@@ -7,10 +7,14 @@ project(helloworld)
 #find_package(Gflags REQUIRED)
 find_package(Ceres REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(PCL 1.7 REQUIRED)
+
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
 
 add_definitions(-DCERES_GFLAGS_NAMESPACE=${GFLAGS_NAMESPACE})
 
-include_directories(include ${CERES_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS})
+include_directories(include ${CERES_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS})
 
 add_library(rbf_kernel src/sparse_gp/rbf_kernel.cpp)
 
@@ -25,3 +29,6 @@ target_link_libraries(pose_graph_3d ${CERES_LIBRARIES})
 
 add_executable(test_gaussian_process src/test_gaussian_process.cpp)
 target_link_libraries(test_gaussian_process rbf_kernel probit_noise ${CERES_LIBRARIES})
+
+add_executable(visualize_pointclouds src/visualize_pointclouds.cpp)
+target_link_libraries(visualize_pointclouds ${PCL_LIBRARIES})
