@@ -20,6 +20,10 @@ add_library(rbf_kernel src/sparse_gp/rbf_kernel.cpp)
 
 add_library(probit_noise src/sparse_gp/probit_noise.cpp)
 
+add_library(gaussian_noise src/sparse_gp/gaussian_noise.cpp)
+
+add_library(octave_convenience src/sparse_gp/octave_convenience.cpp)
+
 # helloworld
 add_executable(helloworld src/helloworld.cpp)
 target_link_libraries(helloworld ${CERES_LIBRARIES})
@@ -34,4 +38,4 @@ add_executable(visualize_pointclouds src/visualize_pointclouds.cpp)
 target_link_libraries(visualize_pointclouds ${PCL_LIBRARIES})
 
 add_executable(visualize_process src/visualize_process.cpp)
-target_link_libraries(visualize_process rbf_kernel probit_noise ${PCL_LIBRARIES})
+target_link_libraries(visualize_process rbf_kernel gaussian_noise probit_noise octave_convenience ${PCL_LIBRARIES})

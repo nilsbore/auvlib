@@ -6,7 +6,7 @@
 
 class rbf_kernel
 {
-private:
+public:
     double sigmaf_sq;
     double l_sq; // length parameter, how far points influence each other
     Eigen::VectorXd p;

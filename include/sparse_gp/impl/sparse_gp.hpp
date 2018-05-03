@@ -6,7 +6,7 @@
 
 #include <sparse_gp/octave_convenience.h>
 
-#define DEBUG 0
+#define DEBUG 1
 
 using namespace Eigen;
 
@@ -52,6 +52,7 @@ void sparse_gp<Kernel, Noise>::shuffle(std::vector<int>& ind, int n)
         temp = ind[i];
         ind[i] = ind[r];
         ind[r] = temp;
+		//std::cout << "Ind " << i << ": " << ind[i] << std::endl;
     }
 }
 
@@ -79,7 +80,8 @@ void sparse_gp<Kernel, Noise>::add_measurements(const MatrixXd& X,const VectorXd
     }
     std::cout << "]" << std::endl;*/
 
-    for (int i = 0; i < X.rows(); i++) {
+    for (int i = 0; i < X.rows() && i < 1000; i++) {
+    //for (int i = 0; i < X.rows(); i++) {
         add(X.row(ind[i]).transpose(), y(ind[i])); // row transpose
     }
 
@@ -125,7 +127,7 @@ void sparse_gp<Kernel, Noise>::add(const VectorXd& X, double y)
             if (DEBUG) {
                 printf("s2 %lf ",s2);
             }
-            //s2 = 1e-12f; // this is where the nan comes from
+            s2 = 1e-12f; // this is where the nan comes from
         }
 
         //Update scalars

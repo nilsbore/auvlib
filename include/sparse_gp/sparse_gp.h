@@ -10,10 +10,11 @@ class sparse_gp
 public:
     typedef Kernel kernel_type;
     typedef Noise noise_type;
-private:
-    // parameters of covariance function:
+public:
     kernel_type kernel; // the gp kernel type used
     noise_type noise; // the noise model used
+private:
+    // parameters of covariance function:
     int total_count; // How many points have I seen?
     int current_size; // how many inducing points do I have
     int capacity; // maximum number of inducing points
@@ -33,7 +34,7 @@ private:
     void neg_log_likelihood_dx(Eigen::Vector3d& dx, const Eigen::VectorXd& x, double y);
     void likelihood_dtheta(Eigen::VectorXd& dtheta, const Eigen::Vector2d& x, double y);
     double likelihood(const Eigen::Vector2d& x, double y);
-    double neg_log_likelihood(const Eigen::Vector2d& x, double y);
+    //double neg_log_likelihood(const Eigen::Vector2d& x, double y);
 public:
     void reset();
     void train_parameters(const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
