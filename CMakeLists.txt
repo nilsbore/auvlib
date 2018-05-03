@@ -32,3 +32,6 @@ target_link_libraries(test_gaussian_process rbf_kernel probit_noise ${CERES_LIBR
 
 add_executable(visualize_pointclouds src/visualize_pointclouds.cpp)
 target_link_libraries(visualize_pointclouds ${PCL_LIBRARIES})
+
+add_executable(visualize_process src/visualize_process.cpp)
+target_link_libraries(visualize_process rbf_kernel probit_noise ${PCL_LIBRARIES})
