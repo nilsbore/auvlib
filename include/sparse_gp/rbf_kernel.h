@@ -20,8 +20,8 @@ public:
     void kernel_dx(Eigen::MatrixXd& k_dx, const Eigen::VectorXd& x, const Eigen::MatrixXd& BV);
     void kernels_fast(Eigen::ArrayXXd& K_dx, Eigen::ArrayXXd& K_dy, const Eigen::MatrixXd& X, const Eigen::MatrixXd& BV);
     void construct_covariance_fast(Eigen::MatrixXd& K, const Eigen::MatrixXd& X, const Eigen::MatrixXd& BV);
-    //rbf_kernel(double sigmaf_sq = 1e-0f, double l_sq = 0.05*0.05);
-    rbf_kernel(double sigmaf_sq = 100e-0f, double l_sq = 1*1);
+    //rbf_kernel(double sigmaf_sq = 100e-0f, double l_sq = 1*1); // NOTE: original values
+    rbf_kernel(double sigmaf_sq = 100e-0f, double l_sq = 1000*1000);
 };
 
 #endif // RBF_KERNEL_H

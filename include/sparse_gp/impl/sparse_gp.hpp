@@ -243,7 +243,8 @@ void sparse_gp<Kernel, Noise>::add(const VectorXd& X, double y)
 
     }
     if (std::isnan(C(0, 0))) {
-        printf("sparse_gp::C has become Nan\n");
+        printf("sparse_gp::C has become Nan after %d inducing points\n", current_size);
+		exit(0);
     }
 
 }

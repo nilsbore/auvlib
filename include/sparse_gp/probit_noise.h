@@ -7,7 +7,7 @@ public:
     double s20;
     double dx_ln(double y, double x, double sigma_x); // d/dx ln P(y|x)
     double dx2_ln(double y, double x, double sigma_x); // d2/dx2 ln P(y|x)
-    probit_noise(double s20);
+    probit_noise(double s20); // NOTE: this parameter is set from the sparse_gp constructor argument
 };
 
 #endif // PROBIT_NOISE_H

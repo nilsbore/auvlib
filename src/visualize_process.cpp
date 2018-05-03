@@ -94,12 +94,40 @@ void visualize_submaps(SubmapsT& submaps)
 	}
 }
 
+void visualize_submap(Eigen::MatrixXd& points)
+{
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+
+    for (int i = 0; i < points.rows(); ++i) {
+		PointT p;
+		p.getVector3fMap() = points.row(i).cast<float>();
+		p.r = colormap[0][0];
+		p.g = colormap[0][1];
+		p.b = colormap[0][2];
+		cloud->push_back(p);
+    }
+
+	cout << "Done constructing point cloud, starting viewer..." << endl;
+
+	//... populate cloud
+	pcl::visualization::CloudViewer viewer ("Simple Cloud Viewer");
+	viewer.showCloud (cloud);
+	while (!viewer.wasStopped ())
+	{
+	}
+}
+
 void train_gp(Eigen::MatrixXd& points, ProcessT& gp)
 {
     cout << "Training gaussian process..." << endl;
+	double meanx = points.col(0).mean();
+	double meany = points.col(1).mean();
+	double meanz = points.col(2).mean();
 
     Eigen::MatrixXd X = points.leftCols(2);
-	Eigen::VectorXd y = points.col(2);
+	X.col(0).array() -= meanx;
+	X.col(1).array() -= meany;
+	Eigen::VectorXd y = points.col(2).array() - meanz;
 	gp.add_measurements(X, y);
 
     cout << "Done training gaussian process..." << endl;
@@ -107,11 +135,18 @@ void train_gp(Eigen::MatrixXd& points, ProcessT& gp)
 
 void visualize_submap_and_gp(Eigen::MatrixXd& points, ProcessT& gp)
 {
+	double meanx = points.col(0).mean();
+	double meany = points.col(1).mean();
+	double meanz = points.col(2).mean();
+	
+	points.col(0).array() -= meanx;
+	points.col(1).array() -= meany;
+	points.col(2).array() -= meanz;
+
 	double maxx = points.col(0).maxCoeff();
 	double minx = points.col(0).minCoeff();
 	double maxy = points.col(1).maxCoeff();
 	double miny = points.col(1).minCoeff();
-	double meanz = points.col(2).mean();
 
 	int sz = 50;
 	double xstep = (maxx - minx)/float(sz-1);
@@ -119,13 +154,15 @@ void visualize_submap_and_gp(Eigen::MatrixXd& points, ProcessT& gp)
     
 	cout << "Predicting gaussian process..." << endl;
 
-	MatrixXd X_star;
-    VectorXd f_star; // mean?
+	MatrixXd X_star(sz*sz, 2);
+    VectorXd f_star(sz*sz); // mean?
 	VectorXd V_star; // variance?
-	X_star.resize(sz*sz, 2);
     int i = 0;
     for (int y = 0; y < sz; ++y) { // ROOM FOR SPEEDUP
 	    for (int x = 0; x < sz; ++x) {
+		    //if (i % 100 != 0) {
+            //    continue;
+            //}
 		    //int ind = x*sz + y;
 		    /*if (!W(ind, i)) {
 			    continue;
@@ -135,13 +172,15 @@ void visualize_submap_and_gp(Eigen::MatrixXd& points, ProcessT& gp)
 		    ++i;
 	    }
     }
-    X_star.conservativeResize(i, 2);
+    //X_star.conservativeResize(i, 2);
     gp.predict_measurements(f_star, X_star, V_star);
+    //f_star.setZero();
+	cout << "Predicted heights: " << f_star << endl;
 	
 	cout << "Done predicting gaussian process..." << endl;
 
 	Eigen::MatrixXd predicted_points(X_star.rows(), 3);
-	predicted_points.leftCols(3) = X_star;
+	predicted_points.leftCols(2) = X_star;
 	predicted_points.col(2) = f_star;
 
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -182,8 +221,9 @@ int main(int argc, char** argv)
 	//visualize_submaps(submaps);
 	
 	Eigen::MatrixXd points = read_submap(folder / "patch_00_00.xyz");
+	//visualize_submap(points);
 	
-	ProcessT gp(100, 100.);
+	ProcessT gp(100, 10.);
 	train_gp(points, gp);
 	visualize_submap_and_gp(points, gp);
 
