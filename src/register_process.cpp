@@ -130,6 +130,48 @@ void visualize_cloud(CloudT::Ptr& cloud)
 	}
 }
 
+void get_transform_jacobian(Eigen::MatrixXd& J, const Eigen::Vector3d& x)
+{
+    J.block<3, 3>(0, 0).setIdentity();
+    J(0, 3) = -x(1);
+    J(0, 5) = x(2);
+    J(1, 3) = x(0);
+    J(1, 4) = -x(2);
+    J(2, 4) = x(1);
+    J(2, 5) = -x(0);
+}
+
+void update(Eigen::MatrixXd& points, ProcessT& gp, Eigen::Matrix3d& R, Eigen::Vector3d& t)
+{
+    MatrixXd dX;
+    gp.compute_derivatives(dX, points.leftCols(2), points.col(2));
+	R = rotations[i].toRotationMatrix();
+    t = means[i];
+	dX *= R.transpose();
+	double added_derivatives = 0;
+	Eigen::RowVectorXd delta(6);
+	delta.setZero();
+	Eigen::MatrixXd J(3, 6);
+	// This would be really easy to do as one operation
+	for (int m = 0; m < points.cols(); ++m) {
+        //points.col(m) = R*points.col(m) + t;
+        get_transform_jacobian(J, points.col(m));
+        delta = (added_derivatives/(added_derivatives+1.))*delta + 1./(added_derivatives+1.)*dX.row(m)*J;
+        ++added_derivatives;
+	}
+	return delta.transpose();
+}
+
+void gradient_step(Eigen::MatrixXd& delta, Matrix3d& R, Vector3d& t)
+{
+    double step = 1e-1;
+    Matrix3d Rx = Eigen::AngleAxisd(step*delta(3), Vector3d::UnitX()).matrix();
+    Matrix3d Ry = Eigen::AngleAxisd(step*delta(4), Vector3d::UnitY()).matrix();
+    Matrix3d Rz = Eigen::AngleAxisd(step*delta(5), Vector3d::UnitZ()).matrix();
+    R = Rx*Ry*Rz;
+    t = step*delta.head<3>().transpose();
+}
+
 // Example: ./visualize_process --folder ../scripts --lsq 100.0 --sigma 0.1 --s0 1.
 int main(int argc, char** argv)
 {
