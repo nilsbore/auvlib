@@ -179,7 +179,7 @@ Eigen::MatrixXd get_points_in_bound_transform(Eigen::MatrixXd points, Eigen::Vec
 											  Eigen::Matrix3d& R_in, double bound)
 {
     points *= R.transpose()*R_in;
-	points.rowwise() += (t.transpose() - t_in.transpose()*R_in);
+	points.rowwise() += (t.transpose()*R_in - t_in.transpose()*R_in);
 
     int counter = 0;
 	for (int i = 0; i < points.rows(); ++i) {
@@ -306,6 +306,7 @@ int main(int argc, char** argv)
     gp1.kernel.p(0) = gp1.kernel.sigmaf_sq;
     gp1.kernel.p(1) = gp1.kernel.l_sq;
 	tie(t1, R1) = train_gp(points1, gp1);
+	R1 = Eigen::AngleAxisd(0.1, Eigen::Vector3d::UnitZ()).matrix();
 	
 	ProcessT gp2(100, s0);
 	gp2.kernel.sigmaf_sq = sigma;
