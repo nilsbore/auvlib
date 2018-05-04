@@ -40,7 +40,7 @@ tuple<Eigen::Vector3d, Eigen::Matrix3d> train_gp(Eigen::MatrixXd& points, Proces
     return make_tuple(t, R);
 }
 
-CloudT::Ptr construct_submap_and_gp_cloud(Eigen::MatrixXd& points, ProcessT& gp,
+CloudT::Ptr construct_submap_and_gp_cloud(Eigen::MatrixXd points, ProcessT& gp,
 				                          Eigen::Vector3d& t, Eigen::Matrix3d& R,
 										  int offset)
 {
@@ -133,6 +133,24 @@ CloudT::Ptr construct_submap_and_gp_cloud(Eigen::MatrixXd& points, ProcessT& gp,
 	return cloud;
 }
 
+CloudT::Ptr construct_cloud(Eigen::MatrixXd points, Eigen::Vector3d& t,
+				            Eigen::Matrix3d& R, int offset)
+{
+	CloudT::Ptr cloud(new CloudT);
+    points *= R.transpose();
+
+    for (int i = 0; i < points.rows(); ++i) {
+        PointT p;
+        p.getVector3fMap() = points.row(i).cast<float>().transpose() + t.cast<float>();
+        p.r = colormap[offset+1][0];
+	    p.g = colormap[offset+1][1];
+		p.b = colormap[offset+1][2];
+		cloud->push_back(p);
+    }
+
+	return cloud;
+}
+
 void visualize_cloud(CloudT::Ptr& cloud)
 {
 	cout << "Done constructing point cloud, starting viewer..." << endl;
@@ -156,8 +174,27 @@ void get_transform_jacobian(Eigen::MatrixXd& J, const Eigen::Vector3d& x)
     J(2, 5) = -x(0);
 }
 
+Eigen::MatrixXd get_points_in_bound_transform(Eigen::MatrixXd points, Eigen::Vector3d& t,
+				                              Eigen::Matrix3d& R, Eigen::Vector3d& t_in,
+											  Eigen::Matrix3d& R_in, double bound)
+{
+    points *= R.transpose()*R_in;
+	points.rowwise() += (t.transpose() - t_in.transpose()*R_in);
+
+    int counter = 0;
+	for (int i = 0; i < points.rows(); ++i) {
+		if (points(i, 0) < bound && points(i, 1) > -bound &&
+		    points(i, 1) < bound && points(i, 1) > -bound) {
+		    points.row(counter) = points.row(i);
+			++counter;
+		}
+    }
+	points.conservativeResize(counter, 3);
+	return points;
+}
+
 Eigen::VectorXd compute_step(Eigen::MatrixXd& points, ProcessT& gp,
-		                     Eigen::Matrix3d& R, Eigen::Vector3d& t)
+		                     Eigen::Vector3d& t, Eigen::Matrix3d& R)
 {
     MatrixXd dX;
     gp.compute_derivatives(dX, points.leftCols(2), points.col(2));
@@ -178,21 +215,47 @@ Eigen::VectorXd compute_step(Eigen::MatrixXd& points, ProcessT& gp,
 	return delta.transpose();
 }
 
-void update_step(Eigen::VectorXd& delta, Matrix3d& R, Vector3d& t)
+tuple<Vector3d, Matrix3d> update_step(Eigen::VectorXd& delta)
 {
     double step = 1e-1;
+    Eigen::Vector3d dt;
+    Eigen::Matrix3d dR;
     Matrix3d Rx = Eigen::AngleAxisd(step*delta(3), Vector3d::UnitX()).matrix();
     Matrix3d Ry = Eigen::AngleAxisd(step*delta(4), Vector3d::UnitY()).matrix();
     Matrix3d Rz = Eigen::AngleAxisd(step*delta(5), Vector3d::UnitZ()).matrix();
-    R = Rx*Ry*Rz;
-    t = step*delta.head<3>().transpose();
+    dR = Rx*Ry*Rz;
+    dt = step*delta.head<3>().transpose();
+
+	return make_tuple(dt, dR);
 }
 
 void register_processes(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d& t1, Eigen::Matrix3d& R1,
 				        Eigen::MatrixXd& points2, ProcessT& gp2, Eigen::Vector3d& t2, Eigen::Matrix3d& R2)
 {
-    while (true) {
+    Eigen::MatrixXd points2in1 = get_points_in_bound_transform(points2, t2, R2, t1, R1, 465);
+    VectorXd delta(6);
+	delta.setZero();
+    bool delta_diff_small = false;
+    while (!delta_diff_small) {
+		Eigen::VectorXd delta_old = delta;
+		Eigen::VectorXd delta = compute_step(points2in1, gp1, t1, R1);
+        delta_diff_small = (delta - delta_old).norm() < 1e-4f;
+		Eigen::Vector3d dt;
+		Eigen::Matrix3d dR;
+		tie(dt, dR) = update_step(delta);
+		R1 = dR*R1; // add to total rotation
+		t1 += dt; // add to total translation
+        Eigen::MatrixXd points2in1 = get_points_in_bound_transform(points2, t2, R2, t1, R1, 465);
+	    
+		Eigen::MatrixXd points3 = get_points_in_bound_transform(points2, t2, R2, t1, R1, 465);
 
+	    CloudT::Ptr cloud1 = construct_submap_and_gp_cloud(points1, gp1, t1, R1, 0);
+	    CloudT::Ptr cloud2 = construct_submap_and_gp_cloud(points2, gp2, t2, R2, 2);
+	    CloudT::Ptr cloud3 = construct_cloud(points3, t1, R1, 4);
+
+	    *cloud1 += *cloud2;
+	    *cloud1 += *cloud3;
+	    visualize_cloud(cloud1);
     }
 }
 
@@ -251,11 +314,17 @@ int main(int argc, char** argv)
     gp2.kernel.p(1) = gp2.kernel.l_sq;
 	tie(t2, R2) = train_gp(points2, gp2);
 
+	Eigen::MatrixXd points3 = get_points_in_bound_transform(points2, t2, R2, t1, R1, 465);
+
 	CloudT::Ptr cloud1 = construct_submap_and_gp_cloud(points1, gp1, t1, R1, 0);
 	CloudT::Ptr cloud2 = construct_submap_and_gp_cloud(points2, gp2, t2, R2, 2);
+	CloudT::Ptr cloud3 = construct_cloud(points3, t1, R1, 4);
 
 	*cloud1 += *cloud2;
+	*cloud1 += *cloud3;
 	visualize_cloud(cloud1);
+    
+	register_processes(points1, gp1, t1, R1, points2, gp2, t2, R2);
 
     return 0;
 }
