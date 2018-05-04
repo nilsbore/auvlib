@@ -15,33 +15,43 @@ using ProcessT = sparse_gp<rbf_kernel, gaussian_noise>;
 using PointT = pcl::PointXYZRGB;
 using CloudT = pcl::PointCloud<PointT>;
 
-void train_gp(Eigen::MatrixXd& points, ProcessT& gp)
+tuple<Eigen::Vector3d, Eigen::Matrix3d> train_gp(Eigen::MatrixXd& points, ProcessT& gp)
 {
     cout << "Training gaussian process..." << endl;
 	double meanx = points.col(0).mean();
 	double meany = points.col(1).mean();
 	double meanz = points.col(2).mean();
+	
+	points.col(0).array() -= meanx;
+	points.col(1).array() -= meany;
+	points.col(2).array() -= meanz;
 
     Eigen::MatrixXd X = points.leftCols(2);
-	X.col(0).array() -= meanx;
-	X.col(1).array() -= meany;
-	Eigen::VectorXd y = points.col(2).array() - meanz;
+	Eigen::VectorXd y = points.col(2);
 	//gp.train_parameters(X, y);
 	gp.add_measurements(X, y);
 
     cout << "Done training gaussian process..." << endl;
+
+	Eigen::Vector3d t(meanx, meany, meanz);
+	Eigen::Matrix3d R;
+	R.setIdentity();
+
+    return make_tuple(t, R);
 }
 
-CloudT::Ptr construct_submap_and_gp_cloud(Eigen::MatrixXd& points, ProcessT& gp, int offset)
+CloudT::Ptr construct_submap_and_gp_cloud(Eigen::MatrixXd& points, ProcessT& gp,
+				                          Eigen::Vector3d& t, Eigen::Matrix3d& R,
+										  int offset)
 {
-	double meanx = points.col(0).mean();
+	/*double meanx = points.col(0).mean();
 	double meany = points.col(1).mean();
 	double meanz = points.col(2).mean();
 	Eigen::Vector3f mean_vector(meanx, meany, meanz);
 	
 	points.col(0).array() -= meanx;
 	points.col(1).array() -= meany;
-	points.col(2).array() -= meanz;
+	points.col(2).array() -= meanz;*/
     
 	/*for (int i = 0; i < points.rows(); ++i) {
 		if (points(i, 2) < -10.) {
@@ -98,17 +108,22 @@ CloudT::Ptr construct_submap_and_gp_cloud(Eigen::MatrixXd& points, ProcessT& gp,
 
 	CloudT::Ptr cloud(new CloudT);
 
+	predicted_points *= R.transpose();
+
     for (int i = 0; i < predicted_points.rows(); ++i) {
         PointT p;
-        p.getVector3fMap() = predicted_points.row(i).cast<float>().transpose() + mean_vector;
+        p.getVector3fMap() = predicted_points.row(i).cast<float>().transpose() + t.cast<float>();
         p.r = colormap[offset][0];
 	    p.g = colormap[offset][1];
 		p.b = colormap[offset][2];
 		cloud->push_back(p);
     }
+
+    points *= R.transpose();
+
     for (int i = 0; i < points.rows(); ++i) {
         PointT p;
-        p.getVector3fMap() = points.row(i).cast<float>().transpose() + mean_vector;
+        p.getVector3fMap() = points.row(i).cast<float>().transpose() + t.cast<float>();
         p.r = colormap[offset+1][0];
 	    p.g = colormap[offset+1][1];
 		p.b = colormap[offset+1][2];
@@ -141,12 +156,13 @@ void get_transform_jacobian(Eigen::MatrixXd& J, const Eigen::Vector3d& x)
     J(2, 5) = -x(0);
 }
 
-void update(Eigen::MatrixXd& points, ProcessT& gp, Eigen::Matrix3d& R, Eigen::Vector3d& t)
+Eigen::VectorXd compute_step(Eigen::MatrixXd& points, ProcessT& gp,
+		                     Eigen::Matrix3d& R, Eigen::Vector3d& t)
 {
     MatrixXd dX;
     gp.compute_derivatives(dX, points.leftCols(2), points.col(2));
-	R = rotations[i].toRotationMatrix();
-    t = means[i];
+	//R = rotations[i].toRotationMatrix();
+    //t = means[i];
 	dX *= R.transpose();
 	double added_derivatives = 0;
 	Eigen::RowVectorXd delta(6);
@@ -162,7 +178,7 @@ void update(Eigen::MatrixXd& points, ProcessT& gp, Eigen::Matrix3d& R, Eigen::Ve
 	return delta.transpose();
 }
 
-void gradient_step(Eigen::MatrixXd& delta, Matrix3d& R, Vector3d& t)
+void update_step(Eigen::VectorXd& delta, Matrix3d& R, Vector3d& t)
 {
     double step = 1e-1;
     Matrix3d Rx = Eigen::AngleAxisd(step*delta(3), Vector3d::UnitX()).matrix();
@@ -170,6 +186,14 @@ void gradient_step(Eigen::MatrixXd& delta, Matrix3d& R, Vector3d& t)
     Matrix3d Rz = Eigen::AngleAxisd(step*delta(5), Vector3d::UnitZ()).matrix();
     R = Rx*Ry*Rz;
     t = step*delta.head<3>().transpose();
+}
+
+void register_processes(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d& t1, Eigen::Matrix3d& R1,
+				        Eigen::MatrixXd& points2, ProcessT& gp2, Eigen::Vector3d& t2, Eigen::Matrix3d& R2)
+{
+    while (true) {
+
+    }
 }
 
 // Example: ./visualize_process --folder ../scripts --lsq 100.0 --sigma 0.1 --s0 1.
@@ -209,23 +233,26 @@ int main(int argc, char** argv)
 	Eigen::MatrixXd points2 = read_submap(folder / "patch_00_01.xyz");
 	//points = 0.1/930.*points;
 	//visualize_submap(points);
+
+	Eigen::Vector3d t1, t2;
+	Eigen::Matrix3d R1, R2;
 	
 	ProcessT gp1(100, s0);
 	gp1.kernel.sigmaf_sq = sigma;
 	gp1.kernel.l_sq = lsq*lsq;
     gp1.kernel.p(0) = gp1.kernel.sigmaf_sq;
     gp1.kernel.p(1) = gp1.kernel.l_sq;
-	train_gp(points1, gp1);
+	tie(t1, R1) = train_gp(points1, gp1);
 	
 	ProcessT gp2(100, s0);
 	gp2.kernel.sigmaf_sq = sigma;
 	gp2.kernel.l_sq = lsq*lsq;
     gp2.kernel.p(0) = gp2.kernel.sigmaf_sq;
     gp2.kernel.p(1) = gp2.kernel.l_sq;
-	train_gp(points2, gp2);
+	tie(t2, R2) = train_gp(points2, gp2);
 
-	CloudT::Ptr cloud1 = construct_submap_and_gp_cloud(points1, gp1, 0);
-	CloudT::Ptr cloud2 = construct_submap_and_gp_cloud(points2, gp2, 2);
+	CloudT::Ptr cloud1 = construct_submap_and_gp_cloud(points1, gp1, t1, R1, 0);
+	CloudT::Ptr cloud2 = construct_submap_and_gp_cloud(points2, gp2, t2, R2, 2);
 
 	*cloud1 += *cloud2;
 	visualize_cloud(cloud1);
