@@ -6,6 +6,7 @@
 #include <sparse_gp/rbf_kernel.h>
 #include <sparse_gp/probit_noise.h>
 #include <sparse_gp/gaussian_noise.h>
+
 #include <data_tools/colormap.h>
 #include <data_tools/submaps.h>
 
@@ -127,8 +128,8 @@ void visualize_submap_and_gp(Eigen::MatrixXd& points, ProcessT& gp)
 int main(int argc, char** argv)
 {
     string folder_str;
-	double lsq = 800.;
-	double sigma = 10.;
+	double lsq = 100.;
+	double sigma = 1.;
 	double s0 = 1.;
 
 	cxxopts::Options options("MyProgram", "One line description of MyProgram");
