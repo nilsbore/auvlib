@@ -42,3 +42,6 @@ target_link_libraries(visualize_pointclouds ${PCL_LIBRARIES})
 
 add_executable(visualize_process src/visualize_process.cpp)
 target_link_libraries(visualize_process rbf_kernel gaussian_noise probit_noise octave_convenience submaps ${PCL_LIBRARIES})
+
+add_executable(register_process src/register_process.cpp)
+target_link_libraries(register_process rbf_kernel gaussian_noise probit_noise octave_convenience submaps ${PCL_LIBRARIES})
