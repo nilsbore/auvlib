@@ -530,22 +530,23 @@ void sparse_gp<Kernel, Noise>::neg_log_likelihood_dx(Vector3d& dx, const VectorX
     double k_star = kernel.kernel_function(x, x);
     construct_covariance(k, x, BV);
     MatrixXd k_dx;
-    MatrixXd k_star_dx;
+    //MatrixXd k_star_dx;
     kernel.kernel_dx(k_dx, x, BV);
-    kernel.kernel_dx(k_star_dx, x, x);
-    Array2d sigma_dx = 2.0f*k_dx.transpose()*C*k + k_star_dx.transpose(); // with or without k_star?
+    //kernel.kernel_dx(k_star_dx, x, x);
+
+    Array2d sigma_dx = (2.*k_dx.transpose()*C*k).array(); // + k_star_dx.transpose(); // with or without k_star?
     double sigma = s20 + k.transpose()*C*k + k_star;
-    double sqrtsigma = sqrt(sigma);
-    double offset = y - k.transpose()*alpha;
-    //double exppart = 0.5f/(sigma*sqrtsigma)*exp(-0.5f/sigma * offset*offset);
-    Array2d firstpart = -sigma_dx;
-    Array2d secondpart = (2.0f*(k_dx.transpose()*alpha).array()*offset);// +
-    Array2d thirdpart = sigma_dx/sigma * offset*offset;
-    dx.head<2>() = -firstpart - secondpart - thirdpart;
-    dx(2) = -1.0f/sigma*offset;
-    if (std::isnan(dx(0)) || std::isnan(dx(1)) || std::isnan(dx(2))) {
+    double mu = k.transpose()*alpha;
+    Array2d mu_dx = k_dx.transpose()*alpha;
+
+    double offset = y - mu;
+    dx.head<2>() = 0.5/sigma*(-sigma_dx+sigma_dx/sigma*offset*offset-2.*mu_dx*offset);
+
+    dx(2) = 1./sigma*offset;
+    
+    /*if (std::isnan(dx(0)) || std::isnan(dx(1)) || std::isnan(dx(2))) {
         //breakpoint();
-    }
+    }*/
 }
 
 template <class Kernel, class Noise>

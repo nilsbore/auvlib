@@ -41,7 +41,7 @@ void rbf_kernel::kernel_dx(MatrixXd& k_dx, const VectorXd& x, const MatrixXd& BV
     RowVectorXd offset;
     for (int i = 0; i < BV.cols(); ++i) {
         offset =  (x - BV.col(i)).transpose();
-        k_dx.row(i) = -p(0)/p(1)*offset*exp(-0.5f/p(1)*offset.squaredNorm());
+        k_dx.row(i) = p(0)/p(1)*offset*exp(-0.5f/p(1)*offset.squaredNorm());
     }
 }
 

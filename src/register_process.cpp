@@ -183,7 +183,7 @@ void get_transform_jacobian(MatrixXd& J, const Vector3d& x)
     J(0, 5) = -x(1);
     J(1, 5) = x(0);
 
-	J.rightCols<3>() = 0.00001*J.rightCols<3>();
+	J.rightCols<3>() = 0.00000*J.rightCols<3>();
 	
 }
 
@@ -222,7 +222,8 @@ Eigen::VectorXd compute_step(Eigen::MatrixXd& points, ProcessT& gp,
 {
     MatrixXd dX;
 	cout << "Computing derivatives..." << endl;
-    gp.compute_derivatives(dX, points.leftCols(2), points.col(2));
+    //gp.compute_derivatives(dX, points.leftCols(2), points.col(2));
+    gp.compute_neg_log_derivatives(dX, points.leftCols(2), points.col(2));
 	//dX.col(2).setZero();
 	//R = rotations[i].toRotationMatrix();
     //t = means[i];
@@ -253,7 +254,7 @@ Eigen::VectorXd compute_step(Eigen::MatrixXd& points, ProcessT& gp,
 
 tuple<Vector3d, Matrix3d> update_step(Eigen::VectorXd& delta)
 {
-    double step = 1e1;
+    double step = 1e-0;
     Eigen::Vector3d dt;
     Eigen::Matrix3d dR;
     Matrix3d Rx = Eigen::AngleAxisd(step*delta(3), Vector3d::UnitX()).matrix();
@@ -282,8 +283,8 @@ void register_processes(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d
 		cout << "Computing registration update" << endl;
 		tie(dt, dR) = update_step(delta);
 		cout << "Registration update: " << delta << endl;
-		R1 = dR.transpose()*R1; // add to total rotation
-		t1 -= dt; // add to total translation
+		R1 = dR*R1; // add to total rotation
+		t1 += dt; // add to total translation
 		cout << "Getting points from submap 2 in submap 1" << endl;
         points2in1 = get_points_in_bound_transform(points2, t2, R2, t1, R1, 465);
 	    
@@ -346,8 +347,8 @@ int main(int argc, char** argv)
     gp1.kernel.p(0) = gp1.kernel.sigmaf_sq;
     gp1.kernel.p(1) = gp1.kernel.l_sq;
 	tie(t1, R1) = train_gp(points1, gp1);
-    R1 = Eigen::AngleAxisd(0.05, Eigen::Vector3d::UnitZ()).matrix();
-	//t1.array() += 2.0;
+    //R1 = Eigen::AngleAxisd(0.05, Eigen::Vector3d::UnitZ()).matrix();
+	t1.array() += 20.0;
 	
 	ProcessT gp2(100, s0);
 	gp2.kernel.sigmaf_sq = sigma;
