@@ -95,7 +95,7 @@ CloudT::Ptr construct_submap_and_gp_cloud(Eigen::MatrixXd points, ProcessT& gp,
     }
     //X_star.conservativeResize(i, 2);
     gp.predict_measurements(f_star, X_star, V_star);
-	cout << "Predicted heights: " << f_star << endl;
+	//cout << "Predicted heights: " << f_star << endl;
 	
 	cout << "Done predicting gaussian process..." << endl;
 	cout << "X size: " << maxx - minx << endl;
@@ -163,16 +163,40 @@ void visualize_cloud(CloudT::Ptr& cloud)
 	}
 }
 
-void get_transform_jacobian(Eigen::MatrixXd& J, const Eigen::Vector3d& x)
+void get_transform_jacobian(MatrixXd& J, const Vector3d& x)
+{
+    // Ok, let's write this out for the future
+	// 3 is the X axis rotation, 4 Y axis, and 5 Z axis rotation
+	// so rotating around Z(5), would give us higher Y, proportional to x(1)
+	// and lower X, proportional to x(0)
+	
+    J.setZero();
+    J.block<3, 3>(0, 0).setIdentity();
+	
+	// X axis rotations
+    J(1, 3) = -x(2);
+    J(2, 3) = x(1);
+	// Y axis rotations
+    J(2, 4) = -x(0);
+    J(0, 4) = x(2);
+	// Z axis rotations
+    J(0, 5) = -x(1);
+    J(1, 5) = x(0);
+
+	J.rightCols<3>() = 0.00001*J.rightCols<3>();
+	
+}
+
+/*void gp_registration::get_transform_jacobian(MatrixXd& J, const Vector3d& x)
 {
     J.block<3, 3>(0, 0).setIdentity();
-    J(0, 3) = -x(1);
-    J(0, 5) = x(2);
-    J(1, 3) = x(0);
-    J(1, 4) = -x(2);
-    J(2, 4) = x(1);
-    J(2, 5) = -x(0);
-}
+    J(1, 3) = -x(2);
+    J(2, 3) = x(1);
+    J(0, 4) = x(2);
+    J(2, 4) = -x(0);
+    J(0, 5) = -x(1);
+    J(1, 5) = x(0);
+}*/
 
 Eigen::MatrixXd get_points_in_bound_transform(Eigen::MatrixXd points, Eigen::Vector3d& t,
 				                              Eigen::Matrix3d& R, Eigen::Vector3d& t_in,
@@ -197,27 +221,39 @@ Eigen::VectorXd compute_step(Eigen::MatrixXd& points, ProcessT& gp,
 		                     Eigen::Vector3d& t, Eigen::Matrix3d& R)
 {
     MatrixXd dX;
+	cout << "Computing derivatives..." << endl;
     gp.compute_derivatives(dX, points.leftCols(2), points.col(2));
+	//dX.col(2).setZero();
 	//R = rotations[i].toRotationMatrix();
     //t = means[i];
+	cout << "Done computing derivatives..." << endl;
+	Eigen::VectorXd l;
+	gp.compute_likelihoods(l, points.leftCols(2), points.col(2));
+	cout << "Mean likelihood: " << l.mean() << endl;
+	cout << "Mean derivative: " << dX.colwise().sum() << endl;
 	dX *= R.transpose();
 	double added_derivatives = 0;
 	Eigen::RowVectorXd delta(6);
 	delta.setZero();
 	Eigen::MatrixXd J(3, 6);
 	// This would be really easy to do as one operation
+	cout << "Getting transform jacobians and accumulating..." << endl;
+    cout << "J size: " << J.rows() << "x" << J.cols() << endl;
+    cout << "Delta size: " << delta.rows() << "x" << delta.cols() << endl;
+    cout << "dX row size: " << dX.row(0).rows() << "x" << dX.row(0).cols() << endl;
 	for (int m = 0; m < points.cols(); ++m) {
         //points.col(m) = R*points.col(m) + t;
-        get_transform_jacobian(J, points.col(m));
+        get_transform_jacobian(J, R*points.row(m).transpose() + t);
         delta = (added_derivatives/(added_derivatives+1.))*delta + 1./(added_derivatives+1.)*dX.row(m)*J;
         ++added_derivatives;
 	}
+	cout << "Done accumulating..." << endl;
 	return delta.transpose();
 }
 
 tuple<Vector3d, Matrix3d> update_step(Eigen::VectorXd& delta)
 {
-    double step = 1e-1;
+    double step = 1e1;
     Eigen::Vector3d dt;
     Eigen::Matrix3d dR;
     Matrix3d Rx = Eigen::AngleAxisd(step*delta(3), Vector3d::UnitX()).matrix();
@@ -236,22 +272,26 @@ void register_processes(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d
     VectorXd delta(6);
 	delta.setZero();
     bool delta_diff_small = false;
-    while (!delta_diff_small) {
+    while (true) { //!delta_diff_small) {
 		Eigen::VectorXd delta_old = delta;
-		Eigen::VectorXd delta = compute_step(points2in1, gp1, t1, R1);
-        delta_diff_small = (delta - delta_old).norm() < 1e-4f;
+		cout << "Computing registration delta" << endl;
+		delta = compute_step(points2in1, gp1, t1, R1);
+        delta_diff_small = (delta - delta_old).norm() < 1e-5f;
 		Eigen::Vector3d dt;
 		Eigen::Matrix3d dR;
+		cout << "Computing registration update" << endl;
 		tie(dt, dR) = update_step(delta);
-		R1 = dR*R1; // add to total rotation
-		t1 += dt; // add to total translation
-        Eigen::MatrixXd points2in1 = get_points_in_bound_transform(points2, t2, R2, t1, R1, 465);
+		cout << "Registration update: " << delta << endl;
+		R1 = dR.transpose()*R1; // add to total rotation
+		t1 -= dt; // add to total translation
+		cout << "Getting points from submap 2 in submap 1" << endl;
+        points2in1 = get_points_in_bound_transform(points2, t2, R2, t1, R1, 465);
 	    
-		Eigen::MatrixXd points3 = get_points_in_bound_transform(points2, t2, R2, t1, R1, 465);
-
+		cout << "Visualizing step" << endl;
+		//Eigen::MatrixXd points3 = get_points_in_bound_transform(points2, t2, R2, t1, R1, 465);
 	    CloudT::Ptr cloud1 = construct_submap_and_gp_cloud(points1, gp1, t1, R1, 0);
 	    CloudT::Ptr cloud2 = construct_submap_and_gp_cloud(points2, gp2, t2, R2, 2);
-	    CloudT::Ptr cloud3 = construct_cloud(points3, t1, R1, 4);
+	    CloudT::Ptr cloud3 = construct_cloud(points2in1, t1, R1, 4);
 
 	    *cloud1 += *cloud2;
 	    *cloud1 += *cloud3;
@@ -274,7 +314,7 @@ int main(int argc, char** argv)
       ("folder", "Folder", cxxopts::value(folder_str))
       ("lsq", "RBF length scale", cxxopts::value(lsq))
       ("sigma", "RBF scale", cxxopts::value(sigma))
-      ("s0", "Probit noise", cxxopts::value(s0));
+      ("s0", "Measurement noise", cxxopts::value(s0));
 
     auto result = options.parse(argc, argv);
 	if (result.count("help")) {
@@ -306,7 +346,8 @@ int main(int argc, char** argv)
     gp1.kernel.p(0) = gp1.kernel.sigmaf_sq;
     gp1.kernel.p(1) = gp1.kernel.l_sq;
 	tie(t1, R1) = train_gp(points1, gp1);
-	R1 = Eigen::AngleAxisd(0.1, Eigen::Vector3d::UnitZ()).matrix();
+    R1 = Eigen::AngleAxisd(0.05, Eigen::Vector3d::UnitZ()).matrix();
+	//t1.array() += 2.0;
 	
 	ProcessT gp2(100, s0);
 	gp2.kernel.sigmaf_sq = sigma;

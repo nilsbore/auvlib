@@ -22,7 +22,7 @@ Eigen::MatrixXd read_submap(const boost::filesystem::path& filename)
 		if (!(iss >> x >> y >> z)) {
 			break;
 		} // error
-		if (counter % 13 != 0) {
+		if (counter % 37 != 0) {
 		    ++counter;
 		    continue;
 		}

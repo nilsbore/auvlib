@@ -27,7 +27,7 @@ using namespace Eigen;
 template <class Kernel, class Noise>
 sparse_gp<Kernel, Noise>::sparse_gp(int capacity, double s0) :
     kernel(), noise(s0), capacity(capacity), s20(s0),
-    eps_tol(1e-6f), current_size(0), total_count(0) // 1e-6f
+    eps_tol(1e-1f), current_size(0), total_count(0) // 1e-6f
 {
 
 }
@@ -509,8 +509,8 @@ void sparse_gp<Kernel, Noise>::likelihood_dx(Vector3d& dx, const VectorXd& x, do
     Array2d firstpart = -sigma_dx;
     Array2d secondpart = (2.0f*(k_dx.transpose()*alpha).array()*offset);// +
     Array2d thirdpart = sigma_dx/sigma * offset*offset;
-    dx(0) = -1.0f/(sigma*sqrtsigma)*offset*exppart;
-    dx.tail<2>() = exppart*(firstpart + secondpart + thirdpart);
+    dx.head<2>() = exppart*(firstpart + secondpart + thirdpart);
+    dx(2) = -1.0f/(sigma*sqrtsigma)*offset*exppart;
     if (std::isnan(dx(0)) || std::isnan(dx(1)) || std::isnan(dx(2))) {
         //breakpoint();
     }
@@ -541,8 +541,8 @@ void sparse_gp<Kernel, Noise>::neg_log_likelihood_dx(Vector3d& dx, const VectorX
     Array2d firstpart = -sigma_dx;
     Array2d secondpart = (2.0f*(k_dx.transpose()*alpha).array()*offset);// +
     Array2d thirdpart = sigma_dx/sigma * offset*offset;
-    dx(0) = -1.0f/sigma*offset;
-    dx.tail<2>() = -firstpart - secondpart - thirdpart;
+    dx.head<2>() = -firstpart - secondpart - thirdpart;
+    dx(2) = -1.0f/sigma*offset;
     if (std::isnan(dx(0)) || std::isnan(dx(1)) || std::isnan(dx(2))) {
         //breakpoint();
     }
