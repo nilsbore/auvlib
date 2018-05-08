@@ -2,6 +2,11 @@
 #include <cxxopts.hpp>
 #include <pcl/visualization/cloud_viewer.h>
 
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/core/eigen.hpp>
+#include <opencv2/imgproc.hpp>
+
 #include <sparse_gp/sparse_gp.h>
 #include <sparse_gp/rbf_kernel.h>
 #include <sparse_gp/probit_noise.h>
@@ -183,6 +188,7 @@ void get_transform_jacobian(MatrixXd& J, const Vector3d& x)
     J(0, 5) = -x(1);
     J(1, 5) = x(0);
 
+    J(2, 2) = 0.;
 	J.rightCols<3>() = 0.00000*J.rightCols<3>();
 	
 }
@@ -269,6 +275,11 @@ tuple<Vector3d, Matrix3d> update_step(Eigen::VectorXd& delta)
 void register_processes(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d& t1, Eigen::Matrix3d& R1,
 				        Eigen::MatrixXd& points2, ProcessT& gp2, Eigen::Vector3d& t2, Eigen::Matrix3d& R2)
 {
+    Eigen::Vector3d rt;
+    rt.setZero();
+    Eigen::Matrix3d rR;
+    rR.setIdentity();
+
     Eigen::MatrixXd points2in1 = get_points_in_bound_transform(points2, t2, R2, t1, R1, 465);
     VectorXd delta(6);
 	delta.setZero();
@@ -283,8 +294,13 @@ void register_processes(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d
 		cout << "Computing registration update" << endl;
 		tie(dt, dR) = update_step(delta);
 		cout << "Registration update: " << delta << endl;
+        rt += dt;
+        rR = dR*rR;
 		R1 = dR*R1; // add to total rotation
 		t1 += dt; // add to total translation
+        cout << "Relative transformations: " << endl;
+        cout << "T: " << rt.transpose() << endl;
+        cout << "R: \n" << rR << endl;
 		cout << "Getting points from submap 2 in submap 1" << endl;
         points2in1 = get_points_in_bound_transform(points2, t2, R2, t1, R1, 465);
 	    
@@ -296,8 +312,71 @@ void register_processes(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d
 
 	    *cloud1 += *cloud2;
 	    *cloud1 += *cloud3;
-	    visualize_cloud(cloud1);
+	    //visualize_cloud(cloud1);
     }
+}
+
+void visualize_likelihoods(ProcessT& gp1, Eigen::Vector3d& t1, Eigen::Matrix3d& R1,
+				           Eigen::MatrixXd& points2, Eigen::Vector3d& t2, Eigen::Matrix3d& R2)
+{
+    int subsample = 37;
+    int counter = 0;
+    for (int i = 0; i < points2.rows(); ++i) {
+        if (i % subsample == 0) {
+            points2.row(counter) = points2.row(i);
+            ++counter;
+        }
+    }
+    points2.conservativeResize(counter, 3);
+
+    int sz = 10;
+    cv::Mat float_image = cv::Mat::zeros(2*sz, 2*sz, CV_32FC1);
+    double step_offset = 2.0;
+    for (int y = -sz; y < sz; ++y) { // ROOM FOR SPEEDUP
+	    for (int x = -sz; x < sz; ++x) {
+            Eigen::Vector3d tt = t1 + Eigen::Vector3d(x*step_offset, y*step_offset, 0.);
+            Eigen::MatrixXd points2in1 = get_points_in_bound_transform(points2, t2, R2, tt, R1, 465);
+            Eigen::VectorXd ll;
+            gp1.compute_neg_log_likelihoods(ll, points2in1.leftCols(2), points2in1.col(2));
+            double mean_ll = ll.mean();
+            float_image.at<float>(sz+y, sz+x) = mean_ll;
+	    }
+    }
+    
+    double min;
+    double max;
+    cv::minMaxIdx(float_image, &min, &max);
+
+    cv::Mat adjMap;
+    cv::convertScaleAbs(float_image-min, adjMap, 255. / max);
+
+    cv::Mat large, color;
+    double factor = 20.;
+    cv::resize(adjMap, large, cv::Size(factor*2*sz, factor*2*sz));//resize image
+    cv::cvtColor(large, color, cv::COLOR_GRAY2BGR);
+
+    double arrow_len = 10.;
+    for (int y = -sz; y < sz; ++y) { // ROOM FOR SPEEDUP
+	    for (int x = -sz; x < sz; ++x) {
+            Eigen::MatrixXd dX;
+            cout << "Computing derivatives..." << endl;
+            gp1.compute_neg_log_derivatives(dX, points2.leftCols(2), points2.col(2));
+            Eigen::Vector2d mean_dx = dX.colwise().mean().head<2>();
+            mean_dx.normalize();
+            Eigen::Vector2d origin(factor*(.5+sz+x), factor*(.5+sz+y));
+            Eigen::Vector2d vector = origin + arrow_len*mean_dx;
+
+            cv::Point point1(int(origin(0)), int(origin(1)));
+            cv::Point point2(int(vector(0)), int(vector(1)));
+
+            arrowedLine(color, point1, point2, cv::Scalar(0,255,0)); //, int thickness=1, int line_type=8, int shift=0, double tipLength=0.1);
+	    }
+    }
+
+    cout << "Likelihoods: \n" << float_image << endl;
+
+    cv::imshow("Out", color);
+    cv::waitKey(0);
 }
 
 // Example: ./visualize_process --folder ../scripts --lsq 100.0 --sigma 0.1 --s0 1.
@@ -348,7 +427,8 @@ int main(int argc, char** argv)
     gp1.kernel.p(1) = gp1.kernel.l_sq;
 	tie(t1, R1) = train_gp(points1, gp1);
     //R1 = Eigen::AngleAxisd(0.05, Eigen::Vector3d::UnitZ()).matrix();
-	t1.array() += 20.0;
+	t1.array() += 0.0;
+    t1(2) -= 0.0; 
 	
 	ProcessT gp2(100, s0);
 	gp2.kernel.sigmaf_sq = sigma;
@@ -356,6 +436,8 @@ int main(int argc, char** argv)
     gp2.kernel.p(0) = gp2.kernel.sigmaf_sq;
     gp2.kernel.p(1) = gp2.kernel.l_sq;
 	tie(t2, R2) = train_gp(points2, gp2);
+
+    visualize_likelihoods(gp1, t1, R1, points2, t2, R2);
 
 	Eigen::MatrixXd points3 = get_points_in_bound_transform(points2, t2, R2, t1, R1, 465);
 

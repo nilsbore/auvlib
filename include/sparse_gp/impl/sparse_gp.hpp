@@ -382,7 +382,7 @@ double sparse_gp<Kernel, Noise>::neg_log_likelihood(const VectorXd& X, double y)
     // in eigen, we have to use decomposition to get log determinant
     long double log_det_cov = log(sigma);
 
-    long double lp = logsqrt2pi + 0.5f*log_det_cov + 0.5f*cent2/sigma;
+    long double lp = -logsqrt2pi - 0.5f*log_det_cov - 0.5f*cent2/sigma;
     //printf("\tCalculating log prob %Lf, Sigma = %lf, cent = %lf\n",lp,sigma,cent2);
     //if(C.Nrows()==1)
     //printf("\t\tC has one entry: %lf, k = %lf\n",C(1,1),k(1));
@@ -540,9 +540,9 @@ void sparse_gp<Kernel, Noise>::neg_log_likelihood_dx(Vector3d& dx, const VectorX
     Array2d mu_dx = k_dx.transpose()*alpha;
 
     double offset = y - mu;
-    dx.head<2>() = 0.5/sigma*(-sigma_dx+sigma_dx/sigma*offset*offset-2.*mu_dx*offset);
+    dx.head<2>() = 0.5/sigma*(-sigma_dx+sigma_dx/sigma*offset*offset+2.*mu_dx*offset);
 
-    dx(2) = 1./sigma*offset;
+    dx(2) = 1./sigma*offset; // NOTE: this was negative before!
     
     /*if (std::isnan(dx(0)) || std::isnan(dx(1)) || std::isnan(dx(2))) {
         //breakpoint();

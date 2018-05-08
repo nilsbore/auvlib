@@ -8,6 +8,7 @@ project(helloworld)
 find_package(Ceres REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(PCL 1.7 REQUIRED)
+find_package(OpenCV REQUIRED)
 
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
@@ -44,4 +45,4 @@ add_executable(visualize_process src/visualize_process.cpp)
 target_link_libraries(visualize_process rbf_kernel gaussian_noise probit_noise octave_convenience submaps ${PCL_LIBRARIES})
 
 add_executable(register_process src/register_process.cpp)
-target_link_libraries(register_process rbf_kernel gaussian_noise probit_noise octave_convenience submaps ${PCL_LIBRARIES})
+target_link_libraries(register_process rbf_kernel gaussian_noise probit_noise octave_convenience submaps ${PCL_LIBRARIES} ${OpenCV_LIBS})
