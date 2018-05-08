@@ -239,21 +239,24 @@ Eigen::VectorXd compute_step(Eigen::MatrixXd& points, ProcessT& gp,
 	cout << "Mean likelihood: " << l.mean() << endl;
 	cout << "Mean derivative: " << dX.colwise().sum() << endl;
 	dX *= R.transpose();
-	double added_derivatives = 0;
+	//double added_derivatives = 0;
 	Eigen::RowVectorXd delta(6);
-	delta.setZero();
+	//delta.setZero();
 	Eigen::MatrixXd J(3, 6);
 	// This would be really easy to do as one operation
 	cout << "Getting transform jacobians and accumulating..." << endl;
     cout << "J size: " << J.rows() << "x" << J.cols() << endl;
     cout << "Delta size: " << delta.rows() << "x" << delta.cols() << endl;
     cout << "dX row size: " << dX.row(0).rows() << "x" << dX.row(0).cols() << endl;
-	for (int m = 0; m < points.cols(); ++m) {
+    Eigen::MatrixXd deltas(points.rows(), 6);
+	for (int m = 0; m < points.rows(); ++m) {
         //points.col(m) = R*points.col(m) + t;
         get_transform_jacobian(J, R*points.row(m).transpose() + t);
-        delta = (added_derivatives/(added_derivatives+1.))*delta + 1./(added_derivatives+1.)*dX.row(m)*J;
-        ++added_derivatives;
+        //delta = (added_derivatives/(added_derivatives+1.))*delta + 1./(added_derivatives+1.)*dX.row(m)*J;
+        //++added_derivatives;
+        deltas.row(m) = dX.row(m)*J;
 	}
+    delta = deltas.colwise().mean();
 	cout << "Done accumulating..." << endl;
 	return delta.transpose();
 }
@@ -273,12 +276,15 @@ tuple<Vector3d, Matrix3d> update_step(Eigen::VectorXd& delta)
 }
 
 void register_processes(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d& t1, Eigen::Matrix3d& R1,
-				        Eigen::MatrixXd& points2, ProcessT& gp2, Eigen::Vector3d& t2, Eigen::Matrix3d& R2)
+				        Eigen::MatrixXd& points2, ProcessT& gp2, Eigen::Vector3d& t2, Eigen::Matrix3d& R2,
+                        cv::Mat& vis)
 {
     Eigen::Vector3d rt;
     rt.setZero();
     Eigen::Matrix3d rR;
     rR.setIdentity();
+
+    cv::Point old_point(vis.cols/2+0, vis.rows/2+0);
 
     Eigen::MatrixXd points2in1 = get_points_in_bound_transform(points2, t2, R2, t1, R1, 465);
     VectorXd delta(6);
@@ -295,6 +301,13 @@ void register_processes(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d
 		tie(dt, dR) = update_step(delta);
 		cout << "Registration update: " << delta << endl;
         rt += dt;
+
+        cv::Point new_point(vis.cols/2+int(2.*20.*rt(0)), vis.rows/2+int(2.*20.*rt(1)));
+        cv::line(vis, old_point, new_point, cv::Scalar(0, 0, 255)); //, int thickness=1, int lineType=8, int shift=0)
+        old_point = new_point;
+        cv::imshow("registration", vis);
+        cv::waitKey(0.01);
+
         rR = dR*rR;
 		R1 = dR*R1; // add to total rotation
 		t1 += dt; // add to total translation
@@ -316,8 +329,8 @@ void register_processes(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d
     }
 }
 
-void visualize_likelihoods(ProcessT& gp1, Eigen::Vector3d& t1, Eigen::Matrix3d& R1,
-				           Eigen::MatrixXd& points2, Eigen::Vector3d& t2, Eigen::Matrix3d& R2)
+cv::Mat visualize_likelihoods(ProcessT& gp1, Eigen::Vector3d& t1, Eigen::Matrix3d& R1,
+                              Eigen::MatrixXd& points2, Eigen::Vector3d& t2, Eigen::Matrix3d& R2)
 {
     int subsample = 37;
     int counter = 0;
@@ -328,6 +341,11 @@ void visualize_likelihoods(ProcessT& gp1, Eigen::Vector3d& t1, Eigen::Matrix3d& 
         }
     }
     points2.conservativeResize(counter, 3);
+	
+    if (boost::filesystem::exists("temp.png")) {
+        cv::Mat vis = cv::imread("temp.png");
+        return vis;
+    }
 
     int sz = 10;
     cv::Mat float_image = cv::Mat::zeros(2*sz, 2*sz, CV_32FC1);
@@ -358,10 +376,14 @@ void visualize_likelihoods(ProcessT& gp1, Eigen::Vector3d& t1, Eigen::Matrix3d& 
     double arrow_len = 10.;
     for (int y = -sz; y < sz; ++y) { // ROOM FOR SPEEDUP
 	    for (int x = -sz; x < sz; ++x) {
+            Eigen::Vector3d tt = t1 + Eigen::Vector3d(x*step_offset, y*step_offset, 0.);
+            Eigen::MatrixXd points2in1 = get_points_in_bound_transform(points2, t2, R2, tt, R1, 465);
             Eigen::MatrixXd dX;
             cout << "Computing derivatives..." << endl;
-            gp1.compute_neg_log_derivatives(dX, points2.leftCols(2), points2.col(2));
+            gp1.compute_neg_log_derivatives(dX, points2in1.leftCols(2), points2in1.col(2));
+            //gp1.compute_derivatives(dX, points2in1.leftCols(2), points2in1.col(2));
             Eigen::Vector2d mean_dx = dX.colwise().mean().head<2>();
+            double norm_dx = mean_dx.norm();
             mean_dx.normalize();
             Eigen::Vector2d origin(factor*(.5+sz+x), factor*(.5+sz+y));
             Eigen::Vector2d vector = origin + arrow_len*mean_dx;
@@ -377,6 +399,9 @@ void visualize_likelihoods(ProcessT& gp1, Eigen::Vector3d& t1, Eigen::Matrix3d& 
 
     cv::imshow("Out", color);
     cv::waitKey(0);
+    cv::imwrite("temp.png", color);
+
+    return color;
 }
 
 // Example: ./visualize_process --folder ../scripts --lsq 100.0 --sigma 0.1 --s0 1.
@@ -427,8 +452,8 @@ int main(int argc, char** argv)
     gp1.kernel.p(1) = gp1.kernel.l_sq;
 	tie(t1, R1) = train_gp(points1, gp1);
     //R1 = Eigen::AngleAxisd(0.05, Eigen::Vector3d::UnitZ()).matrix();
-	t1.array() += 0.0;
-    t1(2) -= 0.0; 
+	t1.array() += -8.0;
+    t1(2) -= -8.0; 
 	
 	ProcessT gp2(100, s0);
 	gp2.kernel.sigmaf_sq = sigma;
@@ -437,7 +462,7 @@ int main(int argc, char** argv)
     gp2.kernel.p(1) = gp2.kernel.l_sq;
 	tie(t2, R2) = train_gp(points2, gp2);
 
-    visualize_likelihoods(gp1, t1, R1, points2, t2, R2);
+    cv::Mat vis = visualize_likelihoods(gp1, t1, R1, points2, t2, R2);
 
 	Eigen::MatrixXd points3 = get_points_in_bound_transform(points2, t2, R2, t1, R1, 465);
 
@@ -449,7 +474,7 @@ int main(int argc, char** argv)
 	*cloud1 += *cloud3;
 	visualize_cloud(cloud1);
     
-	register_processes(points1, gp1, t1, R1, points2, gp2, t2, R2);
+	register_processes(points1, gp1, t1, R1, points2, gp2, t2, R2, vis);
 
     return 0;
 }
