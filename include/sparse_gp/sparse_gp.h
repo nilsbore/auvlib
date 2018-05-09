@@ -50,6 +50,13 @@ public:
     void compute_neg_log_likelihoods(Eigen::VectorXd& l, const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
     //sparse_gp(int capacity = 30, double s0 = 1e-1f, double sigmaf = 1e-2f, double l = 0.08*0.08);
     sparse_gp(int capacity = 100, double s0 = 1e-1f);
+	
+    template <class Archive>
+    void serialize(Archive & ar)
+    {
+       ar(kernel, noise, total_count, current_size,
+          capacity, s20, eps_tol, alpha, C, Q, BV);
+    }
 };
 
 #include "impl/sparse_gp.hpp"

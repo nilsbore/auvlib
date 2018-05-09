@@ -22,6 +22,12 @@ public:
     void construct_covariance_fast(Eigen::MatrixXd& K, const Eigen::MatrixXd& X, const Eigen::MatrixXd& BV);
     //rbf_kernel(double sigmaf_sq = 100e-0f, double l_sq = 1*1); // NOTE: original values
     rbf_kernel(double sigmaf_sq = 100e-0f, double l_sq = 1000*1000);
+
+    template <class Archive>
+    void serialize(Archive & ar)
+    {
+       ar(sigmaf_sq, l_sq, p);
+    }
 };
 
 #endif // RBF_KERNEL_H

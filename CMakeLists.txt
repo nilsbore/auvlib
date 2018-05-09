@@ -36,7 +36,7 @@ add_executable(pose_graph_3d src/pose_graph_3d.cpp)
 target_link_libraries(pose_graph_3d ${CERES_LIBRARIES})
 
 add_executable(test_gaussian_process src/test_gaussian_process.cpp)
-target_link_libraries(test_gaussian_process rbf_kernel probit_noise ${CERES_LIBRARIES})
+target_link_libraries(test_gaussian_process rbf_kernel gaussian_noise probit_noise octave_convenience submaps ${PCL_LIBRARIES} ${CERES_LIBRARIES})
 
 add_executable(visualize_pointclouds src/visualize_pointclouds.cpp)
 target_link_libraries(visualize_pointclouds ${PCL_LIBRARIES})

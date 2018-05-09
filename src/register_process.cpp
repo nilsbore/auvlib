@@ -20,31 +20,6 @@ using ProcessT = sparse_gp<rbf_kernel, gaussian_noise>;
 using PointT = pcl::PointXYZRGB;
 using CloudT = pcl::PointCloud<PointT>;
 
-tuple<Eigen::Vector3d, Eigen::Matrix3d> train_gp(Eigen::MatrixXd& points, ProcessT& gp)
-{
-    cout << "Training gaussian process..." << endl;
-	double meanx = points.col(0).mean();
-	double meany = points.col(1).mean();
-	double meanz = points.col(2).mean();
-	
-	points.col(0).array() -= meanx;
-	points.col(1).array() -= meany;
-	points.col(2).array() -= meanz;
-
-    Eigen::MatrixXd X = points.leftCols(2);
-	Eigen::VectorXd y = points.col(2);
-	//gp.train_parameters(X, y);
-	gp.add_measurements(X, y);
-
-    cout << "Done training gaussian process..." << endl;
-
-	Eigen::Vector3d t(meanx, meany, meanz);
-	Eigen::Matrix3d R;
-	R.setIdentity();
-
-    return make_tuple(t, R);
-}
-
 CloudT::Ptr construct_submap_and_gp_cloud(Eigen::MatrixXd points, ProcessT& gp,
 				                          Eigen::Vector3d& t, Eigen::Matrix3d& R,
 										  int offset)
@@ -179,17 +154,18 @@ void get_transform_jacobian(MatrixXd& J, const Vector3d& x)
     J.block<3, 3>(0, 0).setIdentity();
 	
 	// X axis rotations
-    J(1, 3) = -x(2);
-    J(2, 3) = x(1);
+    J(1, 3) = 0.*-x(2);
+    J(2, 3) = 0.*x(1);
 	// Y axis rotations
-    J(2, 4) = -x(0);
-    J(0, 4) = x(2);
+    J(2, 4) = 0.*-x(0);
+    J(0, 4) = 0.*x(2);
 	// Z axis rotations
     J(0, 5) = -x(1);
     J(1, 5) = x(0);
 
     J(2, 2) = 0.;
-	J.rightCols<3>() = 0.00000*J.rightCols<3>();
+	//J.rightCols<3>() = 0.00001*J.rightCols<3>();
+	J.rightCols<3>() = 0.0*J.rightCols<3>();
 	
 }
 
@@ -279,6 +255,15 @@ void register_processes(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d
 				        Eigen::MatrixXd& points2, ProcessT& gp2, Eigen::Vector3d& t2, Eigen::Matrix3d& R2,
                         cv::Mat& vis)
 {
+	pcl::visualization::CloudViewer viewer ("Simple Cloud Viewer");
+    CloudT::Ptr cloud1 = construct_submap_and_gp_cloud(points1, gp1, t1, R1, 0);
+    CloudT::Ptr cloud2 = construct_submap_and_gp_cloud(points2, gp2, t2, R2, 2);
+	viewer.showCloud(cloud1, "cloud1");
+	viewer.showCloud(cloud2, "cloud2");
+	//while (!viewer.wasStopped ())
+	//{
+	//}
+
     Eigen::Vector3d rt;
     rt.setZero();
     Eigen::Matrix3d rR;
@@ -290,7 +275,7 @@ void register_processes(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d
     VectorXd delta(6);
 	delta.setZero();
     bool delta_diff_small = false;
-	double step_offset = 2.;
+	double step_offset = 15.;
 	double factor = 20.;
     while (true) { //!delta_diff_small) {
 		Eigen::VectorXd delta_old = delta;
@@ -307,8 +292,7 @@ void register_processes(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d
         cv::Point new_point(vis.cols/2+int(factor*(rt(0)/step_offset+0.5)), vis.rows/2+int(factor*(rt(1)/step_offset+0.5)));
         cv::line(vis, old_point, new_point, cv::Scalar(0, 0, 255)); //, int thickness=1, int lineType=8, int shift=0)
         old_point = new_point;
-        cv::imshow("registration", vis);
-        cv::waitKey(0.01);
+        //cv::waitKey(10);
 
         rR = dR*rR;
 		R1 = dR*R1; // add to total rotation
@@ -322,12 +306,16 @@ void register_processes(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d
 		cout << "Visualizing step" << endl;
 		//Eigen::MatrixXd points3 = get_points_in_bound_transform(points2, t2, R2, t1, R1, 465);
 	    CloudT::Ptr cloud1 = construct_submap_and_gp_cloud(points1, gp1, t1, R1, 0);
-	    CloudT::Ptr cloud2 = construct_submap_and_gp_cloud(points2, gp2, t2, R2, 2);
-	    CloudT::Ptr cloud3 = construct_cloud(points2in1, t1, R1, 4);
+	    //CloudT::Ptr cloud3 = construct_cloud(points2in1, t1, R1, 4);
+        
+		viewer.removeVisualizationCallable("cloud1");
+		viewer.showCloud(cloud1, "cloud1");
+        cv::imshow("registration", vis);
+		cv::waitKey(0);
 
-	    *cloud1 += *cloud2;
+	    /*cloud1 += *cloud2;
 	    *cloud1 += *cloud3;
-	    //visualize_cloud(cloud1);
+	    visualize_cloud(cloud1);*/
     }
 }
 
@@ -351,7 +339,7 @@ cv::Mat visualize_likelihoods(ProcessT& gp1, Eigen::Vector3d& t1, Eigen::Matrix3
 
     int sz = 10;
     cv::Mat float_image = cv::Mat::zeros(2*sz, 2*sz, CV_32FC1);
-    double step_offset = 2.0;
+    double step_offset = 15.0;
     for (int y = -sz; y < sz; ++y) { // ROOM FOR SPEEDUP
 	    for (int x = -sz; x < sz; ++x) {
             Eigen::Vector3d tt = t1 + Eigen::Vector3d(x*step_offset, y*step_offset, 0.);
@@ -453,9 +441,9 @@ int main(int argc, char** argv)
     gp1.kernel.p(0) = gp1.kernel.sigmaf_sq;
     gp1.kernel.p(1) = gp1.kernel.l_sq;
 	tie(t1, R1) = train_gp(points1, gp1);
-    //R1 = Eigen::AngleAxisd(0.05, Eigen::Vector3d::UnitZ()).matrix();
-	t1.array() += -8.0;
-    t1(2) -= -8.0; 
+    //R1 = Eigen::AngleAxisd(0.2, Eigen::Vector3d::UnitZ()).matrix();
+	t1.array() += -70.0;
+    t1(2) -= -70.0; 
 	
 	ProcessT gp2(100, s0);
 	gp2.kernel.sigmaf_sq = sigma;
