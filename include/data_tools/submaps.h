@@ -11,6 +11,9 @@ Eigen::MatrixXd read_submap(const boost::filesystem::path& filename);
 SubmapsT read_submaps(const boost::filesystem::path& folder);
 void visualize_submaps(SubmapsT& submaps);
 void visualize_submap(Eigen::MatrixXd& points);
+Eigen::MatrixXd get_points_in_bound_transform(Eigen::MatrixXd points, Eigen::Vector3d& t,
+				                              Eigen::Matrix3d& R, Eigen::Vector3d& t_in,
+											  Eigen::Matrix3d& R_in, double bound);
 
 template <typename ProcessT>
 std::tuple<Eigen::Vector3d, Eigen::Matrix3d> train_gp(Eigen::MatrixXd& points, ProcessT& gp)

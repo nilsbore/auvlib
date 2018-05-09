@@ -180,24 +180,6 @@ void get_transform_jacobian(MatrixXd& J, const Vector3d& x)
     J(1, 5) = x(0);
 }*/
 
-Eigen::MatrixXd get_points_in_bound_transform(Eigen::MatrixXd points, Eigen::Vector3d& t,
-				                              Eigen::Matrix3d& R, Eigen::Vector3d& t_in,
-											  Eigen::Matrix3d& R_in, double bound)
-{
-    points *= R.transpose()*R_in;
-	points.rowwise() += (t.transpose()*R_in - t_in.transpose()*R_in);
-
-    int counter = 0;
-	for (int i = 0; i < points.rows(); ++i) {
-		if (points(i, 0) < bound && points(i, 1) > -bound &&
-		    points(i, 1) < bound && points(i, 1) > -bound) {
-		    points.row(counter) = points.row(i);
-			++counter;
-		}
-    }
-	points.conservativeResize(counter, 3);
-	return points;
-}
 
 Eigen::VectorXd compute_step(Eigen::MatrixXd& points, ProcessT& gp,
 		                     Eigen::Vector3d& t, Eigen::Matrix3d& R)
