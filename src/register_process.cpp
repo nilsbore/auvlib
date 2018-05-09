@@ -290,6 +290,8 @@ void register_processes(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d
     VectorXd delta(6);
 	delta.setZero();
     bool delta_diff_small = false;
+	double step_offset = 2.;
+	double factor = 20.;
     while (true) { //!delta_diff_small) {
 		Eigen::VectorXd delta_old = delta;
 		cout << "Computing registration delta" << endl;
@@ -302,7 +304,7 @@ void register_processes(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d
 		cout << "Registration update: " << delta << endl;
         rt += dt;
 
-        cv::Point new_point(vis.cols/2+int(2.*20.*rt(0)), vis.rows/2+int(2.*20.*rt(1)));
+        cv::Point new_point(vis.cols/2+int(factor*(rt(0)/step_offset+0.5)), vis.rows/2+int(factor*(rt(1)/step_offset+0.5)));
         cv::line(vis, old_point, new_point, cv::Scalar(0, 0, 255)); //, int thickness=1, int lineType=8, int shift=0)
         old_point = new_point;
         cv::imshow("registration", vis);
