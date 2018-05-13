@@ -46,3 +46,6 @@ target_link_libraries(visualize_process rbf_kernel gaussian_noise probit_noise o
 
 add_executable(register_process src/register_process.cpp)
 target_link_libraries(register_process rbf_kernel gaussian_noise probit_noise octave_convenience submaps ${PCL_LIBRARIES} ${OpenCV_LIBS})
+
+add_executable(register_process_ceres src/register_process_ceres.cpp)
+target_link_libraries(register_process_ceres rbf_kernel gaussian_noise probit_noise octave_convenience submaps ${PCL_LIBRARIES} ${OpenCV_LIBS} ${CERES_LIBRARIES})
