@@ -43,7 +43,7 @@ void get_transform_jacobian(Eigen::MatrixXd& J, const Eigen::Vector3d& x)
     J(1, 5) = x(0);
 
     J(2, 2) = 0.;
-	J.rightCols<3>() = 0.00001*J.rightCols<3>();
+	J.rightCols<3>() = 0.00000001*J.rightCols<3>();
 	//J.rightCols<3>() = 0.0*J.rightCols<3>();
 	
 }
@@ -90,7 +90,7 @@ public:
         cout << "Residual: " << residuals[0] << endl;
 		
 		// Compute the Jacobian if asked for.
-		if (jacobians != NULL && jacobians[0] != NULL) {
+		if (jacobians != NULL) { // && jacobians[0] != NULL) {
 		    Eigen::MatrixXd dX;
 	        cout << "Computing derivatives..." << endl;
             //gp.compute_derivatives(dX, points.leftCols(2), points.col(2));
@@ -105,10 +105,26 @@ public:
 				deltas.row(m) = dX.row(m)*J;
 			}
 			Eigen::RowVectorXd delta = deltas.colwise().mean();
-			for (int j = 0; j < 6; ++j) {
-                jacobians[0][j] = -delta[j];
-                jacobians[0][6+j] = delta[j];
-		    }
+            if (jacobians[0] != NULL) { 
+                for (int j = 0; j < 3; ++j) {
+                    jacobians[0][j] = -delta[j];
+                }
+            }
+            if (jacobians[1] != NULL) { 
+                for (int j = 0; j < 3; ++j) {
+                    jacobians[1][j] = -delta[3+j];
+                }
+            }
+            if (jacobians[2] != NULL) { 
+                for (int j = 0; j < 3; ++j) {
+                    jacobians[2][j] = delta[j];
+                }
+            }
+            if (jacobians[3] != NULL) { 
+                for (int j = 0; j < 3; ++j) {
+                    jacobians[3][j] = delta[3+j];
+                }
+            }
 
             cout << "Derivative: " << delta << endl;
 		}
@@ -445,9 +461,11 @@ void register_processes_ceres(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Ve
     ceres::CostFunction* cost_function1 = new GaussianProcessCostFunction(gp1, points2);
     ceres::CostFunction* cost_function2 = new GaussianProcessCostFunction(gp2, points1);
 
-    ceres::LossFunction* loss_function = NULL;
+    //ceres::LossFunction* loss_function = new ceres::SoftLOneLoss(1.);
+    ceres::LossFunction* loss_function = new ceres::HuberLoss(1.);
+    //ceres::LossFunction* loss_function = NULL;
     problem.AddResidualBlock(cost_function1, loss_function, t1.data(), R1.data(), t2.data(), R2.data());
-    //problem.AddResidualBlock(cost_function2, loss_function, t2.data(), R2.data(), t1.data(), R1.data());
+    problem.AddResidualBlock(cost_function2, loss_function, t2.data(), R2.data(), t1.data(), R1.data());
 
     /*problem->SetParameterization(pose_begin_iter->second.q.coeffs().data(),
         quaternion_local_parameterization);
@@ -466,7 +484,7 @@ void register_processes_ceres(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Ve
     
     //problem.SetParameterBlockConstant(t1.data());
     problem.SetParameterBlockConstant(t2.data());
-    problem.SetParameterBlockConstant(R1.data());
+    //problem.SetParameterBlockConstant(R1.data());
     problem.SetParameterBlockConstant(R2.data());
 
     ceres::Solver::Options options;
@@ -528,7 +546,7 @@ int main(int argc, char** argv)
 
 	Eigen::Vector3d t1, t2; // translations
     Eigen::Vector3d R1, R2; // Euler angles
-    R1 << 0., 0., 0.; //2;
+    R1 << 0., 0., 0.2;
     R2 << 0., 0., 0.;
 	Eigen::Matrix3d RM1, RM2; // rotation matrices
 	
@@ -541,8 +559,8 @@ int main(int argc, char** argv)
     //R1 = Eigen::AngleAxisd(0.2, Eigen::Vector3d::UnitZ()).matrix();
     RM1 = euler_to_matrix(R1(0), R1(1), R1(2));
     Eigen::Vector3d t1_gt = t1;
-	t1.array() += -70.0;
-    t1(2) -= -70.0; 
+	t1.array() += -40.0;
+    t1(2) -= -40.0; 
 	
 	ProcessT gp2(100, s0);
 	gp2.kernel.sigmaf_sq = sigma;
