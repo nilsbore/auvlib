@@ -43,8 +43,8 @@ void get_transform_jacobian(Eigen::MatrixXd& J, const Eigen::Vector3d& x)
     J(1, 5) = x(0);
 
     J(2, 2) = 0.;
-	//J.rightCols<3>() = 0.00001*J.rightCols<3>();
-	J.rightCols<3>() = 0.0*J.rightCols<3>();
+	J.rightCols<3>() = 0.00001*J.rightCols<3>();
+	//J.rightCols<3>() = 0.0*J.rightCols<3>();
 	
 }
 
@@ -374,6 +374,66 @@ cv::Mat visualize_likelihoods(ProcessT& gp1, Eigen::Vector3d& t1, Eigen::Matrix3
     return color;
 }
 
+class VisCallback : public ceres::IterationCallback {
+private:
+    pcl::visualization::CloudViewer viewer; 
+    MatrixXd& points1;
+    MatrixXd& points2;
+    ProcessT& gp1;
+    Vector3d& t1;
+    Vector3d& R1;
+    cv::Mat vis;
+    cv::Point old_point;
+    double step_offset;
+    double factor;
+    Vector3d t0;
+public:
+    explicit VisCallback(MatrixXd& points1, MatrixXd& points2,
+                         ProcessT& gp1, ProcessT& gp2, cv::Mat& vis,
+                         Vector3d& t1, Vector3d& R1,
+                         Vector3d& t2, Vector3d& R2)
+        : viewer("Simple Cloud Viewer"), points1(points1), points2(points2), gp1(gp1), t1(t1), R1(R1), vis(vis)
+    {
+
+        Matrix3d RM1 = euler_to_matrix(R1(0), R1(1), R1(2));
+        Matrix3d RM2 = euler_to_matrix(R2(0), R2(1), R2(2));
+        t0 = t1;
+        CloudT::Ptr cloud1 = construct_submap_and_gp_cloud(points1, gp1, t1, RM1, 0);
+        CloudT::Ptr cloud2 = construct_submap_and_gp_cloud(points2, gp2, t2, RM2, 2);
+        viewer.showCloud(cloud1, "cloud1");
+        viewer.showCloud(cloud2, "cloud2");
+
+        old_point = cv::Point(vis.cols/2+0, vis.rows/2+0);
+
+        step_offset = 15.;
+        factor = 20.;
+    }
+
+    ~VisCallback() {}
+
+    ceres::CallbackReturnType operator()(const ceres::IterationSummary& summary)
+    {
+        Vector3d rt = t1 - t0;
+        cv::Point new_point(vis.cols/2+int(factor*(rt(0)/step_offset+0.5)), vis.rows/2+int(factor*(rt(1)/step_offset+0.5)));
+        cv::line(vis, old_point, new_point, cv::Scalar(0, 0, 255)); //, int thickness=1, int lineType=8, int shift=0)
+        old_point = new_point;
+        //cv::waitKey(10);
+
+		cout << "Visualizing step" << endl;
+		//Eigen::MatrixXd points3 = get_points_in_bound_transform(points2, t2, R2, t1, R1, 465);
+        Matrix3d RM1 = euler_to_matrix(R1(0), R1(1), R1(2));
+	    CloudT::Ptr cloud1 = construct_submap_and_gp_cloud(points1, gp1, t1, RM1, 0);
+	    //CloudT::Ptr cloud3 = construct_cloud(points2in1, t1, R1, 4);
+        
+		viewer.removeVisualizationCallable("cloud1");
+		viewer.showCloud(cloud1, "cloud1");
+        cv::imshow("registration", vis);
+		cv::waitKey(0);
+
+        return ceres::SOLVER_CONTINUE;
+    }
+};
+
 void register_processes_ceres(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d& t1, Eigen::Vector3d& R1,
                               Eigen::MatrixXd& points2, ProcessT& gp2, Eigen::Vector3d& t2, Eigen::Vector3d& R2,
                               cv::Mat& vis)
@@ -387,7 +447,7 @@ void register_processes_ceres(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Ve
 
     ceres::LossFunction* loss_function = NULL;
     problem.AddResidualBlock(cost_function1, loss_function, t1.data(), R1.data(), t2.data(), R2.data());
-    problem.AddResidualBlock(cost_function2, loss_function, t2.data(), R2.data(), t1.data(), R1.data());
+    //problem.AddResidualBlock(cost_function2, loss_function, t2.data(), R2.data(), t1.data(), R1.data());
 
     /*problem->SetParameterization(pose_begin_iter->second.q.coeffs().data(),
         quaternion_local_parameterization);
@@ -405,12 +465,14 @@ void register_processes_ceres(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Ve
     problem.SetParameterUpperBound(t2.data(), 1, t2(1) + 100.);
     
     //problem.SetParameterBlockConstant(t1.data());
-    //problem.SetParameterBlockConstant(t2.data());
+    problem.SetParameterBlockConstant(t2.data());
     problem.SetParameterBlockConstant(R1.data());
     problem.SetParameterBlockConstant(R2.data());
 
     ceres::Solver::Options options;
+    options.callbacks.push_back(new VisCallback(points1, points2, gp1, gp2, vis, t1, R1, t2, R2));
     options.max_num_iterations = 200;
+    options.update_state_every_iteration = true;
     //options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
     //options.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY;
     options.linear_solver_type = ceres::DENSE_QR;
@@ -466,7 +528,7 @@ int main(int argc, char** argv)
 
 	Eigen::Vector3d t1, t2; // translations
     Eigen::Vector3d R1, R2; // Euler angles
-    R1 << 0., 0., 0.;
+    R1 << 0., 0., 0.; //2;
     R2 << 0., 0., 0.;
 	Eigen::Matrix3d RM1, RM2; // rotation matrices
 	
@@ -494,6 +556,7 @@ int main(int argc, char** argv)
     cv::Mat vis = visualize_likelihoods(gp1, t1, RM1, points2, t2, RM2);
     subsample_cloud(points1); // points2 is subsampled in the above function
 
+    /*
 	Eigen::MatrixXd points3 = get_points_in_bound_transform(points2, t2, RM2, t1, RM1, 465);
 
 	CloudT::Ptr cloud1 = construct_submap_and_gp_cloud(points1, gp1, t1, RM1, 0);
@@ -503,6 +566,7 @@ int main(int argc, char** argv)
 	*cloud1 += *cloud2;
 	*cloud1 += *cloud3;
 	visualize_cloud(cloud1);
+    */
     
 	register_processes_ceres(points1, gp1, t1, R1, points2, gp2, t2, R2, vis);
 
