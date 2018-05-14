@@ -87,6 +87,7 @@ public:
         Eigen::VectorXd ll;
         gp1.compute_neg_log_likelihoods(ll, points2in1.leftCols(2), points2in1.col(2));
 		residuals[0] = -ll.mean();
+        cout << "Residual: " << residuals[0] << endl;
 		
 		// Compute the Jacobian if asked for.
 		if (jacobians != NULL && jacobians[0] != NULL) {
@@ -106,10 +107,14 @@ public:
 			Eigen::RowVectorXd delta = deltas.colwise().mean();
 			for (int j = 0; j < 6; ++j) {
                 jacobians[0][j] = -delta[j];
+                jacobians[0][6+j] = delta[j];
 		    }
 
             cout << "Derivative: " << delta << endl;
 		}
+        else {
+            cout << "Not computing derivatives" << endl;
+        }
 		return true;
     }
 };
@@ -289,18 +294,23 @@ void register_processes(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d
 }
 */
 
-cv::Mat visualize_likelihoods(ProcessT& gp1, Eigen::Vector3d& t1, Eigen::Matrix3d& R1,
-                              Eigen::MatrixXd& points2, Eigen::Vector3d& t2, Eigen::Matrix3d& R2)
+void subsample_cloud(Eigen::MatrixXd& points)
 {
     int subsample = 37;
     int counter = 0;
-    for (int i = 0; i < points2.rows(); ++i) {
+    for (int i = 0; i < points.rows(); ++i) {
         if (i % subsample == 0) {
-            points2.row(counter) = points2.row(i);
+            points.row(counter) = points.row(i);
             ++counter;
         }
     }
-    points2.conservativeResize(counter, 3);
+    points.conservativeResize(counter, 3);
+}
+
+cv::Mat visualize_likelihoods(ProcessT& gp1, Eigen::Vector3d& t1, Eigen::Matrix3d& R1,
+                              Eigen::MatrixXd& points2, Eigen::Vector3d& t2, Eigen::Matrix3d& R2)
+{
+    subsample_cloud(points2);
 	
     if (boost::filesystem::exists("temp.png")) {
         cv::Mat vis = cv::imread("temp.png");
@@ -372,27 +382,38 @@ void register_processes_ceres(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Ve
 
     ceres::Problem problem;
     //ceres::examples::BuildOptimizationProblem(constraints, &poses, &problem);
-    ceres::CostFunction* cost_function = new GaussianProcessCostFunction(gp1, points2);
+    ceres::CostFunction* cost_function1 = new GaussianProcessCostFunction(gp1, points2);
+    ceres::CostFunction* cost_function2 = new GaussianProcessCostFunction(gp2, points1);
 
     ceres::LossFunction* loss_function = NULL;
-    problem.AddResidualBlock(cost_function, loss_function, t1.data(), R1.data(), t2.data(), R2.data());
+    problem.AddResidualBlock(cost_function1, loss_function, t1.data(), R1.data(), t2.data(), R2.data());
+    problem.AddResidualBlock(cost_function2, loss_function, t2.data(), R2.data(), t1.data(), R1.data());
 
     /*problem->SetParameterization(pose_begin_iter->second.q.coeffs().data(),
         quaternion_local_parameterization);
     problem->SetParameterization(pose_end_iter->second.q.coeffs().data(),
         quaternion_local_parameterization);*/
-
-    problem.SetParameterBlockConstant(t2.data());
-    problem.SetParameterBlockConstant(R2.data());
-    problem.SetParameterBlockConstant(R1.data());
+    
     problem.SetParameterLowerBound(t1.data(), 0, t1(0) - 100.);
     problem.SetParameterLowerBound(t1.data(), 1, t1(1) - 100.);
     problem.SetParameterUpperBound(t1.data(), 0, t1(0) + 100.);
     problem.SetParameterUpperBound(t1.data(), 1, t1(1) + 100.);
+    
+    problem.SetParameterLowerBound(t2.data(), 0, t2(0) - 100.);
+    problem.SetParameterLowerBound(t2.data(), 1, t2(1) - 100.);
+    problem.SetParameterUpperBound(t2.data(), 0, t2(0) + 100.);
+    problem.SetParameterUpperBound(t2.data(), 1, t2(1) + 100.);
+    
+    //problem.SetParameterBlockConstant(t1.data());
+    //problem.SetParameterBlockConstant(t2.data());
+    problem.SetParameterBlockConstant(R1.data());
+    problem.SetParameterBlockConstant(R2.data());
 
     ceres::Solver::Options options;
     options.max_num_iterations = 200;
-    options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
+    //options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
+    //options.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY;
+    options.linear_solver_type = ceres::DENSE_QR;
 
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
@@ -400,7 +421,6 @@ void register_processes_ceres(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Ve
     std::cout << summary.FullReport() << '\n';
 
     std::cout << "Is usable?: " << summary.IsSolutionUsable() << std::endl;
-    std::cout << "T1 final value: " << t1.transpose() << std::endl;
 
 }
 
@@ -469,8 +489,10 @@ int main(int argc, char** argv)
     gp2.kernel.p(1) = gp2.kernel.l_sq;
 	tie(t2, RM2) = train_gp(points2, gp2);
     RM2 = euler_to_matrix(R2(0), R2(1), R2(2));
+    Eigen::Vector3d t2_gt = t2;
 
     cv::Mat vis = visualize_likelihoods(gp1, t1, RM1, points2, t2, RM2);
+    subsample_cloud(points1); // points2 is subsampled in the above function
 
 	Eigen::MatrixXd points3 = get_points_in_bound_transform(points2, t2, RM2, t1, RM1, 465);
 
@@ -485,6 +507,9 @@ int main(int argc, char** argv)
 	register_processes_ceres(points1, gp1, t1, R1, points2, gp2, t2, R2, vis);
 
     cout << "T1 gt value: " << t1_gt.transpose() << endl;
+    cout << "T1 final value: " << t1.transpose() << endl;
+    cout << "T2 gt value: " << t2_gt.transpose() << endl;
+    cout << "T2 final value: " << t2.transpose() << endl;
 
     return 0;
 }
