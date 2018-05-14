@@ -48,6 +48,14 @@ void get_transform_jacobian(Eigen::MatrixXd& J, const Eigen::Vector3d& x)
 	
 }
 
+Eigen::Matrix3d euler_to_matrix(double x, double y, double z)
+{
+    Matrix3d Rx = Eigen::AngleAxisd(x, Vector3d::UnitX()).matrix();
+    Matrix3d Ry = Eigen::AngleAxisd(y, Vector3d::UnitY()).matrix();
+    Matrix3d Rz = Eigen::AngleAxisd(z, Vector3d::UnitZ()).matrix();
+    return Rx*Ry*Rz;
+}
+
 // first parameter block, translation 1, then rotation 1, translation 2 and rotation 2
 class GaussianProcessCostFunction : public ceres::SizedCostFunction<1, 3, 3, 3, 3> {
 private:
@@ -68,24 +76,17 @@ public:
 	// jacobians: derivatives of neg-log-likelihood w.r.t. parameters, dim 1*2*(3+3)
     virtual bool Evaluate(double const* const* parameters, double* residuals, double** jacobians) const
     {
-        const double x = parameters[0][0];
-		residuals[0] = 10 - x;
-        
 		Eigen::Vector3d t1(parameters[0][0], parameters[0][1], parameters[0][2]);
-        Matrix3d Rx = Eigen::AngleAxisd(parameters[1][0], Vector3d::UnitX()).matrix();
-        Matrix3d Ry = Eigen::AngleAxisd(parameters[1][1], Vector3d::UnitY()).matrix();
-        Matrix3d Rz = Eigen::AngleAxisd(parameters[1][2], Vector3d::UnitZ()).matrix();
-        Eigen::Matrix3d R1 = Rx*Ry*Rz;
+        Eigen::Matrix3d R1 = euler_to_matrix(parameters[1][0], parameters[1][1], parameters[1][2]);
 		Eigen::Vector3d t2(parameters[2][0], parameters[2][1], parameters[2][2]);
-        Matrix3d Rx = Eigen::AngleAxisd(parameters[3][0], Vector3d::UnitX()).matrix();
-        Matrix3d Ry = Eigen::AngleAxisd(parameters[3][1], Vector3d::UnitY()).matrix();
-        Matrix3d Rz = Eigen::AngleAxisd(parameters[3][2], Vector3d::UnitZ()).matrix();
-        Eigen::Matrix3d R2 = Rx*Ry*Rz;
+        Eigen::Matrix3d R2 = euler_to_matrix(parameters[3][0], parameters[3][1], parameters[3][2]);
+
+        cout << "Translation: " << t1.transpose() << ", Rotation: \n" << R1 << endl;
 
 		Eigen::MatrixXd points2in1 = get_points_in_bound_transform(points2, t2, R2, t1, R1, 465);
         Eigen::VectorXd ll;
         gp1.compute_neg_log_likelihoods(ll, points2in1.leftCols(2), points2in1.col(2));
-		residuals[0] = ll.mean();
+		residuals[0] = -ll.mean();
 		
 		// Compute the Jacobian if asked for.
 		if (jacobians != NULL && jacobians[0] != NULL) {
@@ -97,15 +98,17 @@ public:
 			dX *= R1.transpose();
 
 			Eigen::MatrixXd J(3, 6);
-			Eigen::MatrixXd deltas(points.rows(), 6);
+			Eigen::MatrixXd deltas(points2in1.rows(), 6);
 			for (int m = 0; m < points2in1.rows(); ++m) {
-				get_transform_jacobian(J, points2in1.row(m).transpose());
+				get_transform_jacobian(J, R1*points2in1.row(m).transpose()+t1);
 				deltas.row(m) = dX.row(m)*J;
 			}
 			Eigen::RowVectorXd delta = deltas.colwise().mean();
 			for (int j = 0; j < 6; ++j) {
-                jacobians[0][i] = delta[i];
+                jacobians[0][j] = -delta[j];
 		    }
+
+            cout << "Derivative: " << delta << endl;
 		}
 		return true;
     }
@@ -219,58 +222,7 @@ void visualize_cloud(CloudT::Ptr& cloud)
 	}
 }
 
-Eigen::VectorXd compute_step(Eigen::MatrixXd& points, ProcessT& gp,
-		                     Eigen::Vector3d& t, Eigen::Matrix3d& R)
-{
-    MatrixXd dX;
-	cout << "Computing derivatives..." << endl;
-    //gp.compute_derivatives(dX, points.leftCols(2), points.col(2));
-    gp.compute_neg_log_derivatives(dX, points.leftCols(2), points.col(2));
-	//dX.col(2).setZero();
-	//R = rotations[i].toRotationMatrix();
-    //t = means[i];
-	cout << "Done computing derivatives..." << endl;
-	Eigen::VectorXd l;
-	gp.compute_likelihoods(l, points.leftCols(2), points.col(2));
-	cout << "Mean likelihood: " << l.mean() << endl;
-	cout << "Mean derivative: " << dX.colwise().sum() << endl;
-	dX *= R.transpose();
-	//double added_derivatives = 0;
-	Eigen::RowVectorXd delta(6);
-	//delta.setZero();
-	Eigen::MatrixXd J(3, 6);
-	// This would be really easy to do as one operation
-	cout << "Getting transform jacobians and accumulating..." << endl;
-    cout << "J size: " << J.rows() << "x" << J.cols() << endl;
-    cout << "Delta size: " << delta.rows() << "x" << delta.cols() << endl;
-    cout << "dX row size: " << dX.row(0).rows() << "x" << dX.row(0).cols() << endl;
-    Eigen::MatrixXd deltas(points.rows(), 6);
-	for (int m = 0; m < points.rows(); ++m) {
-        //points.col(m) = R*points.col(m) + t;
-        get_transform_jacobian(J, R*points.row(m).transpose() + t);
-        //delta = (added_derivatives/(added_derivatives+1.))*delta + 1./(added_derivatives+1.)*dX.row(m)*J;
-        //++added_derivatives;
-        deltas.row(m) = dX.row(m)*J;
-	}
-    delta = deltas.colwise().mean();
-	cout << "Done accumulating..." << endl;
-	return delta.transpose();
-}
-
-tuple<Vector3d, Matrix3d> update_step(Eigen::VectorXd& delta)
-{
-    double step = 1e-0;
-    Eigen::Vector3d dt;
-    Eigen::Matrix3d dR;
-    Matrix3d Rx = Eigen::AngleAxisd(step*delta(3), Vector3d::UnitX()).matrix();
-    Matrix3d Ry = Eigen::AngleAxisd(step*delta(4), Vector3d::UnitY()).matrix();
-    Matrix3d Rz = Eigen::AngleAxisd(step*delta(5), Vector3d::UnitZ()).matrix();
-    dR = Rx*Ry*Rz;
-    dt = step*delta.head<3>().transpose();
-
-	return make_tuple(dt, dR);
-}
-
+/*
 void register_processes(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d& t1, Eigen::Matrix3d& R1,
 				        Eigen::MatrixXd& points2, ProcessT& gp2, Eigen::Vector3d& t2, Eigen::Matrix3d& R2,
                         cv::Mat& vis)
@@ -333,11 +285,9 @@ void register_processes(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d
         cv::imshow("registration", vis);
 		cv::waitKey(0);
 
-	    /*cloud1 += *cloud2;
-	    *cloud1 += *cloud3;
-	    visualize_cloud(cloud1);*/
     }
 }
+*/
 
 cv::Mat visualize_likelihoods(ProcessT& gp1, Eigen::Vector3d& t1, Eigen::Matrix3d& R1,
                               Eigen::MatrixXd& points2, Eigen::Vector3d& t2, Eigen::Matrix3d& R2)
@@ -414,12 +364,54 @@ cv::Mat visualize_likelihoods(ProcessT& gp1, Eigen::Vector3d& t1, Eigen::Matrix3
     return color;
 }
 
+void register_processes_ceres(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d& t1, Eigen::Vector3d& R1,
+                              Eigen::MatrixXd& points2, ProcessT& gp2, Eigen::Vector3d& t2, Eigen::Vector3d& R2,
+                              cv::Mat& vis)
+{
+
+
+    ceres::Problem problem;
+    //ceres::examples::BuildOptimizationProblem(constraints, &poses, &problem);
+    ceres::CostFunction* cost_function = new GaussianProcessCostFunction(gp1, points2);
+
+    ceres::LossFunction* loss_function = NULL;
+    problem.AddResidualBlock(cost_function, loss_function, t1.data(), R1.data(), t2.data(), R2.data());
+
+    /*problem->SetParameterization(pose_begin_iter->second.q.coeffs().data(),
+        quaternion_local_parameterization);
+    problem->SetParameterization(pose_end_iter->second.q.coeffs().data(),
+        quaternion_local_parameterization);*/
+
+    problem.SetParameterBlockConstant(t2.data());
+    problem.SetParameterBlockConstant(R2.data());
+    problem.SetParameterBlockConstant(R1.data());
+    problem.SetParameterLowerBound(t1.data(), 0, t1(0) - 100.);
+    problem.SetParameterLowerBound(t1.data(), 1, t1(1) - 100.);
+    problem.SetParameterUpperBound(t1.data(), 0, t1(0) + 100.);
+    problem.SetParameterUpperBound(t1.data(), 1, t1(1) + 100.);
+
+    ceres::Solver::Options options;
+    options.max_num_iterations = 200;
+    options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
+
+    ceres::Solver::Summary summary;
+    ceres::Solve(options, &problem, &summary);
+
+    std::cout << summary.FullReport() << '\n';
+
+    std::cout << "Is usable?: " << summary.IsSolutionUsable() << std::endl;
+    std::cout << "T1 final value: " << t1.transpose() << std::endl;
+
+}
+
 // Example: ./visualize_process --folder ../scripts --lsq 100.0 --sigma 0.1 --s0 1.
 int main(int argc, char** argv)
 {
+    google::InitGoogleLogging(argv[0]);
+
     string folder_str;
 	double lsq = 100.;
-	double sigma = 1.;
+	double sigma = 10.;
 	double s0 = 1.;
 
 	cxxopts::Options options("MyProgram", "One line description of MyProgram");
@@ -452,16 +444,21 @@ int main(int argc, char** argv)
 	//points = 0.1/930.*points;
 	//visualize_submap(points);
 
-	Eigen::Vector3d t1, t2;
-	Eigen::Matrix3d R1, R2;
+	Eigen::Vector3d t1, t2; // translations
+    Eigen::Vector3d R1, R2; // Euler angles
+    R1 << 0., 0., 0.;
+    R2 << 0., 0., 0.;
+	Eigen::Matrix3d RM1, RM2; // rotation matrices
 	
 	ProcessT gp1(100, s0);
 	gp1.kernel.sigmaf_sq = sigma;
 	gp1.kernel.l_sq = lsq*lsq;
     gp1.kernel.p(0) = gp1.kernel.sigmaf_sq;
     gp1.kernel.p(1) = gp1.kernel.l_sq;
-	tie(t1, R1) = train_gp(points1, gp1);
+	tie(t1, RM1) = train_gp(points1, gp1);
     //R1 = Eigen::AngleAxisd(0.2, Eigen::Vector3d::UnitZ()).matrix();
+    RM1 = euler_to_matrix(R1(0), R1(1), R1(2));
+    Eigen::Vector3d t1_gt = t1;
 	t1.array() += -70.0;
     t1(2) -= -70.0; 
 	
@@ -470,21 +467,24 @@ int main(int argc, char** argv)
 	gp2.kernel.l_sq = lsq*lsq;
     gp2.kernel.p(0) = gp2.kernel.sigmaf_sq;
     gp2.kernel.p(1) = gp2.kernel.l_sq;
-	tie(t2, R2) = train_gp(points2, gp2);
+	tie(t2, RM2) = train_gp(points2, gp2);
+    RM2 = euler_to_matrix(R2(0), R2(1), R2(2));
 
-    cv::Mat vis = visualize_likelihoods(gp1, t1, R1, points2, t2, R2);
+    cv::Mat vis = visualize_likelihoods(gp1, t1, RM1, points2, t2, RM2);
 
-	Eigen::MatrixXd points3 = get_points_in_bound_transform(points2, t2, R2, t1, R1, 465);
+	Eigen::MatrixXd points3 = get_points_in_bound_transform(points2, t2, RM2, t1, RM1, 465);
 
-	CloudT::Ptr cloud1 = construct_submap_and_gp_cloud(points1, gp1, t1, R1, 0);
-	CloudT::Ptr cloud2 = construct_submap_and_gp_cloud(points2, gp2, t2, R2, 2);
-	CloudT::Ptr cloud3 = construct_cloud(points3, t1, R1, 4);
+	CloudT::Ptr cloud1 = construct_submap_and_gp_cloud(points1, gp1, t1, RM1, 0);
+	CloudT::Ptr cloud2 = construct_submap_and_gp_cloud(points2, gp2, t2, RM2, 2);
+	CloudT::Ptr cloud3 = construct_cloud(points3, t1, RM1, 4);
 
 	*cloud1 += *cloud2;
 	*cloud1 += *cloud3;
 	visualize_cloud(cloud1);
     
-	register_processes(points1, gp1, t1, R1, points2, gp2, t2, R2, vis);
+	register_processes_ceres(points1, gp1, t1, R1, points2, gp2, t2, R2, vis);
+
+    cout << "T1 gt value: " << t1_gt.transpose() << endl;
 
     return 0;
 }
