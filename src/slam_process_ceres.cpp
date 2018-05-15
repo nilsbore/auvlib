@@ -66,9 +66,9 @@ tuple<ObsT, SubmapsGPT, TransT, RotsT, MatchesT> train_or_load_gps(double lsq, d
 
     SubmapsT submaps = read_submaps(folder);
     for (int i = 0; i < submaps.size(); ++i) {
-        submaps[i].resize(2);
+        submaps[i].resize(3);
     }
-    submaps.resize(2);
+    submaps.resize(3);
 
     ObsT obs;
     for (const auto& row : submaps) {
@@ -135,8 +135,8 @@ void register_processes_ceres(ObsT& points, SubmapsGPT& gps, TransT& trans, Angs
         ceres::LossFunction* loss_function = NULL;
         problem.AddResidualBlock(cost_function1, loss_function, trans[i].data(), rots[i].data(),
                                                                 trans[j].data(), rots[j].data());
-        //problem.AddResidualBlock(cost_function2, loss_function, trans[j].data(), rots[j].data(),
-        //                                                        trans[i].data(), rots[i].data());
+        problem.AddResidualBlock(cost_function2, loss_function, trans[j].data(), rots[j].data(),
+                                                                trans[i].data(), rots[i].data());
     }
     
     for (int i = 0; i < trans.size(); ++i) {
@@ -145,10 +145,12 @@ void register_processes_ceres(ObsT& points, SubmapsGPT& gps, TransT& trans, Angs
         problem.SetParameterUpperBound(trans[i].data(), 0, trans[i](0) + 100.);
         problem.SetParameterUpperBound(trans[i].data(), 1, trans[i](1) + 100.);
         //problem.SetParameterBlockConstant(rots[i].data());
+        ceres::SubsetParameterization *subset_parameterization = new ceres::SubsetParameterization(3, {0, 1});
+        problem.SetParameterization(rots[i].data(), subset_parameterization);
     }
     
-    problem.SetParameterBlockConstant(trans[0].data());
-    problem.SetParameterBlockConstant(rots[0].data());
+    problem.SetParameterBlockConstant(trans[4].data());
+    problem.SetParameterBlockConstant(rots[4].data());
 
     ceres::Solver::Options options;
     options.callbacks.push_back(new MultiVisCallback(points, gps, trans, rots));

@@ -25,7 +25,8 @@ void GaussianProcessCostFunction::get_transform_jacobian(Eigen::MatrixXd& J, con
     J(1, 5) = x(0);
 
     J(2, 2) = 0.;
-	J.rightCols<3>() = 0.00000001*J.rightCols<3>();
+	//J.rightCols<3>() = 0.00000001*J.rightCols<3>();
+	J.rightCols<3>() = 0.0000000000001*J.rightCols<3>();
 	//J.rightCols<3>() = 0.0*J.rightCols<3>();
 	
 }
