@@ -21,6 +21,8 @@
 #include <cereal/types/vector.hpp>
 #include <cereal/types/utility.hpp>
 
+#include <random>
+
 using namespace std;
 using TransT = vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> >;
 using RotsT = vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> >;
@@ -60,8 +62,14 @@ tuple<ObsT, SubmapsGPT, TransT, RotsT, MatchesT> train_or_load_gps(double lsq, d
         is.close();
 		return make_tuple(obs, gps, trans, rots, matches);
     }
+    
 
     SubmapsT submaps = read_submaps(folder);
+    for (int i = 0; i < submaps.size(); ++i) {
+        submaps[i].resize(2);
+    }
+    submaps.resize(2);
+
     ObsT obs;
     for (const auto& row : submaps) {
         obs.insert(obs.end(), row.begin(), row.end());
@@ -117,16 +125,18 @@ void register_processes_ceres(ObsT& points, SubmapsGPT& gps, TransT& trans, Angs
     for (const pair<int, int>& match : matches) {
         int i, j;
         tie (i, j) = match;
+        cout << "Adding constraint between " << i << " and " << j << endl;
         ceres::CostFunction* cost_function1 = new GaussianProcessCostFunction(gps[i], points[j]);
         ceres::CostFunction* cost_function2 = new GaussianProcessCostFunction(gps[j], points[i]);
 
-        //ceres::LossFunction* loss_function = new ceres::SoftLOneLoss(1.);
-        //ceres::LossFunction* loss_function = new ceres::HuberLoss(1.);
+        //ceres::LossFunction* loss_function = new ceres::SoftLOneLoss(5.);
+        ceres::LossFunction* loss_function1 = new ceres::HuberLoss(.5);
+        ceres::LossFunction* loss_function2 = new ceres::HuberLoss(5.);
         ceres::LossFunction* loss_function = NULL;
         problem.AddResidualBlock(cost_function1, loss_function, trans[i].data(), rots[i].data(),
                                                                 trans[j].data(), rots[j].data());
-        problem.AddResidualBlock(cost_function2, loss_function, trans[j].data(), rots[j].data(),
-                                                                trans[i].data(), rots[i].data());
+        //problem.AddResidualBlock(cost_function2, loss_function, trans[j].data(), rots[j].data(),
+        //                                                        trans[i].data(), rots[i].data());
     }
     
     for (int i = 0; i < trans.size(); ++i) {
@@ -134,7 +144,7 @@ void register_processes_ceres(ObsT& points, SubmapsGPT& gps, TransT& trans, Angs
         problem.SetParameterLowerBound(trans[i].data(), 1, trans[i](1) - 100.);
         problem.SetParameterUpperBound(trans[i].data(), 0, trans[i](0) + 100.);
         problem.SetParameterUpperBound(trans[i].data(), 1, trans[i](1) + 100.);
-        problem.SetParameterBlockConstant(rots[i].data());
+        //problem.SetParameterBlockConstant(rots[i].data());
     }
     
     problem.SetParameterBlockConstant(trans[0].data());
@@ -209,15 +219,19 @@ int main(int argc, char** argv)
     for (int i = 0; i < points.size(); ++i) {
         CloudT::Ptr subcloud = construct_submap_and_gp_cloud(points[i], gps[i], trans[i], rots[i], 2*i);
         *cloud += *subcloud;
-        if (i % 2 == 0) {
-            trans[i].head<2>().array() += 30.0;
-        }
     }
 	/*pcl::visualization::CloudViewer viewer ("Simple Cloud Viewer");
 	viewer.showCloud(cloud);
 	while (!viewer.wasStopped ())
 	{
 	}*/
+    std::default_random_engine generator;
+    std::normal_distribution<double> distribution(0., 1.);
+    for (int i = 0; i < points.size(); ++i) {
+        trans[i](0) += 30.*distribution(generator);
+        trans[i](1) += 30.*distribution(generator);
+        angles[i](2) += 0.2*distribution(generator);
+    }
 
     register_processes_ceres(points, gps, trans, angles, matches);
 

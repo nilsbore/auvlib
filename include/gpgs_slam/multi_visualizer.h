@@ -23,12 +23,12 @@ using ObsT = std::vector<Eigen::MatrixXd, Eigen::aligned_allocator<MatrixXd> >;
 class MultiVisCallback : public ceres::IterationCallback {
 private:
     pcl::visualization::CloudViewer viewer; 
-    ObsT points;
-    SubmapsGPT gps;
-    TransT trans;
-    AngsT rots;
-    /*cv::Mat vis;
-    cv::Point old_point;
+    ObsT& points;
+    SubmapsGPT& gps;
+    TransT& trans;
+    AngsT& rots;
+    cv::Mat vis;
+    /*cv::Point old_point;
     double step_offset;
     double factor;
     Vector3d t0;*/

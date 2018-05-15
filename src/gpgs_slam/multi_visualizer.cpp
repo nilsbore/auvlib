@@ -20,6 +20,7 @@ MultiVisCallback::MultiVisCallback(ObsT& points, SubmapsGPT& gps, TransT& trans,
         CloudT::Ptr cloud = construct_submap_and_gp_cloud(points[i], gps[i], trans[i], RM, 2*i);
         viewer.showCloud(cloud, string("cloud")+to_string(i));
     }
+    vis = cv::imread("temp.png");
 
     /*
     vis = visualize_likelihoods(t2, RM2);
@@ -49,8 +50,8 @@ void MultiVisCallback::visualizer_step(vector<Eigen::Matrix3d, Eigen::aligned_al
         viewer.showCloud(cloud, string("cloud")+to_string(i));
     }
     
-    //cv::imshow("registration", vis);
-    //cv::waitKey(0);
+    cv::imshow("registration", vis);
+    cv::waitKey(0);
 }
 
 ceres::CallbackReturnType MultiVisCallback::operator()(const ceres::IterationSummary& summary)
