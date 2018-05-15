@@ -28,6 +28,15 @@ add_library(octave_convenience src/sparse_gp/octave_convenience.cpp)
 add_library(submaps src/data_tools/submaps.cpp)
 target_link_libraries(submaps ${PCL_LIBRARIES})
 
+add_library(gpgs_transforms src/gpgs_slam/transforms.cpp)
+
+add_library(gpgs_cost_function src/gpgs_slam/cost_function.cpp)
+target_link_libraries(gpgs_cost_function gpgs_transforms ${CERES_LIBRARIES} rbf_kernel gaussian_noise submaps)
+
+add_library(gpgs_visualization src/gpgs_slam/visualization.cpp)
+target_link_libraries(gpgs_visualization gpgs_transforms ${CERES_LIBRARIES} rbf_kernel gaussian_noise ${PCL_LIBRARIES} ${OpenCV_LIBS} submaps)
+
+
 # helloworld
 add_executable(helloworld src/helloworld.cpp)
 target_link_libraries(helloworld ${CERES_LIBRARIES})
@@ -48,4 +57,5 @@ add_executable(register_process src/register_process.cpp)
 target_link_libraries(register_process rbf_kernel gaussian_noise probit_noise octave_convenience submaps ${PCL_LIBRARIES} ${OpenCV_LIBS})
 
 add_executable(register_process_ceres src/register_process_ceres.cpp)
-target_link_libraries(register_process_ceres rbf_kernel gaussian_noise probit_noise octave_convenience submaps ${PCL_LIBRARIES} ${OpenCV_LIBS} ${CERES_LIBRARIES})
+#target_link_libraries(register_process_ceres rbf_kernel gaussian_noise probit_noise octave_convenience submaps ${PCL_LIBRARIES} ${OpenCV_LIBS} ${CERES_LIBRARIES})
+target_link_libraries(register_process_ceres submaps gpgs_cost_function gpgs_visualization)
