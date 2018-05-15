@@ -17,7 +17,7 @@ using namespace std;
 
 void subsample_cloud(Eigen::MatrixXd& points)
 {
-    int subsample = 37;
+    int subsample = 13;
     int counter = 0;
     for (int i = 0; i < points.rows(); ++i) {
         if (i % subsample == 0) {
@@ -176,7 +176,6 @@ int main(int argc, char** argv)
     gp1.kernel.p(0) = gp1.kernel.sigmaf_sq;
     gp1.kernel.p(1) = gp1.kernel.l_sq;
 	tie(t1, RM1) = train_gp(points1, gp1);
-    //R1 = Eigen::AngleAxisd(0.2, Eigen::Vector3d::UnitZ()).matrix();
 	t1.array() += -70.0;
     t1(2) -= -70.0; 
 	
@@ -187,7 +186,7 @@ int main(int argc, char** argv)
     gp2.kernel.p(1) = gp2.kernel.l_sq;
 	tie(t2, RM2) = train_gp(points2, gp2);
 
-	Eigen::Vector3d R1; R1 << 0., 0., 0.;
+	Eigen::Vector3d R1; R1 << 0., 0., 0.; //2;
     Eigen::Vector3d R2; R2 << 0., 0., 0.;
     
     subsample_cloud(points1);
