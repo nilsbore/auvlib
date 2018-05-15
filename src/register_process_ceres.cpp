@@ -1,6 +1,7 @@
 #include <Eigen/Dense>
 #include <cxxopts.hpp>
 
+// we should really do a types library, would avoid recompiling this all the time
 #include <sparse_gp/sparse_gp.h>
 #include <sparse_gp/rbf_kernel.h>
 #include <sparse_gp/probit_noise.h>

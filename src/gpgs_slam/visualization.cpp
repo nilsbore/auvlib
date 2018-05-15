@@ -176,7 +176,7 @@ VisCallback::VisCallback(MatrixXd& points1, MatrixXd& points2,
     factor = 20.;
 }
 
-ceres::CallbackReturnType VisCallback::operator()(const ceres::IterationSummary& summary)
+void VisCallback::visualizer_step(Eigen::Matrix3d& RM1)
 {
     Vector3d rt = t1 - t0;
     cv::Point new_point(vis.cols/2+int(factor*(rt(0)/step_offset+0.5)), vis.rows/2+int(factor*(rt(1)/step_offset+0.5)));
@@ -186,7 +186,6 @@ ceres::CallbackReturnType VisCallback::operator()(const ceres::IterationSummary&
 
     cout << "Visualizing step" << endl;
     //Eigen::MatrixXd points3 = get_points_in_bound_transform(points2, t2, R2, t1, R1, 465);
-    Matrix3d RM1 = euler_to_matrix(R1(0), R1(1), R1(2));
     CloudT::Ptr cloud1 = construct_submap_and_gp_cloud(points1, gp1, t1, RM1, 0);
     //CloudT::Ptr cloud3 = construct_cloud(points2in1, t1, R1, 4);
     
@@ -194,6 +193,11 @@ ceres::CallbackReturnType VisCallback::operator()(const ceres::IterationSummary&
     viewer.showCloud(cloud1, "cloud1");
     cv::imshow("registration", vis);
     cv::waitKey(0);
+}
 
+ceres::CallbackReturnType VisCallback::operator()(const ceres::IterationSummary& summary)
+{
+    Matrix3d RM1 = euler_to_matrix(R1(0), R1(1), R1(2));
+    visualizer_step(RM1);
     return ceres::SOLVER_CONTINUE;
 }

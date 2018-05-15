@@ -36,6 +36,7 @@ public:
                          Eigen::Vector3d& t2, Eigen::Vector3d& R2);
     ~VisCallback() {}
 
+    void visualizer_step(Eigen::Matrix3d& RM1);
     ceres::CallbackReturnType operator()(const ceres::IterationSummary& summary);
 };
 
