@@ -66,9 +66,9 @@ tuple<ObsT, SubmapsGPT, TransT, RotsT, MatchesT> train_or_load_gps(double lsq, d
 
     SubmapsT submaps = read_submaps(folder);
     for (int i = 0; i < submaps.size(); ++i) {
-        submaps[i].resize(3);
+        submaps[i].resize(4);
     }
-    submaps.resize(3);
+    submaps.resize(4);
 
     ObsT obs;
     for (const auto& row : submaps) {
@@ -149,8 +149,8 @@ void register_processes_ceres(ObsT& points, SubmapsGPT& gps, TransT& trans, Angs
         problem.SetParameterization(rots[i].data(), subset_parameterization);
     }
     
-    problem.SetParameterBlockConstant(trans[4].data());
-    problem.SetParameterBlockConstant(rots[4].data());
+    //problem.SetParameterBlockConstant(trans[4].data());
+    //problem.SetParameterBlockConstant(rots[4].data());
 
     ceres::Solver::Options options;
     options.callbacks.push_back(new MultiVisCallback(points, gps, trans, rots));

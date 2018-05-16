@@ -30,6 +30,8 @@ MultiVisCallback::MultiVisCallback(ObsT& points, SubmapsGPT& gps, TransT& trans,
     step_offset = 15.;
     factor = 20.;
     */
+    cv::imshow("registration", vis);
+    cv::waitKey(0);
 }
 
 void MultiVisCallback::visualizer_step(vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> >& RMs)
@@ -50,8 +52,8 @@ void MultiVisCallback::visualizer_step(vector<Eigen::Matrix3d, Eigen::aligned_al
         viewer.showCloud(cloud, string("cloud")+to_string(i));
     }
     
-    cv::imshow("registration", vis);
-    cv::waitKey(0);
+    //cv::imshow("registration", vis);
+    //cv::waitKey(0);
 }
 
 ceres::CallbackReturnType MultiVisCallback::operator()(const ceres::IterationSummary& summary)
