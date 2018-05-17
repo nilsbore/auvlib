@@ -365,7 +365,7 @@ double sparse_gp<Kernel, Noise>::neg_log_likelihood(const VectorXd& X, double y)
     double mu;
 
     //This is pretty much prediction
-    double kstar = kernel.kernel_function(X, X);
+    double kstar = kernel.kernel_function(X, X); // this is always constant!
     VectorXd k;
     construct_covariance(k, X, BV);
     if (current_size == 0) {
@@ -500,9 +500,8 @@ template <class Kernel, class Noise>
 void sparse_gp<Kernel, Noise>::compute_neg_log_derivatives_fast(VectorXd& ll, MatrixXd& dX, const MatrixXd& X,
                                                                 const VectorXd& y, bool compute_derivatives)
 {
-    // k_star should be a Nx1 vector
-    VectorXd K_star; // OK
-    kernel.kernel_function_fast<2>(K_star, X);
+    // k_star should be a Nx1 vector, but it is constant!
+    double k_star = kernel.kernel_function(X.row(0), X.row(0)); // this is always constant!
 
     // k should be a MxN matrix
     MatrixXd K(X.rows(), BV.rows()); // OK
@@ -521,7 +520,7 @@ void sparse_gp<Kernel, Noise>::compute_neg_log_derivatives_fast(VectorXd& ll, Ma
     }
     else {
         // Nx1 vector
-        sigma = s20 + ((K*C).array()*K.array()).rowwise().sum() + k_star.array(); // OK
+        sigma = s20 + ((K*C).array()*K.array()).rowwise().sum() + k_star; // OK
         // Nx1 vector
         mu = K*alpha; // OK
     }
@@ -604,7 +603,7 @@ template <class Kernel, class Noise>
 void sparse_gp<Kernel, Noise>::neg_log_likelihood_dx(Vector3d& dx, const VectorXd& x, double y)
 {
     VectorXd k;
-    double k_star = kernel.kernel_function(x, x);
+    double k_star = kernel.kernel_function(x, x); // this is always constant!
     construct_covariance(k, x, BV);
     MatrixXd k_dx;
     //MatrixXd k_star_dx;

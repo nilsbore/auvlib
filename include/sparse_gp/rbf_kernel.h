@@ -24,7 +24,7 @@ public:
     // fast computation of covariance matrix
     // This should be OK
     template <int N>
-    void rbf_kernel::kernel_function_fast(Eigen::MatrixXd& K, const Eigen::MatrixXd& X, const Eigen::MatrixXd& BV)
+    void construct_covariance_fast(Eigen::MatrixXd& K, const Eigen::MatrixXd& X, const Eigen::MatrixXd& BV)
     {
         K.resize(X.rows(), BV.cols());
         Eigen::MatrixXd rep;
@@ -32,38 +32,24 @@ public:
         for (int i = 0; i < BV.cols(); ++i) {
             rep = BV.col(i).transpose().replicate(X.rows(), 1); // typically more cols in X than in Xb
             temp = (X - rep).rowwise().squaredNorm();
-            K.col(i) = p(0)*(-0.5f/p(1)*temp).exp();
-        }
-    }
-    
-    template <int N>
-    void rbf_kernel::construct_covariance_fast(Eigen::VectorXd& K_star, const Eigen::MatrixXd& X)
-    {
-        K.resize(BV.cols(), X.cols());
-        Eigen::MatrixXd rep;
-        Eigen::ArrayXd temp;
-        for (int i = 0; i < BV.cols(); ++i) {
-            rep = BV.col(i).replicate(1, X.cols()); // typically more cols in X than in Xb
-            temp = (X - rep).colwise().squaredNorm();
-            K.row(i) = p(0)*(-0.5f/p(1)*temp).exp();
+            K.col(i) = p(0)*(-0.5f/p(1)*temp).exp(); // OK
         }
     }
     
     // fast computation of kernel derivatives
     template <int N>
-    void rbf_kernel::kernel_dx_fast(Eigen::ArrayXXd& K_dx, Eigen::ArrayXXd& K_dy, const Eigen::MatrixXd& X, const Eigen::MatrixXd& BV)
+    void kernel_dx_fast(Eigen::MatrixXd& K_dx1, Eigen::MatrixXd& K_dx2, const Eigen::MatrixXd& X, const Eigen::MatrixXd& BV)
     {
-        K_dx.resize(BV.cols(), X.cols());
-        K_dy.resize(BV.cols(), X.cols());
-        Eigen::MatrixXd offset;
+        MatrixXd K_dx1(X.rows(), BV.cols()); // OK
+        MatrixXd K_dx2(X.rows(), BV.cols()); // OK
+
+        Eigen::ArrayXXd offset;
         Eigen::ArrayXd exppart;
-        Eigen::ArrayXd temp;
         for (int i = 0; i < BV.cols(); ++i) {
-            offset = X - BV.col(i).replicate(1, X.cols());
-            temp = offset.colwise().squaredNorm();
-            exppart = -p(0)/p(1)*(-0.5/p(1)*temp).exp();
-            K_dx.row(i) = offset.row(0).array()*exppart.transpose();
-            K_dy.row(i) = offset.row(1).array()*exppart.transpose();
+            offset = X - BV.col(i).transpose().replicate(X.rows(), 1); // OK
+            exppart = (-0.5f/p(1)*offset.rowwise().squaredNorm()).exp(); // OK
+            K_dx1.col(i) = p(0)/p(1)*offset.col(0)*exppart; // OK
+            K_dx2.col(i) = p(0)/p(1)*offset.col(1)*exppart; // OK
         }
     }
 
