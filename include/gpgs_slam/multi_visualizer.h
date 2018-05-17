@@ -18,7 +18,7 @@ using TransT = std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vect
 using RotsT = std::vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> >;
 using AngsT = std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> >;
 using SubmapsGPT = std::vector<ProcessT>; // Process does not require aligned allocation as all matrices are dynamic
-using ObsT = std::vector<Eigen::MatrixXd, Eigen::aligned_allocator<MatrixXd> >;
+using ObsT = std::vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> >;
 
 class MultiVisCallback : public ceres::IterationCallback {
 private:

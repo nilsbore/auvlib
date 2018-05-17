@@ -63,10 +63,10 @@ void visualize_submap_and_gp(Eigen::MatrixXd& points, ProcessT& gp)
     
 	cout << "Predicting gaussian process..." << endl;
 
-	MatrixXd X_star(sz*sz, 2);
-    VectorXd f_star(sz*sz); // mean?
+    Eigen::MatrixXd X_star(sz*sz, 2);
+    Eigen::VectorXd f_star(sz*sz); // mean?
     f_star.setZero();
-	VectorXd V_star; // variance?
+	Eigen::VectorXd V_star; // variance?
     int i = 0;
     for (int y = 0; y < sz; ++y) { // ROOM FOR SPEEDUP
 	    for (int x = 0; x < sz; ++x) {

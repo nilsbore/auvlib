@@ -27,7 +27,7 @@ private:
     cv::Point old_point;
     double step_offset;
     double factor;
-    Vector3d t0;
+    Eigen::Vector3d t0;
 public:
     cv::Mat visualize_likelihoods(Eigen::Vector3d& t2, Eigen::Matrix3d& R2);
     explicit VisCallback(Eigen::MatrixXd& points1, Eigen::MatrixXd& points2,

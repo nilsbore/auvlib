@@ -18,7 +18,7 @@ using namespace std;
 
 void subsample_cloud(Eigen::MatrixXd& points)
 {
-    int subsample = 37;
+    int subsample = 13;
     int counter = 0;
     for (int i = 0; i < points.rows(); ++i) {
         if (i % subsample == 0) {

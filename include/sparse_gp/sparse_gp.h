@@ -60,6 +60,6 @@ public:
     }
 };
 
-#include "impl/sparse_gp.hpp"
+//#include "impl/sparse_gp.hpp"
 
 #endif // SPARSE_GP_H

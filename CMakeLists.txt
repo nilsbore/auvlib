@@ -25,19 +25,22 @@ add_library(gaussian_noise src/sparse_gp/gaussian_noise.cpp)
 
 add_library(octave_convenience src/sparse_gp/octave_convenience.cpp)
 
+add_library(sparse_gp src/sparse_gp/sparse_gp.cpp)
+target_link_libraries(sparse_gp rbf_kernel gaussian_noise octave_convenience)
+
 add_library(submaps src/data_tools/submaps.cpp)
 target_link_libraries(submaps ${PCL_LIBRARIES})
 
 add_library(gpgs_transforms src/gpgs_slam/transforms.cpp)
 
 add_library(gpgs_cost_function src/gpgs_slam/cost_function.cpp)
-target_link_libraries(gpgs_cost_function gpgs_transforms ${CERES_LIBRARIES} rbf_kernel gaussian_noise submaps)
+target_link_libraries(gpgs_cost_function gpgs_transforms ${CERES_LIBRARIES} sparse_gp rbf_kernel gaussian_noise submaps)
 
 add_library(gpgs_visualization src/gpgs_slam/visualization.cpp)
-target_link_libraries(gpgs_visualization gpgs_transforms ${CERES_LIBRARIES} rbf_kernel gaussian_noise ${PCL_LIBRARIES} ${OpenCV_LIBS} submaps)
+target_link_libraries(gpgs_visualization gpgs_transforms ${CERES_LIBRARIES} sparse_gp rbf_kernel gaussian_noise ${PCL_LIBRARIES} ${OpenCV_LIBS} submaps)
 
 add_library(gpgs_multi_visualizer src/gpgs_slam/multi_visualizer.cpp)
-target_link_libraries(gpgs_multi_visualizer gpgs_visualization gpgs_transforms ${CERES_LIBRARIES} rbf_kernel gaussian_noise ${PCL_LIBRARIES} ${OpenCV_LIBS} submaps)
+target_link_libraries(gpgs_multi_visualizer gpgs_visualization gpgs_transforms ${CERES_LIBRARIES} sparse_gp rbf_kernel gaussian_noise ${PCL_LIBRARIES} ${OpenCV_LIBS} submaps)
 
 # helloworld
 add_executable(helloworld src/helloworld.cpp)
@@ -47,16 +50,16 @@ add_executable(pose_graph_3d src/pose_graph_3d.cpp)
 target_link_libraries(pose_graph_3d ${CERES_LIBRARIES})
 
 add_executable(test_gaussian_process src/test_gaussian_process.cpp)
-target_link_libraries(test_gaussian_process rbf_kernel gaussian_noise probit_noise octave_convenience submaps ${PCL_LIBRARIES} ${CERES_LIBRARIES})
+target_link_libraries(test_gaussian_process sparse_gp rbf_kernel gaussian_noise probit_noise octave_convenience submaps ${PCL_LIBRARIES} ${CERES_LIBRARIES})
 
 add_executable(visualize_pointclouds src/visualize_pointclouds.cpp)
 target_link_libraries(visualize_pointclouds ${PCL_LIBRARIES})
 
 add_executable(visualize_process src/visualize_process.cpp)
-target_link_libraries(visualize_process rbf_kernel gaussian_noise probit_noise octave_convenience submaps ${PCL_LIBRARIES})
+target_link_libraries(visualize_process sparse_gp rbf_kernel gaussian_noise probit_noise octave_convenience submaps ${PCL_LIBRARIES})
 
 add_executable(register_process src/register_process.cpp)
-target_link_libraries(register_process submaps gpgs_cost_function gpgs_visualization)
+target_link_libraries(register_process sparse_gp submaps gpgs_cost_function gpgs_visualization)
 
 add_executable(register_process_ceres src/register_process_ceres.cpp)
 #target_link_libraries(register_process_ceres rbf_kernel gaussian_noise probit_noise octave_convenience submaps ${PCL_LIBRARIES} ${OpenCV_LIBS} ${CERES_LIBRARIES})

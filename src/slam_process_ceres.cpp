@@ -29,7 +29,7 @@ using RotsT = vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> 
 using AngsT = vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> >;
 using ProcessT = sparse_gp<rbf_kernel, gaussian_noise>;
 using SubmapsGPT = vector<ProcessT>; // Process does not require aligned allocation as all matrices are dynamic
-using ObsT = vector<Eigen::MatrixXd, Eigen::aligned_allocator<MatrixXd> >;
+using ObsT = vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> >;
 using MatchesT = vector<pair<int, int> >; // tells us which maps overlap
 
 void subsample_cloud(Eigen::MatrixXd& points)

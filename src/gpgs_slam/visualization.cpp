@@ -28,10 +28,10 @@ CloudT::Ptr construct_submap_and_gp_cloud(Eigen::MatrixXd points, ProcessT& gp,
     
 	cout << "Predicting gaussian process..." << endl;
 
-	MatrixXd X_star(sz*sz, 2);
-    VectorXd f_star(sz*sz); // mean?
+	Eigen::MatrixXd X_star(sz*sz, 2);
+    Eigen::VectorXd f_star(sz*sz); // mean?
     f_star.setZero();
-	VectorXd V_star; // variance?
+	Eigen::VectorXd V_star; // variance?
     int i = 0;
     for (int y = 0; y < sz; ++y) { // ROOM FOR SPEEDUP
 	    for (int x = 0; x < sz; ++x) {
@@ -95,7 +95,7 @@ cv::Mat VisCallback::visualize_likelihoods(Eigen::Vector3d& t2, Eigen::Matrix3d&
         return vis;
     }
     
-    Matrix3d RM1 = euler_to_matrix(R1(0), R1(1), R1(2));
+    Eigen::Matrix3d RM1 = euler_to_matrix(R1(0), R1(1), R1(2));
 
     int sz = 10;
     cv::Mat float_image = cv::Mat::zeros(2*sz, 2*sz, CV_32FC1);
@@ -154,15 +154,15 @@ cv::Mat VisCallback::visualize_likelihoods(Eigen::Vector3d& t2, Eigen::Matrix3d&
     return color;
 }
 
-VisCallback::VisCallback(MatrixXd& points1, MatrixXd& points2,
+VisCallback::VisCallback(Eigen::MatrixXd& points1, Eigen::MatrixXd& points2,
                          ProcessT& gp1, ProcessT& gp2,
-                         Vector3d& t1, Vector3d& R1,
-                         Vector3d& t2, Vector3d& R2)
+                         Eigen::Vector3d& t1, Eigen::Vector3d& R1,
+                         Eigen::Vector3d& t2, Eigen::Vector3d& R2)
     : viewer("Simple Cloud Viewer"), points1(points1), points2(points2), gp1(gp1), t1(t1), R1(R1)
 {
 
-    Matrix3d RM1 = euler_to_matrix(R1(0), R1(1), R1(2));
-    Matrix3d RM2 = euler_to_matrix(R2(0), R2(1), R2(2));
+    Eigen::Matrix3d RM1 = euler_to_matrix(R1(0), R1(1), R1(2));
+    Eigen::Matrix3d RM2 = euler_to_matrix(R2(0), R2(1), R2(2));
     vis = visualize_likelihoods(t2, RM2);
     t0 = t1;
     CloudT::Ptr cloud1 = construct_submap_and_gp_cloud(points1, gp1, t1, RM1, 0);
@@ -178,7 +178,7 @@ VisCallback::VisCallback(MatrixXd& points1, MatrixXd& points2,
 
 void VisCallback::visualizer_step(Eigen::Matrix3d& RM1)
 {
-    Vector3d rt = t1 - t0;
+    Eigen::Vector3d rt = t1 - t0;
     cv::Point new_point(vis.cols/2+int(factor*(rt(0)/step_offset+0.5)), vis.rows/2+int(factor*(rt(1)/step_offset+0.5)));
     cv::line(vis, old_point, new_point, cv::Scalar(0, 0, 255)); //, int thickness=1, int lineType=8, int shift=0)
     old_point = new_point;
@@ -197,7 +197,7 @@ void VisCallback::visualizer_step(Eigen::Matrix3d& RM1)
 
 ceres::CallbackReturnType VisCallback::operator()(const ceres::IterationSummary& summary)
 {
-    Matrix3d RM1 = euler_to_matrix(R1(0), R1(1), R1(2));
+    Eigen::Matrix3d RM1 = euler_to_matrix(R1(0), R1(1), R1(2));
     visualizer_step(RM1);
     return ceres::SOLVER_CONTINUE;
 }

@@ -28,7 +28,7 @@ void subsample_cloud(Eigen::MatrixXd& points)
     points.conservativeResize(counter, 3);
 }
 
-void get_transform_jacobian(MatrixXd& J, const Vector3d& x)
+void get_transform_jacobian(Eigen::MatrixXd& J, const Eigen::Vector3d& x)
 {
     // Ok, let's write this out for the future
 	// 3 is the X axis rotation, 4 Y axis, and 5 Z axis rotation
@@ -57,7 +57,7 @@ void get_transform_jacobian(MatrixXd& J, const Vector3d& x)
 Eigen::VectorXd compute_step(Eigen::MatrixXd& points, ProcessT& gp,
 		                     Eigen::Vector3d& t, Eigen::Matrix3d& R)
 {
-    MatrixXd dX;
+    Eigen::MatrixXd dX;
 	cout << "Computing derivatives..." << endl;
     //gp.compute_derivatives(dX, points.leftCols(2), points.col(2));
     gp.compute_neg_log_derivatives(dX, points.leftCols(2), points.col(2));
@@ -92,14 +92,14 @@ Eigen::VectorXd compute_step(Eigen::MatrixXd& points, ProcessT& gp,
 	return delta.transpose();
 }
 
-tuple<Vector3d, Matrix3d> update_step(Eigen::VectorXd& delta)
+tuple<Eigen::Vector3d, Eigen::Matrix3d> update_step(Eigen::VectorXd& delta)
 {
     double step = 1e-0;
     Eigen::Vector3d dt;
     Eigen::Matrix3d dR;
-    Matrix3d Rx = Eigen::AngleAxisd(step*delta(3), Vector3d::UnitX()).matrix();
-    Matrix3d Ry = Eigen::AngleAxisd(step*delta(4), Vector3d::UnitY()).matrix();
-    Matrix3d Rz = Eigen::AngleAxisd(step*delta(5), Vector3d::UnitZ()).matrix();
+    Eigen::Matrix3d Rx = Eigen::AngleAxisd(step*delta(3), Eigen::Vector3d::UnitX()).matrix();
+    Eigen::Matrix3d Ry = Eigen::AngleAxisd(step*delta(4), Eigen::Vector3d::UnitY()).matrix();
+    Eigen::Matrix3d Rz = Eigen::AngleAxisd(step*delta(5), Eigen::Vector3d::UnitZ()).matrix();
     dR = Rx*Ry*Rz;
     dt = step*delta.head<3>().transpose();
 
@@ -110,11 +110,11 @@ void register_processes(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d
 				        Eigen::MatrixXd& points2, ProcessT& gp2, Eigen::Vector3d& t2, Eigen::Vector3d& R2)
 {
     VisCallback vis(points1, points2, gp1, gp2, t1, R1, t2, R2);
-    Matrix3d RM1 = euler_to_matrix(R1(0), R1(1), R1(2));
-    Matrix3d RM2 = euler_to_matrix(R2(0), R2(1), R2(2));
+    Eigen::Matrix3d RM1 = euler_to_matrix(R1(0), R1(1), R1(2));
+    Eigen::Matrix3d RM2 = euler_to_matrix(R2(0), R2(1), R2(2));
 
     Eigen::MatrixXd points2in1 = get_points_in_bound_transform(points2, t2, RM2, t1, RM1, 465);
-    VectorXd delta(6);
+    Eigen::VectorXd delta(6);
 	delta.setZero();
     bool delta_diff_small = false;
     while (true) { //!delta_diff_small) {
