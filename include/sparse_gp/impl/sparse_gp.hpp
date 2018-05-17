@@ -494,6 +494,73 @@ void sparse_gp<Kernel, Noise>::compute_neg_log_derivatives(MatrixXd& dX, const M
     }
 }
 
+// this needs one of the dimensions fixed size, should add a parameter in template for X dimension
+// this should calulcate the neg log likelihood as well as the derivative
+template <class Kernel, class Noise>
+void sparse_gp<Kernel, Noise>::compute_neg_log_derivatives_fast(VectorXd& ll, MatrixXd& dX, const MatrixXd& X,
+                                                                const VectorXd& y, bool compute_derivatives)
+{
+    // k_star should be a Nx1 vector
+    VectorXd K_star; // OK
+    kernel.kernel_function_fast<2>(K_star, X);
+
+    // k should be a MxN matrix
+    MatrixXd K(X.rows(), BV.rows()); // OK
+    kernel.construct_covariance_fast<2>(K, X, BV);
+    
+    // begin likelihood computation
+    static const double logsqrt2pi = 0.5f*log(2.0f*M_PI); // OK
+
+    ArrayXd sigma; // OK
+    ArrayXd mu; // OK
+    //This is pretty much prediction
+    if (current_size == 0) {
+        sigma = kstar + s20; // ok
+        mu.resize(X.rows());
+        mu.setZero(); // OK
+    }
+    else {
+        // Nx1 vector
+        sigma = s20 + ((K*C).array()*K.array()).rowwise().sum() + k_star.array(); // OK
+        // Nx1 vector
+        mu = K*alpha; // OK
+    }
+    // Nx1 vector
+    ArrayXd offset = y - mu; // OK
+
+    ll = -logsqrt2pi - 0.5f*sigma.log() - 0.5f*offset*offset/sigma; // OK
+    // end likelihood computation
+    
+    if (!compute_derivatives) {
+        return;
+    }
+
+    // begin derivative computation
+    // separate into k_dx1 and k_dx2, both MxN matrices, where M is number of basis vectors
+    MatrixXd K_dx1(X.rows(), BV.rows()); // OK
+    MatrixXd K_dx2(X.rows(), BV.rows()); // OK
+
+    //MatrixXd k_star_dx;
+    kernel.kernel_dx_fast<2>(K_dx1, K_dx2, X, BV); // OK
+    //kernel.kernel_dx(k_star_dx, x, x);
+
+    // goal should be that sigma_dx and mu_dx is 2xN instead
+    ArrayXd sigma_dx(X.rows(), 2);
+    sigma_dx.col(0) = 2.*((K_dx1*C).array()*K.array()).rowwise().sum(); // OK 
+    sigma_dx.col(1) = 2.*((K_dx2*C).array()*K.array()).rowwise().sum(); // OK
+    
+    // 2xN matrix
+    ArrayXXd mu_dx(X.rows(), 2); // OK
+    mu_dx.col(0) = K_dx1*alpha; // OK
+    mu_dx.col(1) = K_dx2*alpha; // OK
+
+    // this should be ok given that we can broadcast Nx2 and Nx1
+    dX.leftCols<2>() = 0.5/sigma*(-sigma_dx+sigma_dx/sigma*offset*offset+2.*mu_dx*offset);
+
+    dX.col(2) = 1./sigma*offset; // OK
+    // end derivative computation
+}
+
 /*
 // THIS NEEDS SOME SPEEDUP, PROBABLY BY COMPUTING SEVERAL AT ONCE
 // the differential likelihood with respect to x and y

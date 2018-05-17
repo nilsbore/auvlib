@@ -38,7 +38,7 @@ private:
 public:
     void reset();
     void train_parameters(const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
-    void compute_derivatives_fast(Eigen::MatrixXd& dX, const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
+    //void compute_derivatives_fast(Eigen::MatrixXd& dX, const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
     int size();
     void add_measurements(const Eigen::MatrixXd& X,const Eigen::VectorXd& y);
     void predict_measurements(Eigen::VectorXd& f_star, const Eigen::MatrixXd& X_star,
@@ -46,6 +46,8 @@ public:
     double neg_log_likelihood(const Eigen::VectorXd& X_star, double y);
     //void compute_derivatives(Eigen::MatrixXd& dX, const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
     void compute_neg_log_derivatives(Eigen::MatrixXd& dX, const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
+    void compute_neg_log_derivatives_fast(Eigen::VectorXd& ll, Eigen::MatrixXd& dX, const Eigen::MatrixXd& X,
+                                          const Eigen::VectorXd& y, bool compute_derivatives=true);
     //void compute_likelihoods(Eigen::VectorXd& l, const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
     void compute_neg_log_likelihoods(Eigen::VectorXd& l, const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
     //sparse_gp(int capacity = 30, double s0 = 1e-1f, double sigmaf = 1e-2f, double l = 0.08*0.08);
