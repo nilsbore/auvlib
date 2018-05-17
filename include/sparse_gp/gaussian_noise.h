@@ -8,6 +8,7 @@ public:
     double dx_ln(double y, double x, double sigma_x); // d/dx ln P(y|x)
     double dx2_ln(double y, double x, double sigma_x); // d2/dx2 ln P(y|x)
     gaussian_noise(double s20);
+    gaussian_noise() {}
     template <class Archive>
     void serialize(Archive & ar)
     {
