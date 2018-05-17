@@ -30,10 +30,10 @@ private:
     double predict(const Eigen::VectorXd& X_star, double& sigma, bool conf);
     void construct_covariance(Eigen::VectorXd& K, const Eigen::Vector2d& X, const Eigen::MatrixXd& Xv);
     void shuffle(std::vector<int>& ind, int n);
-    void likelihood_dx(Eigen::Vector3d& dx, const Eigen::VectorXd& x, double y);
+    //void likelihood_dx(Eigen::Vector3d& dx, const Eigen::VectorXd& x, double y);
     void neg_log_likelihood_dx(Eigen::Vector3d& dx, const Eigen::VectorXd& x, double y);
     void likelihood_dtheta(Eigen::VectorXd& dtheta, const Eigen::Vector2d& x, double y);
-    double likelihood(const Eigen::Vector2d& x, double y);
+    //double likelihood(const Eigen::Vector2d& x, double y);
     //double neg_log_likelihood(const Eigen::Vector2d& x, double y);
 public:
     void reset();
@@ -44,9 +44,9 @@ public:
     void predict_measurements(Eigen::VectorXd& f_star, const Eigen::MatrixXd& X_star,
                               Eigen::VectorXd& sigconf, bool conf = false);
     double neg_log_likelihood(const Eigen::VectorXd& X_star, double y);
-    void compute_derivatives(Eigen::MatrixXd& dX, const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
+    //void compute_derivatives(Eigen::MatrixXd& dX, const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
     void compute_neg_log_derivatives(Eigen::MatrixXd& dX, const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
-    void compute_likelihoods(Eigen::VectorXd& l, const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
+    //void compute_likelihoods(Eigen::VectorXd& l, const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
     void compute_neg_log_likelihoods(Eigen::VectorXd& l, const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
     //sparse_gp(int capacity = 30, double s0 = 1e-1f, double sigmaf = 1e-2f, double l = 0.08*0.08);
     sparse_gp(int capacity = 100, double s0 = 1e-1f);

@@ -389,6 +389,7 @@ double sparse_gp<Kernel, Noise>::neg_log_likelihood(const VectorXd& X, double y)
     return lp;
 }
 
+/*
 template <class Kernel, class Noise>
 void sparse_gp<Kernel, Noise>::compute_likelihoods(VectorXd& l, const MatrixXd& X, const VectorXd& y)
 {
@@ -397,6 +398,7 @@ void sparse_gp<Kernel, Noise>::compute_likelihoods(VectorXd& l, const MatrixXd& 
         l(i) = likelihood(X.row(i).transpose(), y(i));
     }
 }
+*/
 
 template <class Kernel, class Noise>
 void sparse_gp<Kernel, Noise>::compute_neg_log_likelihoods(VectorXd& l, const MatrixXd& X, const VectorXd& y)
@@ -407,6 +409,7 @@ void sparse_gp<Kernel, Noise>::compute_neg_log_likelihoods(VectorXd& l, const Ma
     }
 }
 
+/*
 // likelihood, without log for derivatives
 template <class Kernel, class Noise>
 double sparse_gp<Kernel, Noise>::likelihood(const Vector2d& x, double y)
@@ -428,7 +431,9 @@ double sparse_gp<Kernel, Noise>::likelihood(const Vector2d& x, double y)
     }
     return 1.0f/sqrt(2.0f*M_PI*sigma)*exp(-0.5f/sigma*(y - mu)*(y - mu));
 }
+*/
 
+/*
 template <class Kernel, class Noise>
 void sparse_gp<Kernel, Noise>::compute_derivatives_fast(MatrixXd& dX, const MatrixXd& X, const VectorXd& y)
 {
@@ -463,7 +468,9 @@ void sparse_gp<Kernel, Noise>::compute_derivatives_fast(MatrixXd& dX, const Matr
     dX.col(1) = exppart*(-sigma_dx + secondpart_dx + thirdpart_dx);
     dX.col(2) = exppart*(-sigma_dy + secondpart_dy + thirdpart_dy);
 }
+*/
 
+/*
 template <class Kernel, class Noise>
 void sparse_gp<Kernel, Noise>::compute_derivatives(MatrixXd& dX, const MatrixXd& X, const VectorXd& y)
 {
@@ -474,6 +481,7 @@ void sparse_gp<Kernel, Noise>::compute_derivatives(MatrixXd& dX, const MatrixXd&
         dX.row(i) = dx.transpose();
     }
 }
+*/
 
 template <class Kernel, class Noise>
 void sparse_gp<Kernel, Noise>::compute_neg_log_derivatives(MatrixXd& dX, const MatrixXd& X, const VectorXd& y)
@@ -486,6 +494,7 @@ void sparse_gp<Kernel, Noise>::compute_neg_log_derivatives(MatrixXd& dX, const M
     }
 }
 
+/*
 // THIS NEEDS SOME SPEEDUP, PROBABLY BY COMPUTING SEVERAL AT ONCE
 // the differential likelihood with respect to x and y
 template <class Kernel, class Noise>
@@ -520,6 +529,7 @@ void sparse_gp<Kernel, Noise>::likelihood_dx(Vector3d& dx, const VectorXd& x, do
 //    dx(0) = k.transpose()*alpha - y;
 //    dx.tail<2>().setZero();
 }
+*/
 
 // NOTE: this is kind of a guess right now, we need to properly
 // derive this again to control that it is correct
@@ -682,7 +692,8 @@ void sparse_gp<Kernel, Noise>::train_parameters(const MatrixXd& X, const VectorX
         exit(0);
 
         l_old = l;
-        compute_likelihoods(l, X, y);
+        //compute_likelihoods(l, X, y);
+        compute_neg_log_likelihoods(l, X, y); // NOTE: this should be exp'd!
         ls.push_back(l.norm());
         std::cout << "L norm: " << (l - l_old).norm() << std::endl;
     }

@@ -66,7 +66,7 @@ Eigen::VectorXd compute_step(Eigen::MatrixXd& points, ProcessT& gp,
     //t = means[i];
 	cout << "Done computing derivatives..." << endl;
 	Eigen::VectorXd l;
-	gp.compute_likelihoods(l, points.leftCols(2), points.col(2));
+	gp.compute_neg_log_likelihoods(l, points.leftCols(2), points.col(2));
 	cout << "Mean likelihood: " << l.mean() << endl;
 	cout << "Mean derivative: " << dX.colwise().sum() << endl;
 	dX *= R.transpose();
