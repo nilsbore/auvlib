@@ -505,7 +505,7 @@ void sparse_gp<Kernel, Noise>::compute_neg_log_derivatives_fast(VectorXd& ll, Ma
 
     // k should be a MxN matrix
     MatrixXd K(X.rows(), BV.rows()); // OK
-    kernel.construct_covariance_fast<2>(K, X, BV);
+    kernel.template construct_covariance_fast<2>(K, X, BV);
     
     // begin likelihood computation
     static const double logsqrt2pi = 0.5f*log(2.0f*M_PI); // OK
@@ -514,7 +514,7 @@ void sparse_gp<Kernel, Noise>::compute_neg_log_derivatives_fast(VectorXd& ll, Ma
     ArrayXd mu; // OK
     //This is pretty much prediction
     if (current_size == 0) {
-        sigma = kstar + s20; // ok
+        sigma = k_star + s20; // ok
         mu.resize(X.rows());
         mu.setZero(); // OK
     }
@@ -525,7 +525,7 @@ void sparse_gp<Kernel, Noise>::compute_neg_log_derivatives_fast(VectorXd& ll, Ma
         mu = K*alpha; // OK
     }
     // Nx1 vector
-    ArrayXd offset = y - mu; // OK
+    ArrayXd offset = y.array() - mu; // OK
 
     ll = -logsqrt2pi - 0.5f*sigma.log() - 0.5f*offset*offset/sigma; // OK
     // end likelihood computation
@@ -540,7 +540,7 @@ void sparse_gp<Kernel, Noise>::compute_neg_log_derivatives_fast(VectorXd& ll, Ma
     MatrixXd K_dx2(X.rows(), BV.rows()); // OK
 
     //MatrixXd k_star_dx;
-    kernel.kernel_dx_fast<2>(K_dx1, K_dx2, X, BV); // OK
+    kernel.template kernel_dx_fast<2>(K_dx1, K_dx2, X, BV); // OK
     //kernel.kernel_dx(k_star_dx, x, x);
 
     // goal should be that sigma_dx and mu_dx is 2xN instead
@@ -554,7 +554,7 @@ void sparse_gp<Kernel, Noise>::compute_neg_log_derivatives_fast(VectorXd& ll, Ma
     mu_dx.col(1) = K_dx2*alpha; // OK
 
     // this should be ok given that we can broadcast Nx2 and Nx1
-    dX.leftCols<2>() = 0.5/sigma*(-sigma_dx+sigma_dx/sigma*offset*offset+2.*mu_dx*offset);
+    dX.leftCols<2>() = (0.5/sigma*(-sigma_dx+sigma_dx.colwise()*(offset*offset/sigma)+2.*(mu_dx.colwise()*offset))).matrix();
 
     dX.col(2) = 1./sigma*offset; // OK
     // end derivative computation

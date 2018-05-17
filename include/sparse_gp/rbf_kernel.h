@@ -40,14 +40,15 @@ public:
     template <int N>
     void kernel_dx_fast(Eigen::MatrixXd& K_dx1, Eigen::MatrixXd& K_dx2, const Eigen::MatrixXd& X, const Eigen::MatrixXd& BV)
     {
-        MatrixXd K_dx1(X.rows(), BV.cols()); // OK
-        MatrixXd K_dx2(X.rows(), BV.cols()); // OK
+        K_dx1.resize(X.rows(), BV.cols()); // OK
+        K_dx2.resize(X.rows(), BV.cols()); // OK
 
         Eigen::ArrayXXd offset;
         Eigen::ArrayXd exppart;
         for (int i = 0; i < BV.cols(); ++i) {
             offset = X - BV.col(i).transpose().replicate(X.rows(), 1); // OK
-            exppart = (-0.5f/p(1)*offset.rowwise().squaredNorm()).exp(); // OK
+            exppart = -0.5f/p(1)*offset.matrix().rowwise().squaredNorm();
+            exppart = exppart.exp(); // OK
             K_dx1.col(i) = p(0)/p(1)*offset.col(0)*exppart; // OK
             K_dx2.col(i) = p(0)/p(1)*offset.col(1)*exppart; // OK
         }
