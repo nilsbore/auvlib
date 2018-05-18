@@ -41,17 +41,22 @@ bool GaussianProcessCostFunction::Evaluate(double const* const* parameters, doub
     cout << "Translation: " << t1.transpose() << ", Rotation: \n" << R1 << endl;
 
     Eigen::MatrixXd points2in1 = get_points_in_bound_transform(points2, t2, R2, t1, R1, 465);
+    
+    Eigen::MatrixXd dX;
     Eigen::VectorXd ll;
-    gp1.compute_neg_log_likelihoods(ll, points2in1.leftCols(2), points2in1.col(2));
+
+    bool compute_derivatives = jacobians != NULL;
+    gp1.compute_neg_log_derivatives_fast(ll, dX, points2in1.leftCols<2>(), points2in1.col(2), compute_derivatives);
+
+    //gp1.compute_neg_log_likelihoods(ll, points2in1.leftCols(2), points2in1.col(2));
     residuals[0] = -ll.mean();
     cout << "Residual: " << residuals[0] << endl;
     
     // Compute the Jacobian if asked for.
-    if (jacobians != NULL) { // && jacobians[0] != NULL) {
-        Eigen::MatrixXd dX;
+    if (compute_derivatives) { // && jacobians[0] != NULL) {
         cout << "Computing derivatives..." << endl;
         //gp.compute_derivatives(dX, points.leftCols(2), points.col(2));
-        gp1.compute_neg_log_derivatives(dX, points2in1.leftCols(2), points2in1.col(2));
+        //gp1.compute_neg_log_derivatives(dX, points2in1.leftCols(2), points2in1.col(2));
         cout << "Done computing derivatives..." << endl;
         dX *= R1.transpose();
 

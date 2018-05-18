@@ -12,6 +12,7 @@
 #include <gpgs_slam/cost_function.h>
 #include <gpgs_slam/visualization.h>
 #include <gpgs_slam/multi_visualizer.h>
+#include <gpgs_slam/transforms.h>
 
 #include <ceres/ceres.h>
 
@@ -153,9 +154,9 @@ void test_fast_derivatives(ObsT& points, SubmapsGPT& gps, TransT& trans, AngsT& 
         slow_likelihoods.push_back(ll1); slow_likelihoods.push_back(ll2);
 
         Eigen::MatrixXd dX1;
-        gps[i].compute_neg_log_derivatives(dX1, points2in1.leftCols<2>(), points2in1.col(2))
+        gps[i].compute_neg_log_derivatives(dX1, points2in1.leftCols<2>(), points2in1.col(2));
         Eigen::MatrixXd dX2;
-        gps[j].compute_neg_log_derivatives(dX2, points1in2.leftCols<2>(), points1in2.col(2))
+        gps[j].compute_neg_log_derivatives(dX2, points1in2.leftCols<2>(), points1in2.col(2));
 
         slow_derivatives.push_back(dX1); slow_derivatives.push_back(dX2);
     }
@@ -165,7 +166,7 @@ void test_fast_derivatives(ObsT& points, SubmapsGPT& gps, TransT& trans, AngsT& 
     // Get duration. Substart timepoints to 
     // get durarion. To cast it to proper unit
     // use duration cast method
-    auto duration = chrono::duration_cast<chrono::seconds>(stop - start);
+    auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
  
     cout << "Time taken by slow_likelihoods: " << duration.count() << " microseconds" << endl;
     
@@ -173,7 +174,7 @@ void test_fast_derivatives(ObsT& points, SubmapsGPT& gps, TransT& trans, AngsT& 
     LLT fast_likelihoods;
 
     // Get starting timepoint
-    auto start = chrono::high_resolution_clock::now();
+    start = chrono::high_resolution_clock::now();
     for (const pair<int, int>& match : matches) {
         int i, j;
         tie (i, j) = match;
@@ -201,18 +202,21 @@ void test_fast_derivatives(ObsT& points, SubmapsGPT& gps, TransT& trans, AngsT& 
         fast_derivatives.push_back(dX1); fast_derivatives.push_back(dX2);
     }
     // Get ending timepoint
-    auto stop = chrono::high_resolution_clock::now();
+    stop = chrono::high_resolution_clock::now();
  
     // Get duration. Substart timepoints to 
     // get durarion. To cast it to proper unit
     // use duration cast method
-    auto duration = chrono::duration_cast<chrono::seconds>(stop - start);
+    duration = chrono::duration_cast<chrono::microseconds>(stop - start);
  
     cout << "Time taken by fast_likelihoods: " << duration.count() << " microseconds" << endl;
 
     for (int i = 0; i < slow_derivatives.size(); ++i) {
-        cout << "Derivative i difference col 0 norm: " << (slow_derivatives.col(0)[i] - fast_derivatives.col(0)[i]).norm() << endl;
-        cout << "Derivative i difference col 1 norm: " << (slow_derivatives.col(0)[i] - fast_derivatives.col(0)[i]).norm() << endl;
+        cout << "Derivative i absolute col 0 norm: " << slow_derivatives[i].col(0).norm() << endl;
+        cout << "Derivative i absolute col 1 norm: " << slow_derivatives[i].col(1).norm() << endl;
+        cout << "Likelihood i absolute norm: " << slow_likelihoods[i].norm() << endl;
+        cout << "Derivative i difference col 0 norm: " << (slow_derivatives[i].col(0) - fast_derivatives[i].col(0)).norm() << endl;
+        cout << "Derivative i difference col 1 norm: " << (slow_derivatives[i].col(1) - fast_derivatives[i].col(1)).norm() << endl;
         cout << "Likelihood i likelihood norm: " << (slow_likelihoods[i] - fast_likelihoods[i]).norm() << endl;
     }
 }

@@ -67,3 +67,6 @@ target_link_libraries(register_process_ceres submaps gpgs_cost_function gpgs_vis
 
 add_executable(slam_process_ceres src/slam_process_ceres.cpp)
 target_link_libraries(slam_process_ceres submaps gpgs_cost_function gpgs_visualization gpgs_multi_visualizer)
+
+add_executable(test_fast_derivatives test/test_fast_derivatives.cpp)
+target_link_libraries(test_fast_derivatives submaps gpgs_cost_function gpgs_visualization gpgs_multi_visualizer gpgs_transforms)

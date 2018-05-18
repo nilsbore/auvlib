@@ -544,7 +544,7 @@ void sparse_gp<Kernel, Noise>::compute_neg_log_derivatives_fast(VectorXd& ll, Ma
     //kernel.kernel_dx(k_star_dx, x, x);
 
     // goal should be that sigma_dx and mu_dx is 2xN instead
-    ArrayXd sigma_dx(X.rows(), 2);
+    ArrayXXd sigma_dx(X.rows(), 2);
     sigma_dx.col(0) = 2.*((K_dx1*C).array()*K.array()).rowwise().sum(); // OK 
     sigma_dx.col(1) = 2.*((K_dx2*C).array()*K.array()).rowwise().sum(); // OK
     
@@ -553,8 +553,15 @@ void sparse_gp<Kernel, Noise>::compute_neg_log_derivatives_fast(VectorXd& ll, Ma
     mu_dx.col(0) = K_dx1*alpha; // OK
     mu_dx.col(1) = K_dx2*alpha; // OK
 
+    ArrayXXd temp1 = sigma_dx.colwise()*(offset*offset/sigma);
+    ArrayXXd temp2 = 2.*(mu_dx.colwise()*offset);
+    ArrayXXd temp3 = (-sigma_dx+temp1+temp2);
+
+    dX.resize(X.rows(), 3);
+
     // this should be ok given that we can broadcast Nx2 and Nx1
-    dX.leftCols<2>() = (0.5/sigma*(-sigma_dx+sigma_dx.colwise()*(offset*offset/sigma)+2.*(mu_dx.colwise()*offset))).matrix();
+    ArrayXXd ldX = 0.5*(temp3.colwise()/sigma);
+    dX.leftCols<2>() = ldX.matrix();
 
     dX.col(2) = 1./sigma*offset; // OK
     // end derivative computation
