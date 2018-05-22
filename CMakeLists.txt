@@ -31,6 +31,9 @@ target_link_libraries(sparse_gp rbf_kernel gaussian_noise octave_convenience)
 add_library(submaps src/data_tools/submaps.cpp)
 target_link_libraries(submaps ${PCL_LIBRARIES})
 
+add_library(navi_data src/data_tools/navi_data.cpp)
+target_link_libraries(submaps ${PCL_LIBRARIES})
+
 add_library(gpgs_transforms src/gpgs_slam/transforms.cpp)
 
 add_library(gpgs_cost_function src/gpgs_slam/cost_function.cpp)
@@ -45,6 +48,9 @@ target_link_libraries(gpgs_multi_visualizer gpgs_visualization gpgs_transforms $
 # helloworld
 add_executable(helloworld src/helloworld.cpp)
 target_link_libraries(helloworld ${CERES_LIBRARIES})
+
+add_executable(parse_navi_data src/parse_navi_data.cpp)
+target_link_libraries(parse_navi_data navi_data ${PCL_LIBRARIES})
 
 add_executable(pose_graph_3d src/pose_graph_3d.cpp)
 target_link_libraries(pose_graph_3d ${CERES_LIBRARIES})
