@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
 
-add_definitions(-std=c++11 -O3)
+#add_definitions(-std=c++11 -O3)
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3")
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -O3")
 
 project(helloworld)
 
@@ -9,13 +11,18 @@ find_package(Ceres REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(PCL 1.7 REQUIRED)
 find_package(OpenCV REQUIRED)
+find_package(OpenGL REQUIRED)
+find_package(glfw3 REQUIRED)
 
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
 add_definitions(-DCERES_GFLAGS_NAMESPACE=${GFLAGS_NAMESPACE})
 
-include_directories(include ${CERES_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS})
+include_directories(include libigl/include libigl/external/glad/include ${CERES_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS})
+
+add_library(glad libigl/external/glad/src/glad.c)
+#target_include_directories(glad PUBLIC include)
 
 add_library(rbf_kernel src/sparse_gp/rbf_kernel.cpp)
 
@@ -76,3 +83,6 @@ target_link_libraries(slam_process_ceres submaps gpgs_cost_function gpgs_visuali
 
 add_executable(test_fast_derivatives test/test_fast_derivatives.cpp)
 target_link_libraries(test_fast_derivatives submaps gpgs_cost_function gpgs_visualization gpgs_multi_visualizer gpgs_transforms)
+
+add_executable(test_igl src/test_igl.cpp)
+target_link_libraries(test_igl glad ${GLFW3_LIBRARY} ${OPENGL_LIBRARY} ${OPENGL_glu_LIBRARY} -lpthread)
