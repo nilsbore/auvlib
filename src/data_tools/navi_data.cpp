@@ -203,14 +203,14 @@ vector<nav_entry> read_file(const boost::filesystem::path& file)
 
 void divide_tracks(vector<mbes_ping>& pings)
 {
-    for (auto pos = pings.begin(); ; pos != pings.end()) {
+    for (auto pos = pings.begin(); pos != pings.end(); ) {
         auto next = std::find_if(pos, pings.end(), [&](const mbes_ping& ping) {
             return ping.first_in_file_ && (&ping != &(*pos));
         });
 
-        if (pos == next) {
+        /*if (pos == next) {
             break;
-        }
+        }*/
 
         Vector3d first_pos = pos->pos_;
         Vector3d last_pos;
@@ -251,7 +251,7 @@ tuple<ObsT, TransT> create_submaps(const vector<mbes_ping>& pings)
 {
     ObsT submaps;
     TransT trans;
-    for (auto pos = pings.begin(); ; pos != pings.end()) {
+    for (auto pos = pings.begin(); pos != pings.end(); ) {
         auto next = std::find_if(pos, pings.end(), [&](const mbes_ping& ping) {
             return ping.first_in_file_ && (&ping != &(*pos));
         });
@@ -259,9 +259,9 @@ tuple<ObsT, TransT> create_submaps(const vector<mbes_ping>& pings)
         track_pings.insert(track_pings.end(), pos, next);
         cout << "found 1 pos!" << endl;
 
-        if (pos == next) {
+        /*if (pos == next) {
             break;
-        }
+        }*/
 
         MatrixXd points(track_pings.size()*track_pings[0].beams.size(), 3);
         int counter = 0;
