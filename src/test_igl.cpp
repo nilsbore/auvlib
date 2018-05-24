@@ -3,7 +3,6 @@
 
 #include <Eigen/Dense>
 #include <cxxopts.hpp>
-//#include <pcl/visualization/cloud_viewer.h>
 
 #include <sparse_gp/sparse_gp.h>
 #include <sparse_gp/rbf_kernel.h>
@@ -47,13 +46,11 @@ void visualize_submap_and_gp(Eigen::MatrixXd& points, ProcessT& gp)
 	Eigen::VectorXd V_star; // variance?
     int nbr_faces = 2*(sz-1)*(sz-1);
     Eigen::MatrixXi F(nbr_faces, 3);
-    //int i = 0;
     int face_counter = 0;
     for (int y = 0; y < sz; ++y) { // ROOM FOR SPEEDUP
 	    for (int x = 0; x < sz; ++x) {
 		    X_star(y*sz+x, 0) = minx + x*xstep;
 		    X_star(y*sz+x, 1) = miny + y*ystep;
-		    //++i;
             if (x > 0 && y > 0) {
                 F.row(face_counter) << y*sz+x, y*sz+x-1, (y-1)*sz+x;
                 ++face_counter;
@@ -67,7 +64,6 @@ void visualize_submap_and_gp(Eigen::MatrixXd& points, ProcessT& gp)
 
     cout << "F size: " << F.rows() << ", face count: " << face_counter << endl;
 
-    //X_star.conservativeResize(i, 2);
     gp.predict_measurements(f_star, X_star, V_star);
 	cout << "Predicted heights: " << f_star << endl;
 	
@@ -80,7 +76,6 @@ void visualize_submap_and_gp(Eigen::MatrixXd& points, ProcessT& gp)
 	V.leftCols(2) = X_star;
 	V.col(2) = f_star;
 
-	
     // Load a mesh in OFF format
     //igl::readOFF("bunny.off", V, F);
 
@@ -99,37 +94,6 @@ void visualize_submap_and_gp(Eigen::MatrixXd& points, ProcessT& gp)
     viewer.data().set_colors(C);
 
     viewer.launch();
-	
-    /*CloudT::Ptr cloud(new CloudT);
-
-    for (int i = 0; i < predicted_points.rows(); ++i) {
-        PointT p;
-        p.getVector3fMap() = predicted_points.row(i).cast<float>();
-        p.r = colormap[0][0];
-	    p.g = colormap[0][1];
-		p.b = colormap[0][2];
-		cloud->push_back(p);
-    }*/
-    
-    /*for (int i = 0; i < points.rows(); ++i) {
-        PointT p;
-        p.getVector3fMap() = points.row(i).cast<float>();
-        p.r = colormap[1][0];
-	    p.g = colormap[1][1];
-		p.b = colormap[1][2];
-		cloud->push_back(p);
-    }*/
-
-    /*
-	cout << "Done constructing point cloud, starting viewer..." << endl;
-
-	//... populate cloud
-	pcl::visualization::CloudViewer viewer ("Simple Cloud Viewer");
-	viewer.showCloud (cloud);
-	while (!viewer.wasStopped ())
-	{
-	}
-    */
 }
 
 void train_gp(Eigen::MatrixXd& points, ProcessT& gp)
