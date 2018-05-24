@@ -121,6 +121,7 @@ IglVisCallback::IglVisCallback(ObsT& points, SubmapsGPT& gps, TransT& trans, Ang
     viewer.core.is_animating = true;
     viewer.core.animation_max_fps = 30.;
 	//viewer.launch();
+    viewer.core.background_color << 1., 1., 1., 1.; // white background
 
     vis = cv::imread("temp.png");
     cv::imshow("registration", vis);
