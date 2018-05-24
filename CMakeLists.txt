@@ -85,4 +85,4 @@ add_executable(test_fast_derivatives test/test_fast_derivatives.cpp)
 target_link_libraries(test_fast_derivatives submaps gpgs_cost_function gpgs_visualization gpgs_multi_visualizer gpgs_transforms)
 
 add_executable(test_igl src/test_igl.cpp)
-target_link_libraries(test_igl glad ${GLFW3_LIBRARY} ${OPENGL_LIBRARY} ${OPENGL_glu_LIBRARY} -lpthread)
+target_link_libraries(test_igl glad ${GLFW3_LIBRARY} ${OPENGL_LIBRARY} ${OPENGL_glu_LIBRARY} -lpthread sparse_gp rbf_kernel gaussian_noise probit_noise octave_convenience submaps)
