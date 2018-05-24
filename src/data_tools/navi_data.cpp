@@ -251,47 +251,83 @@ void divide_tracks(vector<mbes_ping>& pings)
 
 void divide_tracks_equal(vector<mbes_ping>& pings)
 {
+    Vector3d point1, point2, dir; // first and last point on line
+    vector<bool> line_positive_directions;
+    double first_line_pos = -1000000;
+    double last_line_pos = 1000000;
+
+    double mean_width = 0.; double count = 0.;
     for (auto pos = pings.begin(); pos != pings.end(); ) {
         auto next = std::find_if(pos, pings.end(), [&](const mbes_ping& ping) {
             return ping.first_in_file_ && (&ping != &(*pos));
         });
 
-        /*if (pos == next) {
-            break;
-        }*/
-
         Vector3d first_pos = pos->pos_;
         Vector3d last_pos;
-        double mean_width = 0.; double count = 0.;
         for (auto it = pos; it != next; ++it) {
             last_pos = it->pos_;
             mean_width += 1.7*(it->beams.front() - it->beams.back()).norm();
             count += 1;
         }
-        mean_width /= count;
-        double length = (last_pos - first_pos).norm();
+        if (pos == pings.begin()) {
+            point1 = first_pos;
+            point2 = last_pos;
+            dir = point2-point1;
+            dir.normalize();
+        }
 
-        int nbr_submaps = int(length/mean_width+0.5);
-        double submap_length = length / double(nbr_submaps);
+        bool positive_direction = (point2 - point1).dot(last_pos - first_pos) > 0;
+        line_positive_directions.push_back(positive_direction);
 
-        cout << "Mean width: " << mean_width << ", Length: " << length << ",  Nbr submaps: " << nbr_submaps << ", Submap length: " << submap_length << endl;
-        
-        Vector3d recent_pos = first_pos;
-        int counter = 0; // TODO: remove!
+        double line_pos1 = dir.dot(first_pos - point1);
+        double line_pos2 = dir.dot(last_pos - point1);
+        if (!positive_direction) {
+            std::swap(line_pos1, line_pos2);
+        }
+
+        first_line_pos = std::max(first_line_pos, line_pos1);
+        last_line_pos = std::max(last_line_pos, line_pos2);
+
+        pos = next;
+    }
+    
+    mean_width /= count;
+    //double length = (point2 - point1).norm();
+    double line_pos_length = last_line_pos - first_line_pos;
+    int nbr_submaps = int(line_pos_length/mean_width+0.5);
+    double submap_length = line_pos_length / double(nbr_submaps);
+
+    cout << "Mean width: " << mean_width << ", Length: " << line_pos_length << ",  Nbr submaps: " << nbr_submaps << ", Submap length: " << submap_length << endl;
+
+    int track_counter = 0;
+    for (auto pos = pings.begin(); pos != pings.end(); ) {
+        auto next = std::find_if(pos, pings.end(), [&](const mbes_ping& ping) {
+            return ping.first_in_file_ && (&ping != &(*pos));
+        });
+
+        bool positive_direction = line_positive_directions[track_counter];
+        //Vector3d recent_pos = pos->pos_;
+        //int counter;
+        double recent_line_pos = positive_direction? dir.dot(pos->pos_ - point1) : dir.dot(point2 - pos->pos_);
         for (auto it = pos; it != next; ++it) {
-            if ((last_pos - it->pos_).norm() < submap_length/2.) {
-                cout << "Too close to end, breaking at " << counter << endl;
-                break;
+            double line_pos = positive_direction? dir.dot(it->pos_ - point1) : dir.dot(point2 - it->pos_);
+            if (line_pos > 0 && line_pos < line_pos_length) {
+                if (recent_line_pos < 0 || recent_line_pos > line_pos_length) {
+                    it->first_in_file_ = true;
+                }
+                else if (int(recent_line_pos/submap_length) < int(line_pos/submap_length)) {
+                    it->first_in_file_ = true;
+                }
             }
-            if ((it->pos_ - recent_pos).norm() > submap_length) {
-                cout << "Breaking up submap at " << counter << " out of " << std::distance(pos, next) << endl;
+            else if (recent_line_pos > 0 || recent_line_pos < line_pos_length) {
                 it->first_in_file_ = true;
-                recent_pos = it->pos_;
             }
-            ++counter;
+            //++counter;
+            recent_line_pos = line_pos;
         }
 
         pos = next;
+        ++track_counter;
     }
 }
 

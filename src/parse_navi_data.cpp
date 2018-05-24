@@ -41,7 +41,8 @@ int main(int argc, char** argv)
 	vector<nav_entry> entries = read_folder<nav_entry>(nav_dir);
 
     match_timestamps(pings, entries);
-    divide_tracks(pings);
+    //divide_tracks(pings);
+    divide_tracks_equal(pings);
 	//view_cloud(pings);
     ObsT submaps;
     TransT trans;

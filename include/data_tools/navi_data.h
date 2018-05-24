@@ -95,6 +95,7 @@ std::vector<T> read_folder(const boost::filesystem::path& folder)
 }
 
 void divide_tracks(std::vector<mbes_ping>& pings);
+void divide_tracks_equal(std::vector<mbes_ping>& pings);
 std::tuple<ObsT, TransT, AngsT, MatchesT> create_submaps(const std::vector<mbes_ping>& pings);
 void visualize_submaps(ObsT& submaps, TransT& trans, AngsT& angs);
 
