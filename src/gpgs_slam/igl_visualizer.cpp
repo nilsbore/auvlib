@@ -118,6 +118,7 @@ IglVisCallback::IglVisCallback(ObsT& points, SubmapsGPT& gps, TransT& trans, Ang
     viewer.data().set_colors(C);
 
     viewer.callback_pre_draw = std::bind(&IglVisCallback::callback_pre_draw, this, std::placeholders::_1);
+    viewer.callback_key_pressed = std::bind(&IglVisCallback::callback_key_pressed, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
     viewer.core.is_animating = true;
     viewer.core.animation_max_fps = 30.;
 	//viewer.launch();
@@ -131,6 +132,20 @@ IglVisCallback::IglVisCallback(ObsT& points, SubmapsGPT& gps, TransT& trans, Ang
 void IglVisCallback::display()
 {
 	viewer.launch();
+}
+
+bool IglVisCallback::callback_key_pressed(igl::opengl::glfw::Viewer& viewer, unsigned int key, int mods)
+{
+    switch (key) {
+    case 'j':
+		// Get jet colormap for current depths
+        igl::jet(V.col(2), true, C_jet);
+        // Add per-vertex colors
+        viewer.data().set_colors(C_jet);
+        return true;
+    default:
+        return false;
+    }
 }
 
 bool IglVisCallback::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)

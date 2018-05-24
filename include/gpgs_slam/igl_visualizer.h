@@ -31,6 +31,7 @@ private:
     AngsT& rots;
     Eigen::MatrixXd V; // the vertices used in the viewer
     Eigen::MatrixXd C; // the colormap of the different maps
+    Eigen::MatrixXd C_jet; // the jet colormap of one map
     Eigen::MatrixXd V_orig; // the vertices used in the viewer
     Eigen::MatrixXd V_new; // the transformed vertices computed in each iteration
     Eigen::MatrixXi F; // the faces used in the viewer
@@ -49,6 +50,7 @@ public:
 	std::tuple<Eigen::MatrixXd, Eigen::MatrixXi> vertices_faces_from_gp(Eigen::MatrixXd& points, ProcessT& gp);
 	void display();
 	bool callback_pre_draw(igl::opengl::glfw::Viewer& viewer);
+    bool callback_key_pressed(igl::opengl::glfw::Viewer& viewer, unsigned int key, int mods);
     ceres::CallbackReturnType operator()(const ceres::IterationSummary& summary);
 };
 
