@@ -1,6 +1,8 @@
 #include <data_tools/navi_data.h>
 #include <data_tools/colormap.h>
 
+#include <gpgs_slam/transforms.h>
+
 #include <pcl/point_types.h>
 #include <pcl/visualization/cloud_viewer.h>
 
@@ -229,7 +231,7 @@ void divide_tracks(vector<mbes_ping>& pings)
         cout << "Mean width: " << mean_width << ", Length: " << length << ",  Nbr submaps: " << nbr_submaps << ", Submap length: " << submap_length << endl;
         
         Vector3d recent_pos = first_pos;
-        int counter = 0;
+        int counter = 0; // TODO: remove!
         for (auto it = pos; it != next; ++it) {
             if ((last_pos - it->pos_).norm() < submap_length/2.) {
                 cout << "Too close to end, breaking at " << counter << endl;
@@ -247,10 +249,58 @@ void divide_tracks(vector<mbes_ping>& pings)
     }
 }
 
-tuple<ObsT, TransT> create_submaps(const vector<mbes_ping>& pings)
+void divide_tracks_equal(vector<mbes_ping>& pings)
+{
+    for (auto pos = pings.begin(); pos != pings.end(); ) {
+        auto next = std::find_if(pos, pings.end(), [&](const mbes_ping& ping) {
+            return ping.first_in_file_ && (&ping != &(*pos));
+        });
+
+        /*if (pos == next) {
+            break;
+        }*/
+
+        Vector3d first_pos = pos->pos_;
+        Vector3d last_pos;
+        double mean_width = 0.; double count = 0.;
+        for (auto it = pos; it != next; ++it) {
+            last_pos = it->pos_;
+            mean_width += 1.7*(it->beams.front() - it->beams.back()).norm();
+            count += 1;
+        }
+        mean_width /= count;
+        double length = (last_pos - first_pos).norm();
+
+        int nbr_submaps = int(length/mean_width+0.5);
+        double submap_length = length / double(nbr_submaps);
+
+        cout << "Mean width: " << mean_width << ", Length: " << length << ",  Nbr submaps: " << nbr_submaps << ", Submap length: " << submap_length << endl;
+        
+        Vector3d recent_pos = first_pos;
+        int counter = 0; // TODO: remove!
+        for (auto it = pos; it != next; ++it) {
+            if ((last_pos - it->pos_).norm() < submap_length/2.) {
+                cout << "Too close to end, breaking at " << counter << endl;
+                break;
+            }
+            if ((it->pos_ - recent_pos).norm() > submap_length) {
+                cout << "Breaking up submap at " << counter << " out of " << std::distance(pos, next) << endl;
+                it->first_in_file_ = true;
+                recent_pos = it->pos_;
+            }
+            ++counter;
+        }
+
+        pos = next;
+    }
+}
+
+tuple<ObsT, TransT, AngsT, MatchesT> create_submaps(const vector<mbes_ping>& pings)
 {
     ObsT submaps;
     TransT trans;
+    AngsT angs;
+    MatchesT matches;
     for (auto pos = pings.begin(); pos != pings.end(); ) {
         auto next = std::find_if(pos, pings.end(), [&](const mbes_ping& ping) {
             return ping.first_in_file_ && (&ping != &(*pos));
@@ -264,6 +314,12 @@ tuple<ObsT, TransT> create_submaps(const vector<mbes_ping>& pings)
         }*/
 
         MatrixXd points(track_pings.size()*track_pings[0].beams.size(), 3);
+        
+        // get the direction of the submap as the mean direction
+        Vector3d dir = track_pings.back().pos_ - track_pings.front().pos_;
+        Vector3d ang; ang << 0., 0., std::atan2(dir(1), dir(0));
+        Eigen::Matrix3d RM = euler_to_matrix(ang(0), ang(1), ang(2));
+
         int counter = 0;
         for (const mbes_ping& ping : track_pings) {
             //cout << "Counter : " << counter << " and size: " << points.rows() << " and new points: " << ping.beams.size() << endl;
@@ -277,23 +333,26 @@ tuple<ObsT, TransT> create_submaps(const vector<mbes_ping>& pings)
         }
         points.conservativeResize(counter, 3);
         trans.push_back(points.colwise().mean().transpose());
+        angs.push_back(ang);
         points.array().rowwise() -= trans.back().transpose().array();
+        points = points*RM;
         submaps.push_back(points);
 
         pos = next;
     }
-    return make_tuple(submaps, trans);
+    return make_tuple(submaps, trans, angs, matches);
 }
 
-void visualize_submaps(ObsT& submaps, TransT& trans) {
+void visualize_submaps(ObsT& submaps, TransT& trans, AngsT& angs) {
 
 	CloudT::Ptr cloud(new CloudT);
 
     for (int i = 0; i < submaps.size(); ++i) {
         Vector3f t = trans[i].cast<float>() - trans[0].cast<float>();
+        Matrix3d RM = euler_to_matrix(angs[i](0), angs[i](1), angs[i](2));
         for (int j = 0; j < submaps[i].rows(); ++j) {
             PointT p;
-            p.getVector3fMap() = submaps[i].row(j).cast<float>() + t.transpose();
+            p.getVector3fMap() = (RM*submaps[i].row(j).transpose()).cast<float>() + t;
             p.r = colormap[i%43][0];
             p.g = colormap[i%43][1];
             p.b = colormap[i%43][2];

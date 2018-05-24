@@ -40,10 +40,10 @@ target_link_libraries(sparse_gp rbf_kernel gaussian_noise octave_convenience)
 add_library(submaps src/data_tools/submaps.cpp)
 target_link_libraries(submaps ${PCL_LIBRARIES})
 
-add_library(navi_data src/data_tools/navi_data.cpp)
-target_link_libraries(submaps ${PCL_LIBRARIES})
-
 add_library(gpgs_transforms src/gpgs_slam/transforms.cpp)
+
+add_library(navi_data src/data_tools/navi_data.cpp)
+target_link_libraries(navi_data gpgs_transforms ${PCL_LIBRARIES})
 
 add_library(gpgs_cost_function src/gpgs_slam/cost_function.cpp)
 target_link_libraries(gpgs_cost_function gpgs_transforms ${CERES_LIBRARIES} sparse_gp rbf_kernel gaussian_noise submaps)

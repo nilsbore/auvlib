@@ -45,8 +45,10 @@ int main(int argc, char** argv)
 	//view_cloud(pings);
     ObsT submaps;
     TransT trans;
-    tie(submaps, trans) = create_submaps(pings);
-    visualize_submaps(submaps, trans);
+    AngsT angs;
+    MatchesT matches;
+    tie(submaps, trans, angs, matches) = create_submaps(pings);
+    visualize_submaps(submaps, trans, angs);
 
     return 0;
 }
