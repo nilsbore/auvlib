@@ -12,6 +12,7 @@
 #include <gpgs_slam/cost_function.h>
 #include <gpgs_slam/visualization.h>
 #include <gpgs_slam/multi_visualizer.h>
+#include <gpgs_slam/igl_visualizer.h>
 
 #include <ceres/ceres.h>
 
@@ -22,6 +23,8 @@
 #include <cereal/types/utility.hpp>
 
 #include <random>
+#include <thread>
+#include <future>
 
 using namespace std;
 using TransT = vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> >;
@@ -34,7 +37,7 @@ using MatchesT = vector<pair<int, int> >; // tells us which maps overlap
 
 void subsample_cloud(Eigen::MatrixXd& points)
 {
-    int subsample = 13;
+    int subsample = 1; //37; // Works best
     int counter = 0;
     for (int i = 0; i < points.rows(); ++i) {
         if (i % subsample == 0) {
@@ -153,7 +156,9 @@ void register_processes_ceres(ObsT& points, SubmapsGPT& gps, TransT& trans, Angs
     //problem.SetParameterBlockConstant(rots[4].data());
 
     ceres::Solver::Options options;
-    options.callbacks.push_back(new MultiVisCallback(points, gps, trans, rots));
+    //options.callbacks.push_back(new MultiVisCallback(points, gps, trans, rots));
+	IglVisCallback* vis = new IglVisCallback(points, gps, trans, rots);
+    options.callbacks.push_back(vis);
     options.max_num_iterations = 200;
     options.update_state_every_iteration = true;
     options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
@@ -161,7 +166,12 @@ void register_processes_ceres(ObsT& points, SubmapsGPT& gps, TransT& trans, Angs
     //options.linear_solver_type = ceres::DENSE_QR;
 
     ceres::Solver::Summary summary;
-    ceres::Solve(options, &problem, &summary);
+    
+	auto handle = std::async(std::launch::async, [&options, &problem, &summary]() {
+		ceres::Solve(options, &problem, &summary);
+	});
+	vis->display();
+	handle.get();
 
     std::cout << summary.FullReport() << '\n';
 

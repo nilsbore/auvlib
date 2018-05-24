@@ -4,6 +4,8 @@ cmake_minimum_required(VERSION 2.8)
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3")
 SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -O3")
 
+#add_definitions(-DIGL_VIEWER_WITH_NANOGUI=1)
+
 project(helloworld)
 
 #find_package(Gflags REQUIRED)
@@ -52,6 +54,9 @@ target_link_libraries(gpgs_visualization gpgs_transforms ${CERES_LIBRARIES} spar
 add_library(gpgs_multi_visualizer src/gpgs_slam/multi_visualizer.cpp)
 target_link_libraries(gpgs_multi_visualizer gpgs_visualization gpgs_transforms ${CERES_LIBRARIES} sparse_gp rbf_kernel gaussian_noise ${PCL_LIBRARIES} ${OpenCV_LIBS} submaps)
 
+add_library(gpgs_igl_visualizer src/gpgs_slam/igl_visualizer.cpp)
+target_link_libraries(gpgs_igl_visualizer gpgs_visualization gpgs_transforms ${CERES_LIBRARIES} sparse_gp rbf_kernel gaussian_noise ${OpenCV_LIBS} submaps glad ${GLFW3_LIBRARY} ${OPENGL_LIBRARY} ${OPENGL_glu_LIBRARY} -lpthread)
+
 # helloworld
 add_executable(helloworld src/helloworld.cpp)
 target_link_libraries(helloworld ${CERES_LIBRARIES})
@@ -79,7 +84,7 @@ add_executable(register_process_ceres src/register_process_ceres.cpp)
 target_link_libraries(register_process_ceres submaps gpgs_cost_function gpgs_visualization)
 
 add_executable(slam_process_ceres src/slam_process_ceres.cpp)
-target_link_libraries(slam_process_ceres submaps gpgs_cost_function gpgs_visualization gpgs_multi_visualizer)
+target_link_libraries(slam_process_ceres submaps gpgs_cost_function gpgs_visualization gpgs_multi_visualizer gpgs_igl_visualizer)
 
 add_executable(test_fast_derivatives test/test_fast_derivatives.cpp)
 target_link_libraries(test_fast_derivatives submaps gpgs_cost_function gpgs_visualization gpgs_multi_visualizer gpgs_transforms)
