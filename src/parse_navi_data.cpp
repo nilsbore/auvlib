@@ -18,30 +18,23 @@ using namespace std;
 using ProcessT = sparse_gp<rbf_kernel, gaussian_noise>;
 using SubmapsGPT = vector<ProcessT>; // Process does not require aligned allocation as all matrices are dynamic
 
-int main(int argc, char** argv)
+
+tuple<ObsT, TransT, AngsT, MatchesT, BBsT> load_or_create_submaps(const boost::filesystem::path& folder)
 {
-
-    string folder_str;
-
-	cxxopts::Options options("MyProgram", "One line description of MyProgram");
-	//options.positional_help("[optional args]").show_positional_help();
-	options.add_options()
-      ("help", "Print help")
-      ("folder", "Folder", cxxopts::value(folder_str));
-
-    auto result = options.parse(argc, argv);
-	if (result.count("help")) {
-        cout << options.help({"", "Group"}) << endl;
-        exit(0);
-	}
-    if (result.count("folder") == 0) {
-		cout << "Please provide folder arg..." << endl;
-		exit(0);
+    if (boost::filesystem::exists("navi_submaps.cereal")) {
+        ObsT submaps;
+        TransT trans;
+        AngsT angs;
+        MatchesT matches;
+        BBsT bounds;
+        std::ifstream is("navi_submaps.cereal", std::ifstream::binary);
+        {
+			cereal::BinaryInputArchive archive(is);
+			archive(submaps, trans, angs, matches, bounds);
+        }
+        is.close();
+		return make_tuple(submaps, trans, angs, matches, bounds);
     }
-	
-	boost::filesystem::path folder(folder_str);
-	cout << "Folder : " << folder << endl;
-    
 	// Parse ROV track files
 	boost::filesystem::path nav_dir = folder / "NavUTM";
 
@@ -56,7 +49,7 @@ int main(int argc, char** argv)
 
     match_timestamps(pings, entries);
     //divide_tracks(pings);
-    divide_tracks_equal(pings);
+    //divide_tracks_equal(pings);
 	//view_cloud(pings);
     ObsT submaps;
     TransT trans;
@@ -64,19 +57,76 @@ int main(int argc, char** argv)
     MatchesT matches;
     BBsT bounds;
     tie(submaps, trans, angs, matches, bounds) = create_submaps(pings);
+
+    std::ofstream os("navi_submaps.cereal", std::ofstream::binary);
+    {
+        cereal::BinaryOutputArchive archive(os);
+        archive(submaps, trans, angs, matches, bounds);
+    }
+    os.close();
+	
+    return make_tuple(submaps, trans, angs, matches, bounds);
+}
+
+int main(int argc, char** argv)
+{
+    string folder_str;
+	double lsq = 100.;
+	double sigma = 10.;
+	double s0 = 1.;
+
+	cxxopts::Options options("MyProgram", "One line description of MyProgram");
+	//options.positional_help("[optional args]").show_positional_help();
+	options.add_options()
+      ("help", "Print help")
+      ("folder", "Folder", cxxopts::value(folder_str))
+      ("lsq", "RBF length scale", cxxopts::value(lsq))
+      ("sigma", "RBF scale", cxxopts::value(sigma))
+      ("s0", "Measurement noise", cxxopts::value(s0));
+
+    auto result = options.parse(argc, argv);
+	if (result.count("help")) {
+        cout << options.help({"", "Group"}) << endl;
+        exit(0);
+	}
+    if (result.count("folder") == 0) {
+		cout << "Please provide folder arg..." << endl;
+		exit(0);
+    }
+	
+	boost::filesystem::path folder(folder_str);
+	cout << "Folder : " << folder << endl;
+    
+    ObsT submaps;
+    TransT trans;
+    AngsT angs;
+    MatchesT matches;
+    BBsT bounds;
+    tie(submaps, trans, angs, matches, bounds) = load_or_create_submaps(folder);
+    
     RotsT rots;
     SubmapsGPT gps;
     //visualize_submaps(submaps, trans, angs);
+    for (int i = 0; i < submaps.size(); ++i) {
+        ProcessT gp(100, s0);
+        gp.kernel.sigmaf_sq = sigma;
+        gp.kernel.l_sq = lsq*lsq;
+        gp.kernel.p(0) = gp.kernel.sigmaf_sq;
+        gp.kernel.p(1) = gp.kernel.l_sq;
+        // this will also centralize the points
+        Eigen::MatrixXd X = submaps[i].leftCols(2);
+        Eigen::VectorXd y = submaps[i].col(2);
+        //gp.train_parameters(X, y);
+        gp.add_measurements(X, y);
+
+        std::cout << "Done training gaussian process..." << std::endl;
+        gps.push_back(gp);
+        cout << "Pushed back..." << endl;
+    }
 	
     IglVisCallback* vis = new IglVisCallback(submaps, gps, trans, angs, bounds);
     vis->display();
 		
-    std::ifstream is("gp_submaps.cereal", std::ifstream::binary);
-    {
-        cereal::BinaryInputArchive archive(is);
-        archive(submaps, gps, trans, rots, matches, bounds);
-    }
-    is.close();
 
     return 0;
 }
