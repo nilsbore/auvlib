@@ -23,7 +23,7 @@ using CloudT = pcl::PointCloud<PointT>;
 void match_timestamps(vector<mbes_ping>& pings, vector<nav_entry>& entries)
 {
 
-    std::sort(pings.begin(), pings.end(), [](const mbes_ping& ping1, const mbes_ping& ping2) {
+    std::stable_sort(pings.begin(), pings.end(), [](const mbes_ping& ping1, const mbes_ping& ping2) {
         return ping1.time_stamp_ < ping2.time_stamp_;
     });
     std::sort(entries.begin(), entries.end(), [](const nav_entry& entry1, const nav_entry& entry2) {
@@ -131,6 +131,7 @@ vector<mbes_ping> read_file(const boost::filesystem::path& file)
 		ping.beams.push_back(Vector3d(x, y, -z));
 
 		if (beam_id == 255) {
+            ping.first_in_file_ = pings.empty();
             std::istringstream is(year_string + " " + date_string + " " + second_string);
             is.imbue(loc);
             boost::posix_time::ptime t;
@@ -143,7 +144,6 @@ vector<mbes_ping> read_file(const boost::filesystem::path& file)
             //cout << year_string << " " << date_string << " " << second_string << endl;
             //cout << t << endl;
 
-            ping.first_in_file_ = pings.empty();
 		    pings.push_back(ping);
 			ping.beams.resize(0);
 		}
@@ -251,10 +251,12 @@ void divide_tracks(vector<mbes_ping>& pings)
 
 void divide_tracks_equal(vector<mbes_ping>& pings)
 {
-    Vector3d point1, point2, dir; // first and last point on line
+    Vector2d point1, point2, dir; // first and last point on line
     vector<bool> line_positive_directions;
     double first_line_pos = -1000000;
     double last_line_pos = 1000000;
+        
+    cout << "Really First first in file?: " << pings[0].first_in_file_ << endl;
 
     double mean_width = 0.; double count = 0.;
     for (auto pos = pings.begin(); pos != pings.end(); ) {
@@ -262,10 +264,10 @@ void divide_tracks_equal(vector<mbes_ping>& pings)
             return ping.first_in_file_ && (&ping != &(*pos));
         });
 
-        Vector3d first_pos = pos->pos_;
-        Vector3d last_pos;
+        Vector2d first_pos = pos->pos_.head<2>();
+        Vector2d last_pos;
         for (auto it = pos; it != next; ++it) {
-            last_pos = it->pos_;
+            last_pos = it->pos_.head<2>();
             mean_width += 1.7*(it->beams.front() - it->beams.back()).norm();
             count += 1;
         }
@@ -276,17 +278,25 @@ void divide_tracks_equal(vector<mbes_ping>& pings)
             dir.normalize();
         }
 
-        bool positive_direction = (point2 - point1).dot(last_pos - first_pos) > 0;
+        bool positive_direction = dir.dot(last_pos - first_pos) > 0;
         line_positive_directions.push_back(positive_direction);
 
         double line_pos1 = dir.dot(first_pos - point1);
         double line_pos2 = dir.dot(last_pos - point1);
+        cout << "Number pings: " << std::distance(pos, next);
+        cout << "First == last?" << (pos == next) << endl;
+        cout << "First beams: " << pos->beams.size() << " Next beams: " << next->beams.size() << endl;
+        cout << "First firs in file?: " << pos->first_in_file_ << ", Next first in file?: " << next->first_in_file_ << endl;
+        cout << "First time: " << pos->time_stamp_ << ", Next time: " << next->time_stamp_ << endl;
+        cout << "First pos: " << first_pos.transpose() << endl;
+        cout << "Last pos: " << last_pos.transpose() << ", Point 1: " << point1.transpose() << "Dir: " << dir.transpose() << endl;
+        cout << "Line pos 1: " << line_pos1 << ", Line pos 2: " << line_pos2 << endl;
         if (!positive_direction) {
             std::swap(line_pos1, line_pos2);
         }
 
         first_line_pos = std::max(first_line_pos, line_pos1);
-        last_line_pos = std::max(last_line_pos, line_pos2);
+        last_line_pos = std::min(last_line_pos, line_pos2);
 
         pos = next;
     }
@@ -297,6 +307,7 @@ void divide_tracks_equal(vector<mbes_ping>& pings)
     int nbr_submaps = int(line_pos_length/mean_width+0.5);
     double submap_length = line_pos_length / double(nbr_submaps);
 
+    cout << "First line pos: " << first_line_pos << ", last line pos: " << last_line_pos << endl;
     cout << "Mean width: " << mean_width << ", Length: " << line_pos_length << ",  Nbr submaps: " << nbr_submaps << ", Submap length: " << submap_length << endl;
 
     int track_counter = 0;
@@ -308,22 +319,33 @@ void divide_tracks_equal(vector<mbes_ping>& pings)
         bool positive_direction = line_positive_directions[track_counter];
         //Vector3d recent_pos = pos->pos_;
         //int counter;
-        double recent_line_pos = positive_direction? dir.dot(pos->pos_ - point1) : dir.dot(point2 - pos->pos_);
+        double recent_line_pos = positive_direction? dir.dot(pos->pos_.head<2>() - point1) - first_line_pos : last_line_pos - dir.dot(pos->pos_.head<2>() - point1);
+        int time_since_last = 0;
         for (auto it = pos; it != next; ++it) {
-            double line_pos = positive_direction? dir.dot(it->pos_ - point1) : dir.dot(point2 - it->pos_);
+            if (std::distance(it, next) < 10) {
+                break;
+            }
+            double line_pos = positive_direction? dir.dot(it->pos_.head<2>() - point1) - first_line_pos : last_line_pos - dir.dot(it->pos_.head<2>() - point1);
             if (line_pos > 0 && line_pos < line_pos_length) {
-                if (recent_line_pos < 0 || recent_line_pos > line_pos_length) {
+                if ((recent_line_pos < 0 || recent_line_pos > line_pos_length) &&
+                        time_since_last > 10) {
                     it->first_in_file_ = true;
+                    time_since_last = 0;
                 }
-                else if (int(recent_line_pos/submap_length) < int(line_pos/submap_length)) {
+                else if ((int(recent_line_pos/submap_length) < int(line_pos/submap_length)) &&
+                        time_since_last > 10) {
                     it->first_in_file_ = true;
+                    time_since_last = 0;
                 }
             }
-            else if (recent_line_pos > 0 || recent_line_pos < line_pos_length) {
+            else if ((recent_line_pos > 0 && recent_line_pos < line_pos_length) &&
+                    time_since_last > 10) {
                 it->first_in_file_ = true;
+                time_since_last = 0;
             }
             //++counter;
             recent_line_pos = line_pos;
+            ++time_since_last;
         }
 
         pos = next;
