@@ -353,12 +353,13 @@ void divide_tracks_equal(vector<mbes_ping>& pings)
     }
 }
 
-tuple<ObsT, TransT, AngsT, MatchesT> create_submaps(const vector<mbes_ping>& pings)
+tuple<ObsT, TransT, AngsT, MatchesT, BBsT> create_submaps(const vector<mbes_ping>& pings)
 {
     ObsT submaps;
     TransT trans;
     AngsT angs;
     MatchesT matches;
+    BBsT bounds;
     for (auto pos = pings.begin(); pos != pings.end(); ) {
         auto next = std::find_if(pos, pings.end(), [&](const mbes_ping& ping) {
             return ping.first_in_file_ && (&ping != &(*pos));
@@ -394,11 +395,17 @@ tuple<ObsT, TransT, AngsT, MatchesT> create_submaps(const vector<mbes_ping>& pin
         angs.push_back(ang);
         points.array().rowwise() -= trans.back().transpose().array();
         points = points*RM;
+        Matrix2d bb;
+        bb(0, 0) = points.col(0).minCoeff();
+        bb(0, 1) = points.col(1).minCoeff();
+        bb(1, 0) = points.col(0).maxCoeff();
+        bb(1, 1) = points.col(1).maxCoeff();
         submaps.push_back(points);
+        bounds.push_back(bb);
 
         pos = next;
     }
-    return make_tuple(submaps, trans, angs, matches);
+    return make_tuple(submaps, trans, angs, matches, bounds);
 }
 
 void visualize_submaps(ObsT& submaps, TransT& trans, AngsT& angs) {

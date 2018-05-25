@@ -17,6 +17,7 @@ using RotsT = std::vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matri
 using AngsT = std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> >;
 using SubmapsGPT = std::vector<ProcessT>; // Process does not require aligned allocation as all matrices are dynamic
 using ObsT = std::vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> >;
+using BBsT = std::vector<Eigen::Matrix2d, Eigen::aligned_allocator<Eigen::Matrix2d> >;
 
 class IglVisCallback : public ceres::IterationCallback {
 private:
@@ -29,6 +30,7 @@ private:
     SubmapsGPT& gps;
     TransT& trans;
     AngsT& rots;
+    BBsT& bounds;
     Eigen::MatrixXd V; // the vertices used in the viewer
     Eigen::MatrixXd C; // the colormap of the different maps
     Eigen::MatrixXd C_jet; // the jet colormap of one map
@@ -43,11 +45,11 @@ private:
     Vector3d t0;*/
 public:
     //cv::Mat visualize_likelihoods(Eigen::Vector3d& t2, Eigen::Matrix3d& R2);
-    explicit IglVisCallback(ObsT& points, SubmapsGPT& gps, TransT& trans, AngsT& rots);
+    explicit IglVisCallback(ObsT& points, SubmapsGPT& gps, TransT& trans, AngsT& rots, BBsT& bounds);
     ~IglVisCallback() {}
 
     void visualizer_step(std::vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> >& RMs);
-	std::tuple<Eigen::MatrixXd, Eigen::MatrixXi> vertices_faces_from_gp(Eigen::MatrixXd& points, ProcessT& gp);
+	std::tuple<Eigen::MatrixXd, Eigen::MatrixXi> vertices_faces_from_gp(Eigen::MatrixXd& points, ProcessT& gp, Eigen::Matrix2d& bb);
 	void display();
 	bool callback_pre_draw(igl::opengl::glfw::Viewer& viewer);
     bool callback_key_pressed(igl::opengl::glfw::Viewer& viewer, unsigned int key, int mods);

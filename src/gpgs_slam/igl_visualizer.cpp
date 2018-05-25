@@ -13,7 +13,7 @@
 
 using namespace std;
 
-tuple<Eigen::MatrixXd, Eigen::MatrixXi> IglVisCallback::vertices_faces_from_gp(Eigen::MatrixXd& points, ProcessT& gp)
+tuple<Eigen::MatrixXd, Eigen::MatrixXi> IglVisCallback::vertices_faces_from_gp(Eigen::MatrixXd& points, ProcessT& gp, Eigen::Matrix2d& bb)
 {
 	double meanx = points.col(0).mean();
 	double meany = points.col(1).mean();
@@ -23,10 +23,10 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXi> IglVisCallback::vertices_faces_from_gp(E
 	points.col(1).array() -= meany;
 	points.col(2).array() -= meanz;
     
-	double maxx = points.col(0).maxCoeff();
-	double minx = points.col(0).minCoeff();
-	double maxy = points.col(1).maxCoeff();
-	double miny = points.col(1).minCoeff();
+	double maxx = bb(1, 0); // points.col(0).maxCoeff();
+	double minx = bb(0, 0); //points.col(0).minCoeff();
+	double maxy = bb(1, 1); //points.col(1).maxCoeff();
+	double miny = bb(0, 1); //points.col(1).minCoeff();
 	double maxz = points.col(2).maxCoeff();
 	double minz = points.col(2).minCoeff();
 
@@ -74,8 +74,8 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXi> IglVisCallback::vertices_faces_from_gp(E
 	return make_tuple(V, F);
 }
 
-IglVisCallback::IglVisCallback(ObsT& points, SubmapsGPT& gps, TransT& trans, AngsT& rots)
-    :  points(points), gps(gps), trans(trans), rots(rots)
+IglVisCallback::IglVisCallback(ObsT& points, SubmapsGPT& gps, TransT& trans, AngsT& rots, BBsT& bounds)
+    :  points(points), gps(gps), trans(trans), rots(rots), bounds(bounds)
 {
 	updated = false;
 	sz = 50;
@@ -96,7 +96,7 @@ IglVisCallback::IglVisCallback(ObsT& points, SubmapsGPT& gps, TransT& trans, Ang
         //viewer.showCloud(cloud, string("cloud")+to_string(i));
 		Eigen::MatrixXd Vi;
 		Eigen::MatrixXi Fi;
-		tie(Vi, Fi) = vertices_faces_from_gp(points[i], gps[i]);
+		tie(Vi, Fi) = vertices_faces_from_gp(points[i], gps[i], bounds[i]);
 		V_orig.block(i*nbr_vertices, 0, nbr_vertices, 3) = Vi;
 		F.block(i*nbr_faces, 0, nbr_faces, 3) = Fi.array() + i*nbr_vertices;
 		Eigen::RowVector3d Ci(double(colormap[i%43][0])/255., double(colormap[i%43][1])/255., double(colormap[i%43][2])/255.);

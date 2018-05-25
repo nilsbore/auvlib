@@ -165,7 +165,7 @@ void register_processes_ceres(ObsT& points, SubmapsGPT& gps, TransT& trans, Angs
 
     ceres::Solver::Options options;
     //options.callbacks.push_back(new MultiVisCallback(points, gps, trans, rots));
-	IglVisCallback* vis = new IglVisCallback(points, gps, trans, rots);
+	IglVisCallback* vis = new IglVisCallback(points, gps, trans, rots, bounds);
     options.callbacks.push_back(vis);
     options.max_num_iterations = 200;
     options.update_state_every_iteration = true;
@@ -252,8 +252,10 @@ int main(int argc, char** argv)
         trans[i](0) += 30.*distribution(generator);
         trans[i](1) += 30.*distribution(generator);
         angles[i](2) += 0.2*distribution(generator);
+        rots[i] = Eigen::AngleAxisd(angles[i](2), Eigen::Vector3d::UnitZ()).matrix();
     }
 
+    matches = compute_matches(trans, rots, bounds);
     register_processes_ceres(points, gps, trans, angles, matches, bounds);
 
     return 0;

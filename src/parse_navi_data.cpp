@@ -2,7 +2,21 @@
 #include <data_tools/navi_data.h>
 #include <boost/filesystem.hpp>
 
+#include <cereal/archives/json.hpp>
+#include <cereal/archives/binary.hpp>
+#include <cereal/types/vector.hpp>
+#include <cereal/types/utility.hpp>
+
+#include <sparse_gp/sparse_gp.h>
+#include <sparse_gp/rbf_kernel.h>
+#include <sparse_gp/probit_noise.h>
+#include <sparse_gp/gaussian_noise.h>
+
+#include <gpgs_slam/igl_visualizer.h>
+
 using namespace std;
+using ProcessT = sparse_gp<rbf_kernel, gaussian_noise>;
+using SubmapsGPT = vector<ProcessT>; // Process does not require aligned allocation as all matrices are dynamic
 
 int main(int argc, char** argv)
 {
@@ -48,8 +62,21 @@ int main(int argc, char** argv)
     TransT trans;
     AngsT angs;
     MatchesT matches;
-    tie(submaps, trans, angs, matches) = create_submaps(pings);
-    visualize_submaps(submaps, trans, angs);
+    BBsT bounds;
+    tie(submaps, trans, angs, matches, bounds) = create_submaps(pings);
+    RotsT rots;
+    SubmapsGPT gps;
+    //visualize_submaps(submaps, trans, angs);
+	
+    IglVisCallback* vis = new IglVisCallback(submaps, gps, trans, angs, bounds);
+    vis->display();
+		
+    std::ifstream is("gp_submaps.cereal", std::ifstream::binary);
+    {
+        cereal::BinaryInputArchive archive(is);
+        archive(submaps, gps, trans, rots, matches, bounds);
+    }
+    is.close();
 
     return 0;
 }
