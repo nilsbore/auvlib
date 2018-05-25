@@ -33,7 +33,7 @@ using AngsT = vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> 
 using ProcessT = sparse_gp<rbf_kernel, gaussian_noise>;
 using SubmapsGPT = vector<ProcessT>; // Process does not require aligned allocation as all matrices are dynamic
 using ObsT = vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> >;
-using MatchesT = vector<pair<int, int> >; // tells us which maps overlap
+//using MatchesT = vector<pair<int, int> >; // tells us which maps overlap
 
 void subsample_cloud(Eigen::MatrixXd& points)
 {
@@ -48,8 +48,8 @@ void subsample_cloud(Eigen::MatrixXd& points)
     points.conservativeResize(counter, 3);
 }
 
-tuple<ObsT, SubmapsGPT, TransT, RotsT, MatchesT> train_or_load_gps(double lsq, double sigma, double s0,
-                                                                   const boost::filesystem::path& folder)
+tuple<ObsT, SubmapsGPT, TransT, RotsT, MatchesT, BBsT> train_or_load_gps(double lsq, double sigma, double s0,
+                                                                         const boost::filesystem::path& folder)
 {
     if (boost::filesystem::exists("gp_submaps.cereal")) {
 		TransT trans;
@@ -57,13 +57,14 @@ tuple<ObsT, SubmapsGPT, TransT, RotsT, MatchesT> train_or_load_gps(double lsq, d
 		SubmapsGPT gps;
         ObsT obs;
         MatchesT matches;
+        BBsT bounds;
         std::ifstream is("gp_submaps.cereal", std::ifstream::binary);
         {
 			cereal::BinaryInputArchive archive(is);
-			archive(obs, gps, trans, rots, matches);
+			archive(obs, gps, trans, rots, matches, bounds);
         }
         is.close();
-		return make_tuple(obs, gps, trans, rots, matches);
+		return make_tuple(obs, gps, trans, rots, matches, bounds);
     }
     
 
@@ -76,6 +77,13 @@ tuple<ObsT, SubmapsGPT, TransT, RotsT, MatchesT> train_or_load_gps(double lsq, d
     ObsT obs;
     for (const auto& row : submaps) {
         obs.insert(obs.end(), row.begin(), row.end());
+    }
+    BBsT bounds;
+    for (int i = 0; i < obs.size(); ++i) {
+        Eigen::Matrix2d bb;
+        bb.row(0) << -465., -465.; // bottom left corner
+        bb.row(1) << 465., 465.; // top right corner
+        bounds.push_back(bb);
     }
 
     MatchesT matches;
@@ -114,14 +122,14 @@ tuple<ObsT, SubmapsGPT, TransT, RotsT, MatchesT> train_or_load_gps(double lsq, d
     std::ofstream os("gp_submaps.cereal", std::ofstream::binary);
 	{
 		cereal::BinaryOutputArchive archive(os);
-        archive(obs, gps, trans, rots, matches);
+        archive(obs, gps, trans, rots, matches, bounds);
 	}
     os.close();
     
-    return make_tuple(obs, gps, trans, rots, matches);
+    return make_tuple(obs, gps, trans, rots, matches, bounds);
 }
 
-void register_processes_ceres(ObsT& points, SubmapsGPT& gps, TransT& trans, AngsT& rots, MatchesT& matches)
+void register_processes_ceres(ObsT& points, SubmapsGPT& gps, TransT& trans, AngsT& rots, MatchesT& matches, BBsT& bounds)
 {
     ceres::Problem problem;
 
@@ -129,8 +137,8 @@ void register_processes_ceres(ObsT& points, SubmapsGPT& gps, TransT& trans, Angs
         int i, j;
         tie (i, j) = match;
         cout << "Adding constraint between " << i << " and " << j << endl;
-        ceres::CostFunction* cost_function1 = new GaussianProcessCostFunction(gps[i], points[j]);
-        ceres::CostFunction* cost_function2 = new GaussianProcessCostFunction(gps[j], points[i]);
+        ceres::CostFunction* cost_function1 = new GaussianProcessCostFunction(gps[i], bounds[i], points[j]);
+        ceres::CostFunction* cost_function2 = new GaussianProcessCostFunction(gps[j], bounds[j], points[i]);
 
         //ceres::LossFunction* loss_function = new ceres::SoftLOneLoss(5.);
         ceres::LossFunction* loss_function1 = new ceres::HuberLoss(.5);
@@ -215,7 +223,8 @@ int main(int argc, char** argv)
     TransT trans;
     RotsT rots;
     MatchesT matches;
-    tie(points, gps, trans, rots, matches) = train_or_load_gps(lsq, sigma, s0, folder);
+    BBsT bounds;
+    tie(points, gps, trans, rots, matches, bounds) = train_or_load_gps(lsq, sigma, s0, folder);
 	
     for (Eigen::MatrixXd& p : points) {
         subsample_cloud(p);
@@ -245,7 +254,7 @@ int main(int argc, char** argv)
         angles[i](2) += 0.2*distribution(generator);
     }
 
-    register_processes_ceres(points, gps, trans, angles, matches);
+    register_processes_ceres(points, gps, trans, angles, matches, bounds);
 
     return 0;
 }

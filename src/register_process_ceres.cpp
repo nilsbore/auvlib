@@ -29,15 +29,15 @@ void subsample_cloud(Eigen::MatrixXd& points)
     points.conservativeResize(counter, 3);
 }
 
-void register_processes_ceres(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d& t1, Eigen::Vector3d& R1,
-                              Eigen::MatrixXd& points2, ProcessT& gp2, Eigen::Vector3d& t2, Eigen::Vector3d& R2)
+void register_processes_ceres(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d& t1, Eigen::Vector3d& R1, Eigen::Matrix2d& bounds1,
+                              Eigen::MatrixXd& points2, ProcessT& gp2, Eigen::Vector3d& t2, Eigen::Vector3d& R2, Eigen::Matrix2d& bounds2)
 {
 
 
     ceres::Problem problem;
     //ceres::examples::BuildOptimizationProblem(constraints, &poses, &problem);
-    ceres::CostFunction* cost_function1 = new GaussianProcessCostFunction(gp1, points2);
-    ceres::CostFunction* cost_function2 = new GaussianProcessCostFunction(gp2, points1);
+    ceres::CostFunction* cost_function1 = new GaussianProcessCostFunction(gp1, bounds1, points2);
+    ceres::CostFunction* cost_function2 = new GaussianProcessCostFunction(gp2, bounds2, points1);
 
     //ceres::LossFunction* loss_function = new ceres::SoftLOneLoss(1.);
     //ceres::LossFunction* loss_function = new ceres::HuberLoss(1.);
@@ -152,8 +152,11 @@ int main(int argc, char** argv)
     subsample_cloud(points1);
     subsample_cloud(points2);
     //cv::Mat vis = visualize_likelihoods(gp1, t1, RM1, points2, t2, RM2);
-
-	register_processes_ceres(points1, gp1, t1, R1, points2, gp2, t2, R2);
+    Eigen::Matrix2d bb1;
+    bb1.row(0) << -465., -465; // bottom left corner
+    bb1.row(1) << 465., 465; // top right corner
+    Eigen::Matrix2d bb2 = bb1;
+	register_processes_ceres(points1, gp1, t1, R1, bb1, points2, gp2, t2, R2, bb2);
 
     cout << "T1 gt value: " << t1_gt.transpose() << endl;
     cout << "T1 final value: " << t1.transpose() << endl;

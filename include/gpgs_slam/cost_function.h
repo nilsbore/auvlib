@@ -13,10 +13,11 @@ using ProcessT = sparse_gp<rbf_kernel, gaussian_noise>;
 class GaussianProcessCostFunction : public ceres::SizedCostFunction<1, 3, 3, 3, 3> {
 private:
     ProcessT& gp1;
+    Eigen::Matrix2d& bounds1;
 	Eigen::MatrixXd& points2;
 public:
 
-    GaussianProcessCostFunction(ProcessT& gp1, Eigen::MatrixXd& points2) : gp1(gp1), points2(points2)
+    GaussianProcessCostFunction(ProcessT& gp1, Eigen::Matrix2d& bounds1, Eigen::MatrixXd& points2) : gp1(gp1), bounds1(bounds1), points2(points2)
     {
         
     }

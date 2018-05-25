@@ -40,7 +40,8 @@ bool GaussianProcessCostFunction::Evaluate(double const* const* parameters, doub
 
     cout << "Translation: " << t1.transpose() << ", Rotation: \n" << R1 << endl;
 
-    Eigen::MatrixXd points2in1 = get_points_in_bound_transform(points2, t2, R2, t1, R1, 465);
+    Eigen::MatrixXd points2in1 = get_points_in_bound_transform(points2, t2, R2, t1, R1, bounds1);
+    //Eigen::MatrixXd points2in1 = get_points_in_bound_transform(points2, t2, R2, t1, R1, 465.);
     
     Eigen::MatrixXd dX;
     Eigen::VectorXd ll;
