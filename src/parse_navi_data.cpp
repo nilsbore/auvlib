@@ -19,6 +19,21 @@ using namespace std;
 using ProcessT = sparse_gp<rbf_kernel, gaussian_noise>;
 using SubmapsGPT = vector<ProcessT>; // Process does not require aligned allocation as all matrices are dynamic
 
+void clip_submap(Eigen::MatrixXd& points, Eigen::Matrix2d& bounds, double minx, double maxx)
+{
+    bounds(0, 0) = max(minx, bounds(0, 0));
+    bounds(1, 0) = min(maxx, bounds(1, 0));
+
+    //int subsample = 13; //37; // Works best
+    int counter = 0;
+    for (int i = 0; i < points.rows(); ++i) {
+        if (points(i, 0) > minx && points(i, 0) < maxx) {
+            points.row(counter) = points.row(i);
+            ++counter;
+        }
+    }
+    points.conservativeResize(counter, 3);
+}
 
 tuple<ObsT, TransT, AngsT, MatchesT, BBsT> load_or_create_submaps(const boost::filesystem::path& folder)
 {
@@ -75,6 +90,8 @@ int main(int argc, char** argv)
 	double lsq = 100.;
 	double sigma = 10.;
 	double s0 = 1.;
+    double minx = -10000.;
+    double maxx = 10000.;
 
 	cxxopts::Options options("MyProgram", "One line description of MyProgram");
 	//options.positional_help("[optional args]").show_positional_help();
@@ -83,6 +100,8 @@ int main(int argc, char** argv)
       ("folder", "Folder", cxxopts::value(folder_str))
       ("lsq", "RBF length scale", cxxopts::value(lsq))
       ("sigma", "RBF scale", cxxopts::value(sigma))
+      ("minx", "X clip min", cxxopts::value(minx))
+      ("maxx", "X clip max", cxxopts::value(maxx))
       ("s0", "Measurement noise", cxxopts::value(s0));
 
     auto result = options.parse(argc, argv);
@@ -109,7 +128,20 @@ int main(int argc, char** argv)
     SubmapsGPT gps;
     //visualize_submaps(submaps, trans, angs);
     for (int i = 0; i < submaps.size(); ++i) {
-        ProcessT gp(500, s0);
+
+        if (fabs(angs[i](2)) > M_PI/2.) {
+            submaps[i].leftCols(2).array() *= -1.; // rotate 180 degrees
+            if (angs[i](2) < -M_PI/2.) {
+                angs[i](2) += M_PI;
+            }
+            else {
+                angs[i](2) -= M_PI;
+            }
+        }
+
+        clip_submap(submaps[i], bounds[i], minx, maxx);
+
+        ProcessT gp(100, s0);
         gp.kernel.sigmaf_sq = sigma;
         gp.kernel.l_sq = lsq*lsq;
         gp.kernel.p(0) = gp.kernel.sigmaf_sq;
