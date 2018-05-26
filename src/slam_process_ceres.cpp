@@ -35,9 +35,9 @@ using SubmapsGPT = vector<ProcessT>; // Process does not require aligned allocat
 using ObsT = vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> >;
 //using MatchesT = vector<pair<int, int> >; // tells us which maps overlap
 
-void subsample_cloud(Eigen::MatrixXd& points)
+void subsample_cloud(Eigen::MatrixXd& points, int subsample)
 {
-    int subsample = 1; //37; // Works best
+    //int subsample = 13; //37; // Works best
     int counter = 0;
     for (int i = 0; i < points.rows(); ++i) {
         if (i % subsample == 0) {
@@ -48,12 +48,13 @@ void subsample_cloud(Eigen::MatrixXd& points)
     points.conservativeResize(counter, 3);
 }
 
-tuple<ObsT, SubmapsGPT, TransT, RotsT, MatchesT, BBsT> train_or_load_gps(double lsq, double sigma, double s0,
-                                                                         const boost::filesystem::path& folder)
+tuple<ObsT, SubmapsGPT, TransT, RotsT, AngsT, MatchesT, BBsT> train_or_load_gps(double lsq, double sigma, double s0,
+                                                                                const boost::filesystem::path& folder)
 {
     if (boost::filesystem::exists("gp_submaps.cereal")) {
 		TransT trans;
 		RotsT rots;
+        AngsT angles;
 		SubmapsGPT gps;
         ObsT obs;
         MatchesT matches;
@@ -61,10 +62,10 @@ tuple<ObsT, SubmapsGPT, TransT, RotsT, MatchesT, BBsT> train_or_load_gps(double 
         std::ifstream is("gp_submaps.cereal", std::ifstream::binary);
         {
 			cereal::BinaryInputArchive archive(is);
-			archive(obs, gps, trans, rots, matches, bounds);
+			archive(obs, gps, trans, rots, angles, matches, bounds);
         }
         is.close();
-		return make_tuple(obs, gps, trans, rots, matches, bounds);
+		return make_tuple(obs, gps, trans, rots, angles, matches, bounds);
     }
     
 
@@ -101,7 +102,7 @@ tuple<ObsT, SubmapsGPT, TransT, RotsT, MatchesT, BBsT> train_or_load_gps(double 
             matches.push_back(make_pair(i*submaps[i].size()+j, (i-1)*submaps[i].size()+j));
         }
     }
-
+    
     // check if already available
     TransT trans(obs.size());
 	RotsT rots(obs.size());
@@ -117,16 +118,31 @@ tuple<ObsT, SubmapsGPT, TransT, RotsT, MatchesT, BBsT> train_or_load_gps(double 
         gps.push_back(gp);
         cout << "Pushed back..." << endl;
     }
+    
+    AngsT angles;
+    for (const Eigen::Matrix3d& R : rots) {
+        Eigen::Vector3d a; a << 0., 0., 0.;
+        angles.push_back(a);
+    }
+    
+    std::default_random_engine generator;
+    std::normal_distribution<double> distribution(0., 1.);
+    for (int i = 0; i < obs.size(); ++i) {
+        trans[i](0) += 30.*distribution(generator);
+        trans[i](1) += 30.*distribution(generator);
+        angles[i](2) += 0.2*distribution(generator);
+        rots[i] = Eigen::AngleAxisd(angles[i](2), Eigen::Vector3d::UnitZ()).matrix();
+    }
 
 	// write to disk for next time
     std::ofstream os("gp_submaps.cereal", std::ofstream::binary);
 	{
 		cereal::BinaryOutputArchive archive(os);
-        archive(obs, gps, trans, rots, matches, bounds);
+        archive(obs, gps, trans, rots, angles, matches, bounds);
 	}
     os.close();
     
-    return make_tuple(obs, gps, trans, rots, matches, bounds);
+    return make_tuple(obs, gps, trans, rots, angles, matches, bounds);
 }
 
 void register_processes_ceres(ObsT& points, SubmapsGPT& gps, TransT& trans, AngsT& rots, MatchesT& matches, BBsT& bounds)
@@ -193,6 +209,7 @@ int main(int argc, char** argv)
 	double lsq = 100.;
 	double sigma = 10.;
 	double s0 = 1.;
+    int subsample = 1;
 
 	cxxopts::Options options("MyProgram", "One line description of MyProgram");
 	//options.positional_help("[optional args]").show_positional_help();
@@ -201,6 +218,7 @@ int main(int argc, char** argv)
       ("folder", "Folder", cxxopts::value(folder_str))
       ("lsq", "RBF length scale", cxxopts::value(lsq))
       ("sigma", "RBF scale", cxxopts::value(sigma))
+      ("subsample", "Subsampling rate", cxxopts::value(subsample))
       ("s0", "Measurement noise", cxxopts::value(s0));
 
     auto result = options.parse(argc, argv);
@@ -222,38 +240,28 @@ int main(int argc, char** argv)
     SubmapsGPT gps;
     TransT trans;
     RotsT rots;
+    AngsT angles;
     MatchesT matches;
     BBsT bounds;
-    tie(points, gps, trans, rots, matches, bounds) = train_or_load_gps(lsq, sigma, s0, folder);
+    tie(points, gps, trans, rots, angles, matches, bounds) = train_or_load_gps(lsq, sigma, s0, folder);
 	
     for (Eigen::MatrixXd& p : points) {
-        subsample_cloud(p);
-    }
-
-    AngsT angles;
-    for (const Eigen::Matrix3d& R : rots) {
-        Eigen::Vector3d a; a << 0., 0., 0.;
-        angles.push_back(a);
+        subsample_cloud(p, subsample);
     }
     
+    /*
     CloudT::Ptr cloud(new CloudT);
     for (int i = 0; i < points.size(); ++i) {
         CloudT::Ptr subcloud = construct_submap_and_gp_cloud(points[i], gps[i], trans[i], rots[i], 2*i);
         *cloud += *subcloud;
     }
+    */
 	/*pcl::visualization::CloudViewer viewer ("Simple Cloud Viewer");
 	viewer.showCloud(cloud);
 	while (!viewer.wasStopped ())
 	{
 	}*/
-    std::default_random_engine generator;
-    std::normal_distribution<double> distribution(0., 1.);
-    for (int i = 0; i < points.size(); ++i) {
-        trans[i](0) += 30.*distribution(generator);
-        trans[i](1) += 30.*distribution(generator);
-        angles[i](2) += 0.2*distribution(generator);
-        rots[i] = Eigen::AngleAxisd(angles[i](2), Eigen::Vector3d::UnitZ()).matrix();
-    }
+    
 
     matches = compute_matches(trans, rots, bounds);
     register_processes_ceres(points, gps, trans, angles, matches, bounds);

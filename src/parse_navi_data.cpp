@@ -13,6 +13,7 @@
 #include <sparse_gp/gaussian_noise.h>
 
 #include <gpgs_slam/igl_visualizer.h>
+#include <gpgs_slam/transforms.h>
 
 using namespace std;
 using ProcessT = sparse_gp<rbf_kernel, gaussian_noise>;
@@ -108,7 +109,7 @@ int main(int argc, char** argv)
     SubmapsGPT gps;
     //visualize_submaps(submaps, trans, angs);
     for (int i = 0; i < submaps.size(); ++i) {
-        ProcessT gp(100, s0);
+        ProcessT gp(500, s0);
         gp.kernel.sigmaf_sq = sigma;
         gp.kernel.l_sq = lsq*lsq;
         gp.kernel.p(0) = gp.kernel.sigmaf_sq;
@@ -122,11 +123,20 @@ int main(int argc, char** argv)
         std::cout << "Done training gaussian process..." << std::endl;
         gps.push_back(gp);
         cout << "Pushed back..." << endl;
+
+        rots.push_back(euler_to_matrix(angs[i](0), angs[i](1), angs[i](2)));
     }
 	
     IglVisCallback* vis = new IglVisCallback(submaps, gps, trans, angs, bounds);
     vis->display();
-		
+
+	// write to disk for next time
+    std::ofstream os("gp_submaps.cereal", std::ofstream::binary);
+	{
+		cereal::BinaryOutputArchive archive(os);
+        archive(submaps, gps, trans, rots, angs, matches, bounds);
+	}
+    os.close();
 
     return 0;
 }

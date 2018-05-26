@@ -62,7 +62,7 @@ add_executable(helloworld src/helloworld.cpp)
 target_link_libraries(helloworld ${CERES_LIBRARIES})
 
 add_executable(parse_navi_data src/parse_navi_data.cpp)
-target_link_libraries(parse_navi_data navi_data sparse_gp gpgs_igl_visualizer ${PCL_LIBRARIES})
+target_link_libraries(parse_navi_data navi_data sparse_gp gpgs_transforms gpgs_igl_visualizer ${PCL_LIBRARIES})
 
 add_executable(pose_graph_3d src/pose_graph_3d.cpp)
 target_link_libraries(pose_graph_3d ${CERES_LIBRARIES})
