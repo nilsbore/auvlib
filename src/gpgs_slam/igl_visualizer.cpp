@@ -107,6 +107,7 @@ IglVisCallback::IglVisCallback(ObsT& points, SubmapsGPT& gps, TransT& trans, Ang
 		V_new.block(i*nbr_vertices, 0, nbr_vertices, 3) = (V_orig.block(i*nbr_vertices, 0, nbr_vertices, 3)*RM.transpose()).rowwise() + trans[i].transpose();
 
         P.row(i) = trans[i].transpose();
+        P(i, 2) += 50.;
     }
 	V = V_new;
 
@@ -160,6 +161,12 @@ bool IglVisCallback::callback_key_pressed(igl::opengl::glfw::Viewer& viewer, uns
     case 'p':
         toggle_matches = !toggle_matches;
         viewer.data().show_overlay = toggle_matches;
+        if (toggle_matches) {
+            viewer.data().set_points(P, Eigen::RowVector3d(1., 0., 0.));
+            if (E.rows() > 0) {
+                viewer.data().set_edges(P, E, Eigen::RowVector3d(1., 0., 0.));
+            }
+        }
     default:
         return false;
     }
