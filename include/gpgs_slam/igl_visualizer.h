@@ -25,6 +25,8 @@ private:
     int nbr_faces;
 	int nbr_vertices;
 	bool updated;
+    bool toggle_matches;
+    bool toggle_jet;
     igl::opengl::glfw::Viewer viewer;
     ObsT& points;
     SubmapsGPT& gps;
@@ -37,6 +39,7 @@ private:
     Eigen::MatrixXd V_orig; // the vertices used in the viewer
     Eigen::MatrixXd V_new; // the transformed vertices computed in each iteration
     Eigen::MatrixXi F; // the faces used in the viewer
+    Eigen::MatrixXd P; // the center point of the different maps
 	//std::vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> > Vs; // the transformed vertices computed in each iteration
     cv::Mat vis;
     /*cv::Point old_point;

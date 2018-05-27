@@ -78,9 +78,11 @@ IglVisCallback::IglVisCallback(ObsT& points, SubmapsGPT& gps, TransT& trans, Ang
     :  points(points), gps(gps), trans(trans), rots(rots), bounds(bounds)
 {
 	updated = false;
-	sz = 50;
+	sz = 100;
     nbr_faces = 2*(sz-1)*(sz-1);
 	nbr_vertices = sz*sz;
+    toggle_jet = false;
+    toggle_matches = false;
 
 	int nbr_processes = points.size();
 
@@ -89,6 +91,7 @@ IglVisCallback::IglVisCallback(ObsT& points, SubmapsGPT& gps, TransT& trans, Ang
 	V_new.resize(nbr_processes*nbr_vertices, 3);
 	F.resize(nbr_processes*nbr_faces, 3);
 	C.resize(nbr_processes*nbr_faces, 3);
+    P.resize(nbr_processes, 3);
 
     for (int i = 0; i < points.size(); ++i) {
         Eigen::Matrix3d RM = euler_to_matrix(rots[i](0), rots[i](1), rots[i](2));
@@ -102,6 +105,8 @@ IglVisCallback::IglVisCallback(ObsT& points, SubmapsGPT& gps, TransT& trans, Ang
 		Eigen::RowVector3d Ci(double(colormap[i%43][0])/255., double(colormap[i%43][1])/255., double(colormap[i%43][2])/255.);
 		C.block(i*nbr_faces, 0, nbr_faces, 3).rowwise() = Ci;
 		V_new.block(i*nbr_vertices, 0, nbr_vertices, 3) = (V_orig.block(i*nbr_vertices, 0, nbr_vertices, 3)*RM.transpose()).rowwise() + trans[i].transpose();
+
+        P.row(i) = trans[i].transpose();
     }
 	V = V_new;
 
@@ -138,11 +143,19 @@ bool IglVisCallback::callback_key_pressed(igl::opengl::glfw::Viewer& viewer, uns
 {
     switch (key) {
     case 'j':
-		// Get jet colormap for current depths
-        igl::jet(V.col(2), true, C_jet);
-        // Add per-vertex colors
-        viewer.data().set_colors(C_jet);
+        toggle_jet = !toggle_jet;
+        if (toggle_jet) {
+            // Get jet colormap for current depths
+            igl::jet(V.col(2), true, C_jet);
+            // Add per-vertex colors
+            viewer.data().set_colors(C_jet);
+        }
+        else {
+            viewer.data().set_colors(C);
+        }
         return true;
+    case 'p':
+        toggle_matches = !toggle_matches;
     default:
         return false;
     }
@@ -156,6 +169,9 @@ bool IglVisCallback::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
 		V = V_new;
         viewer.data().set_vertices(V);
         viewer.data().compute_normals();
+        if (toggle_matches) {
+            viewer.data().set_points(P, Eigen::RowVector3d(1., 0., 0.));
+        }
 		updated = false;
     }
 
@@ -193,6 +209,10 @@ ceres::CallbackReturnType IglVisCallback::operator()(const ceres::IterationSumma
     vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> > RMs;
     for (const Eigen::Vector3d& rot : rots) {
         RMs.push_back(euler_to_matrix(rot(0), rot(1), rot(2)));
+    }
+    for (int i = 0; i < trans.size(); ++i) {
+        P.row(i) = trans[i].transpose();
+        P(i, 2) += 50.;
     }
     visualizer_step(RMs);
     return ceres::SOLVER_CONTINUE;
