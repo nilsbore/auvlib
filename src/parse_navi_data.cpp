@@ -124,6 +124,12 @@ int main(int argc, char** argv)
     BBsT bounds;
     tie(submaps, trans, angs, matches, bounds) = load_or_create_submaps(folder);
     
+    Eigen::Vector3d origin = trans[0];
+    for (int i = 0; i < trans.size(); ++i) {
+        cout << "Trans " << i << ": " << trans[i].transpose() << endl;
+        trans[i].array() -= origin.array();
+    }
+    
     RotsT rots;
     SubmapsGPT gps;
     //visualize_submaps(submaps, trans, angs);
@@ -141,7 +147,7 @@ int main(int argc, char** argv)
 
         clip_submap(submaps[i], bounds[i], minx, maxx);
 
-        ProcessT gp(100, s0);
+        ProcessT gp(300, s0);
         gp.kernel.sigmaf_sq = sigma;
         gp.kernel.l_sq = lsq*lsq;
         gp.kernel.p(0) = gp.kernel.sigmaf_sq;
