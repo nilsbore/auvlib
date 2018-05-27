@@ -192,6 +192,7 @@ void register_processes_ceres(ObsT& points, SubmapsGPT& gps, TransT& trans, Angs
 
     ceres::Solver::Summary summary;
     
+	//vis->display();
 	auto handle = std::async(std::launch::async, [&options, &problem, &summary]() {
 		ceres::Solve(options, &problem, &summary);
 	});
@@ -263,8 +264,11 @@ int main(int argc, char** argv)
 	{
 	}*/
     
-
     matches = compute_matches(trans, rots, bounds);
+    /*for (int i = 0; i < trans.size(); ++i) {
+        trans[i](0) *= 2.5;
+        trans[i](1) *= 2.5;
+    }*/
     register_processes_ceres(points, gps, trans, angles, matches, bounds);
 
     return 0;
