@@ -122,6 +122,9 @@ IglVisCallback::IglVisCallback(ObsT& points, SubmapsGPT& gps, TransT& trans, Ang
     // Add per-vertex colors
     viewer.data().set_colors(C);
 
+    viewer.data().point_size = 10;
+    viewer.data().line_width = 1;
+
     viewer.callback_pre_draw = std::bind(&IglVisCallback::callback_pre_draw, this, std::placeholders::_1);
     viewer.callback_key_pressed = std::bind(&IglVisCallback::callback_key_pressed, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
     viewer.core.is_animating = true;
@@ -156,6 +159,7 @@ bool IglVisCallback::callback_key_pressed(igl::opengl::glfw::Viewer& viewer, uns
         return true;
     case 'p':
         toggle_matches = !toggle_matches;
+        viewer.data().show_overlay = toggle_matches;
     default:
         return false;
     }
