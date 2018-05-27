@@ -182,6 +182,7 @@ void register_processes_ceres(ObsT& points, SubmapsGPT& gps, TransT& trans, Angs
     ceres::Solver::Options options;
     //options.callbacks.push_back(new MultiVisCallback(points, gps, trans, rots));
 	IglVisCallback* vis = new IglVisCallback(points, gps, trans, rots, bounds);
+    vis->set_matches(matches);
     options.callbacks.push_back(vis);
     options.max_num_iterations = 200;
     options.update_state_every_iteration = true;

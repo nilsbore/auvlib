@@ -171,6 +171,9 @@ bool IglVisCallback::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
         viewer.data().compute_normals();
         if (toggle_matches) {
             viewer.data().set_points(P, Eigen::RowVector3d(1., 0., 0.));
+            if (E.rows() > 0) {
+                viewer.data().set_edges(P, E, Eigen::RowVector3d(1., 0., 0.));
+            }
         }
 		updated = false;
     }
@@ -216,4 +219,13 @@ ceres::CallbackReturnType IglVisCallback::operator()(const ceres::IterationSumma
     }
     visualizer_step(RMs);
     return ceres::SOLVER_CONTINUE;
+}
+
+void IglVisCallback::set_matches(const MatchesT& matches)
+{
+    //matches = new_matches;
+    E.resize(matches.size(), 2);
+    for (int i = 0; i < matches.size(); ++i) {
+        E.row(i) << matches[i].first, matches[i].second;
+    }
 }
