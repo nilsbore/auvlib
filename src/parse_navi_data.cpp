@@ -135,16 +135,6 @@ int main(int argc, char** argv)
     //visualize_submaps(submaps, trans, angs);
     for (int i = 0; i < submaps.size(); ++i) {
 
-        if (fabs(angs[i](2)) > M_PI/2.) {
-            submaps[i].leftCols(2).array() *= -1.; // rotate 180 degrees
-            if (angs[i](2) < -M_PI/2.) {
-                angs[i](2) += M_PI;
-            }
-            else {
-                angs[i](2) -= M_PI;
-            }
-        }
-
         clip_submap(submaps[i], bounds[i], minx, maxx);
 
         ProcessT gp(300, s0);

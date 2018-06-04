@@ -405,6 +405,20 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT> create_submaps(const vector<mbes_ping
 
         pos = next;
     }
+
+    // homogenize angles
+    for (int i = 0; i < submaps.size(); ++i) {
+        if (fabs(angs[i](2)) > M_PI/2.) {
+            submaps[i].leftCols(2).array() *= -1.; // rotate 180 degrees
+            if (angs[i](2) < -M_PI/2.) {
+                angs[i](2) += M_PI;
+            }
+            else {
+                angs[i](2) -= M_PI;
+            }
+        }
+    }
+
     return make_tuple(submaps, trans, angs, matches, bounds);
 }
 

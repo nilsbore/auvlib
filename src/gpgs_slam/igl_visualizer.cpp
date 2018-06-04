@@ -74,6 +74,22 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXi> IglVisCallback::vertices_faces_from_gp(E
 	return make_tuple(V, F);
 }
 
+void IglVisCallback::construct_points_matrices()
+{
+    vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> > RMs;
+    for (const Eigen::Vector3d& rot : rots) {
+        RMs.push_back(euler_to_matrix(rot(0), rot(1), rot(2)));
+    }
+
+    int counter = 0;
+    for (int i = 0; i < points.size(); ++i) {
+        Ps.block(counter, 0, points[i].rows(), 3) = (points[i]*RMs[i].transpose()).rowwise() + trans[i].transpose();
+		Eigen::RowVector3d Ci(double(colormap[i%43][0])/255., double(colormap[i%43][1])/255., double(colormap[i%43][2])/255.);
+		Cs.block(counter, 0, points[i].rows(), 3).rowwise() = Ci;
+        counter += points[i].rows();
+    }
+}
+
 IglVisCallback::IglVisCallback(ObsT& points, SubmapsGPT& gps, TransT& trans, AngsT& rots, BBsT& bounds)
     :  points(points), gps(gps), trans(trans), rots(rots), bounds(bounds)
 {
@@ -83,6 +99,7 @@ IglVisCallback::IglVisCallback(ObsT& points, SubmapsGPT& gps, TransT& trans, Ang
 	nbr_vertices = sz*sz;
     toggle_jet = false;
     toggle_matches = false;
+    toggle_points = false;
 
 	int nbr_processes = points.size();
 
@@ -93,6 +110,7 @@ IglVisCallback::IglVisCallback(ObsT& points, SubmapsGPT& gps, TransT& trans, Ang
 	C.resize(nbr_processes*nbr_faces, 3);
     P.resize(nbr_processes, 3);
 
+    nbr_points = 0;
     for (int i = 0; i < points.size(); ++i) {
         Eigen::Matrix3d RM = euler_to_matrix(rots[i](0), rots[i](1), rots[i](2));
         //CloudT::Ptr cloud = construct_submap_and_gp_cloud(points[i], gps[i], trans[i], RM, 2*i);
@@ -108,8 +126,11 @@ IglVisCallback::IglVisCallback(ObsT& points, SubmapsGPT& gps, TransT& trans, Ang
 
         P.row(i) = trans[i].transpose();
         P(i, 2) += 50.;
+        nbr_points += points[i].rows();
     }
 	V = V_new;
+    Ps.resize(nbr_points, 3);
+    Cs.resize(nbr_points, 3);
 
     /*
     vis = visualize_likelihoods(t2, RM2);
@@ -159,13 +180,24 @@ bool IglVisCallback::callback_key_pressed(igl::opengl::glfw::Viewer& viewer, uns
         }
         return true;
     case 'p':
+        toggle_points = false;
         toggle_matches = !toggle_matches;
         viewer.data().show_overlay = toggle_matches;
         if (toggle_matches) {
+            viewer.data().point_size = 10;
             viewer.data().set_points(P, Eigen::RowVector3d(1., 0., 0.));
             if (E.rows() > 0) {
                 viewer.data().set_edges(P, E, Eigen::RowVector3d(1., 0., 0.));
             }
+        }
+    case 'q':
+        toggle_matches = false;
+        toggle_points = !toggle_points;
+        viewer.data().show_overlay = toggle_points;
+        if (toggle_points) {
+            viewer.data().point_size = 4;
+            construct_points_matrices();
+            viewer.data().set_points(Ps, Cs);
         }
     default:
         return false;
@@ -185,6 +217,9 @@ bool IglVisCallback::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
             if (E.rows() > 0) {
                 viewer.data().set_edges(P, E, Eigen::RowVector3d(1., 0., 0.));
             }
+        }
+        if (toggle_points) {
+            viewer.data().set_points(Ps, Cs);
         }
 		updated = false;
     }
@@ -228,6 +263,7 @@ ceres::CallbackReturnType IglVisCallback::operator()(const ceres::IterationSumma
         P.row(i) = trans[i].transpose();
         P(i, 2) += 50.;
     }
+    construct_points_matrices();
     visualizer_step(RMs);
     return ceres::SOLVER_CONTINUE;
 }

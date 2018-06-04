@@ -28,6 +28,7 @@ private:
 	bool updated;
     bool toggle_matches;
     bool toggle_jet;
+    bool toggle_points;
     igl::opengl::glfw::Viewer viewer;
     ObsT& points;
     SubmapsGPT& gps;
@@ -42,6 +43,9 @@ private:
     Eigen::MatrixXi F; // the faces used in the viewer
     Eigen::MatrixXd P; // the center point of the different maps
     Eigen::MatrixXi E; // the matches edges
+    Eigen::MatrixXd Ps; // the concatenated submap points
+    Eigen::MatrixXd Cs; // the color of the concatenated submap points
+    int nbr_points; // the total number of points in the different submaps
 	//std::vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> > Vs; // the transformed vertices computed in each iteration
     cv::Mat vis;
     /*cv::Point old_point;
@@ -53,6 +57,7 @@ public:
     explicit IglVisCallback(ObsT& points, SubmapsGPT& gps, TransT& trans, AngsT& rots, BBsT& bounds);
     ~IglVisCallback() {}
 
+    void construct_points_matrices();
     void set_matches(const MatchesT& matches);
     void visualizer_step(std::vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> >& RMs);
 	std::tuple<Eigen::MatrixXd, Eigen::MatrixXi> vertices_faces_from_gp(Eigen::MatrixXd& points, ProcessT& gp, Eigen::Matrix2d& bb);

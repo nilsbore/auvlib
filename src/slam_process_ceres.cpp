@@ -48,6 +48,14 @@ void subsample_cloud(Eigen::MatrixXd& points, int subsample)
     points.conservativeResize(counter, 3);
 }
 
+// we should just create our own data structure called something like "SlamProblemGP"
+// that struct should come with all the utilities to save and load the problem
+// ok, let's do that tomorrow, and not do it here
+/*void save_gps()
+{
+
+}*/
+
 tuple<ObsT, SubmapsGPT, TransT, RotsT, AngsT, MatchesT, BBsT> train_or_load_gps(double lsq, double sigma, double s0,
                                                                                 const boost::filesystem::path& folder)
 {
@@ -247,6 +255,7 @@ int main(int argc, char** argv)
     BBsT bounds;
     tie(points, gps, trans, rots, angles, matches, bounds) = train_or_load_gps(lsq, sigma, s0, folder);
 	
+    ObsT original_points = points;
     for (Eigen::MatrixXd& p : points) {
         subsample_cloud(p, subsample);
     }
@@ -270,6 +279,14 @@ int main(int argc, char** argv)
         trans[i](1) *= 2.5;
     }*/
     register_processes_ceres(points, gps, trans, angles, matches, bounds);
+	
+    // write to disk for next time
+    std::ofstream os("gp_results.cereal", std::ofstream::binary);
+	{
+		cereal::BinaryOutputArchive archive(os);
+        archive(original_points, gps, trans, rots, angles, matches, bounds);
+	}
+    os.close();
 
     return 0;
 }
