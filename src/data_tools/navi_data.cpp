@@ -410,6 +410,9 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT> create_submaps(const vector<mbes_ping
     for (int i = 0; i < submaps.size(); ++i) {
         if (fabs(angs[i](2)) > M_PI/2.) {
             submaps[i].leftCols(2).array() *= -1.; // rotate 180 degrees
+            Matrix2d bb = bounds[i];
+            bounds[i].row(0) = -bb.row(1);
+            bounds[i].row(1) = -bb.row(0);
             if (angs[i](2) < -M_PI/2.) {
                 angs[i](2) += M_PI;
             }

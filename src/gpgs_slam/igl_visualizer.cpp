@@ -15,22 +15,22 @@ using namespace std;
 
 tuple<Eigen::MatrixXd, Eigen::MatrixXi> IglVisCallback::vertices_faces_from_gp(Eigen::MatrixXd& points, ProcessT& gp, Eigen::Matrix2d& bb)
 {
-	double meanx = points.col(0).mean();
-	double meany = points.col(1).mean();
-	double meanz = points.col(2).mean();
+	//double meanx = points.col(0).mean();
+	//double meany = points.col(1).mean();
+	//double meanz = points.col(2).mean();
 	
-	points.col(0).array() -= meanx;
-	points.col(1).array() -= meany;
-	points.col(2).array() -= meanz;
+	//points.col(0).array() -= meanx;
+	//points.col(1).array() -= meany;
+	//points.col(2).array() -= meanz;
     
 	double maxx = bb(1, 0); // points.col(0).maxCoeff();
 	double minx = bb(0, 0); //points.col(0).minCoeff();
 	double maxy = bb(1, 1); //points.col(1).maxCoeff();
 	double miny = bb(0, 1); //points.col(1).minCoeff();
-	double maxz = points.col(2).maxCoeff();
-	double minz = points.col(2).minCoeff();
+	//double maxz = points.col(2).maxCoeff();
+	//double minz = points.col(2).minCoeff();
 
-	cout << "Max z: " << maxz << ", Min z: " << minz << endl;
+	//cout << "Max z: " << maxz << ", Min z: " << minz << endl;
 
 	double xstep = (maxx - minx)/float(sz-1);
 	double ystep = (maxy - miny)/float(sz-1);
@@ -65,7 +65,7 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXi> IglVisCallback::vertices_faces_from_gp(E
 	cout << "Done predicting gaussian process..." << endl;
 	cout << "X size: " << maxx - minx << endl;
 	cout << "Y size: " << maxy - miny << endl;
-	cout << "Z size: " << maxz - minz << endl;
+	//cout << "Z size: " << maxz - minz << endl;
 
 	Eigen::MatrixXd V(X_star.rows(), 3);
 	V.leftCols(2) = X_star;

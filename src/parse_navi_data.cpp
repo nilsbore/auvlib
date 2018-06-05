@@ -24,7 +24,6 @@ void clip_submap(Eigen::MatrixXd& points, Eigen::Matrix2d& bounds, double minx, 
     bounds(0, 0) = max(minx, bounds(0, 0));
     bounds(1, 0) = min(maxx, bounds(1, 0));
 
-    //int subsample = 13; //37; // Works best
     int counter = 0;
     for (int i = 0; i < points.rows(); ++i) {
         if (points(i, 0) > minx && points(i, 0) < maxx) {
@@ -137,7 +136,7 @@ int main(int argc, char** argv)
 
         clip_submap(submaps[i], bounds[i], minx, maxx);
 
-        ProcessT gp(300, s0);
+        ProcessT gp(100, s0);
         gp.kernel.sigmaf_sq = sigma;
         gp.kernel.l_sq = lsq*lsq;
         gp.kernel.p(0) = gp.kernel.sigmaf_sq;
