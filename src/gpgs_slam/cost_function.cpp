@@ -31,6 +31,53 @@ void GaussianProcessCostFunction::get_transform_jacobian(Eigen::MatrixXd& J, con
 	
 }
 
+pair<vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> >,
+     vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> > >
+GaussianProcessCostFunction::get_new_transform_jacobian(const Eigen::MatrixXd& X,
+                                                        const Eigen::Vector3d& t1, const Eigen::Vector3d& rot1,
+                                                        const Eigen::Vector3d& t2, const Eigen::Vector3d& rot2) const
+{
+    // Ok, let's write this out for the future
+	// 3 is the X axis rotation, 4 Y axis, and 5 Z axis rotation
+	// so rotating around Z(5), would give us higher Y, proportional to x(1)
+	// and lower X, proportional to x(0)
+    vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> > R1s = euler_to_matrices(rot1(0), rot1(1), rot1(2));
+    vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> > R2s = euler_to_matrices(rot2(0), rot2(1), rot2(2));
+    vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> > R1ds = euler_to_diff_matrices(rot1(0), rot1(1), rot1(2));
+    vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> > R2ds = euler_to_diff_matrices(rot2(0), rot2(1), rot2(2));
+    for (int i = 0; i < 3; ++i) {
+        R1s[i] = R1s[i].transpose();
+        R1ds[i] = R1ds[i].transpose();
+    }
+    Eigen::Matrix3d R1 = R1s[2]*R1s[1]*R1s[0];
+    Eigen::Matrix3d R2 = R2s[0]*R2s[1]*R2s[2];
+    
+    vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> > J1s; 
+    vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> > J2s; 
+    for (int i = 0; i < X.rows(); ++i) {
+        Eigen::Vector3d p = X.row(i).transpose();
+
+        Eigen::MatrixXd J1(3, 6);
+        Eigen::MatrixXd J2(3, 6);
+
+        J2.topRows<3>() = R1;
+        J1.topRows<3>() = -R1;
+
+        J2.row(3) = (R1*R2ds[0]*R2s[1]*R2s[2]*p).transpose();
+        J2.row(4) = (R1*R2s[0]*R2ds[1]*R2s[2]*p).transpose();
+        J2.row(5) = (R1*R2s[0]*R2s[1]*R2ds[2]*p).transpose();
+
+        J1.row(3) = (R1s[2]*R1s[1]*R1ds[0]*R2*p).transpose();
+        J1.row(4) = (R1s[2]*R1ds[1]*R1s[0]*R2*p).transpose();
+        J1.row(5) = (R1ds[2]*R1s[1]*R1s[0]*R2*p).transpose();
+
+        J1s.push_back(J1);
+        J2s.push_back(J2);
+    }
+	
+    return make_pair(J1s, J2s);
+}
+
 bool GaussianProcessCostFunction::Evaluate(double const* const* parameters, double* residuals, double** jacobians) const
 {
     Eigen::Vector3d t1(parameters[0][0], parameters[0][1], parameters[0][2]);

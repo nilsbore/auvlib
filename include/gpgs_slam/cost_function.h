@@ -25,6 +25,12 @@ public:
     virtual ~GaussianProcessCostFunction() {}
 
     void get_transform_jacobian(Eigen::MatrixXd& J, const Eigen::Vector3d& x) const;
+
+    std::pair<std::vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> >,
+              std::vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> > >
+    get_new_transform_jacobian(const Eigen::MatrixXd& X,
+                               const Eigen::Vector3d& t1, const Eigen::Vector3d& rot1,
+                               const Eigen::Vector3d& t2, const Eigen::Vector3d& rot2) const;
 	// somehow, the parameters must contain the transform both for 1 and 2
 	// parameters: translation1, rotation1, translation2, rotation2, dim 2*(3+3)
 	// residuals: neg-log-likelihood of points2 with respect to gp1 and transforms, dim 1
