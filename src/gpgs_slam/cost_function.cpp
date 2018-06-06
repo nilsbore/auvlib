@@ -67,9 +67,9 @@ GaussianProcessCostFunction::get_new_transform_jacobian(const Eigen::MatrixXd& X
         J2.row(4) = (R1*R2s[0]*R2ds[1]*R2s[2]*p).transpose();
         J2.row(5) = (R1*R2s[0]*R2s[1]*R2ds[2]*p).transpose();
 
-        J1.row(3) = (R1s[2]*R1s[1]*R1ds[0]*R2*p).transpose();
-        J1.row(4) = (R1s[2]*R1ds[1]*R1s[0]*R2*p).transpose();
-        J1.row(5) = (R1ds[2]*R1s[1]*R1s[0]*R2*p).transpose();
+        J1.row(3) = (R1s[2]*R1s[1]*R1ds[0]*(R2*p+t2-t1)).transpose();
+        J1.row(4) = (R1s[2]*R1ds[1]*R1s[0]*(R2*p+t2-t1)).transpose();
+        J1.row(5) = (R1ds[2]*R1s[1]*R1s[0]*(R2*p+t2-t1)).transpose();
 
         J1s.push_back(J1);
         J2s.push_back(J2);
