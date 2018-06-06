@@ -179,6 +179,10 @@ void register_processes_ceres(ObsT& points, SubmapsGPT& gps, TransT& trans, Angs
         problem.SetParameterLowerBound(trans[i].data(), 1, trans[i](1) - 100.);
         problem.SetParameterUpperBound(trans[i].data(), 0, trans[i](0) + 100.);
         problem.SetParameterUpperBound(trans[i].data(), 1, trans[i](1) + 100.);
+
+        problem.SetParameterLowerBound(rots[i].data(), 2, rots[i](2) - M_PI);
+        problem.SetParameterUpperBound(rots[i].data(), 2, rots[i](2) + M_PI);
+
         //problem.SetParameterBlockConstant(rots[i].data());
         ceres::SubsetParameterization *subset_parameterization = new ceres::SubsetParameterization(3, {0, 1});
         problem.SetParameterization(rots[i].data(), subset_parameterization);
