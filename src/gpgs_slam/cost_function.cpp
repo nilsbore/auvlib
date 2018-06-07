@@ -96,6 +96,7 @@ bool GaussianProcessCostFunction::Evaluate(double const* const* parameters, doub
     Eigen::VectorXd ll;
 
     bool compute_derivatives = jacobians != NULL;
+    // TODO: we differentiate wrt the process, not the points, leading to a sign reversal. Fix this
     gp1.compute_neg_log_derivatives_fast(ll, dX, points2in1.leftCols<2>(), points2in1.col(2), compute_derivatives);
 
     //gp1.compute_neg_log_likelihoods(ll, points2in1.leftCols(2), points2in1.col(2));
@@ -110,6 +111,7 @@ bool GaussianProcessCostFunction::Evaluate(double const* const* parameters, doub
         cout << "Done computing derivatives..." << endl;
         //dX *= R1.transpose();
     
+        // transform back from coordinates system of 1 to 2
         Eigen::MatrixXd points2sub = points2in1*R1.transpose()*R2;
 	    points2sub.rowwise() += (t1.transpose()*R2 - t2.transpose()*R2);
     
