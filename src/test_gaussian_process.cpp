@@ -5,8 +5,6 @@
 #include <pcl/visualization/cloud_viewer.h>
 
 #include <ceres/ceres.h>
-#include <pose_graph_3d/pose_graph_3d_error_term.h>
-#include <pose_graph_3d/types.h>
 
 #include <sparse_gp/sparse_gp.h>
 #include <sparse_gp/rbf_kernel.h>
