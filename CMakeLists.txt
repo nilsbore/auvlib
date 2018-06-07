@@ -65,7 +65,7 @@ add_executable(helloworld src/helloworld.cpp)
 target_link_libraries(helloworld ${CERES_LIBRARIES})
 
 add_executable(parse_navi_data src/parse_navi_data.cpp)
-target_link_libraries(parse_navi_data navi_data sparse_gp gpgs_transforms gpgs_igl_visualizer ${PCL_LIBRARIES})
+target_link_libraries(parse_navi_data navi_data sparse_gp gpgs_transforms gpgs_igl_visualizer data_structures ${PCL_LIBRARIES})
 
 add_executable(pose_graph_3d src/pose_graph_3d.cpp)
 target_link_libraries(pose_graph_3d ${CERES_LIBRARIES})
@@ -87,11 +87,11 @@ add_executable(register_process_ceres src/register_process_ceres.cpp)
 target_link_libraries(register_process_ceres submaps gpgs_cost_function gpgs_visualization)
 
 add_executable(slam_process_ceres src/slam_process_ceres.cpp)
-target_link_libraries(slam_process_ceres submaps gpgs_cost_function gpgs_visualization gpgs_multi_visualizer gpgs_igl_visualizer)
+target_link_libraries(slam_process_ceres submaps gpgs_cost_function gpgs_visualization gpgs_multi_visualizer gpgs_igl_visualizer data_structures)
 
 add_executable(visualize_slam_process src/visualize_slam_process.cpp)
 #target_link_libraries(visualize_slam_process submaps gpgs_cost_function gpgs_visualization gpgs_multi_visualizer gpgs_igl_visualizer)
-target_link_libraries(visualize_slam_process gpgs_visualization gpgs_igl_visualizer)
+target_link_libraries(visualize_slam_process gpgs_visualization gpgs_igl_visualizer data_structures)
 
 add_executable(test_fast_derivatives test/test_fast_derivatives.cpp)
 target_link_libraries(test_fast_derivatives submaps gpgs_cost_function gpgs_visualization gpgs_multi_visualizer gpgs_transforms)

@@ -1,5 +1,6 @@
 #include <cxxopts.hpp>
 #include <data_tools/navi_data.h>
+#include <data_tools/data_structures.h>
 #include <boost/filesystem.hpp>
 
 #include <cereal/archives/json.hpp>
@@ -16,8 +17,6 @@
 #include <gpgs_slam/transforms.h>
 
 using namespace std;
-using ProcessT = sparse_gp<rbf_kernel, gaussian_noise>;
-using SubmapsGPT = vector<ProcessT>; // Process does not require aligned allocation as all matrices are dynamic
 
 void clip_submap(Eigen::MatrixXd& points, Eigen::Matrix2d& bounds, double minx, double maxx)
 {
@@ -116,54 +115,45 @@ int main(int argc, char** argv)
 	boost::filesystem::path folder(folder_str);
 	cout << "Folder : " << folder << endl;
     
-    ObsT submaps;
-    TransT trans;
-    AngsT angs;
-    MatchesT matches;
-    BBsT bounds;
-    tie(submaps, trans, angs, matches, bounds) = load_or_create_submaps(folder);
+    load_or_create_submaps(folder);
+    cout << "DEBUG 1" << endl;
+    gp_submaps ss;
+    tie(ss.points, ss.trans, ss.angles, ss.matches, ss.bounds) = load_or_create_submaps(folder);
+
+    cout << "DEBUG 2" << endl;
     
-    Eigen::Vector3d origin = trans[0];
-    for (int i = 0; i < trans.size(); ++i) {
-        cout << "Trans " << i << ": " << trans[i].transpose() << endl;
-        trans[i].array() -= origin.array();
+    Eigen::Vector3d origin = ss.trans[0];
+    for (int i = 0; i < ss.trans.size(); ++i) {
+        cout << "Trans " << i << ": " << ss.trans[i].transpose() << endl;
+        ss.trans[i].array() -= origin.array();
     }
     
-    RotsT rots;
-    SubmapsGPT gps;
-    //visualize_submaps(submaps, trans, angs);
-    for (int i = 0; i < submaps.size(); ++i) {
+    for (int i = 0; i < ss.points.size(); ++i) {
 
-        clip_submap(submaps[i], bounds[i], minx, maxx);
+        clip_submap(ss.points[i], ss.bounds[i], minx, maxx);
 
-        ProcessT gp(100, s0);
+        gp_submaps::ProcessT gp(100, s0);
         gp.kernel.sigmaf_sq = sigma;
         gp.kernel.l_sq = lsq*lsq;
         gp.kernel.p(0) = gp.kernel.sigmaf_sq;
         gp.kernel.p(1) = gp.kernel.l_sq;
         // this will also centralize the points
-        Eigen::MatrixXd X = submaps[i].leftCols(2);
-        Eigen::VectorXd y = submaps[i].col(2);
+        Eigen::MatrixXd X = ss.points[i].leftCols(2);
+        Eigen::VectorXd y = ss.points[i].col(2);
         //gp.train_parameters(X, y);
         gp.add_measurements(X, y);
 
         std::cout << "Done training gaussian process..." << std::endl;
-        gps.push_back(gp);
+        ss.gps.push_back(gp);
         cout << "Pushed back..." << endl;
 
-        rots.push_back(euler_to_matrix(angs[i](0), angs[i](1), angs[i](2)));
+        ss.rots.push_back(euler_to_matrix(ss.angles[i](0), ss.angles[i](1), ss.angles[i](2)));
     }
 	
-    IglVisCallback* vis = new IglVisCallback(submaps, gps, trans, angs, bounds);
+    IglVisCallback* vis = new IglVisCallback(ss.points, ss.gps, ss.trans, ss.angles, ss.bounds);
     vis->display();
 
-	// write to disk for next time
-    std::ofstream os("gp_submaps.cereal", std::ofstream::binary);
-	{
-		cereal::BinaryOutputArchive archive(os);
-        archive(submaps, gps, trans, rots, angs, matches, bounds);
-	}
-    os.close();
+    write_data(ss, boost::filesystem::path("gp_submaps.cereal"));
 
     return 0;
 }

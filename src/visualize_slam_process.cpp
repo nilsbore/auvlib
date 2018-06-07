@@ -9,15 +9,10 @@
 #include <cereal/types/vector.hpp>
 #include <cereal/types/utility.hpp>
 
+#include <data_tools/data_structures.h>
 #include <gpgs_slam/igl_visualizer.h>
 
 using namespace std;
-using TransT = vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> >;
-using RotsT = vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> >;
-using AngsT = vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> >;
-using ProcessT = sparse_gp<rbf_kernel, gaussian_noise>;
-using SubmapsGPT = vector<ProcessT>;
-using ObsT = vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> >;
 
 int main(int argc, char** argv)
 {
@@ -47,24 +42,12 @@ int main(int argc, char** argv)
         cout << "File: " << file_path << " does not exist..." << endl;
         exit(0);
     }
-		
-    TransT trans;
-	RotsT rots;
-    AngsT angles;
-    SubmapsGPT gps;
-    ObsT obs;
-    MatchesT matches;
-    BBsT bounds;
-    std::ifstream is(file_path.string(), std::ifstream::binary);
-    {
-        cereal::BinaryInputArchive archive(is);
-        archive(obs, gps, trans, rots, angles, matches, bounds);
-    }
-    is.close();
+
+    gp_submaps ss = read_data<gp_submaps>(file_path);		
 	
-    IglVisCallback* vis = new IglVisCallback(obs, gps, trans, angles, bounds);
-    vis->set_matches(matches);
-	vis->display();
+    IglVisCallback vis(ss.points, ss.gps, ss.trans, ss.angles, ss.bounds);
+    vis.set_matches(ss.matches);
+	vis.display();
 
     return 0;
 }
