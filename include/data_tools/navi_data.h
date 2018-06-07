@@ -14,27 +14,27 @@ using ObsT = std::vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::Matrix
 using MatchesT = std::vector<std::pair<int, int> >; // tells us which maps overlap
 using BBsT = std::vector<Eigen::Matrix2d, Eigen::aligned_allocator<Eigen::Matrix2d> >;
 
-void match_timestamps(std::vector<mbes_ping>& pings, std::vector<nav_entry>& entries);
-void view_cloud(const std::vector<mbes_ping>& pings);
+void match_timestamps(mbes_ping::PingsT& pings, nav_entry::EntriesT& entries);
+void view_cloud(const mbes_ping::PingsT& pings);
 
 template <typename T>
-std::vector<T> read_file(const boost::filesystem::path& file)
+std::vector<T, Eigen::aligned_allocator<T> > parse_file(const boost::filesystem::path& file)
 {
-    std::vector<T> rtn;
+    std::vector<T, Eigen::aligned_allocator<T> > rtn;
     return rtn;
 }
 
 template <>
-std::vector<mbes_ping> read_file(const boost::filesystem::path& file);
+mbes_ping::PingsT parse_file(const boost::filesystem::path& file);
 
 template <>
-std::vector<nav_entry> read_file(const boost::filesystem::path& file);
+nav_entry::EntriesT parse_file(const boost::filesystem::path& file);
 
 template <typename T>
-std::vector<T> read_folder(const boost::filesystem::path& folder)
+std::vector<T, Eigen::aligned_allocator<T> > parse_folder(const boost::filesystem::path& folder)
 {
 	
-    std::vector<T> pings;
+    std::vector<T, Eigen::aligned_allocator<T> > pings;
 
     if(!boost::filesystem::is_directory(folder)) {
         std::cout << folder << " is not a directory containing" << std::endl;
@@ -46,16 +46,16 @@ std::vector<T> read_folder(const boost::filesystem::path& folder)
 	    if (boost::filesystem::is_directory(entry.path())) {
 		    continue;
 		}
-        std::vector<T> file_pings = read_file<T>(entry.path());
+        std::vector<T, Eigen::aligned_allocator<T> > file_pings = parse_file<T>(entry.path());
 		pings.insert(pings.end(), file_pings.begin(), file_pings.end());
     }
 
     return pings;
 }
 
-void divide_tracks(std::vector<mbes_ping>& pings);
-void divide_tracks_equal(std::vector<mbes_ping>& pings);
-std::tuple<ObsT, TransT, AngsT, MatchesT, BBsT> create_submaps(const std::vector<mbes_ping>& pings);
+void divide_tracks(mbes_ping::PingsT& pings);
+void divide_tracks_equal(mbes_ping::PingsT& pings);
+std::tuple<ObsT, TransT, AngsT, MatchesT, BBsT> create_submaps(const mbes_ping::PingsT& pings);
 void visualize_submaps(ObsT& submaps, TransT& trans, AngsT& angs);
 
 #endif // NAVI_DATA_H

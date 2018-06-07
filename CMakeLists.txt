@@ -73,9 +73,6 @@ target_link_libraries(parse_sim_data sparse_gp gpgs_transforms submaps data_stru
 #add_executable(pose_graph_3d src/pose_graph_3d.cpp)
 #target_link_libraries(pose_graph_3d ${CERES_LIBRARIES})
 
-add_executable(test_gaussian_process src/test_gaussian_process.cpp)
-target_link_libraries(test_gaussian_process sparse_gp rbf_kernel gaussian_noise probit_noise octave_convenience submaps ${PCL_LIBRARIES} ${CERES_LIBRARIES})
-
 add_executable(visualize_pointclouds src/visualize_pointclouds.cpp)
 target_link_libraries(visualize_pointclouds ${PCL_LIBRARIES})
 
@@ -96,8 +93,15 @@ add_executable(visualize_slam_process src/visualize_slam_process.cpp)
 #target_link_libraries(visualize_slam_process submaps gpgs_cost_function gpgs_visualization gpgs_multi_visualizer gpgs_igl_visualizer)
 target_link_libraries(visualize_slam_process gpgs_visualization gpgs_igl_visualizer data_structures)
 
+# TESTS
+add_executable(test_gaussian_process test/test_gaussian_process.cpp)
+target_link_libraries(test_gaussian_process sparse_gp rbf_kernel gaussian_noise probit_noise octave_convenience submaps ${PCL_LIBRARIES} ${CERES_LIBRARIES})
+
 add_executable(test_fast_derivatives test/test_fast_derivatives.cpp)
 target_link_libraries(test_fast_derivatives submaps gpgs_cost_function gpgs_visualization gpgs_multi_visualizer gpgs_transforms)
+
+add_executable(test_parse_navi_data test/test_parse_navi_data.cpp)
+target_link_libraries(test_parse_navi_data navi_data gpgs_transforms data_structures)
 
 #add_executable(test_igl src/test_igl.cpp)
 #target_link_libraries(test_igl glad ${GLFW3_LIBRARY} ${OPENGL_LIBRARY} ${OPENGL_glu_LIBRARY} -lpthread sparse_gp rbf_kernel gaussian_noise probit_noise octave_convenience submaps)

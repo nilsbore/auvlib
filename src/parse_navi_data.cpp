@@ -58,8 +58,8 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT> load_or_create_submaps(const boost::f
     // Parse Intensity files
     boost::filesystem::path intensities_dir = folder / "Intensities";
 
-	vector<mbes_ping> pings = read_folder<mbes_ping>(pings_dir);
-	vector<nav_entry> entries = read_folder<nav_entry>(nav_dir);
+    mbes_ping::PingsT pings = parse_folder<mbes_ping>(pings_dir);
+    nav_entry::EntriesT entries = parse_folder<nav_entry>(nav_dir);
 
     match_timestamps(pings, entries);
     //divide_tracks(pings);

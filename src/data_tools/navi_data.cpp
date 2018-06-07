@@ -20,7 +20,7 @@ using namespace Eigen;
 using PointT = pcl::PointXYZRGB;
 using CloudT = pcl::PointCloud<PointT>;
 
-void match_timestamps(vector<mbes_ping>& pings, vector<nav_entry>& entries)
+void match_timestamps(mbes_ping::PingsT& pings, nav_entry::EntriesT& entries)
 {
 
     std::stable_sort(pings.begin(), pings.end(), [](const mbes_ping& ping1, const mbes_ping& ping2) {
@@ -58,7 +58,7 @@ void match_timestamps(vector<mbes_ping>& pings, vector<nav_entry>& entries)
 
 }
 
-void view_cloud(const vector<mbes_ping>& pings)
+void view_cloud(const mbes_ping::PingsT& pings)
 {
     CloudT::Ptr cloud(new CloudT);
 	Array3d mean(0., 0., 0.);
@@ -100,9 +100,9 @@ void view_cloud(const vector<mbes_ping>& pings)
 // 11: Pitch
 // 12: Roll
 template <>
-vector<mbes_ping> read_file(const boost::filesystem::path& file)
+mbes_ping::PingsT parse_file(const boost::filesystem::path& file)
 {
-    vector<mbes_ping> pings;
+    mbes_ping::PingsT pings;
 
 	string line;
     std::ifstream infile(file.string());
@@ -162,9 +162,9 @@ vector<mbes_ping> read_file(const boost::filesystem::path& file)
 // 4: Depth (given in positive values!)
 // 5: Zeros
 template <>
-vector<nav_entry> read_file(const boost::filesystem::path& file)
+nav_entry::EntriesT parse_file(const boost::filesystem::path& file)
 {
-    vector<nav_entry> entries;
+    nav_entry::EntriesT entries;
 
     nav_entry entry;
     double x, y, z;
@@ -203,7 +203,7 @@ vector<nav_entry> read_file(const boost::filesystem::path& file)
 	return entries;
 }
 
-void divide_tracks(vector<mbes_ping>& pings)
+void divide_tracks(mbes_ping::PingsT& pings)
 {
     for (auto pos = pings.begin(); pos != pings.end(); ) {
         auto next = std::find_if(pos, pings.end(), [&](const mbes_ping& ping) {
@@ -249,7 +249,7 @@ void divide_tracks(vector<mbes_ping>& pings)
     }
 }
 
-void divide_tracks_equal(vector<mbes_ping>& pings)
+void divide_tracks_equal(mbes_ping::PingsT& pings)
 {
     Vector2d point1, point2, dir; // first and last point on line
     vector<bool> line_positive_directions;
@@ -353,7 +353,7 @@ void divide_tracks_equal(vector<mbes_ping>& pings)
     }
 }
 
-tuple<ObsT, TransT, AngsT, MatchesT, BBsT> create_submaps(const vector<mbes_ping>& pings)
+tuple<ObsT, TransT, AngsT, MatchesT, BBsT> create_submaps(const mbes_ping::PingsT& pings)
 {
     ObsT submaps;
     TransT trans;
@@ -364,7 +364,7 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT> create_submaps(const vector<mbes_ping
         auto next = std::find_if(pos, pings.end(), [&](const mbes_ping& ping) {
             return ping.first_in_file_ && (&ping != &(*pos));
         });
-        vector<mbes_ping> track_pings;
+        mbes_ping::PingsT track_pings;
         track_pings.insert(track_pings.end(), pos, next);
         cout << "found 1 pos!" << endl;
 
