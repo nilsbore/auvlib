@@ -115,12 +115,8 @@ int main(int argc, char** argv)
 	boost::filesystem::path folder(folder_str);
 	cout << "Folder : " << folder << endl;
     
-    load_or_create_submaps(folder);
-    cout << "DEBUG 1" << endl;
     gp_submaps ss;
     tie(ss.points, ss.trans, ss.angles, ss.matches, ss.bounds) = load_or_create_submaps(folder);
-
-    cout << "DEBUG 2" << endl;
     
     Eigen::Vector3d origin = ss.trans[0];
     for (int i = 0; i < ss.trans.size(); ++i) {
@@ -150,8 +146,8 @@ int main(int argc, char** argv)
         ss.rots.push_back(euler_to_matrix(ss.angles[i](0), ss.angles[i](1), ss.angles[i](2)));
     }
 	
-    IglVisCallback* vis = new IglVisCallback(ss.points, ss.gps, ss.trans, ss.angles, ss.bounds);
-    vis->display();
+    IglVisCallback vis(ss.points, ss.gps, ss.trans, ss.angles, ss.bounds);
+    vis.display();
 
     write_data(ss, boost::filesystem::path("gp_submaps.cereal"));
 

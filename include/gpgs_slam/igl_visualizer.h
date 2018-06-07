@@ -9,7 +9,7 @@
 #include <sparse_gp/rbf_kernel.h>
 #include <sparse_gp/gaussian_noise.h>
 
-#include <opencv2/core.hpp>
+//#include <opencv2/core.hpp>
 
 using ProcessT = sparse_gp<rbf_kernel, gaussian_noise>;
 using TransT = std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> >;
@@ -47,7 +47,7 @@ private:
     Eigen::MatrixXd Cs; // the color of the concatenated submap points
     int nbr_points; // the total number of points in the different submaps
 	//std::vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> > Vs; // the transformed vertices computed in each iteration
-    cv::Mat vis;
+    //cv::Mat vis;
     /*cv::Point old_point;
     double step_offset;
     double factor;

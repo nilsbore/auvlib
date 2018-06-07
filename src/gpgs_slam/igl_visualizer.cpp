@@ -3,9 +3,9 @@
 #include <data_tools/submaps.h>
 #include <data_tools/colormap.h>
 
-#include <opencv2/highgui.hpp>
-#include <opencv2/core/eigen.hpp>
-#include <opencv2/imgproc.hpp>
+//#include <opencv2/highgui.hpp>
+//#include <opencv2/core/eigen.hpp>
+//#include <opencv2/imgproc.hpp>
 
 #include <gpgs_slam/visualization.h>
 
@@ -154,9 +154,9 @@ IglVisCallback::IglVisCallback(ObsT& points, SubmapsGPT& gps, TransT& trans, Ang
 	//viewer.launch();
     viewer.core.background_color << 1., 1., 1., 1.; // white background
 
-    vis = cv::imread("temp.png");
-    cv::imshow("registration", vis);
-    cv::waitKey(0);
+    //vis = cv::imread("temp.png");
+    //cv::imshow("registration", vis);
+    //cv::waitKey(0);
 }
 
 void IglVisCallback::display()

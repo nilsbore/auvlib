@@ -158,6 +158,8 @@ void register_processes_ceres(gp_submaps& ss)
     //options.callbacks.push_back(new MultiVisCallback(points, gps, trans, rots));
 	IglVisCallback* vis = new IglVisCallback(ss.points, ss.gps, ss.trans, ss.angles, ss.bounds);
     vis->set_matches(ss.matches);
+    //vis->display(); // display initial conditions before starting optimization
+
     options.callbacks.push_back(vis);
     options.max_num_iterations = 200;
     options.update_state_every_iteration = true;
@@ -173,6 +175,7 @@ void register_processes_ceres(gp_submaps& ss)
 	});
 	vis->display();
 	handle.get();
+    delete vis; // it seems like memory of this is not handled by ceres
 
     std::cout << summary.FullReport() << '\n';
 
