@@ -41,81 +41,6 @@ void subsample_cloud(Eigen::MatrixXd& points, int subsample)
     points.conservativeResize(counter, 3);
 }
 
-gp_submaps train_or_load_gps(double lsq, double sigma, double s0, const boost::filesystem::path& folder)
-{
-    boost::filesystem::path path("gp_submaps.cereal");
-
-    if (boost::filesystem::exists(path)) {
-		return read_data<gp_submaps>(path);
-    }
-
-    SubmapsT submaps = read_submaps(folder);
-    for (int i = 0; i < submaps.size(); ++i) {
-        submaps[i].resize(4);
-    }
-    submaps.resize(4);
-
-    gp_submaps ss;
-    for (const auto& row : submaps) {
-        ss.points.insert(ss.points.end(), row.begin(), row.end());
-    }
-    for (int i = 0; i < ss.points.size(); ++i) {
-        Eigen::Matrix2d bb;
-        bb.row(0) << -465., -465.; // bottom left corner
-        bb.row(1) << 465., 465.; // top right corner
-        ss.bounds.push_back(bb);
-    }
-
-    for (int j = 1; j < submaps[0].size(); ++j) {
-        int i = 0;
-        ss.matches.push_back(make_pair(i*submaps[i].size()+j, i*submaps[i].size()+j-1));
-    }
-    for (int i = 1; i < submaps.size(); ++i) {
-        int j = 0;
-        ss.matches.push_back(make_pair(i*submaps[i].size()+j, (i-1)*submaps[i].size()+j));
-    }
-    for (int i = 1; i < submaps.size(); ++i) {
-        for (int j = 1; j < submaps[i].size(); ++j) {
-            ss.matches.push_back(make_pair(i*submaps[i].size()+j, i*submaps[i].size()+j-1));
-            ss.matches.push_back(make_pair(i*submaps[i].size()+j, (i-1)*submaps[i].size()+j));
-        }
-    }
-    
-    // check if already available
-    ss.trans.resize(ss.points.size());
-	ss.rots.resize(ss.points.size());
-	SubmapsGPT gps;
-    for (int i = 0; i < ss.points.size(); ++i) {
-        ProcessT gp(100, s0);
-        gp.kernel.sigmaf_sq = sigma;
-        gp.kernel.l_sq = lsq*lsq;
-        gp.kernel.p(0) = gp.kernel.sigmaf_sq;
-        gp.kernel.p(1) = gp.kernel.l_sq;
-        // this will also centralize the points
-        tie(ss.trans[i], ss.rots[i]) = train_gp(ss.points[i], gp);
-        ss.gps.push_back(gp);
-        cout << "Pushed back..." << endl;
-    }
-    
-    for (const Eigen::Matrix3d& R : ss.rots) {
-        Eigen::Vector3d a; a << 0., 0., 0.;
-        ss.angles.push_back(a);
-    }
-    
-    std::default_random_engine generator;
-    std::normal_distribution<double> distribution(0., 1.);
-    for (int i = 0; i < ss.points.size(); ++i) {
-        ss.trans[i](0) += 30.*distribution(generator);
-        ss.trans[i](1) += 30.*distribution(generator);
-        ss.angles[i](2) += 0.2*distribution(generator);
-        ss.rots[i] = Eigen::AngleAxisd(ss.angles[i](2), Eigen::Vector3d::UnitZ()).matrix();
-    }
-
-    write_data(ss, path);
-    
-    return ss;
-}
-
 void register_processes_ceres(gp_submaps& ss)
 {
     ceres::Problem problem;
@@ -185,35 +110,33 @@ void register_processes_ceres(gp_submaps& ss)
 // Example: ./visualize_process --folder ../scripts --lsq 100.0 --sigma 0.1 --s0 1.
 int main(int argc, char** argv)
 {
-    string folder_str;
-	double lsq = 100.;
-	double sigma = 10.;
-	double s0 = 1.;
+    string file_str;
+    string output_str = "gp_results.cereal";
     int subsample = 1;
 
 	cxxopts::Options options("MyProgram", "One line description of MyProgram");
 	options.add_options()
       ("help", "Print help")
-      ("folder", "Folder", cxxopts::value(folder_str))
-      ("lsq", "RBF length scale", cxxopts::value(lsq))
-      ("sigma", "RBF scale", cxxopts::value(sigma))
-      ("subsample", "Subsampling rate", cxxopts::value(subsample))
-      ("s0", "Measurement noise", cxxopts::value(s0));
+      ("file", "Input file", cxxopts::value(file_str))
+      ("output", "Output file", cxxopts::value(output_str))
+      ("subsample", "Subsampling rate", cxxopts::value(subsample));
 
     auto result = options.parse(argc, argv);
 	if (result.count("help")) {
         cout << options.help({"", "Group"}) << endl;
         exit(0);
 	}
-    if (result.count("folder") == 0) {
-		cout << "Please provide folder arg..." << endl;
+    if (result.count("file") == 0) {
+		cout << "Please provide input file arg..." << endl;
 		exit(0);
     }
 	
-	boost::filesystem::path folder(folder_str);
-	cout << "Folder : " << folder << endl;
+    boost::filesystem::path path(file_str);
+    boost::filesystem::path output(output_str);
+	cout << "Input file : " << path << endl;
+	cout << "Output file : " << output << endl;
 
-    gp_submaps ss = train_or_load_gps(lsq, sigma, s0, folder);
+    gp_submaps ss = read_data<gp_submaps>(path);
 	
     ObsT original_points = ss.points;
     for (Eigen::MatrixXd& p : ss.points) {
@@ -225,7 +148,7 @@ int main(int argc, char** argv)
     register_processes_ceres(ss);
 
     ss.points = original_points;
-    write_data(ss, boost::filesystem::path("gp_results.cereal"));
+    write_data(ss, output);
 
     return 0;
 }

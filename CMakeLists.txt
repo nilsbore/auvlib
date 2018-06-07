@@ -67,6 +67,9 @@ target_link_libraries(gpgs_igl_visualizer gpgs_visualization gpgs_transforms ${C
 add_executable(parse_navi_data src/parse_navi_data.cpp)
 target_link_libraries(parse_navi_data navi_data sparse_gp gpgs_transforms gpgs_igl_visualizer data_structures ${PCL_LIBRARIES})
 
+add_executable(parse_sim_data src/parse_sim_data.cpp)
+target_link_libraries(parse_sim_data sparse_gp gpgs_transforms submaps data_structures)
+
 #add_executable(pose_graph_3d src/pose_graph_3d.cpp)
 #target_link_libraries(pose_graph_3d ${CERES_LIBRARIES})
 

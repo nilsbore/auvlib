@@ -85,17 +85,19 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT> load_or_create_submaps(const boost::f
 int main(int argc, char** argv)
 {
     string folder_str;
-	double lsq = 100.;
-	double sigma = 10.;
-	double s0 = 1.;
-    double minx = -10000.;
-    double maxx = 10000.;
+    string file_str;
+	double lsq = 2.;
+	double sigma = 1.;
+	double s0 = .5;
+    double minx = -50.;
+    double maxx = 0.;
 
 	cxxopts::Options options("MyProgram", "One line description of MyProgram");
 	//options.positional_help("[optional args]").show_positional_help();
 	options.add_options()
       ("help", "Print help")
-      ("folder", "Folder", cxxopts::value(folder_str))
+      ("folder", "Input folder", cxxopts::value(folder_str))
+      ("file", "Output file", cxxopts::value(file_str))
       ("lsq", "RBF length scale", cxxopts::value(lsq))
       ("sigma", "RBF scale", cxxopts::value(sigma))
       ("minx", "X clip min", cxxopts::value(minx))
@@ -108,12 +110,19 @@ int main(int argc, char** argv)
         exit(0);
 	}
     if (result.count("folder") == 0) {
-		cout << "Please provide folder arg..." << endl;
+		cout << "Please provide input folder arg..." << endl;
+		exit(0);
+    }
+    if (result.count("file") == 0) {
+		cout << "Please provide output file arg..." << endl;
 		exit(0);
     }
 	
 	boost::filesystem::path folder(folder_str);
-	cout << "Folder : " << folder << endl;
+    boost::filesystem::path path(file_str);
+
+	cout << "Input folder : " << folder << endl;
+	cout << "Output file : " << path << endl;
     
     gp_submaps ss;
     tie(ss.points, ss.trans, ss.angles, ss.matches, ss.bounds) = load_or_create_submaps(folder);
@@ -149,7 +158,7 @@ int main(int argc, char** argv)
     IglVisCallback vis(ss.points, ss.gps, ss.trans, ss.angles, ss.bounds);
     vis.display();
 
-    write_data(ss, boost::filesystem::path("gp_submaps.cereal"));
+    write_data(ss, path);
 
     return 0;
 }
