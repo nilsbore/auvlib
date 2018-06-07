@@ -40,6 +40,9 @@ target_link_libraries(sparse_gp rbf_kernel gaussian_noise octave_convenience)
 add_library(submaps src/data_tools/submaps.cpp)
 target_link_libraries(submaps ${PCL_LIBRARIES})
 
+add_library(data_structures src/data_tools/data_structures.cpp)
+target_link_libraries(data_structures sparse_gp rbf_kernel gaussian_noise)
+
 add_library(gpgs_transforms src/gpgs_slam/transforms.cpp)
 
 add_library(navi_data src/data_tools/navi_data.cpp)
