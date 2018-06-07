@@ -61,14 +61,14 @@ add_library(gpgs_igl_visualizer src/gpgs_slam/igl_visualizer.cpp)
 target_link_libraries(gpgs_igl_visualizer gpgs_visualization gpgs_transforms ${CERES_LIBRARIES} sparse_gp rbf_kernel gaussian_noise ${OpenCV_LIBS} submaps glad ${GLFW3_LIBRARY} ${OPENGL_LIBRARY} ${OPENGL_glu_LIBRARY} -lpthread)
 
 # helloworld
-add_executable(helloworld src/helloworld.cpp)
-target_link_libraries(helloworld ${CERES_LIBRARIES})
+#add_executable(helloworld src/helloworld.cpp)
+#target_link_libraries(helloworld ${CERES_LIBRARIES})
 
 add_executable(parse_navi_data src/parse_navi_data.cpp)
 target_link_libraries(parse_navi_data navi_data sparse_gp gpgs_transforms gpgs_igl_visualizer data_structures ${PCL_LIBRARIES})
 
-add_executable(pose_graph_3d src/pose_graph_3d.cpp)
-target_link_libraries(pose_graph_3d ${CERES_LIBRARIES})
+#add_executable(pose_graph_3d src/pose_graph_3d.cpp)
+#target_link_libraries(pose_graph_3d ${CERES_LIBRARIES})
 
 add_executable(test_gaussian_process src/test_gaussian_process.cpp)
 target_link_libraries(test_gaussian_process sparse_gp rbf_kernel gaussian_noise probit_noise octave_convenience submaps ${PCL_LIBRARIES} ${CERES_LIBRARIES})
@@ -96,5 +96,5 @@ target_link_libraries(visualize_slam_process gpgs_visualization gpgs_igl_visuali
 add_executable(test_fast_derivatives test/test_fast_derivatives.cpp)
 target_link_libraries(test_fast_derivatives submaps gpgs_cost_function gpgs_visualization gpgs_multi_visualizer gpgs_transforms)
 
-add_executable(test_igl src/test_igl.cpp)
-target_link_libraries(test_igl glad ${GLFW3_LIBRARY} ${OPENGL_LIBRARY} ${OPENGL_glu_LIBRARY} -lpthread sparse_gp rbf_kernel gaussian_noise probit_noise octave_convenience submaps)
+#add_executable(test_igl src/test_igl.cpp)
+#target_link_libraries(test_igl glad ${GLFW3_LIBRARY} ${OPENGL_LIBRARY} ${OPENGL_glu_LIBRARY} -lpthread sparse_gp rbf_kernel gaussian_noise probit_noise octave_convenience submaps)
