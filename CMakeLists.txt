@@ -98,7 +98,7 @@ add_executable(test_gaussian_process test/test_gaussian_process.cpp)
 target_link_libraries(test_gaussian_process sparse_gp rbf_kernel gaussian_noise probit_noise octave_convenience submaps ${PCL_LIBRARIES} ${CERES_LIBRARIES})
 
 add_executable(test_fast_derivatives test/test_fast_derivatives.cpp)
-target_link_libraries(test_fast_derivatives submaps gpgs_cost_function gpgs_visualization gpgs_multi_visualizer gpgs_transforms)
+target_link_libraries(test_fast_derivatives submaps data_structures gpgs_cost_function gpgs_visualization gpgs_multi_visualizer gpgs_transforms)
 
 add_executable(test_parse_navi_data test/test_parse_navi_data.cpp)
 target_link_libraries(test_parse_navi_data navi_data gpgs_transforms data_structures)

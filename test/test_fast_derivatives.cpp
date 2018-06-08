@@ -8,6 +8,7 @@
 #include <sparse_gp/gaussian_noise.h>
 
 #include <data_tools/submaps.h>
+#include <data_tools/data_structures.h>
 
 #include <gpgs_slam/cost_function.h>
 #include <gpgs_slam/visualization.h>
@@ -27,10 +28,8 @@
 
 using namespace std;
 using TransT = vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> >;
-using RotsT = vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> >;
 using AngsT = vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> >;
-using ProcessT = sparse_gp<rbf_kernel, gaussian_noise>;
-using SubmapsGPT = vector<ProcessT>; // Process does not require aligned allocation as all matrices are dynamic
+using SubmapsGPT = gp_submaps::SubmapsGPT; // Process does not require aligned allocation as all matrices are dynamic
 using ObsT = vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> >;
 using MatchesT = vector<pair<int, int> >; // tells us which maps overlap
 
@@ -45,79 +44,6 @@ void subsample_cloud(Eigen::MatrixXd& points)
         }
     }
     points.conservativeResize(counter, 3);
-}
-
-tuple<ObsT, SubmapsGPT, TransT, RotsT, MatchesT> train_or_load_gps(double lsq, double sigma, double s0,
-                                                                   const boost::filesystem::path& folder)
-{
-    if (boost::filesystem::exists("gp_submaps.cereal")) {
-		TransT trans;
-		RotsT rots;
-		SubmapsGPT gps;
-        ObsT obs;
-        MatchesT matches;
-        std::ifstream is("gp_submaps.cereal", std::ifstream::binary);
-        {
-			cereal::BinaryInputArchive archive(is);
-			archive(obs, gps, trans, rots, matches);
-        }
-        is.close();
-		return make_tuple(obs, gps, trans, rots, matches);
-    }
-    
-
-    SubmapsT submaps = read_submaps(folder);
-    for (int i = 0; i < submaps.size(); ++i) {
-        submaps[i].resize(4);
-    }
-    submaps.resize(4);
-
-    ObsT obs;
-    for (const auto& row : submaps) {
-        obs.insert(obs.end(), row.begin(), row.end());
-    }
-
-    MatchesT matches;
-    for (int j = 1; j < submaps[0].size(); ++j) {
-        int i = 0;
-        matches.push_back(make_pair(i*submaps[i].size()+j, i*submaps[i].size()+j-1));
-    }
-    for (int i = 1; i < submaps.size(); ++i) {
-        int j = 0;
-        matches.push_back(make_pair(i*submaps[i].size()+j, (i-1)*submaps[i].size()+j));
-    }
-    for (int i = 1; i < submaps.size(); ++i) {
-        for (int j = 1; j < submaps[i].size(); ++j) {
-            matches.push_back(make_pair(i*submaps[i].size()+j, i*submaps[i].size()+j-1));
-            matches.push_back(make_pair(i*submaps[i].size()+j, (i-1)*submaps[i].size()+j));
-        }
-    }
-
-    // check if already available
-    TransT trans(obs.size());
-	RotsT rots(obs.size());
-	SubmapsGPT gps;
-    for (int i = 0; i < obs.size(); ++i) {
-        ProcessT gp(100, s0);
-        gp.kernel.sigmaf_sq = sigma;
-        gp.kernel.l_sq = lsq*lsq;
-        gp.kernel.p(0) = gp.kernel.sigmaf_sq;
-        gp.kernel.p(1) = gp.kernel.l_sq;
-        // this will also centralize the points
-        tie(trans[i], rots[i]) = train_gp(obs[i], gp);
-        gps.push_back(gp);
-        cout << "Pushed back..." << endl;
-    }
-
-	// write to disk for next time
-    std::ofstream os("gp_submaps.cereal", std::ofstream::binary);
-	{
-		cereal::BinaryOutputArchive archive(os);
-        archive(obs, gps, trans, rots, matches);
-	}
-    os.close();
-    
-    return make_tuple(obs, gps, trans, rots, matches);
 }
 
 void test_fast_derivatives(ObsT& points, SubmapsGPT& gps, TransT& trans, AngsT& rots, MatchesT& matches)
@@ -214,9 +140,11 @@ void test_fast_derivatives(ObsT& points, SubmapsGPT& gps, TransT& trans, AngsT& 
     for (int i = 0; i < slow_derivatives.size(); ++i) {
         cout << "Derivative i absolute col 0 norm: " << slow_derivatives[i].col(0).norm() << endl;
         cout << "Derivative i absolute col 1 norm: " << slow_derivatives[i].col(1).norm() << endl;
+        cout << "Derivative i absolute col 2 norm: " << slow_derivatives[i].col(2).norm() << endl;
         cout << "Likelihood i absolute norm: " << slow_likelihoods[i].norm() << endl;
         cout << "Derivative i difference col 0 norm: " << (slow_derivatives[i].col(0) - fast_derivatives[i].col(0)).norm() << endl;
         cout << "Derivative i difference col 1 norm: " << (slow_derivatives[i].col(1) - fast_derivatives[i].col(1)).norm() << endl;
+        cout << "Derivative i difference col 2 norm: " << (slow_derivatives[i].col(2) - fast_derivatives[i].col(2)).norm() << endl;
         cout << "Likelihood i likelihood norm: " << (slow_likelihoods[i] - fast_likelihoods[i]).norm() << endl;
     }
 }
@@ -224,71 +152,36 @@ void test_fast_derivatives(ObsT& points, SubmapsGPT& gps, TransT& trans, AngsT& 
 // Example: ./visualize_process --folder ../scripts --lsq 100.0 --sigma 0.1 --s0 1.
 int main(int argc, char** argv)
 {
-    string folder_str;
-	double lsq = 100.;
-	double sigma = 10.;
-	double s0 = 1.;
+    string file_str;
 
 	cxxopts::Options options("MyProgram", "One line description of MyProgram");
 	//options.positional_help("[optional args]").show_positional_help();
 	options.add_options()
       ("help", "Print help")
-      ("folder", "Folder", cxxopts::value(folder_str))
-      ("lsq", "RBF length scale", cxxopts::value(lsq))
-      ("sigma", "RBF scale", cxxopts::value(sigma))
-      ("s0", "Measurement noise", cxxopts::value(s0));
+      ("file", "Input file", cxxopts::value(file_str));
 
     auto result = options.parse(argc, argv);
 	if (result.count("help")) {
         cout << options.help({"", "Group"}) << endl;
         exit(0);
 	}
-    if (result.count("folder") == 0) {
+    if (result.count("file") == 0) {
 		cout << "Please provide folder arg..." << endl;
 		exit(0);
     }
 	
-	boost::filesystem::path folder(folder_str);
-	cout << "Folder : " << folder << endl;
+	boost::filesystem::path path(file_str);
+	cout << "Input file : " << path << endl;
 
-    //SubmapsT submaps = read_submaps(folder);
-	//visualize_submaps(submaps);
-    ObsT points;
-    SubmapsGPT gps;
-    TransT trans;
-    RotsT rots;
-    MatchesT matches;
-    tie(points, gps, trans, rots, matches) = train_or_load_gps(lsq, sigma, s0, folder);
+    gp_submaps ss = read_data<gp_submaps>(path);
 	
-    for (Eigen::MatrixXd& p : points) {
+    for (Eigen::MatrixXd& p : ss.points) {
         subsample_cloud(p);
     }
-
-    AngsT angles;
-    for (const Eigen::Matrix3d& R : rots) {
-        Eigen::Vector3d a; a << 0., 0., 0.;
-        angles.push_back(a);
-    }
     
-    CloudT::Ptr cloud(new CloudT);
-    for (int i = 0; i < points.size(); ++i) {
-        CloudT::Ptr subcloud = construct_submap_and_gp_cloud(points[i], gps[i], trans[i], rots[i], 2*i);
-        *cloud += *subcloud;
-    }
-	/*pcl::visualization::CloudViewer viewer ("Simple Cloud Viewer");
-	viewer.showCloud(cloud);
-	while (!viewer.wasStopped ())
-	{
-	}*/
-    std::default_random_engine generator;
-    std::normal_distribution<double> distribution(0., 1.);
-    for (int i = 0; i < points.size(); ++i) {
-        trans[i](0) += 30.*distribution(generator);
-        trans[i](1) += 30.*distribution(generator);
-        angles[i](2) += 0.2*distribution(generator);
-    }
+    ss.matches = compute_matches(ss.trans, ss.rots, ss.bounds);
 
-    test_fast_derivatives(points, gps, trans, angles, matches);
+    test_fast_derivatives(ss.points, ss.gps, ss.trans, ss.angles, ss.matches);
 
     return 0;
 }
