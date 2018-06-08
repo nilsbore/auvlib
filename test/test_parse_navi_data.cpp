@@ -1,7 +1,7 @@
-#include <cxxopts.hpp>
-#include <data_tools/navi_data.h>
-#include <data_tools/data_structures.h>
 #include <boost/filesystem.hpp>
+#include <cxxopts.hpp>
+#include <data_tools/data_structures.h>
+#include <data_tools/navi_data.h>
 #include <gpgs_slam/transforms.h>
 
 using namespace std;
@@ -11,30 +11,28 @@ int main(int argc, char** argv)
     string folder_str;
     string file_str;
 
-	cxxopts::Options options("MyProgram", "One line description of MyProgram");
-	options.add_options()
-      ("help", "Print help")
-      ("folder", "Input folder", cxxopts::value(folder_str));
+    cxxopts::Options options("MyProgram", "One line description of MyProgram");
+    options.add_options()("help", "Print help")("folder", "Input folder", cxxopts::value(folder_str));
 
     auto result = options.parse(argc, argv);
-	if (result.count("help")) {
-        cout << options.help({"", "Group"}) << endl;
+    if (result.count("help")) {
+        cout << options.help({ "", "Group" }) << endl;
         exit(0);
-	}
-    if (result.count("folder") == 0) {
-		cout << "Please provide input folder arg..." << endl;
-		exit(0);
     }
-	
-	boost::filesystem::path folder(folder_str);
+    if (result.count("folder") == 0) {
+        cout << "Please provide input folder arg..." << endl;
+        exit(0);
+    }
+
+    boost::filesystem::path folder(folder_str);
     boost::filesystem::path pings_path = folder / "mbes_pings.cereal";
     boost::filesystem::path entries_path = folder / "nav_entries.cereal";
     boost::filesystem::path submaps_path = folder / "submaps.cereal";
 
-	cout << "Input folder : " << folder << endl;
+    cout << "Input folder : " << folder << endl;
 
-	// Parse ROV track files
-	boost::filesystem::path nav_dir = folder / "NavUTM";
+    // Parse ROV track files
+    boost::filesystem::path nav_dir = folder / "NavUTM";
 
     // Parse MBES pings files
     boost::filesystem::path pings_dir = folder / "Pings";
@@ -45,14 +43,14 @@ int main(int argc, char** argv)
     // parse the files from the folder
     mbes_ping::PingsT pings = parse_folder<mbes_ping>(pings_dir);
     nav_entry::EntriesT entries = parse_folder<nav_entry>(nav_dir);
-    
+
     // match timestamps of pings and nav entries
     match_timestamps(pings, entries);
 
     // Divides the tracks into roughly square pieces
     divide_tracks_equal(pings);
     //divide_tracks(pings);
-    
+
     // write to disk
     write_data(pings, pings_path);
     write_data(entries, entries_path);

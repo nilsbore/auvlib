@@ -2,36 +2,36 @@
 #include <cxxopts.hpp>
 
 // we should really do a types library, would avoid recompiling this all the time
-#include <sparse_gp/sparse_gp.h>
-#include <sparse_gp/rbf_kernel.h>
-#include <sparse_gp/probit_noise.h>
 #include <sparse_gp/gaussian_noise.h>
+#include <sparse_gp/probit_noise.h>
+#include <sparse_gp/rbf_kernel.h>
+#include <sparse_gp/sparse_gp.h>
 
-#include <data_tools/submaps.h>
 #include <data_tools/data_structures.h>
+#include <data_tools/submaps.h>
 
 #include <gpgs_slam/cost_function.h>
-#include <gpgs_slam/visualization.h>
 #include <gpgs_slam/multi_visualizer.h>
 #include <gpgs_slam/transforms.h>
+#include <gpgs_slam/visualization.h>
 
 #include <ceres/ceres.h>
 
-#include <eigen_cereal/eigen_cereal.h>
-#include <cereal/archives/json.hpp>
 #include <cereal/archives/binary.hpp>
-#include <cereal/types/vector.hpp>
+#include <cereal/archives/json.hpp>
 #include <cereal/types/utility.hpp>
+#include <cereal/types/vector.hpp>
+#include <eigen_cereal/eigen_cereal.h>
 
-#include <random>
 #include <chrono>
+#include <random>
 
 using namespace std;
-using TransT = vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> >;
-using AngsT = vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> >;
+using TransT = vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>>;
+using AngsT = vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>>;
 using SubmapsGPT = gp_submaps::SubmapsGPT; // Process does not require aligned allocation as all matrices are dynamic
-using ObsT = vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> >;
-using MatchesT = vector<pair<int, int> >; // tells us which maps overlap
+using ObsT = vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd>>;
+using MatchesT = vector<pair<int, int>>; // tells us which maps overlap
 
 void subsample_cloud(Eigen::MatrixXd& points)
 {
@@ -49,7 +49,7 @@ void subsample_cloud(Eigen::MatrixXd& points)
 void test_fast_derivatives(ObsT& points, SubmapsGPT& gps, TransT& trans, AngsT& rots, MatchesT& matches)
 {
     using DerT = ObsT;
-    using LLT = vector<Eigen::VectorXd, Eigen::aligned_allocator<Eigen::VectorXd> >;
+    using LLT = vector<Eigen::VectorXd, Eigen::aligned_allocator<Eigen::VectorXd>>;
 
     DerT slow_derivatives;
     LLT slow_likelihoods;
@@ -58,7 +58,7 @@ void test_fast_derivatives(ObsT& points, SubmapsGPT& gps, TransT& trans, AngsT& 
     auto start = chrono::high_resolution_clock::now();
     for (const pair<int, int>& match : matches) {
         int i, j;
-        tie (i, j) = match;
+        tie(i, j) = match;
         cout << "Adding constraint between " << i << " and " << j << endl;
 
         Eigen::Vector3d R1 = rots[i];
@@ -77,25 +77,27 @@ void test_fast_derivatives(ObsT& points, SubmapsGPT& gps, TransT& trans, AngsT& 
         Eigen::VectorXd ll2;
         gps[j].compute_neg_log_likelihoods(ll2, points1in2.leftCols<2>(), points1in2.col(2));
 
-        slow_likelihoods.push_back(ll1); slow_likelihoods.push_back(ll2);
+        slow_likelihoods.push_back(ll1);
+        slow_likelihoods.push_back(ll2);
 
         Eigen::MatrixXd dX1;
         gps[i].compute_neg_log_derivatives(dX1, points2in1.leftCols<2>(), points2in1.col(2));
         Eigen::MatrixXd dX2;
         gps[j].compute_neg_log_derivatives(dX2, points1in2.leftCols<2>(), points1in2.col(2));
 
-        slow_derivatives.push_back(dX1); slow_derivatives.push_back(dX2);
+        slow_derivatives.push_back(dX1);
+        slow_derivatives.push_back(dX2);
     }
     // Get ending timepoint
     auto stop = chrono::high_resolution_clock::now();
- 
-    // Get duration. Substart timepoints to 
+
+    // Get duration. Substart timepoints to
     // get durarion. To cast it to proper unit
     // use duration cast method
     auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
- 
+
     cout << "Time taken by slow_likelihoods: " << duration.count() << " microseconds" << endl;
-    
+
     DerT fast_derivatives;
     LLT fast_likelihoods;
 
@@ -103,7 +105,7 @@ void test_fast_derivatives(ObsT& points, SubmapsGPT& gps, TransT& trans, AngsT& 
     start = chrono::high_resolution_clock::now();
     for (const pair<int, int>& match : matches) {
         int i, j;
-        tie (i, j) = match;
+        tie(i, j) = match;
         cout << "Adding constraint between " << i << " and " << j << endl;
 
         Eigen::Vector3d R1 = rots[i];
@@ -124,17 +126,19 @@ void test_fast_derivatives(ObsT& points, SubmapsGPT& gps, TransT& trans, AngsT& 
         gps[i].compute_neg_log_derivatives_fast(ll1, dX1, points2in1.leftCols<2>(), points2in1.col(2), true);
         gps[j].compute_neg_log_derivatives_fast(ll2, dX2, points1in2.leftCols<2>(), points1in2.col(2), true);
 
-        fast_likelihoods.push_back(ll1); fast_likelihoods.push_back(ll2);
-        fast_derivatives.push_back(dX1); fast_derivatives.push_back(dX2);
+        fast_likelihoods.push_back(ll1);
+        fast_likelihoods.push_back(ll2);
+        fast_derivatives.push_back(dX1);
+        fast_derivatives.push_back(dX2);
     }
     // Get ending timepoint
     stop = chrono::high_resolution_clock::now();
- 
-    // Get duration. Substart timepoints to 
+
+    // Get duration. Substart timepoints to
     // get durarion. To cast it to proper unit
     // use duration cast method
     duration = chrono::duration_cast<chrono::microseconds>(stop - start);
- 
+
     cout << "Time taken by fast_likelihoods: " << duration.count() << " microseconds" << endl;
 
     for (int i = 0; i < slow_derivatives.size(); ++i) {
@@ -154,31 +158,29 @@ int main(int argc, char** argv)
 {
     string file_str;
 
-	cxxopts::Options options("MyProgram", "One line description of MyProgram");
-	//options.positional_help("[optional args]").show_positional_help();
-	options.add_options()
-      ("help", "Print help")
-      ("file", "Input file", cxxopts::value(file_str));
+    cxxopts::Options options("MyProgram", "One line description of MyProgram");
+    //options.positional_help("[optional args]").show_positional_help();
+    options.add_options()("help", "Print help")("file", "Input file", cxxopts::value(file_str));
 
     auto result = options.parse(argc, argv);
-	if (result.count("help")) {
-        cout << options.help({"", "Group"}) << endl;
+    if (result.count("help")) {
+        cout << options.help({ "", "Group" }) << endl;
         exit(0);
-	}
-    if (result.count("file") == 0) {
-		cout << "Please provide folder arg..." << endl;
-		exit(0);
     }
-	
-	boost::filesystem::path path(file_str);
-	cout << "Input file : " << path << endl;
+    if (result.count("file") == 0) {
+        cout << "Please provide folder arg..." << endl;
+        exit(0);
+    }
+
+    boost::filesystem::path path(file_str);
+    cout << "Input file : " << path << endl;
 
     gp_submaps ss = read_data<gp_submaps>(path);
-	
+
     for (Eigen::MatrixXd& p : ss.points) {
         subsample_cloud(p);
     }
-    
+
     ss.matches = compute_matches(ss.trans, ss.rots, ss.bounds);
 
     test_fast_derivatives(ss.points, ss.gps, ss.trans, ss.angles, ss.matches);
