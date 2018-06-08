@@ -8,7 +8,7 @@ Gaussian Process Graph Slam Multibeam SLAM System
 The `navi_data` library contains tools for parsing files exported from NaviEdit.
 See this example program, also available in [the test folder](https://github.com/nilsbore/gpgs_slam/blob/master/test/test_parse_navi_data.cpp).
 
-```
+```cpp
 #include <boost/filesystem.hpp>
 #include <cxxopts.hpp>
 #include <data_tools/data_structures.h>
