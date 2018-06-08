@@ -527,6 +527,7 @@ void sparse_gp<Kernel, Noise>::compute_neg_log_derivatives_fast(VectorXd& ll, Ma
     // Nx1 vector
     ArrayXd offset = y.array() - mu; // OK
 
+    // this is actually the log likelihood, NOT the neg log likelihood
     ll = -logsqrt2pi - 0.5f*sigma.log() - 0.5f*offset*offset/sigma; // OK
     // end likelihood computation
     

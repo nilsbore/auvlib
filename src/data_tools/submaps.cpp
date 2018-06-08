@@ -68,6 +68,63 @@ SubmapsT read_submaps(const boost::filesystem::path& folder)
 	return submaps;
 }
 
+// first stupid attempt
+//
+// Check if these points are within the other:
+//
+//  ----------------
+//  |              |
+//  |   x      x   |
+//  |              |
+//  |              |
+//  |   x      x   |
+//  |              |
+//  ----------------
+//
+MatchesT compute_matches(const TransTT& trans, const RotsTT& rots, const BBsT& bounds)
+{
+    MatchesT matches;
+
+    // compare each submap with every other submap
+    for (int i = 0; i < trans.size(); ++i) {
+        for (int j = 0; j < i; ++j) {
+            //double area1 = (bounds[i](1, 1) - bounds[i](0, 1))*(bounds[i](1, 0) - bounds[i](0, 0));
+            //double area2 = (bounds[j](1, 1) - bounds[j](0, 1))*(bounds[j](1, 0) - bounds[j](0, 0));
+            Eigen::Matrix2d bb1 = bounds[i]; Eigen::Matrix2d bb2 = bounds[2];
+            Eigen::Matrix<double, 4, 3> corners1, corners2;
+            corners1.setZero(); corners2.setZero();
+            corners1.topLeftCorner<2, 2>() = bb1;
+            corners1.block<2, 1>(2, 0) = bb1.block<2, 1>(0, 0);
+            corners1(2, 1) = corners1(1, 1);
+            corners1(3, 1) = corners1(0, 1);
+            corners2.topLeftCorner<2, 2>() = bb2;
+            corners2.block<2, 1>(2, 0) = bb2.block<2, 1>(0, 0);
+            corners2(2, 1) = corners2(1, 1);
+            corners2(3, 1) = corners2(0, 1);
+            corners1 = ((0.5*corners1*rots[i].transpose()).rowwise() + (trans[i] - trans[j]).transpose())*rots[j];
+            corners2 = ((0.5*corners2*rots[j].transpose()).rowwise() + (trans[j] - trans[i]).transpose())*rots[i];
+            bool match = false;
+            for (int i = 0; i < 4; ++i) {
+                if (corners1(i, 0) < bb2(1, 0) && corners1(i, 0) > bb2(0, 0) &&
+                    corners1(i, 1) < bb2(1, 1) && corners1(i, 1) > bb2(0, 1)) {
+                    match = true;
+                    break;
+                }
+                if (corners2(i, 0) < bb1(1, 0) && corners2(i, 0) > bb1(0, 0) &&
+                    corners2(i, 1) < bb1(1, 1) && corners2(i, 1) > bb1(0, 1)) {
+                    match = true;
+                    break;
+                }
+            }
+            if (match) {
+                matches.push_back(make_pair(i, j));
+            }
+        }
+    }
+
+    return matches;
+}
+
 void visualize_submaps(SubmapsT& submaps)
 {
 	CloudT::Ptr cloud(new CloudT);
@@ -127,8 +184,27 @@ Eigen::MatrixXd get_points_in_bound_transform(Eigen::MatrixXd points, Eigen::Vec
 
     int counter = 0;
 	for (int i = 0; i < points.rows(); ++i) {
-		if (points(i, 0) < bound && points(i, 1) > -bound &&
+		if (points(i, 0) < bound && points(i, 0) > -bound &&
 		    points(i, 1) < bound && points(i, 1) > -bound) {
+		    points.row(counter) = points.row(i);
+			++counter;
+		}
+    }
+	points.conservativeResize(counter, 3);
+	return points;
+}
+
+Eigen::MatrixXd get_points_in_bound_transform(Eigen::MatrixXd points, Eigen::Vector3d& t,
+				                              Eigen::Matrix3d& R, Eigen::Vector3d& t_in,
+											  Eigen::Matrix3d& R_in, Eigen::Matrix2d& bounds)
+{
+    points *= R.transpose()*R_in;
+	points.rowwise() += (t.transpose()*R_in - t_in.transpose()*R_in);
+
+    int counter = 0;
+	for (int i = 0; i < points.rows(); ++i) {
+		if (points(i, 0) < bounds(1, 0) && points(i, 0) > bounds(0, 0) &&
+		    points(i, 1) < bounds(1, 1) && points(i, 1) > bounds(0, 1)) {
 		    points.row(counter) = points.row(i);
 			++counter;
 		}
