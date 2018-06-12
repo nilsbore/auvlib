@@ -43,7 +43,7 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-    string folder_str, file_str;
+    string folder_str;
 
     cxxopts::Options options("MyProgram", "One line description of MyProgram");
     options.add_options()("help", "Print help")("folder", "Input folder", cxxopts::value(folder_str));
