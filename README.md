@@ -1,6 +1,37 @@
 # gpgs_slam
 Gaussian Process Graph Slam Multibeam SLAM System
 
+## Dependencies
+
+On Ubuntu 16.04, just use the following command to install all dependencies:
+```
+sudo apt-get install libcereal-dev libglfw3-dev libceres-dev
+```
+
+## Building
+
+Once cloned, get the libigl submodule via `git submodule init`, `git submodule update`.
+Then, create a build folder, and run `cmake ..`, followed by `make` within that folder.
+
+## Running
+
+You can run a toy example with data provided in this repo.
+In the `scripts` folder, execute `./generate_submaps.py`. This creates
+a bunch of data files within the `scripts` folder. Next, go to your
+build folder and run
+```
+./parse_sim_data --folder ../scripts --file example_problem.cereal
+```
+This creates the optimization problem `example_problem.cereal`. You can view it with
+```
+./visualize_slam_process --file example_problem.cereal
+```
+Now, we can optimize it by running
+```
+./slam_process_ceres --file example_problem.cereal --output example_results.cereal
+```
+Again, the results `example_results.cereal` can be viewed using the visualizer.
+
 ## data_tools
 
 ### navi_data
@@ -19,7 +50,7 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-    string folder_str, file_str;
+    string folder_str;
 
     cxxopts::Options options("MyProgram", "One line description of MyProgram");
     options.add_options()("help", "Print help")("folder", "Input folder", cxxopts::value(folder_str));
