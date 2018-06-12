@@ -5,7 +5,7 @@ Gaussian Process Graph Slam Multibeam SLAM System
 
 On Ubuntu 16.04, just use the following command to install all dependencies:
 ```
-sudo apt-get install libcereal-dev
+sudo apt-get install libcereal-dev libglfw3-dev libceres-dev
 ```
 
 ## Building
