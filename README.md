@@ -1,6 +1,13 @@
 # gpgs_slam
 Gaussian Process Graph Slam Multibeam SLAM System
 
+## Dependencies
+
+On Ubuntu 16.04, just use the following command to install all dependencies:
+```
+sudo apt-get install libcereal-dev
+```
+
 ## Building
 
 Once cloned, get the libigl submodule via `git submodule init`, `git submodule update`.
