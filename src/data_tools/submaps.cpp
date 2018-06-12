@@ -125,6 +125,29 @@ MatchesT compute_matches(const TransTT& trans, const RotsTT& rots, const BBsT& b
     return matches;
 }
 
+MatchesT compute_binary_constraints(const TransTT& trans, const RotsTT& rots, const ObsT& points)
+{
+    const int swath_width = 512;
+
+    MatchesT binary_constraints;
+
+    for (int i = 1; i < points.size(); ++i) {
+
+        Eigen::Vector3d last_point1 = points[i-1].row(points[i-1].rows()-swath_width/2).transpose();
+        Eigen::Vector3d first_point2 = points[i].row(swath_width/2).transpose();
+        last_point1 = rots[i-1]*last_point1 + trans[i-1];
+        first_point2 = rots[i]*first_point2 + trans[i];
+        double dist = (first_point2-last_point1).norm();
+        cout << "Distance between " << i-1 << " and " << i << ": " << dist << endl;
+        if (dist < 0.4) {
+            cout << "Found a binary constraint between" << i-1 << " and " << i << endl;
+            binary_constraints.push_back(make_pair(i-1, i));
+        }
+    }
+
+    return binary_constraints;
+}
+
 void visualize_submaps(SubmapsT& submaps)
 {
 	CloudT::Ptr cloud(new CloudT);

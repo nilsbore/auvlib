@@ -62,7 +62,7 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT> load_or_create_submaps(const boost::f
     nav_entry::EntriesT entries = parse_folder<nav_entry>(nav_dir);
 
     match_timestamps(pings, entries);
-    //divide_tracks(pings);
+    divide_tracks(pings);
     //divide_tracks_equal(pings);
 	//view_cloud(pings);
     ObsT submaps;

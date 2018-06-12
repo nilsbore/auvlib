@@ -5,6 +5,7 @@
 #include <iostream>
 #include <boost/filesystem.hpp>
 
+using ObsT = std::vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> >;
 using SubmapsT = std::vector<std::vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> > >;
 using MatchesT = std::vector<std::pair<int, int> >; // tells us which maps overlap
 using BBsT = std::vector<Eigen::Matrix2d, Eigen::aligned_allocator<Eigen::Matrix2d> >;
@@ -14,6 +15,7 @@ using RotsTT = std::vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matr
 Eigen::MatrixXd read_submap(const boost::filesystem::path& filename);
 SubmapsT read_submaps(const boost::filesystem::path& folder);
 MatchesT compute_matches(const TransTT& trans, const RotsTT& rots, const BBsT& bounds);
+MatchesT compute_binary_constraints(const TransTT& trans, const RotsTT& rots, const ObsT& points);
 void visualize_submaps(SubmapsT& submaps);
 void visualize_submap(Eigen::MatrixXd& points);
 Eigen::MatrixXd get_points_in_bound_transform(Eigen::MatrixXd points, Eigen::Vector3d& t,

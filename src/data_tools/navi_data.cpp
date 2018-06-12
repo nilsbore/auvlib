@@ -123,10 +123,12 @@ mbes_ping::PingsT parse_file(const boost::filesystem::path& file)
 
 		iss >> year_string >> date_string >> second_string >> ping.id_ >> beam_id >> x >> y >> z >> tide >> ping.heading_ >> ping.heave_ >> ping.pitch_ >> ping.roll_;
 
+        /*
         if (beam_id != 255 && counter % 10 != 0) {
             ++counter;
             continue;
         }
+        */
 
 		ping.beams.push_back(Vector3d(x, y, -z));
 

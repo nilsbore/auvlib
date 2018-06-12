@@ -74,6 +74,7 @@ struct pt_submaps
     RotsT rots; // rotation matrices of submaps, same as angles
     AngsT angles; // euler angles of submaps, same as rots
     MatchesT matches; // overlapping submap matches, containing vector indices of matches
+    MatchesT binary_constraints; // consecutive submaps, containing vector indices of matches
     BoundsT bounds; // bounds of the submap, bb(0, 0) - min x, bb(0, 1) - min y, bb(1, 0) - max x, bb(1, 1) - max y
     
     template <class Archive>

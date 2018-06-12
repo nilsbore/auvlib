@@ -11,6 +11,7 @@
 #include <data_tools/data_structures.h>
 
 #include <gpgs_slam/cost_function.h>
+#include <gpgs_slam/binary_constraint_cost.h>
 #include <gpgs_slam/visualization.h>
 #include <gpgs_slam/multi_visualizer.h>
 #include <gpgs_slam/igl_visualizer.h>
@@ -45,6 +46,16 @@ void register_processes_ceres(gp_submaps& ss)
 {
     ceres::Problem problem;
 
+    for (const pair<int, int>& con : ss.binary_constraints) {
+        int i, j;
+        tie (i, j) = con;
+        cout << "Adding binary constraint between " << i << " and " << j << endl;
+        ceres::CostFunction* cost_function = BinaryConstraintCostFunctor::Create(ss.points[i], ss.points[j], 0.3);
+        ceres::LossFunction* loss_function = NULL;
+        problem.AddResidualBlock(cost_function, loss_function, ss.trans[i].data(), ss.angles[i].data(),
+                                                               ss.trans[j].data(), ss.angles[j].data());
+    }
+
     for (const pair<int, int>& match : ss.matches) {
         int i, j;
         tie (i, j) = match;
@@ -71,7 +82,7 @@ void register_processes_ceres(gp_submaps& ss)
         problem.SetParameterLowerBound(ss.angles[i].data(), 2, ss.angles[i](2) - M_PI);
         problem.SetParameterUpperBound(ss.angles[i].data(), 2, ss.angles[i](2) + M_PI);
 
-        //problem.SetParameterBlockConstant(rots[i].data());
+        problem.SetParameterBlockConstant(ss.angles[i].data());
         ceres::SubsetParameterization *subset_parameterization = new ceres::SubsetParameterization(3, {0, 1});
         problem.SetParameterization(ss.angles[i].data(), subset_parameterization);
     }
@@ -138,12 +149,13 @@ int main(int argc, char** argv)
 
     gp_submaps ss = read_data<gp_submaps>(path);
 	
+    ss.matches = compute_matches(ss.trans, ss.rots, ss.bounds);
+    ss.binary_constraints = compute_binary_constraints(ss.trans, ss.rots, ss.points);
+    
     ObsT original_points = ss.points;
     for (Eigen::MatrixXd& p : ss.points) {
         subsample_cloud(p, subsample);
     }
-    
-    ss.matches = compute_matches(ss.trans, ss.rots, ss.bounds);
 
     register_processes_ceres(ss);
 
