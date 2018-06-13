@@ -82,7 +82,7 @@ void register_processes_ceres(gp_submaps& ss)
         problem.SetParameterLowerBound(ss.angles[i].data(), 2, ss.angles[i](2) - M_PI);
         problem.SetParameterUpperBound(ss.angles[i].data(), 2, ss.angles[i](2) + M_PI);
 
-        problem.SetParameterBlockConstant(ss.angles[i].data());
+        //problem.SetParameterBlockConstant(ss.angles[i].data());
         ceres::SubsetParameterization *subset_parameterization = new ceres::SubsetParameterization(3, {0, 1});
         problem.SetParameterization(ss.angles[i].data(), subset_parameterization);
     }
@@ -150,7 +150,7 @@ int main(int argc, char** argv)
     gp_submaps ss = read_data<gp_submaps>(path);
 	
     ss.matches = compute_matches(ss.trans, ss.rots, ss.bounds);
-    ss.binary_constraints = compute_binary_constraints(ss.trans, ss.rots, ss.points);
+    //ss.binary_constraints = compute_binary_constraints(ss.trans, ss.rots, ss.points);
     
     ObsT original_points = ss.points;
     for (Eigen::MatrixXd& p : ss.points) {
