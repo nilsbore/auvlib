@@ -3,10 +3,10 @@ project(gpgs_apps)
 include_directories(include)
 
 add_executable(parse_navi_data src/parse_navi_data.cpp)
-target_link_libraries(parse_navi_data navi_data sparse_gp gpgs_transforms gpgs_igl_visualizer data_structures ${PCL_LIBRARIES})
+target_link_libraries(parse_navi_data navi_data sparse_gp data_transforms gpgs_igl_visualizer data_structures ${PCL_LIBRARIES})
 
 add_executable(parse_sim_data src/parse_sim_data.cpp)
-target_link_libraries(parse_sim_data sparse_gp gpgs_transforms submaps data_structures)
+target_link_libraries(parse_sim_data sparse_gp data_transforms submaps data_structures)
 
 add_executable(visualize_pointclouds src/visualize_pointclouds.cpp)
 target_link_libraries(visualize_pointclouds ${PCL_LIBRARIES})
@@ -33,7 +33,7 @@ add_executable(test_gaussian_process test/test_gaussian_process.cpp)
 target_link_libraries(test_gaussian_process sparse_gp rbf_kernel gaussian_noise probit_noise octave_convenience submaps ${PCL_LIBRARIES} ${CERES_LIBRARIES})
 
 add_executable(test_fast_derivatives test/test_fast_derivatives.cpp)
-target_link_libraries(test_fast_derivatives submaps data_structures gpgs_cost_function gpgs_visualization gpgs_multi_visualizer gpgs_transforms)
+target_link_libraries(test_fast_derivatives submaps data_structures gpgs_cost_function gpgs_visualization gpgs_multi_visualizer data_transforms)
 
 add_executable(test_parse_navi_data test/test_parse_navi_data.cpp)
-target_link_libraries(test_parse_navi_data navi_data gpgs_transforms data_structures)
+target_link_libraries(test_parse_navi_data navi_data data_transforms data_structures)

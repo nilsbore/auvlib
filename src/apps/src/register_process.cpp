@@ -8,10 +8,10 @@
 
 #include <data_tools/colormap.h>
 #include <data_tools/submaps.h>
+#include <data_tools/transforms.h>
 
 #include <gpgs_slam/cost_function.h>
 #include <gpgs_slam/visualization.h>
-#include <gpgs_slam/transforms.h>
 
 using namespace std;
 

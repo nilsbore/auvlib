@@ -9,10 +9,10 @@
 
 #include <data_tools/data_structures.h>
 #include <data_tools/submaps.h>
+#include <data_tools/transforms.h>
 
 #include <gpgs_slam/cost_function.h>
 #include <gpgs_slam/multi_visualizer.h>
-#include <gpgs_slam/transforms.h>
 #include <gpgs_slam/visualization.h>
 
 #include <ceres/ceres.h>

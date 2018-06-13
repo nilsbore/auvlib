@@ -1,6 +1,7 @@
 #include <cxxopts.hpp>
 #include <data_tools/navi_data.h>
 #include <data_tools/data_structures.h>
+#include <data_tools/transforms.h>
 #include <boost/filesystem.hpp>
 
 #include <cereal/archives/json.hpp>
@@ -14,7 +15,6 @@
 #include <sparse_gp/gaussian_noise.h>
 
 #include <gpgs_slam/igl_visualizer.h>
-#include <gpgs_slam/transforms.h>
 
 using namespace std;
 

@@ -1,5 +1,5 @@
-#ifndef GPGS_TRANSFORMS_H
-#define GPGS_TRANSFORMS_H
+#ifndef DATA_TRANSFORMS_H
+#define DATA_TRANSFORMS_H
 
 #include <Eigen/Dense>
 
@@ -9,4 +9,4 @@ std::vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> > euler_t
 
 std::vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> > euler_to_diff_matrices(double x, double y, double z);
 
-#endif // GPGS_TRANSFORMS_H
+#endif // DATA_TRANSFORMS_H
