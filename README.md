@@ -11,7 +11,7 @@ sudo apt-get install libcereal-dev libglfw3-dev libceres-dev
 ## Building
 
 Once cloned, get the libigl submodule via `git submodule init`, `git submodule update`.
-Then, create a build folder, and run `cmake ..`, followed by `make` within that folder.
+Then, create a build folder, and run `cmake ../src`, followed by `make` within that folder.
 
 ## Running
 
