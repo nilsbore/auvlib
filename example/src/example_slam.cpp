@@ -12,6 +12,7 @@
 
 #include <gpgs_slam/cost_function.h>
 #include <gpgs_slam/binary_constraint_cost.h>
+#include <gpgs_slam/unary_constraint_cost.h>
 #include <gpgs_slam/visualization.h>
 #include <gpgs_slam/multi_visualizer.h>
 #include <gpgs_slam/igl_visualizer.h>
@@ -42,15 +43,16 @@ void subsample_cloud(Eigen::MatrixXd& points, int subsample)
     points.conservativeResize(counter, 3);
 }
 
-void register_processes_ceres(gp_submaps& ss)
+void register_processes_ceres(gp_submaps& ss, bool with_rot)
 {
     ceres::Problem problem;
 
-    for (const pair<int, int>& con : ss.binary_constraints) {
+    for (const tuple<int, int, Eigen::Vector3d, Eigen::Vector3d>& con : ss.binary_constraints) {
         int i, j;
-        tie (i, j) = con;
+        Eigen::Vector3d last_point1, first_point2;
+        tie (i, j, last_point1, first_point2) = con;
         cout << "Adding binary constraint between " << i << " and " << j << endl;
-        ceres::CostFunction* cost_function = BinaryConstraintCostFunctor::Create(ss.points[i], ss.points[j], 0.3);
+        ceres::CostFunction* cost_function = BinaryConstraintCostFunctor::Create(last_point1, first_point2, 40.);
         ceres::LossFunction* loss_function = NULL;
         problem.AddResidualBlock(cost_function, loss_function, ss.trans[i].data(), ss.angles[i].data(),
                                                                ss.trans[j].data(), ss.angles[j].data());
@@ -74,15 +76,21 @@ void register_processes_ceres(gp_submaps& ss)
     }
     
     for (int i = 0; i < ss.trans.size(); ++i) {
-        problem.SetParameterLowerBound(ss.trans[i].data(), 0, ss.trans[i](0) - 100.);
-        problem.SetParameterLowerBound(ss.trans[i].data(), 1, ss.trans[i](1) - 100.);
-        problem.SetParameterUpperBound(ss.trans[i].data(), 0, ss.trans[i](0) + 100.);
-        problem.SetParameterUpperBound(ss.trans[i].data(), 1, ss.trans[i](1) + 100.);
+        ceres::CostFunction* cost_function = UnaryConstraintCostFunctor::Create(ss.angles[i], 0.05);
+        ceres::LossFunction* loss_function = NULL;
+        problem.AddResidualBlock(cost_function, loss_function, ss.angles[i].data());
+
+        problem.SetParameterLowerBound(ss.trans[i].data(), 0, ss.trans[i](0) - 20.);
+        problem.SetParameterLowerBound(ss.trans[i].data(), 1, ss.trans[i](1) - 20.);
+        problem.SetParameterUpperBound(ss.trans[i].data(), 0, ss.trans[i](0) + 20.);
+        problem.SetParameterUpperBound(ss.trans[i].data(), 1, ss.trans[i](1) + 20.);
 
         problem.SetParameterLowerBound(ss.angles[i].data(), 2, ss.angles[i](2) - M_PI);
         problem.SetParameterUpperBound(ss.angles[i].data(), 2, ss.angles[i](2) + M_PI);
 
-        //problem.SetParameterBlockConstant(ss.angles[i].data());
+        if (!with_rot) {
+            problem.SetParameterBlockConstant(ss.angles[i].data());
+        }
         ceres::SubsetParameterization *subset_parameterization = new ceres::SubsetParameterization(3, {0, 1});
         problem.SetParameterization(ss.angles[i].data(), subset_parameterization);
     }
@@ -99,7 +107,9 @@ void register_processes_ceres(gp_submaps& ss)
     options.callbacks.push_back(vis);
     options.max_num_iterations = 200;
     options.update_state_every_iteration = true;
-    options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
+    options.num_threads = 8;
+    //options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
+    options.linear_solver_type = ceres::SPARSE_SCHUR;
     //options.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY;
     //options.linear_solver_type = ceres::DENSE_QR;
 
@@ -124,12 +134,14 @@ int main(int argc, char** argv)
     string file_str;
     string output_str = "gp_results.cereal";
     int subsample = 1;
+    bool norot = false;
 
 	cxxopts::Options options("MyProgram", "One line description of MyProgram");
 	options.add_options()
       ("help", "Print help")
       ("file", "Input file", cxxopts::value(file_str))
       ("output", "Output file", cxxopts::value(output_str))
+      ("norot", "No rotation?", cxxopts::value(norot))
       ("subsample", "Subsampling rate", cxxopts::value(subsample));
 
     auto result = options.parse(argc, argv);
@@ -150,14 +162,19 @@ int main(int argc, char** argv)
     gp_submaps ss = read_data<gp_submaps>(path);
 	
     ss.matches = compute_matches(ss.trans, ss.rots, ss.bounds);
-    //ss.binary_constraints = compute_binary_constraints(ss.trans, ss.rots, ss.points);
+    //ss.matches.resize(0);
+    ss.binary_constraints = compute_binary_constraints(ss.trans, ss.rots, ss.points);
     
     ObsT original_points = ss.points;
     for (Eigen::MatrixXd& p : ss.points) {
         subsample_cloud(p, subsample);
     }
 
-    register_processes_ceres(ss);
+    for (Eigen::Vector3d& t : ss.trans) {
+        //t = 1.5*t;
+    }
+
+    register_processes_ceres(ss, !norot);
 
     ss.points = original_points;
     write_data(ss, output);
