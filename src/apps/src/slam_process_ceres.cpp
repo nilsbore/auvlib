@@ -43,8 +43,55 @@ void subsample_cloud(Eigen::MatrixXd& points, int subsample)
     points.conservativeResize(counter, 3);
 }
 
+void calculate_costs(gp_submaps& ss)
+{
+    double binary_costs = 0.;
+    for (const tuple<int, int, Eigen::Vector3d, Eigen::Vector3d>& con : ss.binary_constraints) {
+        int i, j;
+        Eigen::Vector3d last_point1, first_point2;
+        tie (i, j, last_point1, first_point2) = con;
+        BinaryConstraintCostFunctor cost_function(last_point1, first_point2, 40.);
+        double value;
+        cost_function(ss.trans[i].data(), ss.angles[i].data(), ss.trans[j].data(), ss.angles[j].data(), &value);
+        binary_costs += value;
+    }
+
+    double matches_costs = 0.;
+    /*
+    for (const pair<int, int>& match : ss.matches) {
+        int i, j;
+        tie (i, j) = match;
+        cout << "Adding constraint between " << i << " and " << j << endl;
+        double parameters[4][3];
+        std::copy(ss.trans[i].data(), ss.trans[i].data() + 3, parameters[0]);
+        std::copy(ss.angles[i].data(), ss.angles[i].data() + 3, parameters[1]);
+        std::copy(ss.trans[j].data(), ss.trans[j].data() + 3, parameters[2]);
+        std::copy(ss.angles[j].data(), ss.angles[j].data() + 3, parameters[3]);
+        GaussianProcessCostFunction cost_function(ss.gps[i], ss.bounds[i], ss.points[j]);
+        double value;
+        cost_function.Evaluate((double const* const*)parameters, &value, NULL);
+        matches_costs += value;
+    }
+    */
+    
+    double unary_costs = 0.;
+    for (int i = 0; i < ss.trans.size(); ++i) {
+        UnaryConstraintCostFunctor cost_function(ss.angles[i], 0.05);
+        double value;
+        cost_function(ss.angles[i].data(), &value);
+        unary_costs += value;
+    }
+
+    cout << "Matches cost: " << matches_costs << endl;
+    cout << "Binary cost: " << binary_costs << endl;
+    cout << "Unary cost: " << unary_costs << endl;
+    cout << "Total cost: " << matches_costs + binary_costs + unary_costs << endl;
+}
+
 void register_processes_ceres(gp_submaps& ss, bool with_rot)
 {
+    calculate_costs(ss);
+
     ceres::Problem problem;
 
     for (const tuple<int, int, Eigen::Vector3d, Eigen::Vector3d>& con : ss.binary_constraints) {
