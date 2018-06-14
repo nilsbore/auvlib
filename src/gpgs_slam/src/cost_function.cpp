@@ -91,6 +91,11 @@ bool GaussianProcessCostFunction::Evaluate(double const* const* parameters, doub
 
     Eigen::MatrixXd points2in1 = get_points_in_bound_transform(points2, t2, R2, t1, R1, bounds1);
     //Eigen::MatrixXd points2in1 = get_points_in_bound_transform(points2, t2, R2, t1, R1, 465.);
+    // NOTE: this is a workaround if there is no longer any overlap
+    if (points2in1.rows() == 0) {
+        points2in1 = points2*R2.transpose()*R1;
+	    points2in1.rowwise() += (t2 - t1).transpose()*R1;
+    }
     
     Eigen::MatrixXd dX;
     Eigen::VectorXd ll;
