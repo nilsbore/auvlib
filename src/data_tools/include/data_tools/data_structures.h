@@ -67,6 +67,7 @@ struct pt_submaps
     using RotsT = std::vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> >;
     using AngsT = std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> >;
     using MatchesT = std::vector<std::pair<int, int> >; // tells us which maps overlap
+    using ConstraintsT = std::vector<std::tuple<int, int, Eigen::Vector3d, Eigen::Vector3d> >;
     using BoundsT = std::vector<Eigen::Matrix2d, Eigen::aligned_allocator<Eigen::Matrix2d> >;
 
     PointsT points; // Nx3 matrices with all points in the submaps
@@ -74,7 +75,7 @@ struct pt_submaps
     RotsT rots; // rotation matrices of submaps, same as angles
     AngsT angles; // euler angles of submaps, same as rots
     MatchesT matches; // overlapping submap matches, containing vector indices of matches
-    MatchesT binary_constraints; // consecutive submaps, containing vector indices of matches
+    ConstraintsT binary_constraints; // consecutive submaps, containing vector indices of matches
     BoundsT bounds; // bounds of the submap, bb(0, 0) - min x, bb(0, 1) - min y, bb(1, 0) - max x, bb(1, 1) - max y
     
     template <class Archive>
