@@ -137,6 +137,7 @@ ConstraintsT compute_binary_constraints(const TransTT& trans, const RotsTT& rots
         Eigen::Vector3d first_point2 = points[i].row(swath_width/2).transpose();
         Eigen::Vector3d last_point1_transformed = rots[i-1]*last_point1 + trans[i-1];
         Eigen::Vector3d first_point2_transformed = rots[i]*first_point2 + trans[i];
+        first_point2 = rots[i].transpose()*(last_point1_transformed - trans[i]);
         double dist = (first_point2_transformed-last_point1_transformed).norm();
         cout << "Distance between " << i-1 << " and " << i << ": " << dist << endl;
         if (dist < 0.4) {

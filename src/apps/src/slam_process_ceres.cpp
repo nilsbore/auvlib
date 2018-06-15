@@ -50,7 +50,8 @@ void calculate_costs(gp_submaps& ss)
         int i, j;
         Eigen::Vector3d last_point1, first_point2;
         tie (i, j, last_point1, first_point2) = con;
-        BinaryConstraintCostFunctor cost_function(last_point1, first_point2, 40.);
+        //BinaryConstraintCostFunctor cost_function(last_point1, first_point2, 40.);
+        BinaryConstraintCostFunctor cost_function(last_point1, first_point2, 5.);
         double value;
         cost_function(ss.trans[i].data(), ss.angles[i].data(), ss.trans[j].data(), ss.angles[j].data(), &value);
         binary_costs += value;
@@ -99,7 +100,7 @@ void register_processes_ceres(gp_submaps& ss, bool with_rot)
         Eigen::Vector3d last_point1, first_point2;
         tie (i, j, last_point1, first_point2) = con;
         cout << "Adding binary constraint between " << i << " and " << j << endl;
-        ceres::CostFunction* cost_function = BinaryConstraintCostFunctor::Create(last_point1, first_point2, 40.);
+        ceres::CostFunction* cost_function = BinaryConstraintCostFunctor::Create(last_point1, first_point2, 50.);
         ceres::LossFunction* loss_function = NULL;
         problem.AddResidualBlock(cost_function, loss_function, ss.trans[i].data(), ss.angles[i].data(),
                                                                ss.trans[j].data(), ss.angles[j].data());
@@ -112,25 +113,27 @@ void register_processes_ceres(gp_submaps& ss, bool with_rot)
         ceres::CostFunction* cost_function1 = new GaussianProcessCostFunction(ss.gps[i], ss.bounds[i], ss.points[j]);
         ceres::CostFunction* cost_function2 = new GaussianProcessCostFunction(ss.gps[j], ss.bounds[j], ss.points[i]);
 
-        //ceres::LossFunction* loss_function = new ceres::SoftLOneLoss(5.);
-        ceres::LossFunction* loss_function1 = new ceres::HuberLoss(.5);
-        ceres::LossFunction* loss_function2 = new ceres::HuberLoss(5.);
-        ceres::LossFunction* loss_function = NULL;
-        problem.AddResidualBlock(cost_function1, loss_function, ss.trans[i].data(), ss.angles[i].data(),
+        ceres::LossFunction* loss_function1 = new ceres::SoftLOneLoss(1.3);
+        ceres::LossFunction* loss_function2 = new ceres::SoftLOneLoss(1.3);
+        //ceres::LossFunction* loss_function1 = new ceres::HuberLoss(.5);
+        //ceres::LossFunction* loss_function2 = new ceres::HuberLoss(5.);
+        //ceres::LossFunction* loss_function1 = NULL;
+        //ceres::LossFunction* loss_function2 = NULL;
+        problem.AddResidualBlock(cost_function1, loss_function1, ss.trans[i].data(), ss.angles[i].data(),
                                                                 ss.trans[j].data(), ss.angles[j].data());
-        problem.AddResidualBlock(cost_function2, loss_function, ss.trans[j].data(), ss.angles[j].data(),
+        problem.AddResidualBlock(cost_function2, loss_function2, ss.trans[j].data(), ss.angles[j].data(),
                                                                 ss.trans[i].data(), ss.angles[i].data());
     }
     
     for (int i = 0; i < ss.trans.size(); ++i) {
-        ceres::CostFunction* cost_function = UnaryConstraintCostFunctor::Create(ss.angles[i], 0.05);
+        ceres::CostFunction* cost_function = UnaryConstraintCostFunctor::Create(ss.angles[i], 0.2);
         ceres::LossFunction* loss_function = NULL;
         problem.AddResidualBlock(cost_function, loss_function, ss.angles[i].data());
 
-        problem.SetParameterLowerBound(ss.trans[i].data(), 0, ss.trans[i](0) - 20.);
-        problem.SetParameterLowerBound(ss.trans[i].data(), 1, ss.trans[i](1) - 20.);
-        problem.SetParameterUpperBound(ss.trans[i].data(), 0, ss.trans[i](0) + 20.);
-        problem.SetParameterUpperBound(ss.trans[i].data(), 1, ss.trans[i](1) + 20.);
+        problem.SetParameterLowerBound(ss.trans[i].data(), 0, ss.trans[i](0) - 10.);
+        problem.SetParameterLowerBound(ss.trans[i].data(), 1, ss.trans[i](1) - 10.);
+        problem.SetParameterUpperBound(ss.trans[i].data(), 0, ss.trans[i](0) + 10.);
+        problem.SetParameterUpperBound(ss.trans[i].data(), 1, ss.trans[i](1) + 10.);
 
         problem.SetParameterLowerBound(ss.angles[i].data(), 2, ss.angles[i](2) - M_PI);
         problem.SetParameterUpperBound(ss.angles[i].data(), 2, ss.angles[i](2) + M_PI);
@@ -154,7 +157,7 @@ void register_processes_ceres(gp_submaps& ss, bool with_rot)
     options.callbacks.push_back(vis);
     options.max_num_iterations = 200;
     options.update_state_every_iteration = true;
-    options.num_threads = 8;
+    options.num_threads = 4; // 8;
     //options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
     options.linear_solver_type = ceres::SPARSE_SCHUR;
     //options.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY;

@@ -8,7 +8,7 @@ class BinaryConstraintCostFunctor {
 public:
     //BinaryConstraintCostFunctor(const Eigen::MatrixXd& points1, const Eigen::MatrixXd& points2, double sigma)
     BinaryConstraintCostFunctor(const Eigen::Vector3d& last_point1, const Eigen::Vector3d& first_point2, double sigma) :
-        last_point1(last_point1), first_point2(first_point2)
+        last_point1(last_point1), first_point2(first_point2), sigma(sigma)
     {
         // assuming 512 beam wide swaths
         const int swath_width = 512;
@@ -51,11 +51,14 @@ public:
         Eigen::Matrix<T, 3, 1> diff = t1 + R1*last_point1.cast<T>() - (t2 + R2*first_point2.cast<T>());
         //Eigen::Matrix<T, 3, 1> diff = t1 + last_point1.cast<T>() - (t2 + first_point2.cast<T>());
 
-        T nom = -diff.transpose()*C.cast<T>()*diff;
+        //T nom = -diff.transpose()*C.cast<T>()*diff;
         //T cost = -denom - 0.5*nom;
-        T cost = -0.5*nom;
-        std::cout << "Computing derivatives, value: " << cost << std::endl;
-        e[0] = cost;
+        //T cost = -0.5*nom;
+        //std::cout << "Computing derivatives, value: " << cost << std::endl;
+        
+        //e[0] = cost;
+        e[0] = 1./sigma*diff[0];
+        e[1] = 1./sigma*diff[1];
 
         return true;
     }
@@ -66,7 +69,8 @@ public:
                                        const Eigen::Vector3d& first_point2,
                                        double sigma)
     {
-        return new ceres::AutoDiffCostFunction<BinaryConstraintCostFunctor, 1, 3, 3, 3, 3>(
+        return new ceres::AutoDiffCostFunction<BinaryConstraintCostFunctor, 2, 3, 3, 3, 3>(
+        //return new ceres::AutoDiffCostFunction<BinaryConstraintCostFunctor, 1, 3, 3, 3, 3>(
             new BinaryConstraintCostFunctor(last_point1, first_point2, sigma));
     }
 
@@ -74,6 +78,7 @@ private:
     Eigen::Vector3d last_point1;
     Eigen::Vector3d first_point2;
     Eigen::Matrix3d C;
+    double sigma;
     double denom;
 };
 

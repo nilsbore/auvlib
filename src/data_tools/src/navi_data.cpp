@@ -220,7 +220,7 @@ void divide_tracks(mbes_ping::PingsT& pings)
         double mean_width = 0.; double count = 0.;
         for (auto it = pos; it != next; ++it) {
             last_pos = it->pos_;
-            mean_width += 1.7*(it->beams.front() - it->beams.back()).norm();
+            mean_width += 3.7*(it->beams.front() - it->beams.back()).norm();
             count += 1;
         }
         mean_width /= count;
