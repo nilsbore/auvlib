@@ -5,6 +5,9 @@ include_directories(include)
 add_executable(parse_navi_data src/parse_navi_data.cpp)
 target_link_libraries(parse_navi_data navi_data sparse_gp data_transforms gpgs_igl_visualizer data_structures ${PCL_LIBRARIES})
 
+add_executable(parse_distort_navi_data src/parse_distort_navi_data.cpp)
+target_link_libraries(parse_distort_navi_data navi_data sparse_gp data_transforms gpgs_igl_visualizer data_structures ${PCL_LIBRARIES})
+
 add_executable(parse_sim_data src/parse_sim_data.cpp)
 target_link_libraries(parse_sim_data sparse_gp data_transforms submaps data_structures)
 
