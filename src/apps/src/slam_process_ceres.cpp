@@ -43,6 +43,7 @@ void subsample_cloud(Eigen::MatrixXd& points, int subsample)
     points.conservativeResize(counter, 3);
 }
 
+/*
 void calculate_costs(gp_submaps& ss)
 {
     double binary_costs = 0.;
@@ -58,12 +59,15 @@ void calculate_costs(gp_submaps& ss)
     }
 
     double matches_costs = 0.;
-    /*
+
+    double* parameters[4];
+    for (int j = 0; j < 4; ++j) {
+        parameters[j] = new double[3];
+    }
     for (const pair<int, int>& match : ss.matches) {
         int i, j;
         tie (i, j) = match;
         cout << "Adding constraint between " << i << " and " << j << endl;
-        double parameters[4][3];
         std::copy(ss.trans[i].data(), ss.trans[i].data() + 3, parameters[0]);
         std::copy(ss.angles[i].data(), ss.angles[i].data() + 3, parameters[1]);
         std::copy(ss.trans[j].data(), ss.trans[j].data() + 3, parameters[2]);
@@ -73,7 +77,9 @@ void calculate_costs(gp_submaps& ss)
         cost_function.Evaluate((double const* const*)parameters, &value, NULL);
         matches_costs += value;
     }
-    */
+    for (int j = 0; j < 4; ++j) {
+        delete parameters[j];
+    }
     
     double unary_costs = 0.;
     for (int i = 0; i < ss.trans.size(); ++i) {
@@ -88,12 +94,35 @@ void calculate_costs(gp_submaps& ss)
     cout << "Unary cost: " << unary_costs << endl;
     cout << "Total cost: " << matches_costs + binary_costs + unary_costs << endl;
 }
+*/
+
+tuple<double, double, double> calculate_costs(vector<ceres::ResidualBlockId>& matches_residual_block_ids,
+                                              vector<ceres::ResidualBlockId>& binary_residual_block_ids, 
+                                              vector<ceres::ResidualBlockId>& unary_residual_block_ids,
+                                              ceres::Problem& problem)
+{
+    vector<vector<ceres::ResidualBlockId>*> residual_block_ids = {&matches_residual_block_ids, &binary_residual_block_ids, &unary_residual_block_ids};
+
+    std::array<double, 3> costs;
+    for (int i = 0; i < 3; ++i) {   
+        ceres::Problem::EvaluateOptions options;
+        options.residual_blocks = *residual_block_ids[i];
+        costs[i] = 0.0;
+        vector<double> residuals;
+        problem.Evaluate(options, &costs[i], &residuals, nullptr, nullptr);
+    }
+
+    return make_tuple(costs[0], costs[1], costs[2]);
+}
 
 void register_processes_ceres(gp_submaps& ss, bool with_rot)
 {
-    calculate_costs(ss);
+    //calculate_costs(ss);
 
     ceres::Problem problem;
+    vector<ceres::ResidualBlockId> matches_residual_block_ids;
+    vector<ceres::ResidualBlockId> binary_residual_block_ids;
+    vector<ceres::ResidualBlockId> unary_residual_block_ids;
 
     for (const tuple<int, int, Eigen::Vector3d, Eigen::Vector3d>& con : ss.binary_constraints) {
         int i, j;
@@ -102,8 +131,8 @@ void register_processes_ceres(gp_submaps& ss, bool with_rot)
         cout << "Adding binary constraint between " << i << " and " << j << endl;
         ceres::CostFunction* cost_function = BinaryConstraintCostFunctor::Create(last_point1, first_point2, 50.);
         ceres::LossFunction* loss_function = NULL;
-        problem.AddResidualBlock(cost_function, loss_function, ss.trans[i].data(), ss.angles[i].data(),
-                                                               ss.trans[j].data(), ss.angles[j].data());
+        binary_residual_block_ids.push_back(problem.AddResidualBlock(cost_function, loss_function, ss.trans[i].data(), ss.angles[i].data(),
+                                                                                                   ss.trans[j].data(), ss.angles[j].data()));
     }
 
     for (const pair<int, int>& match : ss.matches) {
@@ -113,27 +142,27 @@ void register_processes_ceres(gp_submaps& ss, bool with_rot)
         ceres::CostFunction* cost_function1 = new GaussianProcessCostFunction(ss.gps[i], ss.bounds[i], ss.points[j]);
         ceres::CostFunction* cost_function2 = new GaussianProcessCostFunction(ss.gps[j], ss.bounds[j], ss.points[i]);
 
-        ceres::LossFunction* loss_function1 = new ceres::SoftLOneLoss(1.3);
-        ceres::LossFunction* loss_function2 = new ceres::SoftLOneLoss(1.3);
+        //ceres::LossFunction* loss_function1 = new ceres::SoftLOneLoss(1.3);
+        //ceres::LossFunction* loss_function2 = new ceres::SoftLOneLoss(1.3);
         //ceres::LossFunction* loss_function1 = new ceres::HuberLoss(.5);
         //ceres::LossFunction* loss_function2 = new ceres::HuberLoss(5.);
-        //ceres::LossFunction* loss_function1 = NULL;
-        //ceres::LossFunction* loss_function2 = NULL;
-        problem.AddResidualBlock(cost_function1, loss_function1, ss.trans[i].data(), ss.angles[i].data(),
-                                                                ss.trans[j].data(), ss.angles[j].data());
-        problem.AddResidualBlock(cost_function2, loss_function2, ss.trans[j].data(), ss.angles[j].data(),
-                                                                ss.trans[i].data(), ss.angles[i].data());
+        ceres::LossFunction* loss_function1 = NULL;
+        ceres::LossFunction* loss_function2 = NULL;
+        matches_residual_block_ids.push_back(problem.AddResidualBlock(cost_function1, loss_function1, ss.trans[i].data(), ss.angles[i].data(),
+                                                                                                      ss.trans[j].data(), ss.angles[j].data()));
+        matches_residual_block_ids.push_back(problem.AddResidualBlock(cost_function2, loss_function2, ss.trans[j].data(), ss.angles[j].data(),
+                                                                                                      ss.trans[i].data(), ss.angles[i].data()));
     }
     
     for (int i = 0; i < ss.trans.size(); ++i) {
         ceres::CostFunction* cost_function = UnaryConstraintCostFunctor::Create(ss.angles[i], 0.2);
         ceres::LossFunction* loss_function = NULL;
-        problem.AddResidualBlock(cost_function, loss_function, ss.angles[i].data());
+        unary_residual_block_ids.push_back(problem.AddResidualBlock(cost_function, loss_function, ss.angles[i].data()));
 
-        problem.SetParameterLowerBound(ss.trans[i].data(), 0, ss.trans[i](0) - 10.);
-        problem.SetParameterLowerBound(ss.trans[i].data(), 1, ss.trans[i](1) - 10.);
-        problem.SetParameterUpperBound(ss.trans[i].data(), 0, ss.trans[i](0) + 10.);
-        problem.SetParameterUpperBound(ss.trans[i].data(), 1, ss.trans[i](1) + 10.);
+        problem.SetParameterLowerBound(ss.trans[i].data(), 0, ss.trans[i](0) - 20.);
+        problem.SetParameterLowerBound(ss.trans[i].data(), 1, ss.trans[i](1) - 20.);
+        problem.SetParameterUpperBound(ss.trans[i].data(), 0, ss.trans[i](0) + 20.);
+        problem.SetParameterUpperBound(ss.trans[i].data(), 1, ss.trans[i](1) + 20.);
 
         problem.SetParameterLowerBound(ss.angles[i].data(), 2, ss.angles[i](2) - M_PI);
         problem.SetParameterUpperBound(ss.angles[i].data(), 2, ss.angles[i](2) + M_PI);
@@ -164,6 +193,8 @@ void register_processes_ceres(gp_submaps& ss, bool with_rot)
     //options.linear_solver_type = ceres::DENSE_QR;
 
     ceres::Solver::Summary summary;
+    double matches_cost_0, binary_cost_0, unary_cost_0;
+    tie(matches_cost_0, binary_cost_0, unary_cost_0) = calculate_costs(matches_residual_block_ids, binary_residual_block_ids, unary_residual_block_ids, problem);
     
 	//vis->display();
 	auto handle = std::async(std::launch::async, [&options, &problem, &summary]() {
@@ -172,10 +203,23 @@ void register_processes_ceres(gp_submaps& ss, bool with_rot)
 	vis->display();
 	handle.get();
     delete vis; // it seems like memory of this is not handled by ceres
+    
+    double matches_cost_1, binary_cost_1, unary_cost_1;
+    tie(matches_cost_1, binary_cost_1, unary_cost_1) = calculate_costs(matches_residual_block_ids, binary_residual_block_ids, unary_residual_block_ids, problem);
 
     std::cout << summary.FullReport() << '\n';
 
     std::cout << "Is usable?: " << summary.IsSolutionUsable() << std::endl;
+
+    cout << "Matches cost before: " << matches_cost_0 << endl;
+    cout << "Binary cost before: " << binary_cost_0 << endl;
+    cout << "Unary cost before: " << unary_cost_0 << endl;
+    cout << "Total cost before: " << matches_cost_0+binary_cost_0+unary_cost_0 << endl;
+
+    cout << "Matches cost after: " << matches_cost_1 << endl;
+    cout << "Binary cost after: " << binary_cost_1 << endl;
+    cout << "Unary cost after: " << unary_cost_1 << endl;
+    cout << "Total cost after: " << matches_cost_1+binary_cost_1+unary_cost_1 << endl;
 }
 
 // Example: ./visualize_process --folder ../scripts --lsq 100.0 --sigma 0.1 --s0 1.
