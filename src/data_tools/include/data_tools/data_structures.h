@@ -1,12 +1,16 @@
 #ifndef DATA_STRUCTURES_H
 #define DATA_STRUCTURES_H
 
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
 #include <Eigen/Dense>
+
 #include <eigen_cereal/eigen_cereal.h>
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/vector.hpp>
 #include <cereal/types/utility.hpp>
 #include <cereal/types/string.hpp>
+#include <cereal/types/array.hpp>
 #include <boost/filesystem.hpp>
 
 #include <sparse_gp/sparse_gp.h>
@@ -98,6 +102,48 @@ struct gp_submaps : public pt_submaps
     {
         ar(cereal::base_class<pt_submaps>(this), CEREAL_NVP(gps));
     }
+};
+
+struct track_error_benchmark {
+
+    std::string track_img_path;
+    std::vector<std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > > submap_tracks;
+    std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > gt_track;
+    int nbr_tracks_drawn;
+    std::array<double, 5> params;
+    Eigen::Vector3d submap_origin;
+    cv::Mat track_img;
+
+    track_error_benchmark() : nbr_tracks_drawn(0)
+    {
+
+    }
+
+    void track_img_params(mbes_ping::PingsT& pings, int rows=1000, int cols=1000);
+    void draw_track_img(mbes_ping::PingsT& pings);
+    void draw_track_img(pt_submaps::TransT& positions);
+    double compute_rms_error(pt_submaps::TransT& corrected_track);
+
+    template <class Archive>
+    void save(Archive& ar) const
+    {
+        if (track_img.rows > 0) {
+            cv::imwrite(track_img_path, track_img);
+        }
+        ar(track_img_path, submap_tracks, gt_track, nbr_tracks_drawn, params, submap_origin);
+    }
+
+    template <class Archive>
+    void load(Archive& ar)
+    {
+        ar(track_img_path, submap_tracks, gt_track, nbr_tracks_drawn, params, submap_origin);
+        if (!track_img_path.empty()) {
+            track_img = cv::imread(track_img_path);
+        }
+    }
+
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
 };
 
 template <typename T>

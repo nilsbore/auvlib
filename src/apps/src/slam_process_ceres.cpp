@@ -9,6 +9,7 @@
 
 #include <data_tools/submaps.h>
 #include <data_tools/data_structures.h>
+#include <data_tools/transforms.h>
 
 #include <gpgs_slam/cost_function.h>
 #include <gpgs_slam/binary_constraint_cost.h>
@@ -142,12 +143,12 @@ void register_processes_ceres(gp_submaps& ss, bool with_rot)
         ceres::CostFunction* cost_function1 = new GaussianProcessCostFunction(ss.gps[i], ss.bounds[i], ss.points[j]);
         ceres::CostFunction* cost_function2 = new GaussianProcessCostFunction(ss.gps[j], ss.bounds[j], ss.points[i]);
 
-        //ceres::LossFunction* loss_function1 = new ceres::SoftLOneLoss(1.3);
-        //ceres::LossFunction* loss_function2 = new ceres::SoftLOneLoss(1.3);
+        ceres::LossFunction* loss_function1 = new ceres::SoftLOneLoss(1.3);
+        ceres::LossFunction* loss_function2 = new ceres::SoftLOneLoss(1.3);
         //ceres::LossFunction* loss_function1 = new ceres::HuberLoss(.5);
         //ceres::LossFunction* loss_function2 = new ceres::HuberLoss(5.);
-        ceres::LossFunction* loss_function1 = NULL;
-        ceres::LossFunction* loss_function2 = NULL;
+        //ceres::LossFunction* loss_function1 = NULL;
+        //ceres::LossFunction* loss_function2 = NULL;
         matches_residual_block_ids.push_back(problem.AddResidualBlock(cost_function1, loss_function1, ss.trans[i].data(), ss.angles[i].data(),
                                                                                                       ss.trans[j].data(), ss.angles[j].data()));
         matches_residual_block_ids.push_back(problem.AddResidualBlock(cost_function2, loss_function2, ss.trans[j].data(), ss.angles[j].data(),
@@ -172,6 +173,8 @@ void register_processes_ceres(gp_submaps& ss, bool with_rot)
         }
         ceres::SubsetParameterization *subset_parameterization = new ceres::SubsetParameterization(3, {0, 1});
         problem.SetParameterization(ss.angles[i].data(), subset_parameterization);
+        ceres::SubsetParameterization *subset_parameterization_z = new ceres::SubsetParameterization(3, {2});
+        problem.SetParameterization(ss.trans[i].data(), subset_parameterization_z);
     }
     
     //problem.SetParameterBlockConstant(trans[4].data());
@@ -195,6 +198,8 @@ void register_processes_ceres(gp_submaps& ss, bool with_rot)
     ceres::Solver::Summary summary;
     double matches_cost_0, binary_cost_0, unary_cost_0;
     tie(matches_cost_0, binary_cost_0, unary_cost_0) = calculate_costs(matches_residual_block_ids, binary_residual_block_ids, unary_residual_block_ids, problem);
+    pt_submaps::TransT trans_0 = ss.trans;
+    pt_submaps::AngsT angs_0 = ss.angles;
     
 	//vis->display();
 	auto handle = std::async(std::launch::async, [&options, &problem, &summary]() {
@@ -207,9 +212,8 @@ void register_processes_ceres(gp_submaps& ss, bool with_rot)
     double matches_cost_1, binary_cost_1, unary_cost_1;
     tie(matches_cost_1, binary_cost_1, unary_cost_1) = calculate_costs(matches_residual_block_ids, binary_residual_block_ids, unary_residual_block_ids, problem);
 
-    std::cout << summary.FullReport() << '\n';
-
-    std::cout << "Is usable?: " << summary.IsSolutionUsable() << std::endl;
+    cout << summary.FullReport() << endl;
+    cout << "Is usable?: " << summary.IsSolutionUsable() << endl;
 
     cout << "Matches cost before: " << matches_cost_0 << endl;
     cout << "Binary cost before: " << binary_cost_0 << endl;
@@ -220,6 +224,16 @@ void register_processes_ceres(gp_submaps& ss, bool with_rot)
     cout << "Binary cost after: " << binary_cost_1 << endl;
     cout << "Unary cost after: " << unary_cost_1 << endl;
     cout << "Total cost after: " << matches_cost_1+binary_cost_1+unary_cost_1 << endl;
+
+    double trans_change = 0.;
+    double angs_change = 0.;
+    for (int i = 0; i < ss.trans.size(); ++i) {
+        trans_change += (ss.trans[i] - trans_0[i]).norm();
+        angs_change += (ss.angles[i] - angs_0[i]).norm();
+    }
+
+    cout << "Trans changes: " << trans_change << endl;
+    cout << "Angles change: " << angs_change << endl;
 }
 
 // Example: ./visualize_process --folder ../scripts --lsq 100.0 --sigma 0.1 --s0 1.
@@ -268,10 +282,30 @@ int main(int argc, char** argv)
         //t = 1.5*t;
     }
 
+    TransT trans_0 = ss.trans;
+    RotsT rots_0 = ss.rots;
     register_processes_ceres(ss, !norot);
 
     ss.points = original_points;
     write_data(ss, output);
+
+    track_error_benchmark benchmark = read_data<track_error_benchmark>(boost::filesystem::path("my_benchmark.cereal"));
+    pt_submaps::TransT corrected_track;
+    for (int i = 0; i < benchmark.submap_tracks.size(); ++i) {
+        Eigen::Matrix3d R = euler_to_matrix(ss.angles[i][0], ss.angles[i][1], ss.angles[i][2]);
+        for (const Eigen::Vector3d& pos_0 : benchmark.submap_tracks[i]) {
+            Eigen::Vector3d pos = R*rots_0[i].transpose()*(pos_0 - benchmark.submap_origin - trans_0[i]) + ss.trans[i];
+            corrected_track.push_back(pos);
+        }
+
+    }
+    benchmark.draw_track_img(corrected_track);
+    double error = benchmark.compute_rms_error(corrected_track);
+    
+    cv::imshow("Track", benchmark.track_img);
+    cv::waitKey();
+
+    cout << "RMS position error is: " << error << endl;
 
     return 0;
 }

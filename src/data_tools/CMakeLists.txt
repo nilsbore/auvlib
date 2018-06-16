@@ -35,7 +35,7 @@ target_include_directories(navi_data PUBLIC
 # Link the libraries
 target_link_libraries(submaps ${PCL_LIBRARIES})
 
-target_link_libraries(data_structures PUBLIC sparse_gp rbf_kernel gaussian_noise)
+target_link_libraries(data_structures PUBLIC sparse_gp rbf_kernel gaussian_noise ${OpenCV_LIBS})
 
 target_link_libraries(navi_data PUBLIC sparse_gp data_transforms ${PCL_LIBRARIES})
 

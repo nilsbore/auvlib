@@ -2,6 +2,7 @@
 #include <data_tools/navi_data.h>
 #include <data_tools/data_structures.h>
 #include <data_tools/transforms.h>
+#include <data_tools/colormap.h>
 #include <boost/filesystem.hpp>
 #include <random>
 
@@ -14,6 +15,8 @@
 #include <sparse_gp/rbf_kernel.h>
 #include <sparse_gp/probit_noise.h>
 #include <sparse_gp/gaussian_noise.h>
+
+#include <opencv2/highgui/highgui.hpp>
 
 #include <gpgs_slam/igl_visualizer.h>
 
@@ -38,9 +41,9 @@ void clip_submap(Eigen::MatrixXd& points, Eigen::Matrix2d& bounds, double minx, 
 // and a cumulative dvl error (probably with some bias).
 void distort_tracks(mbes_ping::PingsT& pings)
 {
-    double dvl_std = 0.;
-    double dvl_res_x = 0.0001;
-    double dvl_res_y = 0.0;
+    double dvl_std = 0.0; //01;
+    double dvl_res_x = 0.0005;
+    double dvl_res_y = 0.0002; //001;
 
     std::default_random_engine generator;
     std::normal_distribution<double> distribution(0., 1.);
@@ -105,10 +108,32 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT> load_or_create_submaps(const boost::f
 
     match_timestamps(pings, entries);
 
-    distort_tracks(pings);
-    divide_tracks(pings);
+    int rows = 1000;
+    int cols = 1000;
+    track_error_benchmark benchmark;
+    benchmark.track_img_params(pings, rows, cols);
+    benchmark.draw_track_img(pings);
+
+    for (mbes_ping& ping : pings) {
+        benchmark.gt_track.push_back(ping.pos_);
+    }
+
+    //distort_tracks(pings);
+    benchmark.draw_track_img(pings);
+    
+    cv::imshow("Track", benchmark.track_img);
+    cv::waitKey();
+
+    //divide_tracks(pings);
     //divide_tracks_equal(pings);
 	//view_cloud(pings);
+
+    for (mbes_ping& ping : pings) {
+        if (ping.first_in_file_) {
+            benchmark.submap_tracks.push_back(pt_submaps::TransT());
+        }
+        benchmark.submap_tracks.back().push_back(ping.pos_);
+    }
 
     ObsT submaps;
     TransT trans;
@@ -116,7 +141,16 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT> load_or_create_submaps(const boost::f
     MatchesT matches;
     BBsT bounds;
     tie(submaps, trans, angs, matches, bounds) = create_submaps(pings);
+    
+    Eigen::Vector3d origin = trans[0];
+    for (int i = 0; i < trans.size(); ++i) {
+        cout << "Trans " << i << ": " << trans[i].transpose() << endl;
+        trans[i].array() -= origin.array();
+    }
 	
+    benchmark.submap_origin = origin;
+    write_data(benchmark, boost::filesystem::path("my_benchmark.cereal"));
+
     return make_tuple(submaps, trans, angs, matches, bounds);
 }
 
@@ -164,12 +198,6 @@ int main(int argc, char** argv)
     
     gp_submaps ss;
     tie(ss.points, ss.trans, ss.angles, ss.matches, ss.bounds) = load_or_create_submaps(folder);
-    
-    Eigen::Vector3d origin = ss.trans[0];
-    for (int i = 0; i < ss.trans.size(); ++i) {
-        cout << "Trans " << i << ": " << ss.trans[i].transpose() << endl;
-        ss.trans[i].array() -= origin.array();
-    }
     
     for (int i = 0; i < ss.points.size(); ++i) {
 
