@@ -294,7 +294,7 @@ int main(int argc, char** argv)
     for (int i = 0; i < benchmark.submap_tracks.size(); ++i) {
         Eigen::Matrix3d R = euler_to_matrix(ss.angles[i][0], ss.angles[i][1], ss.angles[i][2]);
         for (const Eigen::Vector3d& pos_0 : benchmark.submap_tracks[i]) {
-            Eigen::Vector3d pos = R*rots_0[i].transpose()*(pos_0 - benchmark.submap_origin - trans_0[i]) + ss.trans[i];
+            Eigen::Vector3d pos = R*rots_0[i].transpose()*(pos_0 - benchmark.submap_origin - trans_0[i]) + ss.trans[i] + benchmark.submap_origin;
             corrected_track.push_back(pos);
         }
 
