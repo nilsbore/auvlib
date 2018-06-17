@@ -4,6 +4,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <Eigen/Dense>
+#include <map>
 
 #include <eigen_cereal/eigen_cereal.h>
 #include <cereal/archives/binary.hpp>
@@ -11,6 +12,7 @@
 #include <cereal/types/utility.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/array.hpp>
+#include <cereal/types/map.hpp>
 #include <boost/filesystem.hpp>
 
 #include <sparse_gp/sparse_gp.h>
@@ -106,23 +108,50 @@ struct gp_submaps : public pt_submaps
 
 struct track_error_benchmark {
 
+    // this contains all added tracks assembled into one image
     std::string track_img_path;
-    std::vector<std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > > submap_tracks;
-    std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > gt_track;
-    int nbr_tracks_drawn;
+    // this contains all added track error images
+    std::map<std::string, std::string> error_img_paths;
+
+    // TODO: this should just be the normal pings instead
+    //std::vector<std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > > submap_tracks;
+
+    // NOTE: this is the potentially distorted input data
+    mbes_ping::PingsT input_pings;
+
+    // NOTE: this is needed to compare with the ground truth
+    pt_submaps::TransT gt_track;
+    //std::map<std::string, pt_submaps::TransT> tracks;
+    std::map<std::string, double> track_rms_errors;
+    std::map<std::string, double> consistency_rms_errors;
+
+    // TODO: get this from on of the dicts instead
+    //int nbr_tracks_drawn;
+
     std::array<double, 5> params;
     Eigen::Vector3d submap_origin;
+
+    // NOTE: this is here for convenience
     cv::Mat track_img;
 
-    track_error_benchmark() : nbr_tracks_drawn(0)
+    track_error_benchmark()
     {
 
     }
 
+    // these 5 functions should be the main way of interfacing with this class
+    void add_ground_truth(mbes_ping::PingsT& pings);
+    void add_initial(mbes_ping::PingsT& pings);
+    void add_benchmark(mbes_ping::PingsT& pings, const std::string& name);
+    void add_benchmark(pt_submaps::TransT& trans_corr, pt_submaps::RotsT& rots_corr, const std::string& name);
+    void print_summary();
+
     void track_img_params(mbes_ping::PingsT& pings, int rows=1000, int cols=1000);
-    void draw_track_img(mbes_ping::PingsT& pings);
-    void draw_track_img(pt_submaps::TransT& positions);
-    double compute_rms_error(pt_submaps::TransT& corrected_track);
+    void draw_track_img(mbes_ping::PingsT& pings, cv::Mat& img, const cv::Scalar& color, const std::string& name);
+    //void draw_track_img(pt_submaps::TransT& positions);
+    void draw_track_legend();
+    double compute_rms_error(mbes_ping::PingsT& pings);
+    std::pair<double, cv::Mat> compute_draw_consistency_map(mbes_ping::PingsT& pings);
 
     template <class Archive>
     void save(Archive& ar) const
@@ -130,13 +159,13 @@ struct track_error_benchmark {
         if (track_img.rows > 0) {
             cv::imwrite(track_img_path, track_img);
         }
-        ar(track_img_path, submap_tracks, gt_track, nbr_tracks_drawn, params, submap_origin);
+        ar(track_img_path, error_img_paths, input_pings, gt_track, track_rms_errors, consistency_rms_errors, params, submap_origin);
     }
 
     template <class Archive>
     void load(Archive& ar)
     {
-        ar(track_img_path, submap_tracks, gt_track, nbr_tracks_drawn, params, submap_origin);
+        ar(track_img_path, error_img_paths, input_pings, gt_track, track_rms_errors, consistency_rms_errors, params, submap_origin);
         if (!track_img_path.empty()) {
             track_img = cv::imread(track_img_path);
         }

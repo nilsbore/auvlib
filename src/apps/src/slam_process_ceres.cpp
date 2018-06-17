@@ -160,10 +160,10 @@ void register_processes_ceres(gp_submaps& ss, bool with_rot)
         ceres::LossFunction* loss_function = NULL;
         unary_residual_block_ids.push_back(problem.AddResidualBlock(cost_function, loss_function, ss.angles[i].data()));
 
-        problem.SetParameterLowerBound(ss.trans[i].data(), 0, ss.trans[i](0) - 20.);
-        problem.SetParameterLowerBound(ss.trans[i].data(), 1, ss.trans[i](1) - 20.);
-        problem.SetParameterUpperBound(ss.trans[i].data(), 0, ss.trans[i](0) + 20.);
-        problem.SetParameterUpperBound(ss.trans[i].data(), 1, ss.trans[i](1) + 20.);
+        problem.SetParameterLowerBound(ss.trans[i].data(), 0, ss.trans[i](0) - 30.);
+        problem.SetParameterLowerBound(ss.trans[i].data(), 1, ss.trans[i](1) - 30.);
+        problem.SetParameterUpperBound(ss.trans[i].data(), 0, ss.trans[i](0) + 30.);
+        problem.SetParameterUpperBound(ss.trans[i].data(), 1, ss.trans[i](1) + 30.);
 
         problem.SetParameterLowerBound(ss.angles[i].data(), 2, ss.angles[i](2) - M_PI);
         problem.SetParameterUpperBound(ss.angles[i].data(), 2, ss.angles[i](2) + M_PI);
@@ -290,22 +290,25 @@ int main(int argc, char** argv)
     write_data(ss, output);
 
     track_error_benchmark benchmark = read_data<track_error_benchmark>(boost::filesystem::path("my_benchmark.cereal"));
-    pt_submaps::TransT corrected_track;
-    for (int i = 0; i < benchmark.submap_tracks.size(); ++i) {
+    
+    //pt_submaps::TransT corrected_track;
+    TransT trans_corr;
+    RotsT rots_corr;
+    for (int i = 0; i < ss.points.size(); ++i) {
         Eigen::Matrix3d R = euler_to_matrix(ss.angles[i][0], ss.angles[i][1], ss.angles[i][2]);
-        for (const Eigen::Vector3d& pos_0 : benchmark.submap_tracks[i]) {
-            Eigen::Vector3d pos = R*rots_0[i].transpose()*(pos_0 - benchmark.submap_origin - trans_0[i]) + ss.trans[i] + benchmark.submap_origin;
-            corrected_track.push_back(pos);
-        }
+        Eigen::Matrix3d Rc = R*rots_0[i].transpose();
+        Eigen::Vector3d tc = benchmark.submap_origin + ss.trans[i] - Rc*(benchmark.submap_origin + trans_0[i]);
+        trans_corr.push_back(tc);
+        rots_corr.push_back(Rc);
 
     }
-    benchmark.draw_track_img(corrected_track);
-    double error = benchmark.compute_rms_error(corrected_track);
+    //benchmark.draw_track_img(corrected_track);
+    //double error = benchmark.compute_rms_error(corrected_track);
+    benchmark.add_benchmark(trans_corr, rots_corr, "slam");
+    benchmark.print_summary();
     
     cv::imshow("Track", benchmark.track_img);
     cv::waitKey();
-
-    cout << "RMS position error is: " << error << endl;
 
     return 0;
 }

@@ -72,6 +72,36 @@ void distort_tracks(mbes_ping::PingsT& pings)
     
 }
 
+void distort_track_turns(mbes_ping::PingsT& pings)
+{
+    double dvl_std = 1.2; //01;
+    double dvl_res_x = 0.0; //005;
+    double dvl_res_y = 0.0; //002; //001;
+
+    std::default_random_engine generator;
+    std::normal_distribution<double> distribution(0., 1.);
+    Eigen::Vector3d cumulative_error; cumulative_error.setZero();
+    int counter = 0;
+    for (mbes_ping& ping : pings) {
+        if (ping.first_in_file_) {
+            Eigen::Vector3d first_beam = ping.beams.front();
+            Eigen::Vector3d last_beam = ping.beams.back();
+
+            Eigen::Vector3d motion_dir(first_beam[1]-last_beam[1], -first_beam[0]+last_beam[0], 0);
+            motion_dir.normalize();
+
+            cumulative_error[0] += dvl_std*distribution(generator) + dvl_res_x*motion_dir[0];
+            cumulative_error[1] += dvl_std*distribution(generator) + dvl_res_y*motion_dir[1];
+        }
+
+        ping.pos_ += cumulative_error;
+        for (Eigen::Vector3d& beam : ping.beams) {
+            beam += cumulative_error;
+        }
+    }
+    
+}
+
 tuple<ObsT, TransT, AngsT, MatchesT, BBsT> load_or_create_submaps(const boost::filesystem::path& folder)
 {
 	// Parse ROV track files
@@ -108,32 +138,41 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT> load_or_create_submaps(const boost::f
 
     match_timestamps(pings, entries);
 
-    int rows = 1000;
-    int cols = 1000;
     track_error_benchmark benchmark;
+    
+    /*
     benchmark.track_img_params(pings, rows, cols);
     benchmark.draw_track_img(pings);
+    benchmark.compute_draw_consistency_map(pings);
 
     for (mbes_ping& ping : pings) {
         benchmark.gt_track.push_back(ping.pos_);
     }
+    */
+    benchmark.add_ground_truth(pings);
 
     //distort_tracks(pings);
-    benchmark.draw_track_img(pings);
+    distort_track_turns(pings);
+
+    //benchmark.draw_track_img(pings);
+    benchmark.add_benchmark(pings, "initial");
+    benchmark.add_initial(pings);
     
-    cv::imshow("Track", benchmark.track_img);
-    cv::waitKey();
+    //cv::imshow("Track", benchmark.track_img);
+    //cv::waitKey();
 
     //divide_tracks(pings);
     //divide_tracks_equal(pings);
 	//view_cloud(pings);
 
+    /*
     for (mbes_ping& ping : pings) {
         if (ping.first_in_file_) {
             benchmark.submap_tracks.push_back(pt_submaps::TransT());
         }
         benchmark.submap_tracks.back().push_back(ping.pos_);
     }
+    */
 
     ObsT submaps;
     TransT trans;
@@ -148,7 +187,7 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT> load_or_create_submaps(const boost::f
         trans[i].array() -= origin.array();
     }
 	
-    benchmark.submap_origin = origin;
+    benchmark.submap_origin = origin; // this should be a method
     write_data(benchmark, boost::filesystem::path("my_benchmark.cereal"));
 
     return make_tuple(submaps, trans, angs, matches, bounds);
