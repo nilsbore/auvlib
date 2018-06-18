@@ -17,18 +17,24 @@ public:
     template <typename T>
     bool operator()(const T* const rot1, T* e) const
     {
-        T diff = rot1[2] - r0[2];
-        T prob = -.5/(sigma*sigma)*diff*diff;
+        e[0] = 1./sigma*(rot1[0] - r0[0]);
+        e[1] = 1./sigma*(rot1[1] - r0[1]);
+        e[2] = 1./sigma*(rot1[2] - r0[2]);
         
-        std::cout << "Computing derivatives, value: " << prob << std::endl;
-        e[0] = -prob;
+        
+        //T diff = rot1[2] - r0[2];
+        //T prob = -.5/(sigma*sigma)*diff*diff;
+        
+        //std::cout << "Computing derivatives, value: " << prob << std::endl;
+        //e[0] = -prob;
 
         return true;
     }
     
     static ceres::CostFunction* Create(const Eigen::Vector3d& r0, double sigma)
     {
-        return new ceres::AutoDiffCostFunction<UnaryConstraintCostFunctor, 1, 3>(
+        //return new ceres::AutoDiffCostFunction<UnaryConstraintCostFunctor, 1, 3>(
+        return new ceres::AutoDiffCostFunction<UnaryConstraintCostFunctor, 3, 3>(
             new UnaryConstraintCostFunctor(r0, sigma));
     }
 
