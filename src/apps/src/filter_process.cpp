@@ -111,6 +111,7 @@ int main(int argc, char** argv)
 
     benchmark.add_benchmark(pings, "slam_filtered");
     benchmark.print_summary();
+    write_data(benchmark, boost::filesystem::path("my_benchmark.cereal"));
 
     return 0;
 }
