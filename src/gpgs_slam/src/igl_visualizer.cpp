@@ -179,6 +179,25 @@ bool IglVisCallback::callback_key_pressed(igl::opengl::glfw::Viewer& viewer, uns
             viewer.data().set_colors(C);
         }
         return true;
+    case 'k':
+        toggle_jet = !toggle_jet;
+        if (toggle_jet) {
+            // Get jet colormap for current depths
+            Eigen::VectorXd ll(V_orig.rows());
+            Eigen::MatrixXd dX;
+            for (int i = 0; i < points.size(); ++i) {
+                Eigen::VectorXd lli;
+                gps[i].compute_neg_log_derivatives_fast(lli, dX, V_orig.block(i*nbr_vertices, 0, nbr_vertices, 2), V_orig.block(i*nbr_vertices, 2, nbr_vertices, 1), false);
+                ll.block(i*nbr_vertices, 0, nbr_vertices, 1) = lli;
+            }
+            igl::jet(ll, true, C_jet);
+            // Add per-vertex colors
+            viewer.data().set_colors(C_jet);
+        }
+        else {
+            viewer.data().set_colors(C);
+        }
+        return true;
     case 'p':
         toggle_points = false;
         toggle_matches = !toggle_matches;
