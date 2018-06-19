@@ -130,7 +130,7 @@ void register_processes_ceres(gp_submaps& ss, bool with_rot)
         Eigen::Vector3d last_point1, first_point2;
         tie (i, j, last_point1, first_point2) = con;
         cout << "Adding binary constraint between " << i << " and " << j << endl;
-        ceres::CostFunction* cost_function = BinaryConstraintCostFunctor::Create(last_point1, first_point2, 50.);
+        ceres::CostFunction* cost_function = BinaryConstraintCostFunctor::Create(last_point1, first_point2, 1.);
         ceres::LossFunction* loss_function = NULL;
         binary_residual_block_ids.push_back(problem.AddResidualBlock(cost_function, loss_function, ss.trans[i].data(), ss.angles[i].data(),
                                                                                                    ss.trans[j].data(), ss.angles[j].data()));
@@ -143,22 +143,34 @@ void register_processes_ceres(gp_submaps& ss, bool with_rot)
         ceres::CostFunction* cost_function1 = new GaussianProcessCostFunction(ss.gps[i], ss.bounds[i], ss.points[j]);
         ceres::CostFunction* cost_function2 = new GaussianProcessCostFunction(ss.gps[j], ss.bounds[j], ss.points[i]);
 
-        ceres::LossFunction* loss_function1 = new ceres::SoftLOneLoss(1.3);
-        ceres::LossFunction* loss_function2 = new ceres::SoftLOneLoss(1.3);
+        //ceres::LossFunction* loss_function1 = new ceres::SoftLOneLoss(1.3);
+        //ceres::LossFunction* loss_function2 = new ceres::SoftLOneLoss(1.3);
         //ceres::LossFunction* loss_function1 = new ceres::HuberLoss(.5);
         //ceres::LossFunction* loss_function2 = new ceres::HuberLoss(5.);
-        //ceres::LossFunction* loss_function1 = NULL;
-        //ceres::LossFunction* loss_function2 = NULL;
-        matches_residual_block_ids.push_back(problem.AddResidualBlock(cost_function1, loss_function1, ss.trans[i].data(), ss.angles[i].data(),
-                                                                                                      ss.trans[j].data(), ss.angles[j].data()));
-        matches_residual_block_ids.push_back(problem.AddResidualBlock(cost_function2, loss_function2, ss.trans[j].data(), ss.angles[j].data(),
-                                                                                                      ss.trans[i].data(), ss.angles[i].data()));
+        ceres::LossFunction* loss_function1 = NULL;
+        ceres::LossFunction* loss_function2 = NULL;
+        
+        /*
+        Eigen::MatrixXd points2in1 = get_points_in_bound_transform(ss.points[j], ss.trans[j], ss.rots[j], ss.trans[i], ss.rots[i], ss.bounds[i]);
+        Eigen::MatrixXd points1in2 = get_points_in_bound_transform(ss.points[i], ss.trans[i], ss.rots[i], ss.trans[j], ss.rots[j], ss.bounds[j]);
+        if (points2in1.rows() < points1in2.rows()) {
+        */
+            matches_residual_block_ids.push_back(problem.AddResidualBlock(cost_function1, loss_function1, ss.trans[i].data(), ss.angles[i].data(),
+                                                                                                          ss.trans[j].data(), ss.angles[j].data()));
+        
+        /*}
+        else {*/
+            matches_residual_block_ids.push_back(problem.AddResidualBlock(cost_function2, loss_function2, ss.trans[j].data(), ss.angles[j].data(),
+                                                                                                          ss.trans[i].data(), ss.angles[i].data()));
+        //}
     }
     
     for (int i = 0; i < ss.trans.size(); ++i) {
-        ceres::CostFunction* cost_function = UnaryConstraintCostFunctor::Create(ss.angles[i], 0.2);
+        //ceres::CostFunction* cost_function = UnaryConstraintCostFunctor::Create(ss.angles[i], 0.2);
+        ceres::CostFunction* cost_function = UnaryConstraintCostFunctor::Create(ss.trans[i], 5.);
         ceres::LossFunction* loss_function = NULL;
-        unary_residual_block_ids.push_back(problem.AddResidualBlock(cost_function, loss_function, ss.angles[i].data()));
+        //unary_residual_block_ids.push_back(problem.AddResidualBlock(cost_function, loss_function, ss.angles[i].data()));
+        //unary_residual_block_ids.push_back(problem.AddResidualBlock(cost_function, loss_function, ss.trans[i].data()));
 
         problem.SetParameterLowerBound(ss.trans[i].data(), 0, ss.trans[i](0) - 30.);
         problem.SetParameterLowerBound(ss.trans[i].data(), 1, ss.trans[i](1) - 30.);
@@ -189,7 +201,7 @@ void register_processes_ceres(gp_submaps& ss, bool with_rot)
     options.callbacks.push_back(vis);
     options.max_num_iterations = 200;
     options.update_state_every_iteration = true;
-    options.num_threads = 4; // 8;
+    options.num_threads = 8;
     //options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
     options.linear_solver_type = ceres::SPARSE_SCHUR;
     //options.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY;
@@ -306,6 +318,7 @@ int main(int argc, char** argv)
     //double error = benchmark.compute_rms_error(corrected_track);
     benchmark.add_benchmark(trans_corr, rots_corr, "slam");
     benchmark.print_summary();
+    write_data(benchmark, boost::filesystem::path("my_benchmark.cereal"));
     
     cv::imshow("Track", benchmark.track_img);
     cv::waitKey();

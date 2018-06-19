@@ -78,6 +78,25 @@ GaussianProcessCostFunction::get_new_transform_jacobian(const Eigen::MatrixXd& X
     return make_pair(J1s, J2s);
 }
 
+Eigen::MatrixXd get_points_in_bound_transform(Eigen::MatrixXd points, Eigen::Vector3d& t,
+				                              Eigen::Matrix3d& R, Eigen::Vector3d& t_in,
+											  Eigen::Matrix3d& R_in, Eigen::Matrix2d& bounds)
+{
+    points *= R.transpose()*R_in;
+	points.rowwise() += (t.transpose()*R_in - t_in.transpose()*R_in);
+
+    int counter = 0;
+	for (int i = 0; i < points.rows(); ++i) {
+		if (points(i, 0) < bounds(1, 0) && points(i, 0) > bounds(0, 0) &&
+		    points(i, 1) < bounds(1, 1) && points(i, 1) > bounds(0, 1)) {
+		    points.row(counter) = points.row(i);
+			++counter;
+		}
+    }
+	points.conservativeResize(counter, 3);
+	return points;
+}
+
 bool GaussianProcessCostFunction::Evaluate(double const* const* parameters, double* residuals, double** jacobians) const
 {
     Eigen::Vector3d t1(parameters[0][0], parameters[0][1], parameters[0][2]);
@@ -89,7 +108,8 @@ bool GaussianProcessCostFunction::Evaluate(double const* const* parameters, doub
 
     cout << "Translation: " << t1.transpose() << ", Rotation: \n" << R1 << endl;
 
-    Eigen::MatrixXd points2in1 = get_points_in_bound_transform(points2, t2, R2, t1, R1, bounds1);
+    //Eigen::MatrixXd points2in1 = get_points_in_bound_transform(points2, t2, R2, t1, R1, bounds1);
+    Eigen::MatrixXd points2in1 = get_certain_points_in_bound_transform(points2, t2, R2, t1, R1, bounds1);
     //Eigen::MatrixXd points2in1 = get_points_in_bound_transform(points2, t2, R2, t1, R1, 465.);
     // NOTE: this is a workaround if there is no longer any overlap
     if (points2in1.rows() == 0) {
@@ -129,28 +149,31 @@ bool GaussianProcessCostFunction::Evaluate(double const* const* parameters, doub
         Eigen::MatrixXd delta2s(points2sub.rows(), 6);
         for (int m = 0; m < points2sub.rows(); ++m) {
             //get_transform_jacobian(J, R1*points2in1.row(m).transpose()+t1);
+            /*if (ll(m) < -1.3) {
+                continue;
+            }*/
             delta1s.row(m) = dX.row(m)*J1s[m];
             delta2s.row(m) = dX.row(m)*J2s[m];
         }
         Eigen::RowVectorXd delta1 = delta1s.colwise().mean();
         Eigen::RowVectorXd delta2 = delta2s.colwise().mean();
-        if (jacobians[0] != NULL) { 
+        if (jacobians[0] != NULL) {
             for (int j = 0; j < 3; ++j) {
                 jacobians[0][j] = delta1[j];
             }
         }
-        if (jacobians[1] != NULL) { 
+        if (jacobians[1] != NULL) {
             for (int j = 0; j < 3; ++j) {
                 //jacobians[1][j] = 0.0000000000001*delta1[3+j];
                 jacobians[1][j] = delta1[3+j];
             }
         }
-        if (jacobians[2] != NULL) { 
+        if (jacobians[2] != NULL) {
             for (int j = 0; j < 3; ++j) {
                 jacobians[2][j] = delta2[j];
             }
         }
-        if (jacobians[3] != NULL) { 
+        if (jacobians[3] != NULL) {
             for (int j = 0; j < 3; ++j) {
                 //jacobians[3][j] = 0.0000000000001*delta2[3+j];
                 jacobians[3][j] = delta2[3+j];
