@@ -1,50 +1,59 @@
-project(data_tools)
+project(libgsf_project)
 
-add_library(data_transforms src/transforms.cpp)
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -O3")
 
-# Add some libraries
-add_library(submaps src/submaps.cpp)
+# Must use GNUInstallDirs to install libraries into correct
+# locations on all platforms.
+#include(GNUInstallDirs)
 
-add_library(data_structures src/data_structures.cpp)
+add_definitions(
+    -D__USE_LARGEFILE64
+    -D_LARGEFILE_SOURCE
+    -D_LARGEFILE64_SOURCE
+)
 
-add_library(navi_data src/navi_data.cpp)
+add_library(gsf_enc src/gsf_enc.c)
 
-add_executable(test_gsf src/test_gsf.cpp)
+add_library(gsf_dec src/gsf_dec.c)
+
+add_library(gsf_indx src/gsf_indx.c)
+
+#add_library(gsf_info src/gsf_info.cpp)
+
+add_library(gsf src/gsf.c src/gsf_geo.c src/gsf_info.c)
 
 # Define headers for this library. PUBLIC headers are used for
 # compiling the library, and will be added to consumers' build
 # paths.
-target_include_directories(data_transforms PUBLIC
+target_include_directories(gsf_enc PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
 
-target_include_directories(submaps PUBLIC
+target_include_directories(gsf_dec PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
 
-target_include_directories(data_structures PUBLIC
+target_include_directories(gsf_indx PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
 
-target_include_directories(navi_data PUBLIC
+target_include_directories(gsf PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
 
-target_link_libraries(test_gsf gsf)
+#target_include_directories(sparse_gp PUBLIC
+#    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+#    $<INSTALL_INTERFACE:include>
+#    PRIVATE src)
 
-# Link the libraries
-target_link_libraries(submaps ${PCL_LIBRARIES})
-
-target_link_libraries(data_structures PUBLIC sparse_gp rbf_kernel gaussian_noise ${OpenCV_LIBS})
-
-target_link_libraries(navi_data PUBLIC sparse_gp data_transforms ${PCL_LIBRARIES})
+target_link_libraries(gsf gsf_enc gsf_dec gsf_indx)
 
 # 'make install' to the correct locations (provided by GNUInstallDirs).
-install(TARGETS data_transforms submaps data_structures navi_data EXPORT DataToolsConfig
+install(TARGETS gsf gsf_enc gsf_dec gsf_indx EXPORT LibGSFConfig
     ARCHIVE  DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR})  # This is for Windows
@@ -53,7 +62,7 @@ install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 # This makes the project importable from the install directory
 # Put config file in per-project dir (name MUST match), can also
 # just go into 'cmake'.
-install(EXPORT DataToolsConfig DESTINATION share/DataTools/cmake)
+install(EXPORT LibGSFConfig DESTINATION share/LibGSF/cmake)
 
 # This makes the project importable from the build directory
-export(TARGETS data_transforms submaps data_structures navi_data FILE DataToolsConfig.cmake)
+export(TARGETS gsf gsf_enc gsf_dec gsf_indx FILE LibGSFConfig.cmake)

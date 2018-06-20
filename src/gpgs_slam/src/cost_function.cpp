@@ -78,6 +78,7 @@ GaussianProcessCostFunction::get_new_transform_jacobian(const Eigen::MatrixXd& X
     return make_pair(J1s, J2s);
 }
 
+/*
 Eigen::MatrixXd get_points_in_bound_transform(Eigen::MatrixXd points, Eigen::Vector3d& t,
 				                              Eigen::Matrix3d& R, Eigen::Vector3d& t_in,
 											  Eigen::Matrix3d& R_in, Eigen::Matrix2d& bounds)
@@ -96,6 +97,7 @@ Eigen::MatrixXd get_points_in_bound_transform(Eigen::MatrixXd points, Eigen::Vec
 	points.conservativeResize(counter, 3);
 	return points;
 }
+*/
 
 bool GaussianProcessCostFunction::Evaluate(double const* const* parameters, double* residuals, double** jacobians) const
 {
@@ -109,8 +111,8 @@ bool GaussianProcessCostFunction::Evaluate(double const* const* parameters, doub
     cout << "Translation: " << t1.transpose() << ", Rotation: \n" << R1 << endl;
 
     //Eigen::MatrixXd points2in1 = get_points_in_bound_transform(points2, t2, R2, t1, R1, bounds1);
-    Eigen::MatrixXd points2in1 = get_certain_points_in_bound_transform(points2, t2, R2, t1, R1, bounds1);
-    //Eigen::MatrixXd points2in1 = get_points_in_bound_transform(points2, t2, R2, t1, R1, 465.);
+    //Eigen::MatrixXd points2in1 = get_certain_points_in_bound_transform(points2, t2, R2, t1, R1, bounds1);
+    Eigen::MatrixXd points2in1 = get_points_in_bound_transform(points2, t2, R2, t1, R1, 465.);
     // NOTE: this is a workaround if there is no longer any overlap
     if (points2in1.rows() == 0) {
         points2in1 = points2*R2.transpose()*R1;

@@ -26,6 +26,7 @@ include_directories(eigen_cereal/include)
 
 add_subdirectory(eigen_cereal)
 add_subdirectory(sparse_gp)
+add_subdirectory(libgsf)
 add_subdirectory(data_tools)
 add_subdirectory(gpgs_slam)
 add_subdirectory(apps)
