@@ -9,6 +9,8 @@ add_library(data_structures src/data_structures.cpp)
 
 add_library(navi_data src/navi_data.cpp)
 
+add_library(gsf_data src/gsf_data.cpp)
+
 add_executable(test_gsf src/test_gsf.cpp)
 
 # Define headers for this library. PUBLIC headers are used for
@@ -34,7 +36,12 @@ target_include_directories(navi_data PUBLIC
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
 
-target_link_libraries(test_gsf gsf)
+target_include_directories(gsf_data PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+    PRIVATE src)
+
+target_link_libraries(test_gsf gsf_data data_structures navi_data)
 
 # Link the libraries
 target_link_libraries(submaps ${PCL_LIBRARIES})
@@ -43,8 +50,10 @@ target_link_libraries(data_structures PUBLIC sparse_gp rbf_kernel gaussian_noise
 
 target_link_libraries(navi_data PUBLIC sparse_gp data_transforms ${PCL_LIBRARIES})
 
+target_link_libraries(gsf_data PUBLIC gsf data_structures navi_data)
+
 # 'make install' to the correct locations (provided by GNUInstallDirs).
-install(TARGETS data_transforms submaps data_structures navi_data EXPORT DataToolsConfig
+install(TARGETS data_transforms submaps data_structures navi_data gsf_data EXPORT DataToolsConfig
     ARCHIVE  DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR})  # This is for Windows
@@ -56,4 +65,4 @@ install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(EXPORT DataToolsConfig DESTINATION share/DataTools/cmake)
 
 # This makes the project importable from the build directory
-export(TARGETS data_transforms submaps data_structures navi_data FILE DataToolsConfig.cmake)
+export(TARGETS data_transforms submaps data_structures navi_data gsf_data FILE DataToolsConfig.cmake)

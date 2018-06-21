@@ -63,8 +63,8 @@ void view_cloud(const mbes_ping::PingsT& pings)
 	Array3d mean(0., 0., 0.);
 	double count = 0.;
 	for (const mbes_ping& ping : pings) {
-		cereal::JSONOutputArchive ar(std::cout);
-		ar(ping);
+		//cereal::JSONOutputArchive ar(std::cout);
+		//ar(ping);
 		for (const Vector3d& p : ping.beams) {
 			mean += p.array(); count += 1.;
 		}
