@@ -202,11 +202,16 @@ gsf_mbes_ping::PingsT parse_file(const boost::filesystem::path& file)
             time_ss << t;
             ping.time_string_ = time_ss.str();
 
+            ping.first_in_file_ = false;
             pings.push_back(ping);
         }
     }
 
     gsfClose(handle);
+
+    if (!pings.empty()) {
+        pings[0].first_in_file_ = true;
+    }
 
     return pings;
 }
@@ -257,6 +262,7 @@ mbes_ping::PingsT convert_matched_entries(gsf_mbes_ping::PingsT& pings, gsf_nav_
         mbes_ping new_ping;
         new_ping.time_stamp_ = ping.time_stamp_;
         new_ping.time_string_ = ping.time_string_;
+        new_ping.first_in_file_ = ping.first_in_file_;
         if (pos == entries.end()) {
             new_ping.pos_ = entries.back().pos_;
             new_ping.heading_ = entries.back().yaw_;

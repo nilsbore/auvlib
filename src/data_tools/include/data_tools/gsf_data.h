@@ -13,11 +13,12 @@ struct gsf_mbes_ping {
     std::vector<double> travel_times; // time_stamp_
     std::vector<double> beam_angles; // time_stamp_
     std::vector<double> distances; // distances, to be filled in
+    bool first_in_file_;
 
 	template <class Archive>
     void serialize( Archive & ar )
     {
-        ar(CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_), CEREAL_NVP(travel_times), CEREAL_NVP(beam_angles), CEREAL_NVP(distances));
+        ar(CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_), CEREAL_NVP(travel_times), CEREAL_NVP(beam_angles), CEREAL_NVP(distances), CEREAL_NVP(first_in_file_));
     }
 
 };
