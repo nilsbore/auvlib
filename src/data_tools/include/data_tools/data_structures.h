@@ -152,6 +152,7 @@ struct track_error_benchmark {
     void draw_track_legend();
     double compute_rms_error(mbes_ping::PingsT& pings);
     std::pair<double, cv::Mat> compute_draw_consistency_map(mbes_ping::PingsT& pings);
+    cv::Mat draw_height_map(mbes_ping::PingsT& pings);
 
     template <class Archive>
     void save(Archive& ar) const

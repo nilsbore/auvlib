@@ -90,8 +90,8 @@ gsf_nav_entry::EntriesT parse_file(const boost::filesystem::path& file)
         }
         istringstream iss(line);
 
-		iss >> entry.id_ >> time_seconds >> entry.lat_ >> entry.long_ >> x >> y >> z >> entry.roll_ >> entry.pitch_ >> entry.yaw_ >> entry.altitude;
-        entry.pos_ = Eigen::Vector3d(x, y, z);
+		iss >> entry.id_ >> time_seconds >> entry.lat_ >> entry.long_ >> y >> x >> z >> entry.roll_ >> entry.pitch_ >> entry.yaw_ >> entry.altitude;
+        entry.pos_ = Eigen::Vector3d(x, y, -z);
 
         entry.time_stamp_ = (long long)(1000. * time_seconds); // double seconds to milliseconds
 
@@ -191,6 +191,7 @@ gsf_mbes_ping::PingsT parse_file(const boost::filesystem::path& file)
             for (int i = 0; i < records.mb_ping.number_beams; ++i) {
                 ping.travel_times.push_back(records.mb_ping.travel_time[i]);
                 ping.beam_angles.push_back(records.mb_ping.beam_angle[i]);
+                ping.amplitudes.push_back(records.mb_ping.mr_amplitude[i]);
             }
 
             long long sec = records.mb_ping.ping_time.tv_sec;
@@ -239,7 +240,8 @@ void match_sound_speeds(gsf_mbes_ping::PingsT& pings, gsf_sound_speed::SpeedsT& 
             ss = pos->below_speed;
         }
         for (int i = 0; i < ping.travel_times.size(); ++i) {
-            ping.distances.push_back(0.5*ss*ping.travel_times[i]);
+            ping.distances.push_back(.5*ss*ping.travel_times[i]);
+            //ping.distances.push_back(ss*ping.travel_times[i]);
         }
     }
 
@@ -270,25 +272,49 @@ mbes_ping::PingsT convert_matched_entries(gsf_mbes_ping::PingsT& pings, gsf_nav_
             new_ping.roll_ = entries.back().roll_;
         }
         else {
-            new_ping.pos_ = pos->pos_;
-            new_ping.heading_ = pos->yaw_;
-            new_ping.pitch_ = pos->pitch_;
-            new_ping.roll_ = pos->roll_;
+            if (pos == entries.begin()) {
+                new_ping.pos_ = pos->pos_;
+                new_ping.heading_ = pos->yaw_;
+                new_ping.pitch_ = pos->pitch_;
+                new_ping.roll_ = pos->roll_;
+            }
+            else {
+                gsf_nav_entry& previous = *(pos - 1);
+                double ratio = double(ping.time_stamp_ - previous.time_stamp_)/double(pos->time_stamp_ - previous.time_stamp_);
+                new_ping.pos_ = previous.pos_ + ratio*(pos->pos_ - previous.pos_);
+                new_ping.heading_ = previous.yaw_ + ratio*(pos->yaw_ - previous.yaw_);
+                new_ping.pitch_ = previous.pitch_ + ratio*(pos->pitch_ - previous.pitch_);
+                new_ping.roll_ = previous.roll_ + ratio*(pos->roll_ - previous.roll_);
+                //cout << "Ping timestamp: " << ping.time_string_ << ", pos time stamp: " << pos->time_string_ << endl;
+            }
         }
 
         for (int i = 0; i < ping.distances.size(); ++i) {
             double d = ping.distances[i];
-            if (d < 0.1) {
+            if (d < 0.1) { // || ping.amplitudes[i] < 10) {
                 continue;
             }
             double th = M_PI/180.*ping.beam_angles[i];
             Eigen::Vector3d p = new_ping.pos_;
-            Eigen::Vector3d beam(0., d*sin(th), -d*cos(th));
-            Eigen::Matrix3d Rx = Eigen::AngleAxisd(new_ping.roll_, Eigen::Vector3d::UnitX()).matrix();
-            Eigen::Matrix3d Ry = Eigen::AngleAxisd(new_ping.pitch_, Eigen::Vector3d::UnitY()).matrix();
-            Eigen::Matrix3d Rz = Eigen::AngleAxisd(new_ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
+            Eigen::Vector3d sensor_p(0.62, 0., 0.);
+            Eigen::Vector3d beam(d*sin(th), 0., -d*cos(th)); // 0.55 comes from the log
+            //Eigen::Vector3d beam(0., d*sin(th), -d*cos(th)); // 0.55 comes from the log
+            Eigen::Matrix3d beam_Rx = Eigen::AngleAxisd(M_PI/180.*0., Eigen::Vector3d::UnitX()).matrix();
+            //Eigen::Matrix3d beam_Rx = Eigen::AngleAxisd(M_PI/180.*4., Eigen::Vector3d::UnitX()).matrix();
+            //Eigen::Matrix3d beam_Ry = Eigen::AngleAxisd(M_PI/180.*-1., Eigen::Vector3d::UnitY()).matrix();
+            Eigen::Matrix3d beam_Ry = Eigen::AngleAxisd(-0.0237, Eigen::Vector3d::UnitY()).matrix();
+            //Eigen::Matrix3d beam_Rz = Eigen::AngleAxisd(0.0237, Eigen::Vector3d::UnitZ()).matrix();
+            Eigen::Matrix3d beam_Rz = Eigen::Matrix3d::Identity();
+            Eigen::Matrix3d Rx = Eigen::AngleAxisd(-new_ping.roll_, Eigen::Vector3d::UnitX()).matrix();
+            Eigen::Matrix3d Ry = Eigen::AngleAxisd(-new_ping.pitch_, Eigen::Vector3d::UnitY()).matrix();
+            Eigen::Matrix3d Rz = Eigen::AngleAxisd(-new_ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
+            //Eigen::Matrix3d Rx = Eigen::AngleAxisd(new_ping.roll_, Eigen::Vector3d::UnitX()).matrix();
+            //Eigen::Matrix3d Ry = Eigen::AngleAxisd(new_ping.pitch_, Eigen::Vector3d::UnitY()).matrix();
+            //Eigen::Matrix3d Rz = Eigen::AngleAxisd(new_ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
             Eigen::Matrix3d R = Rz*Ry*Rx;
-            new_ping.beams.push_back(p + R*beam);
+            //Eigen::Matrix3d R = Rx*Ry*Rz;
+            //new_ping.beams.push_back(p + R*beam_Ry*beam_Rx*beam);
+            new_ping.beams.push_back(p + R*(sensor_p+beam_Rz*beam_Ry*beam_Rx*beam));
         }
 
         new_pings.push_back(new_ping);

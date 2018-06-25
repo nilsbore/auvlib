@@ -29,6 +29,7 @@ private:
     bool toggle_matches;
     bool toggle_jet;
     bool toggle_points;
+    bool toggle_jet_points;
     igl::opengl::glfw::Viewer viewer;
     ObsT& points;
     SubmapsGPT& gps;
@@ -45,6 +46,7 @@ private:
     Eigen::MatrixXi E; // the matches edges
     Eigen::MatrixXd Ps; // the concatenated submap points
     Eigen::MatrixXd Cs; // the color of the concatenated submap points
+    Eigen::MatrixXd Cs_jet; // jet the color of the concatenated submap points
     int nbr_points; // the total number of points in the different submaps
 	//std::vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> > Vs; // the transformed vertices computed in each iteration
     //cv::Mat vis;

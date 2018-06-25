@@ -100,6 +100,7 @@ IglVisCallback::IglVisCallback(ObsT& points, SubmapsGPT& gps, TransT& trans, Ang
     toggle_jet = false;
     toggle_matches = false;
     toggle_points = false;
+    toggle_jet_points = false;
 
 	int nbr_processes = points.size();
 
@@ -177,6 +178,23 @@ bool IglVisCallback::callback_key_pressed(igl::opengl::glfw::Viewer& viewer, uns
         }
         else {
             viewer.data().set_colors(C);
+        }
+        return true;
+    case 'J':
+        toggle_jet_points = !toggle_jet_points;
+        if (toggle_jet_points) {
+            // Get jet colormap for current depths
+            viewer.data().point_size = 4;
+            construct_points_matrices();
+            igl::jet(Ps.col(2), true, Cs_jet);
+            cout << "Min point: " << Ps.col(2).minCoeff() << endl;
+            cout << "Max point: " << Ps.col(2).maxCoeff() << endl;
+            viewer.data().set_points(Ps, Cs_jet);
+        }
+        else {
+            viewer.data().point_size = 4;
+            construct_points_matrices();
+            viewer.data().set_points(Ps, Cs);
         }
         return true;
     case 'k':

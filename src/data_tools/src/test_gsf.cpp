@@ -18,11 +18,11 @@
 #include <cereal/archives/json.hpp>
 
 #include <data_tools/gsf_data.h>
+#include <gsf.h>
 
 
 using namespace std;
 
-/*
 void WriteArray(std::ostream& o, size_t size, const unsigned char* data,
     const string& name)
 {
@@ -138,13 +138,11 @@ std::ostream& operator<<(std::ostream& o, const gsfSwathBathyPing& ping)
     return o;
     // return o << " (" << position.lng_deg << ", " << position.lat_deg << ")";
 }
-*/
 
 
 
 int main(int argc, char** argv)
 {
-    /*
     int handle;
     //int result = gsfOpen("/home/nbore/Data/ACFR-tas200810pockmarks/PROCESSED_DATA/r20081015_221314_butts_pockmarks_23_overlappinggrids/bpslam20110606/DT20081015_221314_gsf", GSF_READONLY, &handle);
     if (gsfOpen("/home/nbore/Data/ACFR-tas200810pockmarks/PROCESSED_DATA/r20081015_221314_butts_pockmarks_23_overlappinggrids/bpslam20110606/DT20081015_221314_gsf/20081015_2213-001.gsf", GSF_READONLY, &handle) != 0 || handle < 0)
@@ -194,7 +192,6 @@ int main(int argc, char** argv)
         }
         ++counter;
     }
-    */
 
     boost::filesystem::path folder("/home/nbore/Data/ACFR-tas200810pockmarks/PROCESSED_DATA/r20081015_221314_butts_pockmarks_23_overlappinggrids/bpslam20110606/DT20081015_221314_gsf");
     //boost::filesystem::path folder("/home/nbore/Data/ACFR-tas200810pockmarks/PROCESSED_DATA/r20081015_221314_butts_pockmarks_23_overlappinggrids/DT20081015_221314_p");

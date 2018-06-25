@@ -33,7 +33,7 @@ void track_error_benchmark::track_img_params(mbes_ping::PingsT& pings, int rows,
     double maxy = std::max_element(pings.begin(), pings.end(), ycomp)->pos_[1];
     double miny = std::min_element(pings.begin(), pings.end(), ycomp)->pos_[1];
 
-    cout << minx << ", " << maxx << ", " << miny << ", " << maxy << endl;
+    cout << "Min X: " << minx << ", Max X: " << maxx << ", Min Y: " << miny << ", Max Y: " << maxy << endl;
 
     double xres = double(cols)/(maxx - minx);
     double yres = double(rows)/(maxy - miny);
@@ -58,7 +58,7 @@ void track_error_benchmark::draw_track_img(mbes_ping::PingsT& pings, cv::Mat& im
 
     vector<cv::Point2f> curve_points;
     for (const mbes_ping& ping : pings) {
-        cv::Point2f pt(x0+res*(ping.pos_[0]-minx), y0+res*(ping.pos_[1]-miny));
+        cv::Point2f pt(x0+res*(ping.pos_[0]-minx), img.rows-y0-res*(ping.pos_[1]-miny)-1);
         curve_points.push_back(pt);
         //cout << pt << endl;
     }
@@ -175,8 +175,8 @@ std::tuple<uint8_t, uint8_t, uint8_t> jet(double x)
 
 pair<double, cv::Mat> track_error_benchmark::compute_draw_consistency_map(mbes_ping::PingsT& pings)
 {
-    int rows = 1000;
-    int cols = 1000;
+    int rows = 500;
+    int cols = 500;
 
     Eigen::MatrixXd means(rows, cols); means.setZero();
     Eigen::MatrixXd counts(rows, cols); counts.setZero();
@@ -236,7 +236,7 @@ pair<double, cv::Mat> track_error_benchmark::compute_draw_consistency_map(mbes_p
             if (mean_offsets(i, j) == 0) {
                 continue;
             }
-            cv::Point3_<uchar>* p = error_img.ptr<cv::Point3_<uchar> >(i, j);
+            cv::Point3_<uchar>* p = error_img.ptr<cv::Point3_<uchar> >(rows-i-1, j);
             tie(p->z, p->y, p->x) = jet(mean_offsets(i, j));
         }
     }
@@ -247,10 +247,56 @@ pair<double, cv::Mat> track_error_benchmark::compute_draw_consistency_map(mbes_p
     return make_pair(meanv, error_img);
 }
 
+cv::Mat track_error_benchmark::draw_height_map(mbes_ping::PingsT& pings)
+{
+    int rows = 500;
+    int cols = 500;
+
+    Eigen::MatrixXd means(rows, cols); means.setZero();
+    Eigen::MatrixXd counts(rows, cols); counts.setZero();
+
+    double res, minx, miny, x0, y0;
+    res = params[0]; minx = params[1]; miny = params[2]; x0 = params[3]; y0 = params[4];
+
+    for (const mbes_ping& ping : pings) {
+        for (const Eigen::Vector3d& pos : ping.beams) {
+            int col = int(x0+res*(pos[0]-minx));
+            int row = int(y0+res*(pos[1]-miny));
+            if (col >= 0 && col < cols && row >= 0 && row < rows) {
+                means(row, col) += pos[2];
+                counts(row, col) += 1.;
+            }
+        }
+    }
+
+    Eigen::ArrayXXd counts_pos = counts.array() + (counts.array() == 0.).cast<double>();
+    means.array() /= counts_pos;
+
+    double minv = means.minCoeff();
+    double meanv = means.mean();
+
+    means.array() -= minv*(counts.array() > 0).cast<double>();
+    double maxv = means.maxCoeff();
+    means.array() /= maxv;
+
+    cv::Mat mean_img = cv::Mat(rows, cols, CV_8UC3, cv::Scalar(255, 255, 255));
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            if (means(i, j) == 0) {
+                continue;
+            }
+            cv::Point3_<uchar>* p = mean_img.ptr<cv::Point3_<uchar> >(rows-i-1, j);
+            tie(p->z, p->y, p->x) = jet(means(i, j));
+        }
+    }
+
+    return mean_img;
+}
+
 void track_error_benchmark::add_ground_truth(mbes_ping::PingsT& pings)
 {
-    int rows = 1000;
-    int cols = 1000;
+    int rows = 500;
+    int cols = 500;
     for (mbes_ping& ping : pings) {
         gt_track.push_back(ping.pos_);
     }
@@ -277,6 +323,11 @@ void track_error_benchmark::add_benchmark(mbes_ping::PingsT& pings, const std::s
     cv::imwrite(error_img_path, error_img);
     error_img_paths[name] = error_img_path;
     consistency_rms_errors[name] = consistency_rms_error;
+    
+    cv::Mat mean_img = draw_height_map(pings);
+    draw_track_img(pings, mean_img, cv::Scalar(0, 0, 0), name);
+    string mean_img_path = name + "_mean_depth.png";
+    cv::imwrite(mean_img_path, mean_img);
 
     double track_rms_error = compute_rms_error(pings);
     track_rms_errors[name] = track_rms_error;

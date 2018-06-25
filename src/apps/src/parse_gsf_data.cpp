@@ -54,7 +54,12 @@ int main(int argc, char** argv)
 
 	cout << "Input folder : " << folder << endl;
 	cout << "Output file : " << path << endl;
-    gsf_mbes_ping::PingsT pings = parse_folder<gsf_mbes_ping>(folder);
+    gsf_mbes_ping::PingsT pings_unfiltered = parse_folder<gsf_mbes_ping>(folder);
+    std::stable_sort(pings_unfiltered.begin(), pings_unfiltered.end(), [](const gsf_mbes_ping& ping1, const gsf_mbes_ping& ping2) {
+        return ping1.time_stamp_ < ping2.time_stamp_;
+    });
+    gsf_mbes_ping::PingsT pings(pings_unfiltered.begin() + 2300, pings_unfiltered.begin() + 52600);
+    pings[0].first_in_file_ = true;
 
     gsf_nav_entry::EntriesT entries = parse_file<gsf_nav_entry>(poses_path);
     
@@ -63,6 +68,14 @@ int main(int argc, char** argv)
     match_sound_speeds(pings, speeds);
     mbes_ping::PingsT new_pings = convert_matched_entries(pings, entries);
 
+    for (mbes_ping& ping : new_pings) {
+        ping.beams.erase(std::remove_if(ping.beams.begin(), ping.beams.end(), [](const Eigen::Vector3d& p) {
+            return p[2] > -28. || p[2] < -34.;
+            //return false; //p[2] > -16. || p[2] < -13.;
+        }), ping.beams.end());
+    }
+
+    /*
     gp_submaps ss;
     tie(ss.points, ss.trans, ss.angles, ss.matches, ss.bounds) = create_submaps(new_pings);
 
@@ -92,6 +105,17 @@ int main(int argc, char** argv)
     vis.display();
 
     write_data(ss, path);
+    */
+    
+    track_error_benchmark benchmark;
+    
+    benchmark.add_ground_truth(new_pings);
+
+    benchmark.add_benchmark(new_pings, "initial");
+    benchmark.add_initial(new_pings);
+
+    benchmark.submap_origin = Eigen::Vector3d::Zero(); // this should be a method
+    write_data(benchmark, boost::filesystem::path("gsf_benchmark.cereal"));
 
     return 0;
 }
