@@ -81,12 +81,14 @@ int main(int argc, char** argv)
 
     vector<vector<cv::Point2f> > curve_points;
     int i = 0;
+    int counter = 0;
     for (const mbes_ping& ping : new_pings) {
         cv::Point2f pt(x0+res*(ping.pos_[0]-minx), rows-y0-res*(ping.pos_[1]-miny)-1);
         if (ping.first_in_file_) {
             curve_points.push_back(vector<cv::Point2f>());
             cv::Point org(pt.x, pt.y);
-            cv::putText(track_img, std::to_string(i), org, cv::FONT_HERSHEY_PLAIN, 1., cv::Scalar(0, 0, 255), 1, 8, false);
+            cv::putText(track_img, std::to_string(counter) + ":" + std::to_string(i), org, cv::FONT_HERSHEY_PLAIN, 1., cv::Scalar(0, 0, 255), 1, 8, false);
+            ++counter;
         }
         if (i % 500 == 0) {
             cv::Point org(pt.x, pt.y);
