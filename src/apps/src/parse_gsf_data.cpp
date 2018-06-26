@@ -75,7 +75,6 @@ int main(int argc, char** argv)
         }), ping.beams.end());
     }
 
-    /*
     gp_submaps ss;
     tie(ss.points, ss.trans, ss.angles, ss.matches, ss.bounds) = create_submaps(new_pings);
 
@@ -105,7 +104,6 @@ int main(int argc, char** argv)
     vis.display();
 
     write_data(ss, path);
-    */
     
     track_error_benchmark benchmark;
     

@@ -297,20 +297,22 @@ mbes_ping::PingsT convert_matched_entries(gsf_mbes_ping::PingsT& pings, gsf_nav_
             double th = M_PI/180.*ping.beam_angles[i];
             Eigen::Vector3d p = new_ping.pos_;
             Eigen::Vector3d sensor_p(0.62, 0., 0.);
-            Eigen::Vector3d beam(d*sin(th), 0., -d*cos(th)); // 0.55 comes from the log
-            //Eigen::Vector3d beam(0., d*sin(th), -d*cos(th)); // 0.55 comes from the log
+            //Eigen::Vector3d beam(d*sin(th), 0., -d*cos(th)); // 0.55 comes from the log
+            Eigen::Vector3d beam(0., d*sin(th), -d*cos(th)); // 0.55 comes from the log
+            //Eigen::Matrix3d beam_Rx = Eigen::AngleAxisd(-0.0237, Eigen::Vector3d::UnitX()).matrix();
             Eigen::Matrix3d beam_Rx = Eigen::AngleAxisd(M_PI/180.*0., Eigen::Vector3d::UnitX()).matrix();
-            //Eigen::Matrix3d beam_Rx = Eigen::AngleAxisd(M_PI/180.*4., Eigen::Vector3d::UnitX()).matrix();
-            //Eigen::Matrix3d beam_Ry = Eigen::AngleAxisd(M_PI/180.*-1., Eigen::Vector3d::UnitY()).matrix();
-            Eigen::Matrix3d beam_Ry = Eigen::AngleAxisd(-0.0237, Eigen::Vector3d::UnitY()).matrix();
+            //Eigen::Matrix3d beam_Ry = Eigen::AngleAxisd(M_PI/180.*-0., Eigen::Vector3d::UnitY()).matrix();
+            Eigen::Matrix3d beam_Ry = Eigen::AngleAxisd(0.32, Eigen::Vector3d::UnitY()).matrix();
+            //Eigen::Matrix3d beam_Ry = Eigen::AngleAxisd(-0.0237, Eigen::Vector3d::UnitY()).matrix();
             //Eigen::Matrix3d beam_Rz = Eigen::AngleAxisd(0.0237, Eigen::Vector3d::UnitZ()).matrix();
             Eigen::Matrix3d beam_Rz = Eigen::Matrix3d::Identity();
-            Eigen::Matrix3d Rx = Eigen::AngleAxisd(-new_ping.roll_, Eigen::Vector3d::UnitX()).matrix();
-            Eigen::Matrix3d Ry = Eigen::AngleAxisd(-new_ping.pitch_, Eigen::Vector3d::UnitY()).matrix();
-            Eigen::Matrix3d Rz = Eigen::AngleAxisd(-new_ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
-            //Eigen::Matrix3d Rx = Eigen::AngleAxisd(new_ping.roll_, Eigen::Vector3d::UnitX()).matrix();
-            //Eigen::Matrix3d Ry = Eigen::AngleAxisd(new_ping.pitch_, Eigen::Vector3d::UnitY()).matrix();
-            //Eigen::Matrix3d Rz = Eigen::AngleAxisd(new_ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
+
+            //Eigen::Matrix3d Rx = Eigen::AngleAxisd(-new_ping.roll_, Eigen::Vector3d::UnitX()).matrix();
+            //Eigen::Matrix3d Ry = Eigen::AngleAxisd(-new_ping.pitch_, Eigen::Vector3d::UnitY()).matrix();
+            //Eigen::Matrix3d Rz = Eigen::AngleAxisd(-new_ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
+            Eigen::Matrix3d Rx = Eigen::AngleAxisd(new_ping.pitch_, Eigen::Vector3d::UnitX()).matrix();
+            Eigen::Matrix3d Ry = Eigen::AngleAxisd(new_ping.roll_, Eigen::Vector3d::UnitY()).matrix();
+            Eigen::Matrix3d Rz = Eigen::AngleAxisd(new_ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
             Eigen::Matrix3d R = Rz*Ry*Rx;
             //Eigen::Matrix3d R = Rx*Ry*Rz;
             //new_ping.beams.push_back(p + R*beam_Ry*beam_Rx*beam);
