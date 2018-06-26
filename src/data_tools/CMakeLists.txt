@@ -13,6 +13,8 @@ add_library(gsf_data src/gsf_data.cpp)
 
 add_executable(test_gsf src/test_gsf.cpp)
 
+add_executable(test_submap_tracks src/test_submap_tracks.cpp)
+
 # Define headers for this library. PUBLIC headers are used for
 # compiling the library, and will be added to consumers' build
 # paths.
@@ -42,6 +44,8 @@ target_include_directories(gsf_data PUBLIC
     PRIVATE src)
 
 target_link_libraries(test_gsf gsf_data data_structures navi_data)
+
+target_link_libraries(test_submap_tracks gsf_data data_structures navi_data ${OpenCV_LIBS})
 
 # Link the libraries
 target_link_libraries(submaps ${PCL_LIBRARIES})

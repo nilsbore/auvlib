@@ -12,6 +12,32 @@
 
 using namespace std;
 
+void divide_gsf_map(mbes_ping::PingsT& pings)
+{
+    pings[3926].first_in_file_ = false;
+    pings[5200].first_in_file_ = true;
+    pings[10151].first_in_file_ = false;
+    pings[10400].first_in_file_ = true;
+    pings[15500].first_in_file_ = true;
+    pings[16376].first_in_file_ = false;
+    pings[20700].first_in_file_ = true;
+    pings[22601].first_in_file_ = false;
+    pings[25800].first_in_file_ = true;
+    pings[28827].first_in_file_ = false;
+    pings[30750].first_in_file_ = true;
+    pings[33300].first_in_file_ = true;
+    pings[34500].first_in_file_ = true;
+    pings[35052].first_in_file_ = false;
+    pings[36800].first_in_file_ = true;
+    pings[37800].first_in_file_ = true;
+    pings[40300].first_in_file_ = true;
+    pings[43700].first_in_file_ = true;
+    pings[44600].first_in_file_ = true;
+    pings[47000].first_in_file_ = true;
+    pings[47502].first_in_file_ = false;
+    pings[48000].first_in_file_ = true;
+}
+
 int main(int argc, char** argv)
 {
     string folder_str;
@@ -67,6 +93,7 @@ int main(int argc, char** argv)
 
     match_sound_speeds(pings, speeds);
     mbes_ping::PingsT new_pings = convert_matched_entries(pings, entries);
+    divide_gsf_map(new_pings);
 
     for (mbes_ping& ping : new_pings) {
         ping.beams.erase(std::remove_if(ping.beams.begin(), ping.beams.end(), [](const Eigen::Vector3d& p) {
