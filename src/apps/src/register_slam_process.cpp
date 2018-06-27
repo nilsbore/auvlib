@@ -162,9 +162,8 @@ int main(int argc, char** argv)
 	cout << "Input file : " << path << endl;
     
     gp_submaps ss = read_data<gp_submaps>(path);
-	ss.trans[first].array() += -70.0;
-    ss.trans[first](2) -= -70.0; 
-    ss.angles[first](2) += 0.2;
+	ss.trans[first].head<2>().array() += -5.0;
+    //ss.angles[first](2) += 0.2;
 
     subsample_cloud(ss.points[first], subsample);
     subsample_cloud(ss.points[second], subsample);
