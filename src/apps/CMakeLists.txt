@@ -46,3 +46,6 @@ target_link_libraries(test_fast_derivatives submaps data_structures gpgs_cost_fu
 
 add_executable(test_parse_navi_data test/test_parse_navi_data.cpp)
 target_link_libraries(test_parse_navi_data navi_data data_transforms data_structures)
+
+add_executable(register_slam_process src/register_slam_process.cpp)
+target_link_libraries(register_slam_process data_structures submaps gpgs_cost_function gpgs_visualization gpgs_multi_visualizer gpgs_igl_visualizer data_structures data_transforms)

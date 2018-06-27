@@ -6,6 +6,7 @@
 #include <sparse_gp/probit_noise.h>
 #include <sparse_gp/gaussian_noise.h>
 
+#include <data_tools/data_structures.h>
 #include <data_tools/colormap.h>
 #include <data_tools/submaps.h>
 #include <data_tools/transforms.h>
@@ -31,7 +32,7 @@ pair<vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> >,
      vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> > >
 get_transform_jacobians(const Eigen::MatrixXd& X,
                         const Eigen::Vector3d& t1, const Eigen::Vector3d& rot1,
-                        const Eigen::Vector3d& t2, const Eigen::Vector3d& rot2) const
+                        const Eigen::Vector3d& t2, const Eigen::Vector3d& rot2)
 {
     vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> > R1s = euler_to_matrices(rot1(0), rot1(1), rot1(2));
     vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> > R2s = euler_to_matrices(rot2(0), rot2(1), rot2(2));
@@ -71,8 +72,8 @@ get_transform_jacobians(const Eigen::MatrixXd& X,
 }
 
 Eigen::VectorXd compute_step(Eigen::MatrixXd& points2, ProcessT& gp1,
-                             Eigen::Vector3d& t1, Eigen::VectorXd3d& rot1,
-                             Eigen::Vector3d& t2, Eigen::VectorXd3d& rot2)
+                             Eigen::Vector3d& t1, Eigen::Vector3d& rot1,
+                             Eigen::Vector3d& t2, Eigen::Vector3d& rot2)
 {
     Eigen::Matrix3d R1 = euler_to_matrix(rot1[0], rot1[1], rot1[2]);
     Eigen::Matrix3d R2 = euler_to_matrix(rot2[0], rot2[1], rot2[2]);
@@ -82,7 +83,7 @@ Eigen::VectorXd compute_step(Eigen::MatrixXd& points2, ProcessT& gp1,
     Eigen::VectorXd ll;
     Eigen::MatrixXd dX;
 	cout << "Computing derivatives..." << endl;
-    gp.compute_neg_log_derivatives_fast(ll, dX, points2in1.leftCols(2), points2in1.col(2), true);
+    gp1.compute_neg_log_derivatives_fast(ll, dX, points2in1.leftCols(2), points2in1.col(2), true);
 	cout << "Done computing derivatives..." << endl;
 	cout << "Mean likelihood: " << ll.mean() << endl;
 	cout << "Mean derivative: " << dX.colwise().sum() << endl;
@@ -92,7 +93,7 @@ Eigen::VectorXd compute_step(Eigen::MatrixXd& points2, ProcessT& gp1,
 
     vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> > J1s; 
     vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> > J2s;
-    tie(J1s, J2s) = get_transform_jacobian(points2sub, t1, rot1, t2, rot2); 
+    tie(J1s, J2s) = get_transform_jacobians(points2sub, t1, rot1, t2, rot2); 
 
     Eigen::MatrixXd delta1s(points2sub.rows(), 6);
     Eigen::MatrixXd delta2s(points2sub.rows(), 6);
@@ -106,20 +107,6 @@ Eigen::VectorXd compute_step(Eigen::MatrixXd& points2, ProcessT& gp1,
 	return delta1.transpose();
 }
 
-tuple<Eigen::Vector3d, Eigen::Matrix3d> update_step(Eigen::VectorXd& delta)
-{
-    double step = 1e-0;
-    Eigen::Vector3d dt;
-    Eigen::Matrix3d dR;
-    Eigen::Matrix3d Rx = Eigen::AngleAxisd(step*delta(3), Eigen::Vector3d::UnitX()).matrix();
-    Eigen::Matrix3d Ry = Eigen::AngleAxisd(step*delta(4), Eigen::Vector3d::UnitY()).matrix();
-    Eigen::Matrix3d Rz = Eigen::AngleAxisd(step*delta(5), Eigen::Vector3d::UnitZ()).matrix();
-    dR = Rx*Ry*Rz;
-    dt = step*delta.head<3>().transpose();
-
-	return make_tuple(dt, dR);
-}
-
 void register_processes(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d& t1, Eigen::Vector3d& rot1,
 				        Eigen::MatrixXd& points2, ProcessT& gp2, Eigen::Vector3d& t2, Eigen::Vector3d& rot2)
 {
@@ -127,22 +114,22 @@ void register_processes(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d
     Eigen::Matrix3d R1 = euler_to_matrix(rot1(0), rot1(1), rot1(2));
     Eigen::Matrix3d R2 = euler_to_matrix(rot2(0), rot2(1), rot2(2));
 
+    double eps = 1.;
+
     Eigen::VectorXd delta1(6);
-	delta.setZero();
+	delta1.setZero();
     bool delta_diff_small = false;
     while (true) { //!delta_diff_small) {
 		Eigen::VectorXd delta_old = delta1;
 		cout << "Computing registration delta" << endl;
-		delta1 = compute_step(points2, gp1, t1, rot1, t2, rot2);
-        delta_diff_small = (delta - delta_old).norm() < 1e-5f;
-		Eigen::Vector3d dt;
-		Eigen::Matrix3d dR;
+		delta1 = -compute_step(points2, gp1, t1, rot1, t2, rot2);
+        delta_diff_small = (delta1 - delta_old).norm() < 1e-5f;
 		cout << "Computing registration update" << endl;
-		tie(dt, dR) = update_step(delta);
-		cout << "Registration update: " << delta << endl;
-        RM1 = dR*RM1; // add to total rotation
-        t1 += dt; // add to total translation
-        vis.visualizer_step(RM1);
+		cout << "Registration update: " << delta1 << endl;
+        t1.array() += eps*delta1.head<3>().array();
+        rot1.array() += eps*0.00002*delta1.tail<3>().array();
+        R1 = euler_to_matrix(rot1(0), rot1(1), rot1(2)); // add to total rotation
+        vis.visualizer_step(R1);
     }
 }
 
@@ -175,9 +162,12 @@ int main(int argc, char** argv)
 	cout << "Input file : " << path << endl;
     
     gp_submaps ss = read_data<gp_submaps>(path);
+	ss.trans[first].array() += -70.0;
+    ss.trans[first](2) -= -70.0; 
+    ss.angles[first](2) += 0.2;
 
-    subsample_cloud(ss.points[first]);
-    subsample_cloud(ss.points[second]);
+    subsample_cloud(ss.points[first], subsample);
+    subsample_cloud(ss.points[second], subsample);
 	register_processes(ss.points[first], ss.gps[first], ss.trans[first], ss.angles[first],
                        ss.points[second], ss.gps[second], ss.trans[second], ss.angles[second]);
 
