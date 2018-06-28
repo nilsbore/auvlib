@@ -38,6 +38,19 @@ void divide_gsf_map(mbes_ping::PingsT& pings)
     pings[48000].first_in_file_ = true;
 }
 
+pt_submaps::MatchesT get_gsf_matches()
+{
+    pt_submaps::MatchesT matches;
+
+    for (int i = 0; i < 6; ++i) {
+        for (int j = 0; j < 6; ++j) {
+            matches.push_back(make_pair(i, 6+2*j));
+        }
+    }
+
+    return matches;
+}
+
 int main(int argc, char** argv)
 {
     string folder_str;
@@ -102,8 +115,10 @@ int main(int argc, char** argv)
         }), ping.beams.end());
     }
 
+    /*
     gp_submaps ss;
     tie(ss.points, ss.trans, ss.angles, ss.matches, ss.bounds) = create_submaps(new_pings);
+    ss.matches = get_gsf_matches();
 
     for (int i = 0; i < ss.points.size(); ++i) {
 
@@ -131,6 +146,9 @@ int main(int argc, char** argv)
     vis.display();
 
     write_data(ss, path);
+    */
+
+    cout << "Wrote output submaps file " << path << endl;
     
     track_error_benchmark benchmark;
     

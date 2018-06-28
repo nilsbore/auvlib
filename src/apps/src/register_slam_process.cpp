@@ -123,6 +123,7 @@ void register_processes(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d
 		Eigen::VectorXd delta_old = delta1;
 		cout << "Computing registration delta" << endl;
 		delta1 = -compute_step(points2, gp1, t1, rot1, t2, rot2);
+        //delta1(2) = delta1(3) = delta1(4) = 0.;
         delta_diff_small = (delta1 - delta_old).norm() < 1e-5f;
 		cout << "Computing registration update" << endl;
 		cout << "Registration update: " << delta1 << endl;
@@ -162,7 +163,7 @@ int main(int argc, char** argv)
 	cout << "Input file : " << path << endl;
     
     gp_submaps ss = read_data<gp_submaps>(path);
-	ss.trans[first].head<2>().array() += -5.0;
+	//ss.trans[first].head<2>().array() += -5.0;
     //ss.angles[first](2) += 0.2;
 
     subsample_cloud(ss.points[first], subsample);

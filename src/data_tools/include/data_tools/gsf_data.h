@@ -16,10 +16,19 @@ struct gsf_mbes_ping {
     std::vector<int> amplitudes; // amplitudes
     bool first_in_file_;
 
+    double heading_;
+    double pitch_;
+    double roll_;
+    double lat_;
+    double long_;
+    double depth_;
+
+    std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > beams; // all 3d points in swath
+
 	template <class Archive>
     void serialize( Archive & ar )
     {
-        ar(CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_), CEREAL_NVP(travel_times), CEREAL_NVP(beam_angles), CEREAL_NVP(distances), CEREAL_NVP(amplitudes), CEREAL_NVP(first_in_file_));
+        ar(CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_), CEREAL_NVP(travel_times), CEREAL_NVP(beam_angles), CEREAL_NVP(distances), CEREAL_NVP(amplitudes), CEREAL_NVP(first_in_file_), CEREAL_NVP(beams));
     }
 
 };

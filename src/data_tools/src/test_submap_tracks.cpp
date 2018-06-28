@@ -35,7 +35,7 @@ void divide_gsf_map(mbes_ping::PingsT& pings)
 int main(int argc, char** argv)
 {
     // read the data
-    boost::filesystem::path folder("/media/nbore/data_ssd/ACFR-tas200810pockmarks/PROCESSED_DATA/r20081015_221314_butts_pockmarks_23_overlappinggrids/bpslam20110606/DT20081015_221314_gsf");
+    boost::filesystem::path folder("/home/nbore/Data/ACFR-tas200810pockmarks/PROCESSED_DATA/r20081015_221314_butts_pockmarks_23_overlappinggrids/bpslam20110606/DT20081015_221314_gsf");
     gsf_mbes_ping::PingsT pings_unfiltered = parse_folder<gsf_mbes_ping>(folder);
     std::stable_sort(pings_unfiltered.begin(), pings_unfiltered.end(), [](const gsf_mbes_ping& ping1, const gsf_mbes_ping& ping2) {
         return ping1.time_stamp_ < ping2.time_stamp_;
@@ -43,9 +43,9 @@ int main(int argc, char** argv)
     gsf_mbes_ping::PingsT pings(pings_unfiltered.begin() + 2300, pings_unfiltered.begin() + 52600);
     pings[0].first_in_file_ = true;
 
-    gsf_nav_entry::EntriesT entries = parse_file<gsf_nav_entry>(boost::filesystem::path("/media/nbore/data_ssd/ACFR-tas200810pockmarks/PROCESSED_DATA/r20081015_221314_butts_pockmarks_23_overlappinggrids/bpslam20110606/dr_pose_est.data"));
+    gsf_nav_entry::EntriesT entries = parse_file<gsf_nav_entry>(boost::filesystem::path("/home/nbore/Data/ACFR-tas200810pockmarks/PROCESSED_DATA/r20081015_221314_butts_pockmarks_23_overlappinggrids/bpslam20110606/dr_pose_est.data"));
     
-    gsf_sound_speed::SpeedsT speeds = parse_file<gsf_sound_speed>(boost::filesystem::path("/media/nbore/data_ssd/ACFR-tas200810pockmarks/PROCESSED_DATA/r20081015_221314_butts_pockmarks_23_overlappinggrids/bpslam20110606/DT20081015_221314_gsf/sound_speed.data"));
+    gsf_sound_speed::SpeedsT speeds = parse_file<gsf_sound_speed>(boost::filesystem::path("/home/nbore/Data/ACFR-tas200810pockmarks/PROCESSED_DATA/r20081015_221314_butts_pockmarks_23_overlappinggrids/bpslam20110606/DT20081015_221314_gsf/sound_speed.data"));
 
     match_sound_speeds(pings, speeds);
     mbes_ping::PingsT new_pings = convert_matched_entries(pings, entries);

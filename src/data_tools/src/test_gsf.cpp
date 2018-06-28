@@ -146,6 +146,7 @@ int main(int argc, char** argv)
     int handle;
     //int result = gsfOpen("/home/nbore/Data/ACFR-tas200810pockmarks/PROCESSED_DATA/r20081015_221314_butts_pockmarks_23_overlappinggrids/bpslam20110606/DT20081015_221314_gsf", GSF_READONLY, &handle);
     if (gsfOpen("/home/nbore/Data/ACFR-tas200810pockmarks/PROCESSED_DATA/r20081015_221314_butts_pockmarks_23_overlappinggrids/bpslam20110606/DT20081015_221314_gsf/20081015_2213-001.gsf", GSF_READONLY, &handle) != 0 || handle < 0)
+    //if (gsfOpen("/home/nbore/Data/ACFR-tas200810pockmarks/PROCESSED_DATA/r20081015_221314_butts_pockmarks_23_overlappinggrids/renav20090218_DT/20081015_2213-001_nav.gsf", GSF_READONLY, &handle) != 0 || handle < 0)
     {
         cout << "File could not be opened!" << endl;
         exit(0);
@@ -179,6 +180,9 @@ int main(int argc, char** argv)
         case (GSF_RECORD_SWATH_BATHYMETRY_PING):
             cout << "Got swath bathymetry ping" << endl;
             cout << (gsfSwathBathyPing&)records.mb_ping << endl;
+            /*if (records.mb_ping.depth_corrector != 0) {
+                cout << "Got depth corrector: " << records.mb_ping.depth_corrector << endl;
+            }*/
             break;
         case (GSF_RECORD_SOUND_VELOCITY_PROFILE):
             cout << "Got sound velocity profile" << endl;
@@ -192,6 +196,8 @@ int main(int argc, char** argv)
         }
         ++counter;
     }
+
+    return 0;
 
     boost::filesystem::path folder("/home/nbore/Data/ACFR-tas200810pockmarks/PROCESSED_DATA/r20081015_221314_butts_pockmarks_23_overlappinggrids/bpslam20110606/DT20081015_221314_gsf");
     //boost::filesystem::path folder("/home/nbore/Data/ACFR-tas200810pockmarks/PROCESSED_DATA/r20081015_221314_butts_pockmarks_23_overlappinggrids/DT20081015_221314_p");

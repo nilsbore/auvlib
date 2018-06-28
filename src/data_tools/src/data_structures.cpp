@@ -57,10 +57,19 @@ void track_error_benchmark::draw_track_img(mbes_ping::PingsT& pings, cv::Mat& im
     res = params[0]; minx = params[1]; miny = params[2]; x0 = params[3]; y0 = params[4];
 
     vector<cv::Point2f> curve_points;
+    int counter = 0;
     for (const mbes_ping& ping : pings) {
         cv::Point2f pt(x0+res*(ping.pos_[0]-minx), img.rows-y0-res*(ping.pos_[1]-miny)-1);
         curve_points.push_back(pt);
         //cout << pt << endl;
+        if (counter % 500 == 0) {
+            double len = 30.;
+            cv::Point pt1(x0+res*(ping.pos_[0]-minx), img.rows-y0-res*(ping.pos_[1]-miny)-1);
+            cv::Point pt2(pt1.x + int(len*cos(ping.heading_)), pt1.y - int(len*sin(ping.heading_)));
+            cv::arrowedLine(img, pt1, pt2, cv::Scalar(0, 0 , 255), 2, 8, 0, 0.1);
+            cv::putText(img, std::to_string(int(180./M_PI*ping.heading_)), pt1, cv::FONT_HERSHEY_PLAIN, 0.5, cv::Scalar(0, 0, 0), 1, 8, false);
+        }
+        ++counter;
     }
 
     cv::Mat curve(curve_points, true);
