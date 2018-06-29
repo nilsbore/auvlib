@@ -44,59 +44,6 @@ void subsample_cloud(Eigen::MatrixXd& points, int subsample)
     points.conservativeResize(counter, 3);
 }
 
-/*
-void calculate_costs(gp_submaps& ss)
-{
-    double binary_costs = 0.;
-    for (const tuple<int, int, Eigen::Vector3d, Eigen::Vector3d>& con : ss.binary_constraints) {
-        int i, j;
-        Eigen::Vector3d last_point1, first_point2;
-        tie (i, j, last_point1, first_point2) = con;
-        //BinaryConstraintCostFunctor cost_function(last_point1, first_point2, 40.);
-        BinaryConstraintCostFunctor cost_function(last_point1, first_point2, 5.);
-        double value;
-        cost_function(ss.trans[i].data(), ss.angles[i].data(), ss.trans[j].data(), ss.angles[j].data(), &value);
-        binary_costs += value;
-    }
-
-    double matches_costs = 0.;
-
-    double* parameters[4];
-    for (int j = 0; j < 4; ++j) {
-        parameters[j] = new double[3];
-    }
-    for (const pair<int, int>& match : ss.matches) {
-        int i, j;
-        tie (i, j) = match;
-        cout << "Adding constraint between " << i << " and " << j << endl;
-        std::copy(ss.trans[i].data(), ss.trans[i].data() + 3, parameters[0]);
-        std::copy(ss.angles[i].data(), ss.angles[i].data() + 3, parameters[1]);
-        std::copy(ss.trans[j].data(), ss.trans[j].data() + 3, parameters[2]);
-        std::copy(ss.angles[j].data(), ss.angles[j].data() + 3, parameters[3]);
-        GaussianProcessCostFunction cost_function(ss.gps[i], ss.bounds[i], ss.points[j]);
-        double value;
-        cost_function.Evaluate((double const* const*)parameters, &value, NULL);
-        matches_costs += value;
-    }
-    for (int j = 0; j < 4; ++j) {
-        delete parameters[j];
-    }
-    
-    double unary_costs = 0.;
-    for (int i = 0; i < ss.trans.size(); ++i) {
-        UnaryConstraintCostFunctor cost_function(ss.angles[i], 0.05);
-        double value;
-        cost_function(ss.angles[i].data(), &value);
-        unary_costs += value;
-    }
-
-    cout << "Matches cost: " << matches_costs << endl;
-    cout << "Binary cost: " << binary_costs << endl;
-    cout << "Unary cost: " << unary_costs << endl;
-    cout << "Total cost: " << matches_costs + binary_costs + unary_costs << endl;
-}
-*/
-
 tuple<double, double, double> calculate_costs(vector<ceres::ResidualBlockId>& matches_residual_block_ids,
                                               vector<ceres::ResidualBlockId>& binary_residual_block_ids, 
                                               vector<ceres::ResidualBlockId>& unary_residual_block_ids,
@@ -118,8 +65,6 @@ tuple<double, double, double> calculate_costs(vector<ceres::ResidualBlockId>& ma
 
 void register_processes_ceres(gp_submaps& ss, bool with_rot)
 {
-    //calculate_costs(ss);
-
     ceres::Problem problem;
     vector<ceres::ResidualBlockId> matches_residual_block_ids;
     vector<ceres::ResidualBlockId> binary_residual_block_ids;
@@ -138,7 +83,7 @@ void register_processes_ceres(gp_submaps& ss, bool with_rot)
 
     for (const pair<int, int>& match : ss.matches) {
         int i, j;
-        tie (i, j) = match;
+        tie(i, j) = match;
         cout << "Adding constraint between " << i << " and " << j << endl;
         ceres::CostFunction* cost_function1 = new GaussianProcessCostFunction(ss.gps[i], ss.bounds[i], ss.points[j]);
         ceres::CostFunction* cost_function2 = new GaussianProcessCostFunction(ss.gps[j], ss.bounds[j], ss.points[i]);
@@ -150,32 +95,24 @@ void register_processes_ceres(gp_submaps& ss, bool with_rot)
         ceres::LossFunction* loss_function1 = NULL;
         ceres::LossFunction* loss_function2 = NULL;
         
-        /*
-        Eigen::MatrixXd points2in1 = get_points_in_bound_transform(ss.points[j], ss.trans[j], ss.rots[j], ss.trans[i], ss.rots[i], ss.bounds[i]);
-        Eigen::MatrixXd points1in2 = get_points_in_bound_transform(ss.points[i], ss.trans[i], ss.rots[i], ss.trans[j], ss.rots[j], ss.bounds[j]);
-        if (points2in1.rows() < points1in2.rows()) {
-        */
-            matches_residual_block_ids.push_back(problem.AddResidualBlock(cost_function1, loss_function1, ss.trans[i].data(), ss.angles[i].data(),
-                                                                                                          ss.trans[j].data(), ss.angles[j].data()));
-        
-        /*}
-        else {*/
-            matches_residual_block_ids.push_back(problem.AddResidualBlock(cost_function2, loss_function2, ss.trans[j].data(), ss.angles[j].data(),
-                                                                                                          ss.trans[i].data(), ss.angles[i].data()));
-        //}
-    }
+        matches_residual_block_ids.push_back(problem.AddResidualBlock(cost_function1, loss_function1, ss.trans[i].data(), ss.angles[i].data(),
+                                                                                                      ss.trans[j].data(), ss.angles[j].data()));
     
+        matches_residual_block_ids.push_back(problem.AddResidualBlock(cost_function2, loss_function2, ss.trans[j].data(), ss.angles[j].data(),
+                                                                                                      ss.trans[i].data(), ss.angles[i].data()));
+    }
+
     for (int i = 0; i < ss.trans.size(); ++i) {
         //ceres::CostFunction* cost_function = UnaryConstraintCostFunctor::Create(ss.angles[i], 0.2);
-        ceres::CostFunction* cost_function = UnaryConstraintCostFunctor::Create(ss.trans[i], 5.);
+        ceres::CostFunction* cost_function = UnaryConstraintCostFunctor::Create(ss.trans[i], 100.);
         ceres::LossFunction* loss_function = NULL;
-        //unary_residual_block_ids.push_back(problem.AddResidualBlock(cost_function, loss_function, ss.angles[i].data()));
-        //unary_residual_block_ids.push_back(problem.AddResidualBlock(cost_function, loss_function, ss.trans[i].data()));
+        unary_residual_block_ids.push_back(problem.AddResidualBlock(cost_function, loss_function, ss.angles[i].data()));
+        unary_residual_block_ids.push_back(problem.AddResidualBlock(cost_function, loss_function, ss.trans[i].data()));
 
-        problem.SetParameterLowerBound(ss.trans[i].data(), 0, ss.trans[i](0) - 30.);
-        problem.SetParameterLowerBound(ss.trans[i].data(), 1, ss.trans[i](1) - 30.);
-        problem.SetParameterUpperBound(ss.trans[i].data(), 0, ss.trans[i](0) + 30.);
-        problem.SetParameterUpperBound(ss.trans[i].data(), 1, ss.trans[i](1) + 30.);
+        problem.SetParameterLowerBound(ss.trans[i].data(), 0, ss.trans[i](0) - 10.);
+        problem.SetParameterLowerBound(ss.trans[i].data(), 1, ss.trans[i](1) - 10.);
+        problem.SetParameterUpperBound(ss.trans[i].data(), 0, ss.trans[i](0) + 10.);
+        problem.SetParameterUpperBound(ss.trans[i].data(), 1, ss.trans[i](1) + 10.);
 
         problem.SetParameterLowerBound(ss.angles[i].data(), 2, ss.angles[i](2) - M_PI);
         problem.SetParameterUpperBound(ss.angles[i].data(), 2, ss.angles[i](2) + M_PI);
@@ -196,7 +133,6 @@ void register_processes_ceres(gp_submaps& ss, bool with_rot)
     //options.callbacks.push_back(new MultiVisCallback(points, gps, trans, rots));
 	IglVisCallback* vis = new IglVisCallback(ss.points, ss.gps, ss.trans, ss.angles, ss.bounds);
     vis->set_matches(ss.matches);
-    //vis->display(); // display initial conditions before starting optimization
 
     options.callbacks.push_back(vis);
     options.max_num_iterations = 200;
@@ -213,7 +149,6 @@ void register_processes_ceres(gp_submaps& ss, bool with_rot)
     pt_submaps::TransT trans_0 = ss.trans;
     pt_submaps::AngsT angs_0 = ss.angles;
     
-	//vis->display();
 	auto handle = std::async(std::launch::async, [&options, &problem, &summary]() {
 		ceres::Solve(options, &problem, &summary);
 	});
@@ -248,7 +183,6 @@ void register_processes_ceres(gp_submaps& ss, bool with_rot)
     cout << "Angles change: " << angs_change << endl;
 }
 
-// Example: ./visualize_process --folder ../scripts --lsq 100.0 --sigma 0.1 --s0 1.
 int main(int argc, char** argv)
 {
     string file_str;
@@ -281,9 +215,9 @@ int main(int argc, char** argv)
 
     gp_submaps ss = read_data<gp_submaps>(path);
 	
-    ss.matches = compute_matches(ss.trans, ss.rots, ss.bounds);
+    //ss.matches = compute_matches(ss.trans, ss.rots, ss.bounds);
     //ss.matches.resize(0);
-    ss.binary_constraints = compute_binary_constraints(ss.trans, ss.rots, ss.points);
+    //ss.binary_constraints = compute_binary_constraints(ss.trans, ss.rots, ss.points);
     
     ObsT original_points = ss.points;
     for (Eigen::MatrixXd& p : ss.points) {
@@ -301,9 +235,9 @@ int main(int argc, char** argv)
     ss.points = original_points;
     write_data(ss, output);
 
-    track_error_benchmark benchmark = read_data<track_error_benchmark>(boost::filesystem::path("my_benchmark.cereal"));
+    //track_error_benchmark benchmark = read_data<track_error_benchmark>(boost::filesystem::path("my_benchmark.cereal"));
+    track_error_benchmark benchmark = read_data<track_error_benchmark>(boost::filesystem::path("gsf_benchmark.cereal"));
     
-    //pt_submaps::TransT corrected_track;
     TransT trans_corr;
     RotsT rots_corr;
     for (int i = 0; i < ss.points.size(); ++i) {
@@ -314,11 +248,10 @@ int main(int argc, char** argv)
         rots_corr.push_back(Rc);
 
     }
-    //benchmark.draw_track_img(corrected_track);
-    //double error = benchmark.compute_rms_error(corrected_track);
     benchmark.add_benchmark(trans_corr, rots_corr, "slam");
     benchmark.print_summary();
-    write_data(benchmark, boost::filesystem::path("my_benchmark.cereal"));
+    //write_data(benchmark, boost::filesystem::path("my_benchmark.cereal"));
+    write_data(benchmark, boost::filesystem::path("gsf_benchmark.cereal"));
     
     cv::imshow("Track", benchmark.track_img);
     cv::waitKey();
