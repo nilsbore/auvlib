@@ -125,6 +125,7 @@ MatchesT compute_matches(const TransTT& trans, const RotsTT& rots, const BBsT& b
     return matches;
 }
 
+// NOTE: we need the poses here
 ConstraintsT compute_binary_constraints(const TransTT& trans, const RotsTT& rots, const ObsT& points)
 {
     const int swath_width = 512;
@@ -140,6 +141,32 @@ ConstraintsT compute_binary_constraints(const TransTT& trans, const RotsTT& rots
         first_point2 = rots[i].transpose()*(last_point1_transformed - trans[i]);
         double dist = (first_point2_transformed-last_point1_transformed).norm();
         cout << "Distance between " << i-1 << " and " << i << ": " << dist << endl;
+        if (dist < 0.4) {
+            cout << "Found a binary constraint between" << i-1 << " and " << i << endl;
+            binary_constraints.push_back(make_tuple(i-1, i, last_point1, first_point2));
+            // TODO: This is debug code, remove afterwards
+            //binary_constraints.push_back(make_tuple(i-1, i, rots[i-1]*last_point1, rots[i]*first_point2));
+        }
+    }
+
+    return binary_constraints;
+}
+
+// NOTE: we need the poses here
+ConstraintsT compute_binary_constraints(const TransTT& trans, const RotsTT& rots, const ObsT& points, const ObsT& tracks)
+{
+    const int swath_width = 512;
+
+    ConstraintsT binary_constraints;
+
+    for (int i = 1; i < points.size(); ++i) {
+
+        Eigen::Vector3d last_point1 = tracks[i-1].bottomRows<1>().transpose();
+        Eigen::Vector3d first_point2 = tracks[i].topRows<1>().transpose();
+        Eigen::Vector3d last_point1_transformed = rots[i-1]*last_point1 + trans[i-1];
+        Eigen::Vector3d first_point2_transformed = rots[i]*first_point2 + trans[i];
+        first_point2 = rots[i].transpose()*(last_point1_transformed - trans[i]);
+        double dist = (first_point2_transformed-last_point1_transformed).norm();
         if (dist < 0.4) {
             cout << "Found a binary constraint between" << i-1 << " and " << i << endl;
             binary_constraints.push_back(make_tuple(i-1, i, last_point1, first_point2));

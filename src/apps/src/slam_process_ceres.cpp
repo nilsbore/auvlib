@@ -75,7 +75,7 @@ void register_processes_ceres(gp_submaps& ss, bool with_rot)
         Eigen::Vector3d last_point1, first_point2;
         tie (i, j, last_point1, first_point2) = con;
         cout << "Adding binary constraint between " << i << " and " << j << endl;
-        ceres::CostFunction* cost_function = BinaryConstraintCostFunctor::Create(last_point1, first_point2, 1.);
+        ceres::CostFunction* cost_function = BinaryConstraintCostFunctor::Create(last_point1, first_point2, 10.);
         ceres::LossFunction* loss_function = NULL;
         binary_residual_block_ids.push_back(problem.AddResidualBlock(cost_function, loss_function, ss.trans[i].data(), ss.angles[i].data(),
                                                                                                    ss.trans[j].data(), ss.angles[j].data()));
@@ -104,10 +104,10 @@ void register_processes_ceres(gp_submaps& ss, bool with_rot)
 
     for (int i = 0; i < ss.trans.size(); ++i) {
         //ceres::CostFunction* cost_function = UnaryConstraintCostFunctor::Create(ss.angles[i], 0.2);
-        ceres::CostFunction* cost_function = UnaryConstraintCostFunctor::Create(ss.trans[i], 100.);
+        ceres::CostFunction* cost_function = UnaryConstraintCostFunctor::Create(ss.trans[i], 0.1);
         ceres::LossFunction* loss_function = NULL;
-        unary_residual_block_ids.push_back(problem.AddResidualBlock(cost_function, loss_function, ss.angles[i].data()));
-        unary_residual_block_ids.push_back(problem.AddResidualBlock(cost_function, loss_function, ss.trans[i].data()));
+        //unary_residual_block_ids.push_back(problem.AddResidualBlock(cost_function, loss_function, ss.angles[i].data()));
+        //unary_residual_block_ids.push_back(problem.AddResidualBlock(cost_function, loss_function, ss.trans[i].data()));
 
         problem.SetParameterLowerBound(ss.trans[i].data(), 0, ss.trans[i](0) - 10.);
         problem.SetParameterLowerBound(ss.trans[i].data(), 1, ss.trans[i](1) - 10.);
@@ -218,6 +218,7 @@ int main(int argc, char** argv)
     //ss.matches = compute_matches(ss.trans, ss.rots, ss.bounds);
     //ss.matches.resize(0);
     //ss.binary_constraints = compute_binary_constraints(ss.trans, ss.rots, ss.points);
+    ss.binary_constraints = compute_binary_constraints(ss.trans, ss.rots, ss.points, ss.tracks);
     
     ObsT original_points = ss.points;
     for (Eigen::MatrixXd& p : ss.points) {
