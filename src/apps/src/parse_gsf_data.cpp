@@ -57,9 +57,9 @@ int main(int argc, char** argv)
     string sounds_file_str;
     string poses_file_str;
     string file_str;
-	double lsq = 2.;
-	double sigma = 1.;
-	double s0 = .5;
+	double lsq = 10.;
+	double sigma = 5.;
+	double s0 = .2;
 
 	cxxopts::Options options("MyProgram", "One line description of MyProgram");
 	options.add_options()
