@@ -33,7 +33,7 @@ void clip_submap(Eigen::MatrixXd& points, Eigen::Matrix2d& bounds, double minx, 
     points.conservativeResize(counter, 3);
 }
 
-tuple<ObsT, TransT, AngsT, MatchesT, BBsT> load_or_create_submaps(const boost::filesystem::path& folder)
+tuple<ObsT, TransT, AngsT, MatchesT, BBsT, ObsT> load_or_create_submaps(const boost::filesystem::path& folder)
 {
     if (boost::filesystem::exists("navi_submaps.cereal")) {
         ObsT submaps;
@@ -41,13 +41,14 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT> load_or_create_submaps(const boost::f
         AngsT angs;
         MatchesT matches;
         BBsT bounds;
+        ObsT tracks;
         std::ifstream is("navi_submaps.cereal", std::ifstream::binary);
         {
 			cereal::BinaryInputArchive archive(is);
-			archive(submaps, trans, angs, matches, bounds);
+			archive(submaps, trans, angs, matches, bounds, tracks);
         }
         is.close();
-		return make_tuple(submaps, trans, angs, matches, bounds);
+		return make_tuple(submaps, trans, angs, matches, bounds, tracks);
     }
 	// Parse ROV track files
 	boost::filesystem::path nav_dir = folder / "NavUTM";
@@ -70,16 +71,17 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT> load_or_create_submaps(const boost::f
     AngsT angs;
     MatchesT matches;
     BBsT bounds;
-    tie(submaps, trans, angs, matches, bounds) = create_submaps(pings);
+    ObsT tracks;
+    tie(submaps, trans, angs, matches, bounds, tracks) = create_submaps(pings);
 
     std::ofstream os("navi_submaps.cereal", std::ofstream::binary);
     {
         cereal::BinaryOutputArchive archive(os);
-        archive(submaps, trans, angs, matches, bounds);
+        archive(submaps, trans, angs, matches, bounds, tracks);
     }
     os.close();
 	
-    return make_tuple(submaps, trans, angs, matches, bounds);
+    return make_tuple(submaps, trans, angs, matches, bounds, tracks);
 }
 
 int main(int argc, char** argv)
@@ -125,7 +127,7 @@ int main(int argc, char** argv)
 	cout << "Output file : " << path << endl;
     
     gp_submaps ss;
-    tie(ss.points, ss.trans, ss.angles, ss.matches, ss.bounds) = load_or_create_submaps(folder);
+    tie(ss.points, ss.trans, ss.angles, ss.matches, ss.bounds, ss.tracks) = load_or_create_submaps(folder);
     
     Eigen::Vector3d origin = ss.trans[0];
     for (int i = 0; i < ss.trans.size(); ++i) {

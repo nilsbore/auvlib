@@ -102,7 +102,7 @@ void distort_track_turns(mbes_ping::PingsT& pings)
     
 }
 
-tuple<ObsT, TransT, AngsT, MatchesT, BBsT> load_or_create_submaps(const boost::filesystem::path& folder)
+tuple<ObsT, TransT, AngsT, MatchesT, BBsT, ObsT> load_or_create_submaps(const boost::filesystem::path& folder)
 {
 	// Parse ROV track files
 	boost::filesystem::path nav_dir = folder / "NavUTM";
@@ -179,7 +179,8 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT> load_or_create_submaps(const boost::f
     AngsT angs;
     MatchesT matches;
     BBsT bounds;
-    tie(submaps, trans, angs, matches, bounds) = create_submaps(pings);
+    ObsT tracks;
+    tie(submaps, trans, angs, matches, bounds, tracks) = create_submaps(pings);
     
     Eigen::Vector3d origin = trans[0];
     for (int i = 0; i < trans.size(); ++i) {
@@ -190,7 +191,7 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT> load_or_create_submaps(const boost::f
     benchmark.submap_origin = origin; // this should be a method
     write_data(benchmark, boost::filesystem::path("my_benchmark.cereal"));
 
-    return make_tuple(submaps, trans, angs, matches, bounds);
+    return make_tuple(submaps, trans, angs, matches, bounds, tracks);
 }
 
 int main(int argc, char** argv)
@@ -236,7 +237,7 @@ int main(int argc, char** argv)
 	cout << "Output file : " << path << endl;
     
     gp_submaps ss;
-    tie(ss.points, ss.trans, ss.angles, ss.matches, ss.bounds) = load_or_create_submaps(folder);
+    tie(ss.points, ss.trans, ss.angles, ss.matches, ss.bounds, ss.tracks) = load_or_create_submaps(folder);
     
     for (int i = 0; i < ss.points.size(); ++i) {
 

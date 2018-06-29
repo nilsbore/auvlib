@@ -55,7 +55,7 @@ std::vector<T, Eigen::aligned_allocator<T> > parse_folder(const boost::filesyste
 
 void divide_tracks(mbes_ping::PingsT& pings);
 void divide_tracks_equal(mbes_ping::PingsT& pings);
-std::tuple<ObsT, TransT, AngsT, MatchesT, BBsT> create_submaps(const mbes_ping::PingsT& pings);
+std::tuple<ObsT, TransT, AngsT, MatchesT, BBsT, ObsT> create_submaps(const mbes_ping::PingsT& pings);
 void visualize_submaps(ObsT& submaps, TransT& trans, AngsT& angs);
 
 #endif // NAVI_DATA_H

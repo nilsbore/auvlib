@@ -115,9 +115,8 @@ int main(int argc, char** argv)
         }), ping.beams.end());
     }
 
-    /*
     gp_submaps ss;
-    tie(ss.points, ss.trans, ss.angles, ss.matches, ss.bounds) = create_submaps(new_pings);
+    tie(ss.points, ss.trans, ss.angles, ss.matches, ss.bounds, ss.tracks) = create_submaps(new_pings);
     ss.matches = get_gsf_matches();
 
     for (int i = 0; i < ss.points.size(); ++i) {
@@ -141,12 +140,18 @@ int main(int argc, char** argv)
 
         ss.rots.push_back(euler_to_matrix(ss.angles[i](0), ss.angles[i](1), ss.angles[i](2)));
     }
+    for (int i = 0; i < ss.points.size(); ++i) {
+        cout << "======== Track " << i << " ===========" << endl;
+        cout << "First point: " << ss.points[i].topRows<1>() << endl;
+        cout << "First pose: " << ss.tracks[i].topRows<1>() << endl;
+        cout << "Last point: " << ss.points[i].bottomRows<1>() << endl;
+        cout << "Last pose: " << ss.tracks[i].bottomRows<1>() << endl;
+    }
 	
     IglVisCallback vis(ss.points, ss.gps, ss.trans, ss.angles, ss.bounds);
     vis.display();
 
     write_data(ss, path);
-    */
 
     cout << "Wrote output submaps file " << path << endl;
     

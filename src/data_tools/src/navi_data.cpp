@@ -354,13 +354,14 @@ void divide_tracks_equal(mbes_ping::PingsT& pings)
     }
 }
 
-tuple<ObsT, TransT, AngsT, MatchesT, BBsT> create_submaps(const mbes_ping::PingsT& pings)
+tuple<ObsT, TransT, AngsT, MatchesT, BBsT, ObsT> create_submaps(const mbes_ping::PingsT& pings)
 {
     ObsT submaps;
     TransT trans;
     AngsT angs;
     MatchesT matches;
     BBsT bounds;
+    ObsT tracks;
     for (auto pos = pings.begin(); pos != pings.end(); ) {
         auto next = std::find_if(pos, pings.end(), [&](const mbes_ping& ping) {
             return ping.first_in_file_ && (&ping != &(*pos));
@@ -374,6 +375,7 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT> create_submaps(const mbes_ping::Pings
         }*/
 
         MatrixXd points(track_pings.size()*track_pings[0].beams.size(), 3);
+        MatrixXd track(track_pings.size(), 3);
         
         // get the direction of the submap as the mean direction
         Vector3d dir = track_pings.back().pos_ - track_pings.front().pos_;
@@ -381,6 +383,7 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT> create_submaps(const mbes_ping::Pings
         Eigen::Matrix3d RM = euler_to_matrix(ang(0), ang(1), ang(2));
 
         int counter = 0;
+        int ping_counter = 0;
         for (const mbes_ping& ping : track_pings) {
             //cout << "Counter : " << counter << " and size: " << points.rows() << " and new points: " << ping.beams.size() << endl;
             if (counter + ping.beams.size() > points.rows()) {
@@ -390,12 +393,16 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT> create_submaps(const mbes_ping::Pings
                 points.row(counter) = p;
                 ++counter;
             }
+            track.row(ping_counter) = ping.pos_;
+            ++ping_counter;
         }
         points.conservativeResize(counter, 3);
         trans.push_back(points.colwise().mean().transpose());
         angs.push_back(ang);
         points.array().rowwise() -= trans.back().transpose().array();
         points = points*RM;
+        track.array().rowwise() -= trans.back().transpose().array();
+        track = track*RM;
         Matrix2d bb;
         bb(0, 0) = points.col(0).minCoeff();
         bb(0, 1) = points.col(1).minCoeff();
@@ -403,14 +410,17 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT> create_submaps(const mbes_ping::Pings
         bb(1, 1) = points.col(1).maxCoeff();
         submaps.push_back(points);
         bounds.push_back(bb);
+        tracks.push_back(track);
 
         pos = next;
     }
 
     // homogenize angles
+    /*
     for (int i = 0; i < submaps.size(); ++i) {
         if (fabs(angs[i](2)) > M_PI/2.) {
             submaps[i].leftCols(2).array() *= -1.; // rotate 180 degrees
+            tracks[i].leftCols(2).array() *= -1.; // rotate 180 degrees
             Matrix2d bb = bounds[i];
             bounds[i].row(0) = -bb.row(1);
             bounds[i].row(1) = -bb.row(0);
@@ -422,8 +432,9 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT> create_submaps(const mbes_ping::Pings
             }
         }
     }
+    */
 
-    return make_tuple(submaps, trans, angs, matches, bounds);
+    return make_tuple(submaps, trans, angs, matches, bounds, tracks);
 }
 
 void visualize_submaps(ObsT& submaps, TransT& trans, AngsT& angs) {

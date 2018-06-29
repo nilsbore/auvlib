@@ -83,12 +83,14 @@ struct pt_submaps
     MatchesT matches; // overlapping submap matches, containing vector indices of matches
     ConstraintsT binary_constraints; // consecutive submaps, containing vector indices of matches
     BoundsT bounds; // bounds of the submap, bb(0, 0) - min x, bb(0, 1) - min y, bb(1, 0) - max x, bb(1, 1) - max y
+    PointsT tracks; // the vehicle track within the submap
     
     template <class Archive>
     void serialize( Archive & ar )
     {
         ar(CEREAL_NVP(points), CEREAL_NVP(trans), CEREAL_NVP(rots),
-           CEREAL_NVP(angles), CEREAL_NVP(matches), CEREAL_NVP(bounds));
+           CEREAL_NVP(angles), CEREAL_NVP(matches), CEREAL_NVP(bounds),
+           CEREAL_NVP(tracks));
     }
 };
 

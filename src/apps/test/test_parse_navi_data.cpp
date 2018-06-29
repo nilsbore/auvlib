@@ -61,7 +61,7 @@ int main(int argc, char** argv)
 
     // convert to submaps
     pt_submaps ss;
-    tie(ss.points, ss.trans, ss.angles, ss.matches, ss.bounds) = create_submaps(pings);
+    tie(ss.points, ss.trans, ss.angles, ss.matches, ss.bounds, ss.tracks) = create_submaps(pings);
     for (const Eigen::Vector3d& ang : ss.angles) {
         ss.rots.push_back(euler_to_matrix(ang(0), ang(1), ang(2)));
     }
