@@ -9,7 +9,6 @@ using namespace std;
 int main(int argc, char** argv)
 {
     string folder_str;
-    string file_str;
 
     cxxopts::Options options("MyProgram", "One line description of MyProgram");
     options.add_options()("help", "Print help")("folder", "Input folder", cxxopts::value(folder_str));
@@ -70,6 +69,26 @@ int main(int argc, char** argv)
     write_data(ss, submaps_path);
     // read from disk
     ss = read_data<pt_submaps>(submaps_path);
+
+    // create a new becnhmark object
+    track_error_benchmark benchmark;
+    
+    // add ground truth pings
+    benchmark.add_ground_truth(pings);
+
+    // may be something more interesting but, add gt as initial value of optimization
+    benchmark.add_benchmark(pings, "initial");
+    benchmark.add_initial(pings);
+
+    // save the benchmark to disk, for use later
+    write_data(benchmark, boost::filesystem::path("my_benchmark.cereal"));
+
+    // e.g., if we have optimized the position of the pings:
+    mbes_ping::PingsT optimized_pings = pings; // hopefully, we have a better slam algorithm than this
+    benchmark.add_benchmark(optimized_pings, "slam");
+
+    // save the benchmark to disk, for use later
+    write_data(benchmark, boost::filesystem::path("my_benchmark.cereal"));
 
     return 0;
 }
