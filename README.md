@@ -217,7 +217,7 @@ Now, in the file where we do our optimization, we can load our benchmark
 again, add our optimized pings to the benchmark again, and save the results:
 ```cpp
 // load the benchmark saved above
-track_error_benchmark benchmark = load_data<track_error_benchmark>(boost::filesystem::path("my_benchmark.cereal"));
+track_error_benchmark benchmark = read_data<track_error_benchmark>(boost::filesystem::path("my_benchmark.cereal"));
 
 mbes_ping::PingsT optimized_pings;
 // fill in the pings using some slam algorithm ...
