@@ -37,7 +37,7 @@ Again, the results `example_results.cereal` can be viewed using the visualizer.
 ### navi_data
 
 The `navi_data` library contains tools for parsing files exported from NaviEdit.
-See this example program, also available in [the test folder](https://github.com/nilsbore/gpgs_slam/blob/master/test/test_parse_navi_data.cpp).
+See this example program, also available in [the test folder](https://github.com/nilsbore/gpgs_slam/blob/master/src/apps/test/test_parse_navi_data.cpp).
 
 ```cpp
 #include <boost/filesystem.hpp>
@@ -99,4 +99,37 @@ int main(int argc, char** argv)
 
     return 0;
 }
+```
+
+### Benchmarking
+
+The tests also [contains an example](https://github.com/nilsbore/gpgs_slam/blob/master/src/apps/test/test_parse_navi_data.cpp)
+of how to use the benchmark system. After having read your files like above, simply do something like the following:
+```cpp
+// create a new becnhmark object
+track_error_benchmark benchmark;
+
+// add ground truth pings
+benchmark.add_ground_truth(pings);
+
+// may be something more interesting but, add gt as initial value of optimization
+benchmark.add_benchmark(pings, "initial");
+benchmark.add_initial(pings);
+
+// save the benchmark to disk, for use later
+write_data(benchmark, boost::filesystem::path("my_benchmark.cereal"));
+```
+Now, in the file where we do our optimization, we can load our benchmark
+again, add our optimized pings to the benchmark again, and save the results:
+```cpp
+// load the benchmark saved above
+track_error_benchmark benchmark = load_data<track_error_benchmark>(boost::filesystem::path("my_benchmark.cereal"));
+
+mbes_ping::PingsT optimized_pings;
+// fill in the pings using some slam algorithm ...
+// add the benchmark with a random name e.g. "slam"
+benchmark.add_benchmark(optimized_pings, "slam");
+
+// save the benchmark to disk, for use later
+write_data(benchmark, boost::filesystem::path("my_benchmark.cereal"));
 ```
