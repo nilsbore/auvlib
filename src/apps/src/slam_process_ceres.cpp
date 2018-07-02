@@ -57,7 +57,9 @@ tuple<double, double, double> calculate_costs(vector<ceres::ResidualBlockId>& ma
         options.residual_blocks = *residual_block_ids[i];
         costs[i] = 0.0;
         vector<double> residuals;
-        problem.Evaluate(options, &costs[i], &residuals, nullptr, nullptr);
+        if (!residual_block_ids[i]->empty()) {
+            problem.Evaluate(options, &costs[i], &residuals, nullptr, nullptr);
+        }
     }
 
     return make_tuple(costs[0], costs[1], costs[2]);
@@ -109,10 +111,10 @@ void register_processes_ceres(gp_submaps& ss, bool with_rot)
         //unary_residual_block_ids.push_back(problem.AddResidualBlock(cost_function, loss_function, ss.angles[i].data()));
         //unary_residual_block_ids.push_back(problem.AddResidualBlock(cost_function, loss_function, ss.trans[i].data()));
 
-        problem.SetParameterLowerBound(ss.trans[i].data(), 0, ss.trans[i](0) - 10.);
-        problem.SetParameterLowerBound(ss.trans[i].data(), 1, ss.trans[i](1) - 10.);
-        problem.SetParameterUpperBound(ss.trans[i].data(), 0, ss.trans[i](0) + 10.);
-        problem.SetParameterUpperBound(ss.trans[i].data(), 1, ss.trans[i](1) + 10.);
+        problem.SetParameterLowerBound(ss.trans[i].data(), 0, ss.trans[i](0) - 30.);
+        problem.SetParameterLowerBound(ss.trans[i].data(), 1, ss.trans[i](1) - 30.);
+        problem.SetParameterUpperBound(ss.trans[i].data(), 0, ss.trans[i](0) + 30.);
+        problem.SetParameterUpperBound(ss.trans[i].data(), 1, ss.trans[i](1) + 30.);
 
         problem.SetParameterLowerBound(ss.angles[i].data(), 2, ss.angles[i](2) - M_PI);
         problem.SetParameterUpperBound(ss.angles[i].data(), 2, ss.angles[i](2) + M_PI);
@@ -126,8 +128,8 @@ void register_processes_ceres(gp_submaps& ss, bool with_rot)
         problem.SetParameterization(ss.trans[i].data(), subset_parameterization_z);
     }
     
-    //problem.SetParameterBlockConstant(trans[4].data());
-    //problem.SetParameterBlockConstant(rots[4].data());
+    //problem.SetParameterBlockConstant(ss.trans[4].data());
+    //problem.SetParameterBlockConstant(ss.angles[4].data());
 
     ceres::Solver::Options options;
     //options.callbacks.push_back(new MultiVisCallback(points, gps, trans, rots));
@@ -215,10 +217,12 @@ int main(int argc, char** argv)
 
     gp_submaps ss = read_data<gp_submaps>(path);
 	
-    //ss.matches = compute_matches(ss.trans, ss.rots, ss.bounds);
+    ss.matches = compute_matches(ss.trans, ss.rots, ss.bounds);
     //ss.matches.resize(0);
     //ss.binary_constraints = compute_binary_constraints(ss.trans, ss.rots, ss.points);
-    ss.binary_constraints = compute_binary_constraints(ss.trans, ss.rots, ss.points, ss.tracks);
+    if (!ss.tracks.empty()) {
+        ss.binary_constraints = compute_binary_constraints(ss.trans, ss.rots, ss.points, ss.tracks);
+    }
     
     ObsT original_points = ss.points;
     for (Eigen::MatrixXd& p : ss.points) {
@@ -236,8 +240,8 @@ int main(int argc, char** argv)
     ss.points = original_points;
     write_data(ss, output);
 
-    //track_error_benchmark benchmark = read_data<track_error_benchmark>(boost::filesystem::path("my_benchmark.cereal"));
-    track_error_benchmark benchmark = read_data<track_error_benchmark>(boost::filesystem::path("gsf_benchmark.cereal"));
+    track_error_benchmark benchmark = read_data<track_error_benchmark>(boost::filesystem::path("my_benchmark.cereal"));
+    //track_error_benchmark benchmark = read_data<track_error_benchmark>(boost::filesystem::path("gsf_benchmark.cereal"));
     
     TransT trans_corr;
     RotsT rots_corr;
@@ -251,11 +255,8 @@ int main(int argc, char** argv)
     }
     benchmark.add_benchmark(trans_corr, rots_corr, "slam");
     benchmark.print_summary();
-    //write_data(benchmark, boost::filesystem::path("my_benchmark.cereal"));
-    write_data(benchmark, boost::filesystem::path("gsf_benchmark.cereal"));
-    
-    cv::imshow("Track", benchmark.track_img);
-    cv::waitKey();
+    write_data(benchmark, boost::filesystem::path("my_benchmark.cereal"));
+    //write_data(benchmark, boost::filesystem::path("gsf_benchmark.cereal"));
 
     return 0;
 }

@@ -152,7 +152,7 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT, ObsT> load_or_create_submaps(const bo
     benchmark.add_ground_truth(pings);
 
     //distort_tracks(pings);
-    distort_track_turns(pings);
+    //distort_track_turns(pings);
 
     //benchmark.draw_track_img(pings);
     benchmark.add_benchmark(pings, "initial");

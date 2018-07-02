@@ -62,7 +62,7 @@ void track_error_benchmark::draw_track_img(mbes_ping::PingsT& pings, cv::Mat& im
         cv::Point2f pt(x0+res*(ping.pos_[0]-minx), img.rows-y0-res*(ping.pos_[1]-miny)-1);
         curve_points.push_back(pt);
         //cout << pt << endl;
-        if (counter % 500 == 0) {
+        if (false) { //counter % 500 == 0) {
             double len = 30.;
             cv::Point pt1(x0+res*(ping.pos_[0]-minx), img.rows-y0-res*(ping.pos_[1]-miny)-1);
             cv::Point pt2(pt1.x + int(len*cos(ping.heading_)), pt1.y - int(len*sin(ping.heading_)));
