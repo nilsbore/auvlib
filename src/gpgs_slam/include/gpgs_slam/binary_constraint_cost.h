@@ -57,8 +57,8 @@ public:
         //std::cout << "Computing derivatives, value: " << cost << std::endl;
         
         //e[0] = cost;
-        e[0] = 1./sigma*diff[0];
-        e[1] = 1./sigma*diff[1];
+        e[0] = 1./(sqrt(2.)*sigma)*diff[0];
+        e[1] = 1./(sqrt(2.)*sigma)*diff[1];
 
         return true;
     }
