@@ -224,6 +224,9 @@ mbes_ping::PingsT optimized_pings;
 // add the benchmark with a random name e.g. "slam"
 benchmark.add_benchmark(optimized_pings, "slam");
 
+// print the results of the benchmark
+benchmark.print_summary();
+
 // save the benchmark to disk, for use later
 write_data(benchmark, boost::filesystem::path("my_benchmark.cereal"));
 ```
