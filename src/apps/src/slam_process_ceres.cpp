@@ -88,12 +88,12 @@ void register_processes_ceres(gp_submaps& ss, bool with_rot)
         ceres::CostFunction* cost_function1 = new GaussianProcessCostFunction(ss.gps[i], ss.bounds[i], ss.points[j]);
         ceres::CostFunction* cost_function2 = new GaussianProcessCostFunction(ss.gps[j], ss.bounds[j], ss.points[i]);
 
-        //ceres::LossFunction* loss_function1 = new ceres::SoftLOneLoss(1.3);
-        //ceres::LossFunction* loss_function2 = new ceres::SoftLOneLoss(1.3);
+        ceres::LossFunction* loss_function1 = new ceres::SoftLOneLoss(1.3);
+        ceres::LossFunction* loss_function2 = new ceres::SoftLOneLoss(1.3);
         //ceres::LossFunction* loss_function1 = new ceres::HuberLoss(.5);
         //ceres::LossFunction* loss_function2 = new ceres::HuberLoss(5.);
-        ceres::LossFunction* loss_function1 = NULL;
-        ceres::LossFunction* loss_function2 = NULL;
+        //ceres::LossFunction* loss_function1 = NULL;
+        //ceres::LossFunction* loss_function2 = NULL;
         
         matches_residual_block_ids.push_back(problem.AddResidualBlock(cost_function1, loss_function1, ss.trans[i].data(), ss.angles[i].data(),
                                                                                                       ss.trans[j].data(), ss.angles[j].data()));
