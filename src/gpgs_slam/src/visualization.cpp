@@ -99,13 +99,14 @@ cv::Mat VisCallback::visualize_likelihoods(Eigen::Vector3d& t2, Eigen::Matrix3d&
 
     int sz = 10;
     cv::Mat float_image = cv::Mat::zeros(2*sz, 2*sz, CV_32FC1);
-    double step_offset = 15.0;
+    double step_offset = 1.;
     for (int y = -sz; y < sz; ++y) { // ROOM FOR SPEEDUP
 	    for (int x = -sz; x < sz; ++x) {
             Eigen::Vector3d tt = t1 + Eigen::Vector3d(x*step_offset, y*step_offset, 0.);
             Eigen::MatrixXd points2in1 = get_points_in_bound_transform(points2, t2, RM2, tt, RM1, 465);
             Eigen::VectorXd ll;
-            gp1.compute_neg_log_likelihoods(ll, points2in1.leftCols(2), points2in1.col(2));
+            Eigen::MatrixXd dX;
+            gp1.compute_neg_log_derivatives_fast(ll, dX, points2in1.leftCols(2), points2in1.col(2), false);
             double mean_ll = ll.mean();
             float_image.at<float>(sz+y, sz+x) = mean_ll;
 	    }
@@ -128,9 +129,10 @@ cv::Mat VisCallback::visualize_likelihoods(Eigen::Vector3d& t2, Eigen::Matrix3d&
 	    for (int x = -sz; x < sz; ++x) {
             Eigen::Vector3d tt = t1 + Eigen::Vector3d(x*step_offset, y*step_offset, 0.);
             Eigen::MatrixXd points2in1 = get_points_in_bound_transform(points2, t2, RM2, tt, RM1, 465);
+            Eigen::VectorXd ll;
             Eigen::MatrixXd dX;
             cout << "Computing derivatives..." << endl;
-            gp1.compute_neg_log_derivatives(dX, points2in1.leftCols(2), points2in1.col(2));
+            gp1.compute_neg_log_derivatives_fast(ll, dX, points2in1.leftCols(2), points2in1.col(2), true);
             //gp1.compute_derivatives(dX, points2in1.leftCols(2), points2in1.col(2));
             Eigen::Vector2d mean_dx = dX.colwise().mean().head<2>();
             double norm_dx = mean_dx.norm();
@@ -172,7 +174,7 @@ VisCallback::VisCallback(Eigen::MatrixXd& points1, Eigen::MatrixXd& points2,
 
     old_point = cv::Point(vis.cols/2+0, vis.rows/2+0);
 
-    step_offset = 15.;
+    step_offset = 1.;
     factor = 20.;
 }
 

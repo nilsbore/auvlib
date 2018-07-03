@@ -198,11 +198,11 @@ int main(int argc, char** argv)
 {
     string folder_str;
     string file_str;
-	double lsq = 2.;
+	double lsq = 3.; //2.;
 	double sigma = 1.;
-	double s0 = .5;
-    double minx = -50.;
-    double maxx = 0.;
+	double s0 = 0.01; //.5;
+    double minx = -10000.;
+    double maxx = 10000.;
 
 	cxxopts::Options options("MyProgram", "One line description of MyProgram");
 	//options.positional_help("[optional args]").show_positional_help();

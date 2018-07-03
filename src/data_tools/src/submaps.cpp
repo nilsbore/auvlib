@@ -167,7 +167,8 @@ ConstraintsT compute_binary_constraints(const TransTT& trans, const RotsTT& rots
         Eigen::Vector3d first_point2_transformed = rots[i]*first_point2 + trans[i];
         first_point2 = rots[i].transpose()*(last_point1_transformed - trans[i]);
         double dist = (first_point2_transformed-last_point1_transformed).norm();
-        if (dist < 0.4) {
+        cout << "Distance between " << i-1 << " and " << i << ": " << dist << endl;
+        if (dist < 20.) {
             cout << "Found a binary constraint between" << i-1 << " and " << i << endl;
             binary_constraints.push_back(make_tuple(i-1, i, last_point1, first_point2));
             // TODO: This is debug code, remove afterwards

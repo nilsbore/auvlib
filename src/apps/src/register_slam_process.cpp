@@ -108,7 +108,8 @@ Eigen::VectorXd compute_step(Eigen::MatrixXd& points2, ProcessT& gp1,
 }
 
 void register_processes(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d& t1, Eigen::Vector3d& rot1,
-				        Eigen::MatrixXd& points2, ProcessT& gp2, Eigen::Vector3d& t2, Eigen::Vector3d& rot2)
+				        Eigen::MatrixXd& points2, ProcessT& gp2, Eigen::Vector3d& t2, Eigen::Vector3d& rot2,
+                        bool norot)
 {
     VisCallback vis(points1, points2, gp1, gp2, t1, rot1, t2, rot2);
     Eigen::Matrix3d R1 = euler_to_matrix(rot1(0), rot1(1), rot1(2));
@@ -123,7 +124,9 @@ void register_processes(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d
 		Eigen::VectorXd delta_old = delta1;
 		cout << "Computing registration delta" << endl;
 		delta1 = -compute_step(points2, gp1, t1, rot1, t2, rot2);
-        //delta1(2) = delta1(3) = delta1(4) = 0.;
+        if (norot) {
+            delta1(2) = delta1(3) = delta1(4) = 0.;
+        }
         delta_diff_small = (delta1 - delta_old).norm() < 1e-5f;
 		cout << "Computing registration update" << endl;
 		cout << "Registration update: " << delta1 << endl;
@@ -140,6 +143,7 @@ int main(int argc, char** argv)
     int first = 0;
     int second = 1;
     int subsample = 1;
+    bool norot = false;
 
 	cxxopts::Options options("MyProgram", "One line description of MyProgram");
 	options.add_options()
@@ -147,6 +151,7 @@ int main(int argc, char** argv)
       ("file", "Input file", cxxopts::value(file_str))
       ("first", "First submap index", cxxopts::value(first))
       ("second", "Second submap index", cxxopts::value(second))
+      ("norot", "No rotation?", cxxopts::value(norot))
       ("subsample", "Subsampling", cxxopts::value(subsample));
 
     auto result = options.parse(argc, argv);
@@ -169,7 +174,8 @@ int main(int argc, char** argv)
     subsample_cloud(ss.points[first], subsample);
     subsample_cloud(ss.points[second], subsample);
 	register_processes(ss.points[first], ss.gps[first], ss.trans[first], ss.angles[first],
-                       ss.points[second], ss.gps[second], ss.trans[second], ss.angles[second]);
+                       ss.points[second], ss.gps[second], ss.trans[second], ss.angles[second],
+                       norot);
 
     return 0;
 }
