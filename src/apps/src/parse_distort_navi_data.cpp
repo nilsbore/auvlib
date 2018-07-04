@@ -3,6 +3,7 @@
 #include <data_tools/data_structures.h>
 #include <data_tools/transforms.h>
 #include <data_tools/colormap.h>
+#include <data_tools/submaps.h>
 #include <boost/filesystem.hpp>
 #include <random>
 
@@ -203,6 +204,7 @@ int main(int argc, char** argv)
 	double s0 = 0.01; //.5;
     double minx = -10000.;
     double maxx = 10000.;
+    double pose_sigma = 0.2;
 
 	cxxopts::Options options("MyProgram", "One line description of MyProgram");
 	//options.positional_help("[optional args]").show_positional_help();
@@ -212,6 +214,7 @@ int main(int argc, char** argv)
       ("file", "Output file", cxxopts::value(file_str))
       ("lsq", "RBF length scale", cxxopts::value(lsq))
       ("sigma", "RBF scale", cxxopts::value(sigma))
+      ("pose_sigma", "The standard deviation pose update per meter", cxxopts::value(pose_sigma))
       ("minx", "X clip min", cxxopts::value(minx))
       ("maxx", "X clip max", cxxopts::value(maxx))
       ("s0", "Measurement noise", cxxopts::value(s0));
@@ -259,7 +262,15 @@ int main(int argc, char** argv)
         cout << "Pushed back..." << endl;
 
         ss.rots.push_back(euler_to_matrix(ss.angles[i](0), ss.angles[i](1), ss.angles[i](2)));
+
+        double len = (ss.tracks[i].bottomRows<1>() - ss.tracks[i].topRows<1>()).norm();
+        cout << "Length of submap " << i << ": " << len << endl;
+        ss.track_end_covs.push_back(len*pose_sigma*pose_sigma*Eigen::Matrix3d::Identity());
     }
+    
+    // compute the matches of the submaps to be included in the optimization
+    ss.matches = compute_matches(ss.trans, ss.rots, ss.bounds);
+    ss.binary_constraints = compute_binary_constraints(ss.trans, ss.rots, ss.points, ss.tracks);
 	
     IglVisCallback vis(ss.points, ss.gps, ss.trans, ss.angles, ss.bounds);
     vis.display();

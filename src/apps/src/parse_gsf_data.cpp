@@ -3,6 +3,7 @@
 #include <cxxopts.hpp>
 #include <data_tools/gsf_data.h>
 #include <data_tools/transforms.h>
+#include <data_tools/submaps.h>
 
 #include <gpgs_slam/igl_visualizer.h>
 
@@ -60,6 +61,7 @@ int main(int argc, char** argv)
 	double lsq = 10.;
 	double sigma = 5.;
 	double s0 = .2;
+    double pose_sigma = 0.4;
 
 	cxxopts::Options options("MyProgram", "One line description of MyProgram");
 	options.add_options()
@@ -70,6 +72,7 @@ int main(int argc, char** argv)
       ("file", "Output file", cxxopts::value(file_str))
       ("lsq", "RBF length scale", cxxopts::value(lsq))
       ("sigma", "RBF scale", cxxopts::value(sigma))
+      ("pose_sigma", "The standard deviation pose update per meter", cxxopts::value(pose_sigma))
       ("s0", "Measurement noise", cxxopts::value(s0));
 
     auto result = options.parse(argc, argv);
@@ -117,7 +120,6 @@ int main(int argc, char** argv)
 
     gp_submaps ss;
     tie(ss.points, ss.trans, ss.angles, ss.matches, ss.bounds, ss.tracks) = create_submaps(new_pings);
-    ss.matches = get_gsf_matches();
 
     for (int i = 0; i < ss.points.size(); ++i) {
 
@@ -146,7 +148,13 @@ int main(int argc, char** argv)
         cout << "First pose: " << ss.tracks[i].topRows<1>() << endl;
         cout << "Last point: " << ss.points[i].bottomRows<1>() << endl;
         cout << "Last pose: " << ss.tracks[i].bottomRows<1>() << endl;
+        double len = (ss.tracks[i].bottomRows<1>() - ss.tracks[i].topRows<1>()).norm();
+        cout << "Length of submap " << i << ": " << len << endl;
+        ss.track_end_covs.push_back(len*pose_sigma*pose_sigma*Eigen::Matrix3d::Identity());
     }
+    
+    ss.matches = get_gsf_matches();
+    ss.binary_constraints = compute_binary_constraints(ss.trans, ss.rots, ss.points, ss.tracks);
 	
     IglVisCallback vis(ss.points, ss.gps, ss.trans, ss.angles, ss.bounds);
     vis.display();

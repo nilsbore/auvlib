@@ -13,6 +13,7 @@
 #include <cereal/types/string.hpp>
 #include <cereal/types/array.hpp>
 #include <cereal/types/map.hpp>
+#include <cereal/types/tuple.hpp>
 #include <boost/filesystem.hpp>
 
 #include <sparse_gp/sparse_gp.h>
@@ -75,6 +76,7 @@ struct pt_submaps
     using MatchesT = std::vector<std::pair<int, int> >; // tells us which maps overlap
     using ConstraintsT = std::vector<std::tuple<int, int, Eigen::Vector3d, Eigen::Vector3d> >;
     using BoundsT = std::vector<Eigen::Matrix2d, Eigen::aligned_allocator<Eigen::Matrix2d> >;
+    using CovsT = std::vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> >;
 
     PointsT points; // Nx3 matrices with all points in the submaps
     TransT trans; // translation of submaps
@@ -84,13 +86,14 @@ struct pt_submaps
     ConstraintsT binary_constraints; // consecutive submaps, containing vector indices of matches
     BoundsT bounds; // bounds of the submap, bb(0, 0) - min x, bb(0, 1) - min y, bb(1, 0) - max x, bb(1, 1) - max y
     PointsT tracks; // the vehicle track within the submap
+    CovsT track_end_covs; // the uncertainty of the last point in the track given the first point
     
     template <class Archive>
     void serialize( Archive & ar )
     {
         ar(CEREAL_NVP(points), CEREAL_NVP(trans), CEREAL_NVP(rots),
-           CEREAL_NVP(angles), CEREAL_NVP(matches), CEREAL_NVP(bounds),
-           CEREAL_NVP(tracks));
+           CEREAL_NVP(angles), CEREAL_NVP(matches), CEREAL_NVP(binary_constraints),
+           CEREAL_NVP(bounds), CEREAL_NVP(tracks), CEREAL_NVP(track_end_covs));
     }
 };
 

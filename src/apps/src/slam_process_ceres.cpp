@@ -77,7 +77,8 @@ void register_processes_ceres(gp_submaps& ss, bool with_rot)
         Eigen::Vector3d last_point1, first_point2;
         tie (i, j, last_point1, first_point2) = con;
         cout << "Adding binary constraint between " << i << " and " << j << endl;
-        ceres::CostFunction* cost_function = BinaryConstraintCostFunctor::Create(last_point1, first_point2, 2.07); // 7.07
+        //ceres::CostFunction* cost_function = BinaryConstraintCostFunctor::Create(last_point1, first_point2, 2.07); // 7.07
+        ceres::CostFunction* cost_function = BinaryConstraintCostFunctor::Create(last_point1, first_point2, ss.track_end_covs[i]);
         ceres::LossFunction* loss_function = NULL;
         binary_residual_block_ids.push_back(problem.AddResidualBlock(cost_function, loss_function, ss.trans[i].data(), ss.angles[i].data(),
                                                                                                    ss.trans[j].data(), ss.angles[j].data()));
@@ -217,12 +218,8 @@ int main(int argc, char** argv)
 
     gp_submaps ss = read_data<gp_submaps>(path);
 	
-    ss.matches = compute_matches(ss.trans, ss.rots, ss.bounds);
     //ss.matches.resize(0);
     //ss.binary_constraints = compute_binary_constraints(ss.trans, ss.rots, ss.points);
-    if (!ss.tracks.empty()) {
-        ss.binary_constraints = compute_binary_constraints(ss.trans, ss.rots, ss.points, ss.tracks);
-    }
     
     ObsT original_points = ss.points;
     for (Eigen::MatrixXd& p : ss.points) {

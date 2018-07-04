@@ -18,6 +18,16 @@ public:
         denom = -3./2.*log(2.*M_PI*sigma*sigma);
     }
 
+    BinaryConstraintCostFunctor(const Eigen::Vector3d& last_point1, const Eigen::Vector3d& first_point2, const Eigen::Matrix3d& CC) :
+        last_point1(last_point1), first_point2(first_point2)
+    {
+        const int swath_width = 512;
+        C = CC;
+        // NOTE: this assumes IID x and y, which is the case right now
+        sigma = sqrt(C(0, 0));
+        denom = -3./2.*log(2.*M_PI*sigma*sigma);
+    }
+
     template <typename T>
     bool operator()(const T* const t1p, const T* const rot1p,
                     const T* const t2p, const T* const rot2p,
@@ -72,6 +82,14 @@ public:
         return new ceres::AutoDiffCostFunction<BinaryConstraintCostFunctor, 2, 3, 3, 3, 3>(
         //return new ceres::AutoDiffCostFunction<BinaryConstraintCostFunctor, 1, 3, 3, 3, 3>(
             new BinaryConstraintCostFunctor(last_point1, first_point2, sigma));
+    }
+
+    static ceres::CostFunction* Create(const Eigen::Vector3d& last_point1,
+                                       const Eigen::Vector3d& first_point2,
+                                       const Eigen::Matrix3d& CC)
+    {
+        return new ceres::AutoDiffCostFunction<BinaryConstraintCostFunctor, 2, 3, 3, 3, 3>(
+            new BinaryConstraintCostFunctor(last_point1, first_point2, CC));
     }
 
 private:
