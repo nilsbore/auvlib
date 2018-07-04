@@ -95,6 +95,7 @@ int main(int argc, char** argv)
     double minx = -50.;
     double maxx = 0.;
     double pose_sigma = 0.14;
+    string dataset_name = "medgaz";
 
 	cxxopts::Options options("MyProgram", "One line description of MyProgram");
 	//options.positional_help("[optional args]").show_positional_help();
@@ -107,6 +108,7 @@ int main(int argc, char** argv)
       ("pose_sigma", "The standard deviation pose update per meter", cxxopts::value(pose_sigma))
       ("minx", "X clip min", cxxopts::value(minx))
       ("maxx", "X clip max", cxxopts::value(maxx))
+      ("name", "The name of the dataset, without spaces", cxxopts::value(dataset_name))
       ("s0", "Measurement noise", cxxopts::value(s0));
 
     auto result = options.parse(argc, argv);
@@ -130,6 +132,7 @@ int main(int argc, char** argv)
 	cout << "Output file : " << path << endl;
     
     gp_submaps ss;
+    ss.dataset_name = dataset_name;
     tie(ss.points, ss.trans, ss.angles, ss.matches, ss.bounds, ss.tracks) = load_or_create_submaps(folder);
     
     Eigen::Vector3d origin = ss.trans[0];

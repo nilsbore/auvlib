@@ -237,8 +237,8 @@ int main(int argc, char** argv)
     ss.points = original_points;
     write_data(ss, output);
 
-    track_error_benchmark benchmark = read_data<track_error_benchmark>(boost::filesystem::path("my_benchmark.cereal"));
-    //track_error_benchmark benchmark = read_data<track_error_benchmark>(boost::filesystem::path("gsf_benchmark.cereal"));
+    boost::filesystem::path benchmark_path(ss.dataset_name + "_benchmark.cereal");
+    track_error_benchmark benchmark = read_data<track_error_benchmark>(benchmark_path);
     
     TransT trans_corr;
     RotsT rots_corr;
@@ -252,8 +252,7 @@ int main(int argc, char** argv)
     }
     benchmark.add_benchmark(trans_corr, rots_corr, "slam");
     benchmark.print_summary();
-    write_data(benchmark, boost::filesystem::path("my_benchmark.cereal"));
-    //write_data(benchmark, boost::filesystem::path("gsf_benchmark.cereal"));
+    write_data(benchmark, benchmark_path);
 
     return 0;
 }

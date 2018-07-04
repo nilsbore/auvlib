@@ -62,6 +62,7 @@ int main(int argc, char** argv)
 	double sigma = 5.;
 	double s0 = .2;
     double pose_sigma = 0.4;
+    string dataset_name = "pockmarks";
 
 	cxxopts::Options options("MyProgram", "One line description of MyProgram");
 	options.add_options()
@@ -73,6 +74,7 @@ int main(int argc, char** argv)
       ("lsq", "RBF length scale", cxxopts::value(lsq))
       ("sigma", "RBF scale", cxxopts::value(sigma))
       ("pose_sigma", "The standard deviation pose update per meter", cxxopts::value(pose_sigma))
+      ("name", "The name of the dataset, without spaces", cxxopts::value(dataset_name))
       ("s0", "Measurement noise", cxxopts::value(s0));
 
     auto result = options.parse(argc, argv);
@@ -119,6 +121,7 @@ int main(int argc, char** argv)
     }
 
     gp_submaps ss;
+    ss.dataset_name = dataset_name;
     tie(ss.points, ss.trans, ss.angles, ss.matches, ss.bounds, ss.tracks) = create_submaps(new_pings);
 
     for (int i = 0; i < ss.points.size(); ++i) {
@@ -163,7 +166,7 @@ int main(int argc, char** argv)
 
     cout << "Wrote output submaps file " << path << endl;
     
-    track_error_benchmark benchmark;
+    track_error_benchmark benchmark(ss.dataset_name);
     
     benchmark.add_ground_truth(new_pings);
 
@@ -171,7 +174,9 @@ int main(int argc, char** argv)
     benchmark.add_initial(new_pings);
 
     benchmark.submap_origin = Eigen::Vector3d::Zero(); // this should be a method
-    write_data(benchmark, boost::filesystem::path("gsf_benchmark.cereal"));
+
+    boost::filesystem::path benchmark_path(ss.dataset_name + "_benchmark.cereal");
+    write_data(benchmark, benchmark_path);
 
     return 0;
 }

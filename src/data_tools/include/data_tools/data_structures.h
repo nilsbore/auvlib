@@ -78,6 +78,7 @@ struct pt_submaps
     using BoundsT = std::vector<Eigen::Matrix2d, Eigen::aligned_allocator<Eigen::Matrix2d> >;
     using CovsT = std::vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> >;
 
+    std::string dataset_name; // arbitrary name of the dataset, without spaces
     PointsT points; // Nx3 matrices with all points in the submaps
     TransT trans; // translation of submaps
     RotsT rots; // rotation matrices of submaps, same as angles
@@ -91,7 +92,7 @@ struct pt_submaps
     template <class Archive>
     void serialize( Archive & ar )
     {
-        ar(CEREAL_NVP(points), CEREAL_NVP(trans), CEREAL_NVP(rots),
+        ar(CEREAL_NVP(dataset_name), CEREAL_NVP(points), CEREAL_NVP(trans), CEREAL_NVP(rots),
            CEREAL_NVP(angles), CEREAL_NVP(matches), CEREAL_NVP(binary_constraints),
            CEREAL_NVP(bounds), CEREAL_NVP(tracks), CEREAL_NVP(track_end_covs));
     }
@@ -112,6 +113,9 @@ struct gp_submaps : public pt_submaps
 };
 
 struct track_error_benchmark {
+
+    // the name of the dataset that we benchmark
+    std::string dataset_name;
 
     // this contains all added tracks assembled into one image
     std::string track_img_path;
@@ -139,7 +143,12 @@ struct track_error_benchmark {
     // NOTE: this is here for convenience
     cv::Mat track_img;
 
-    track_error_benchmark()
+    track_error_benchmark() : dataset_name("default")
+    {
+
+    }
+
+    track_error_benchmark(const std::string& dataset_name) : dataset_name(dataset_name)
     {
 
     }
@@ -165,13 +174,13 @@ struct track_error_benchmark {
         if (track_img.rows > 0) {
             cv::imwrite(track_img_path, track_img);
         }
-        ar(track_img_path, error_img_paths, input_pings, gt_track, track_rms_errors, consistency_rms_errors, params, submap_origin);
+        ar(dataset_name, track_img_path, error_img_paths, input_pings, gt_track, track_rms_errors, consistency_rms_errors, params, submap_origin);
     }
 
     template <class Archive>
     void load(Archive& ar)
     {
-        ar(track_img_path, error_img_paths, input_pings, gt_track, track_rms_errors, consistency_rms_errors, params, submap_origin);
+        ar(dataset_name, track_img_path, error_img_paths, input_pings, gt_track, track_rms_errors, consistency_rms_errors, params, submap_origin);
         if (!track_img_path.empty()) {
             track_img = cv::imread(track_img_path);
         }

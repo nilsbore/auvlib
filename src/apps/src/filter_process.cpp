@@ -58,7 +58,8 @@ int main(int argc, char** argv)
     pt_submaps::TransT trans_0 = input_ss.trans;
     pt_submaps::RotsT rots_0 = input_ss.rots;
 
-    track_error_benchmark benchmark = read_data<track_error_benchmark>(boost::filesystem::path("my_benchmark.cereal"));
+    boost::filesystem::path benchmark_path(input_ss.dataset_name + "_benchmark.cereal");
+    track_error_benchmark benchmark = read_data<track_error_benchmark>(benchmark_path);
     
     pt_submaps::TransT trans_corr;
     pt_submaps::RotsT rots_corr;
@@ -111,7 +112,7 @@ int main(int argc, char** argv)
 
     benchmark.add_benchmark(pings, "slam_filtered");
     benchmark.print_summary();
-    write_data(benchmark, boost::filesystem::path("my_benchmark.cereal"));
+    write_data(benchmark, benchmark_path);
 
     return 0;
 }

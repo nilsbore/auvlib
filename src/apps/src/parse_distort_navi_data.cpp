@@ -103,7 +103,8 @@ void distort_track_turns(mbes_ping::PingsT& pings)
     
 }
 
-tuple<ObsT, TransT, AngsT, MatchesT, BBsT, ObsT> load_or_create_submaps(const boost::filesystem::path& folder)
+tuple<ObsT, TransT, AngsT, MatchesT, BBsT, ObsT> load_or_create_submaps(const boost::filesystem::path& folder,
+                                                                        const string& dataset_name)
 {
 	// Parse ROV track files
 	boost::filesystem::path nav_dir = folder / "NavUTM";
@@ -139,7 +140,7 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT, ObsT> load_or_create_submaps(const bo
 
     match_timestamps(pings, entries);
 
-    track_error_benchmark benchmark;
+    track_error_benchmark benchmark(dataset_name);
     
     /*
     benchmark.track_img_params(pings, rows, cols);
@@ -190,7 +191,9 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT, ObsT> load_or_create_submaps(const bo
     }
 	
     benchmark.submap_origin = origin; // this should be a method
-    write_data(benchmark, boost::filesystem::path("my_benchmark.cereal"));
+
+    boost::filesystem::path benchmark_path(dataset_name + "_benchmark.cereal");
+    write_data(benchmark, benchmark_path);
 
     return make_tuple(submaps, trans, angs, matches, bounds, tracks);
 }
@@ -205,6 +208,7 @@ int main(int argc, char** argv)
     double minx = -10000.;
     double maxx = 10000.;
     double pose_sigma = 0.2;
+    string dataset_name = "medgaz";
 
 	cxxopts::Options options("MyProgram", "One line description of MyProgram");
 	//options.positional_help("[optional args]").show_positional_help();
@@ -217,6 +221,7 @@ int main(int argc, char** argv)
       ("pose_sigma", "The standard deviation pose update per meter", cxxopts::value(pose_sigma))
       ("minx", "X clip min", cxxopts::value(minx))
       ("maxx", "X clip max", cxxopts::value(maxx))
+      ("name", "The name of the dataset, without spaces", cxxopts::value(dataset_name))
       ("s0", "Measurement noise", cxxopts::value(s0));
 
     auto result = options.parse(argc, argv);
@@ -240,7 +245,8 @@ int main(int argc, char** argv)
 	cout << "Output file : " << path << endl;
     
     gp_submaps ss;
-    tie(ss.points, ss.trans, ss.angles, ss.matches, ss.bounds, ss.tracks) = load_or_create_submaps(folder);
+    ss.dataset_name = dataset_name;
+    tie(ss.points, ss.trans, ss.angles, ss.matches, ss.bounds, ss.tracks) = load_or_create_submaps(folder, dataset_name);
     
     for (int i = 0; i < ss.points.size(); ++i) {
 

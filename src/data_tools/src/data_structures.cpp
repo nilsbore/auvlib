@@ -311,7 +311,7 @@ void track_error_benchmark::add_ground_truth(mbes_ping::PingsT& pings)
     }
     track_img_params(pings, rows, cols);
     add_benchmark(pings, "ground_truth");
-    track_img_path = "benchmark_track_img.png";
+    track_img_path = dataset_name + "_benchmark_track_img.png";
 }
 
 void track_error_benchmark::add_initial(mbes_ping::PingsT& pings)
@@ -328,14 +328,14 @@ void track_error_benchmark::add_benchmark(mbes_ping::PingsT& pings, const std::s
     double consistency_rms_error;
     tie(consistency_rms_error, error_img) = compute_draw_consistency_map(pings);
     draw_track_img(pings, error_img, cv::Scalar(0, 0, 0), name);
-    string error_img_path = name + "_rms_consistency_error.png";
+    string error_img_path = dataset_name + "_" + name + "_rms_consistency_error.png";
     cv::imwrite(error_img_path, error_img);
     error_img_paths[name] = error_img_path;
     consistency_rms_errors[name] = consistency_rms_error;
     
     cv::Mat mean_img = draw_height_map(pings);
     draw_track_img(pings, mean_img, cv::Scalar(0, 0, 0), name);
-    string mean_img_path = name + "_mean_depth.png";
+    string mean_img_path = dataset_name + "_" + name + "_mean_depth.png";
     cv::imwrite(mean_img_path, mean_img);
 
     double track_rms_error = compute_rms_error(pings);
