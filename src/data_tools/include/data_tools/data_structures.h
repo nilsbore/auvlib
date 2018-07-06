@@ -190,6 +190,29 @@ struct track_error_benchmark {
 
 };
 
+struct registration_summary_benchmark {
+
+    std::string dataset_name;
+    std::vector<track_error_benchmark> benchmarks;
+    pt_submaps::MatchesT registration_pairs;
+
+    void add_registration_benchmark(mbes_ping::PingsT& initial_pings, mbes_ping::PingsT& optimized_pings, int i, int j);
+    void add_registration_benchmark(mbes_ping::PingsT& initial_pings, pt_submaps::TransT& trans_corr, pt_submaps::RotsT& rots_corr, int i, int j);
+    void print_summary();
+
+    registration_summary_benchmark(const std::string& dataset_name) : dataset_name(dataset_name)
+    {
+
+    }
+
+    template <class Archive>
+    void serialize( Archive & ar )
+    {
+        ar(dataset_name, benchmarks, registration_pairs);
+    }
+
+};
+
 template <typename T>
 T read_data(const boost::filesystem::path& path)
 {

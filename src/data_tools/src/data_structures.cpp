@@ -370,7 +370,6 @@ void track_error_benchmark::add_benchmark(pt_submaps::TransT& trans_corr, pt_sub
     add_benchmark(pings, name);
 }
 
-
 void track_error_benchmark::print_summary()
 {
     for (const pair<string, double>& p : track_rms_errors) {
@@ -384,3 +383,63 @@ void track_error_benchmark::print_summary()
     }
 }
 
+void registration_summary_benchmark::print_summary()
+{
+    double optimized_error_sum = 0.;
+    double initial_error_sum = 0.;
+    double count = 0.;
+    for (track_error_benchmark& benchmark : benchmarks) {
+        for (const pair<string, double>& p : benchmark.consistency_rms_errors) {
+            if (p.first.find("initial") != std::string::npos) {
+                cout << "Adding benchmark " << p.first << " with error " << p.second << " to initial error..." << endl;
+                initial_error_sum += p.second;
+            }
+            else if (p.first.find("optimized") != std::string::npos) {
+                cout << "Adding benchmark " << p.first << " with error " << p.second << " to optimized error..." << endl;
+                optimized_error_sum += p.second;
+            }
+        }
+    }
+
+    cout << "Initial mean RMS consistency error: " << initial_error_sum / count << endl;
+    cout << "Optimized mean RMS consistency error: " << optimized_error_sum / count << endl;
+}
+
+void registration_summary_benchmark::add_registration_benchmark(mbes_ping::PingsT& initial_pings, mbes_ping::PingsT& optimized_pings, int i, int j)
+{
+    track_error_benchmark benchmark(dataset_name + "_registration_" + to_string(i) + " " + to_string(j));
+    
+    benchmark.add_ground_truth(initial_pings);
+
+    benchmark.add_benchmark(initial_pings, "initial");
+    benchmark.add_initial(initial_pings);
+
+    benchmark.submap_origin = Eigen::Vector3d::Zero(); // this should be a method
+    
+    benchmark.add_benchmark(optimized_pings, "optimized");
+
+    registration_pairs.push_back(make_pair(i, j));
+    benchmarks.push_back(benchmark);
+}
+
+void registration_summary_benchmark::add_registration_benchmark(mbes_ping::PingsT& initial_pings, pt_submaps::TransT& trans_corr, pt_submaps::RotsT& rots_corr, int i, int j)
+{
+    mbes_ping::PingsT pings = initial_pings;
+
+    int k = 0;
+    Eigen::Vector3d tc;
+    Eigen::Matrix3d Rc;
+    for (mbes_ping& ping : pings) {
+        if (ping.first_in_file_) {
+            tc = trans_corr[k];
+            Rc = rots_corr[k];
+            k += 1;
+        }
+        ping.pos_ = Rc*ping.pos_ + tc;
+        for (Eigen::Vector3d& p : ping.beams) {
+            p = Rc*p + tc;
+        }
+    }
+
+    add_registration_benchmark(initial_pings, pings, i, j);
+}
