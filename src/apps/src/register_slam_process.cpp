@@ -109,39 +109,50 @@ Eigen::VectorXd compute_step(Eigen::MatrixXd& points2, ProcessT& gp1,
 
 void register_processes(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d& t1, Eigen::Vector3d& rot1,
 				        Eigen::MatrixXd& points2, ProcessT& gp2, Eigen::Vector3d& t2, Eigen::Vector3d& rot2,
-                        bool norot)
+                        bool norot, bool visualize)
 {
-    VisCallback vis(points1, points2, gp1, gp2, t1, rot1, t2, rot2);
+    VisCallback* vis;
+    if (visualize) {
+        vis = new VisCallback(points1, points2, gp1, gp2, t1, rot1, t2, rot2);
+    }
     Eigen::Matrix3d R1 = euler_to_matrix(rot1(0), rot1(1), rot1(2));
     Eigen::Matrix3d R2 = euler_to_matrix(rot2(0), rot2(1), rot2(2));
 
     double eps = 1.;
+    int counter = 0;
 
     Eigen::VectorXd delta1(6);
 	delta1.setZero();
     bool delta_diff_small = false;
-    while (true) { //!delta_diff_small) {
+    while (!delta_diff_small && counter < 200) {
 		Eigen::VectorXd delta_old = delta1;
 		cout << "Computing registration delta" << endl;
 		delta1 = -compute_step(points2, gp1, t1, rot1, t2, rot2);
         if (norot) {
             delta1(2) = delta1(3) = delta1(4) = 0.;
         }
-        delta_diff_small = (delta1 - delta_old).norm() < 1e-5f;
+        delta_diff_small = (delta1 - delta_old).norm() < 1e-3f;
 		cout << "Computing registration update" << endl;
 		cout << "Registration update: " << delta1 << endl;
+		cout << "Delta diff: " << (delta1 - delta_old).norm() << endl;
         t1.array() += eps*delta1.head<3>().array();
         rot1.array() += eps*0.00002*delta1.tail<3>().array();
         R1 = euler_to_matrix(rot1(0), rot1(1), rot1(2)); // add to total rotation
-        vis.visualizer_step(R1);
+        if (delta_diff_small) {
+            cout << "Done registering, exiting!" << endl;
+        }
+        if (visualize) {
+            vis->visualizer_step(R1);
+        }
+        ++counter;
     }
 }
 
 int main(int argc, char** argv)
 {
     string file_str;
-    int first = 0;
-    int second = 1;
+    int first = -1;
+    int second = -1;
     int subsample = 1;
     bool norot = false;
 
@@ -170,12 +181,48 @@ int main(int argc, char** argv)
     gp_submaps ss = read_data<gp_submaps>(path);
 	//ss.trans[first].head<2>().array() += -5.0;
     //ss.angles[first](2) += 0.2;
+    for (Eigen::MatrixXd& points : ss.points) {
+        subsample_cloud(points, subsample);
+    }
+    pt_submaps::TransT trans_0 = ss.trans;
+    pt_submaps::RotsT rots_0 = ss.rots;
 
-    subsample_cloud(ss.points[first], subsample);
-    subsample_cloud(ss.points[second], subsample);
-	register_processes(ss.points[first], ss.gps[first], ss.trans[first], ss.angles[first],
-                       ss.points[second], ss.gps[second], ss.trans[second], ss.angles[second],
-                       norot);
+    if (first == -1 || second == -1) {
+        boost::filesystem::path track_benchmark_path(ss.dataset_name + "_benchmark.cereal");
+        track_error_benchmark track_benchmark = read_data<track_error_benchmark>(track_benchmark_path);
+
+        registration_summary_benchmark benchmark(ss.dataset_name);
+        for (const pair<int, int>& match : ss.matches) {
+            first = match.first; second = match.second;
+            cout << "Registering " << first << " and " << second << " ..." << endl;
+            register_processes(ss.points[first], ss.gps[first], ss.trans[first], ss.angles[first],
+                               ss.points[second], ss.gps[second], ss.trans[second], ss.angles[second],
+                               norot, false);
+            cout << "Done registering " << first << " and " << second << " ..." << endl;
+
+            pt_submaps::TransT trans_corr;
+            pt_submaps::RotsT rots_corr;
+            Eigen::Matrix3d R_first = euler_to_matrix(ss.angles[first][0], ss.angles[first][1], ss.angles[first][2]);
+            Eigen::Matrix3d Rc_first = R_first*rots_0[first].transpose();
+            Eigen::Vector3d tc_first = track_benchmark.submap_origin + ss.trans[first] - Rc_first*(track_benchmark.submap_origin + trans_0[first]);
+            Eigen::Matrix3d R_second = euler_to_matrix(ss.angles[second][0], ss.angles[second][1], ss.angles[second][2]);
+            Eigen::Matrix3d Rc_second = R_second*rots_0[second].transpose();
+            Eigen::Vector3d tc_second = track_benchmark.submap_origin + ss.trans[second] - Rc_second*(track_benchmark.submap_origin + trans_0[second]);
+            trans_corr.push_back(tc_first); trans_corr.push_back(tc_second);
+            rots_corr.push_back(Rc_first); rots_corr.push_back(Rc_second);
+
+            mbes_ping::PingsT pings_pair = registration_summary_benchmark::get_submap_pings_pair(track_benchmark.input_pings, first, second);
+            benchmark.add_registration_benchmark(pings_pair, trans_corr, rots_corr, first, second);
+        }
+        benchmark.print_summary();
+        boost::filesystem::path benchmark_path(ss.dataset_name + "_registration_benchmark.cereal");
+        write_data(benchmark, benchmark_path);
+    }
+    else {
+        register_processes(ss.points[first], ss.gps[first], ss.trans[first], ss.angles[first],
+                           ss.points[second], ss.gps[second], ss.trans[second], ss.angles[second],
+                           norot, true);
+    }
 
     return 0;
 }

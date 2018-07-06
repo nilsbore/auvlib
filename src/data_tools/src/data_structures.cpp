@@ -443,3 +443,22 @@ void registration_summary_benchmark::add_registration_benchmark(mbes_ping::Pings
 
     add_registration_benchmark(initial_pings, pings, i, j);
 }
+
+mbes_ping::PingsT registration_summary_benchmark::get_submap_pings_pair(const mbes_ping::PingsT& pings, int i, int j)
+{
+    mbes_ping::PingsT pings_pair;
+
+    int k = 0;
+    for (auto pos = pings.begin(); pos != pings.end(); ) {
+        auto next = std::find_if(pos, pings.end(), [&](const mbes_ping& ping) {
+            return ping.first_in_file_ && (&ping != &(*pos));
+        });
+        if (k == i || k == j) {
+            pings_pair.insert(pings_pair.end(), pos, next);
+        }
+        ++k;
+        pos = next;
+    }
+
+    return pings_pair;
+}
