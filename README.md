@@ -256,3 +256,4 @@ benchmark.print_summary();
 
 // save the benchmark to disk, for use later
 write_data(benchmark, boost::filesystem::path("my_registration_benchmark.cereal"));
+```
