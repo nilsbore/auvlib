@@ -447,19 +447,23 @@ void registration_summary_benchmark::add_registration_benchmark(mbes_ping::Pings
 
 mbes_ping::PingsT registration_summary_benchmark::get_submap_pings_pair(const mbes_ping::PingsT& pings, int i, int j)
 {
-    mbes_ping::PingsT pings_pair;
+    mbes_ping::PingsT pings_pair, pings_j;
 
     int k = 0;
     for (auto pos = pings.begin(); pos != pings.end(); ) {
         auto next = std::find_if(pos, pings.end(), [&](const mbes_ping& ping) {
             return ping.first_in_file_ && (&ping != &(*pos));
         });
-        if (k == i || k == j) {
+        if (k == i) {
             pings_pair.insert(pings_pair.end(), pos, next);
+        }
+        else if (k == j) {
+            pings_j.insert(pings_j.end(), pos, next);
         }
         ++k;
         pos = next;
     }
+    pings_pair.insert(pings_pair.end(), pings_j.begin(), pings_j.end());
 
     return pings_pair;
 }
