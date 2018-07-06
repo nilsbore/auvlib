@@ -200,8 +200,8 @@ To know which files to look at, it may also help to look at the [tests in `data_
 The tests also [contains an example](https://github.com/nilsbore/gpgs_slam/blob/master/src/apps/test/test_parse_navi_data.cpp)
 of how to use the benchmark system. After having read your files like above, simply do something like the following:
 ```cpp
-// create a new becnhmark object
-track_error_benchmark benchmark;
+// create a new benchmark object with some arbitrary name
+track_error_benchmark benchmark("medgaz");
 
 // add ground truth pings
 benchmark.add_ground_truth(pings);
@@ -230,3 +230,29 @@ benchmark.print_summary();
 // save the benchmark to disk, for use later
 write_data(benchmark, boost::filesystem::path("my_benchmark.cereal"));
 ```
+
+### Registration benchmarking
+
+In the file where we do our registration, we can create another benchmark
+that summarizes all of our registration results.
+Again, add our optimized pings to the benchmark, and save the results.
+```cpp
+// read data from disk
+mbes_ping::PingsT initial_pings = read_data<mbes_ping::PingsT>(pings_path);
+
+// create a new benchmark with some arbitrary name
+registration_summary_benchmark benchmark("medgaz");
+
+for (const pair<int, int>& match : matches) {
+    // get just the pings of the two submaps
+    mbes_ping::PingsT pair_pings = registration_summary_benchmark::get_submap_pings_pair(initial_pings, match.first, match.second);
+    mbes_ping::PingsT optimized_pings;
+    // fill in the pings using some registration algorithm ...
+    benchmark.add_registration_benchmark(pings_pair, optimized_pings, match.first, match.second);
+}
+
+// print the results of the benchmark
+benchmark.print_summary();
+
+// save the benchmark to disk, for use later
+write_data(benchmark, boost::filesystem::path("my_registration_benchmark.cereal"));
