@@ -399,6 +399,7 @@ void registration_summary_benchmark::print_summary()
                 optimized_error_sum += p.second;
             }
         }
+        count += 1.;
     }
 
     cout << "Initial mean RMS consistency error: " << initial_error_sum / count << endl;
