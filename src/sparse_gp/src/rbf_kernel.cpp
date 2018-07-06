@@ -69,7 +69,7 @@ void rbf_kernel::dKdtheta(std::vector<ArrayXXd>& Ks, const MatrixXd& BV)
             Ks[0](j, i) = Ks[0](i, j);
             Ks[1](i, j) = -temp/(p(1)*p(1))*p(0)*Ks[0](i, j);
             Ks[1](j, i) = Ks[1](i, j);
-            std::cout << Ks[1](i, j);
+            //std::cout << Ks[1](i, j);
         }
     }
 }

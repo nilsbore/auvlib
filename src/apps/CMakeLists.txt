@@ -33,6 +33,9 @@ target_link_libraries(slam_process_ceres submaps gpgs_cost_function gpgs_visuali
 add_executable(filter_process src/filter_process.cpp)
 target_link_libraries(filter_process submaps data_structures data_transforms)
 
+add_executable(train_slam_process src/train_slam_process.cpp)
+target_link_libraries(train_slam_process submaps data_structures data_transforms)
+
 add_executable(visualize_slam_process src/visualize_slam_process.cpp)
 #target_link_libraries(visualize_slam_process submaps gpgs_cost_function gpgs_visualization gpgs_multi_visualizer gpgs_igl_visualizer)
 target_link_libraries(visualize_slam_process gpgs_visualization gpgs_igl_visualizer data_structures)

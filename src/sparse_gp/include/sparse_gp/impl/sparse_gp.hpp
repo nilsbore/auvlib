@@ -722,12 +722,13 @@ void sparse_gp<Kernel, Noise>::train_parameters(const MatrixXd& X, const VectorX
     VectorXd deltai(n);
     VectorXd l(X.rows());
     VectorXd l_old(X.rows());
+    MatrixXd dX;
     l.setZero();
     l_old.setZero();
     std::vector<double> ls;
     std::vector<ArrayXXd> dKs;
     dKs.resize(n);
-    double step = 1e-4f;
+    double step = 1e-5f;
     bool first = true;
     do { // iterate until likelihood difference between runs is small
         reset();
@@ -738,32 +739,34 @@ void sparse_gp<Kernel, Noise>::train_parameters(const MatrixXd& X, const VectorX
         ArrayXXd dlPdK = -0.5f*(alpha*alpha.transpose() + C.transpose());
         int counter = 0;
         do { // iterate until derivative is small enough
-            /*kernel.dKdtheta(dKs, BV);
+            kernel.dKdtheta(dKs, BV);
             for (int i = 0; i < n; ++i) {
                 delta(i) = (dlPdK*dKs[i]).sum();
-            }*/
-            delta.setZero();
+            }
+            //delta.setZero();
             for (int i = 0; i < X.rows(); ++i) {
                 likelihood_dtheta(deltai, X.row(i).transpose(), y(i));
                 delta += deltai;
             }
-            kernel.param()(0) += step*delta(0);
-            compute_neg_log_likelihoods(l, X, y);
+            //kernel.param()(0) += step*delta(0);
+            kernel.param() += step*delta;
+            compute_neg_log_derivatives_fast(l, dX, X, y, false);
             std::cout << "Delta norm: " << delta(0) << std::endl;
-            ls.push_back(-l.sum());
             std::cout << "L norm: " << l.norm() << std::endl;
             std::cout << "P: " << kernel.param().transpose() << std::endl;
-            if (counter > 100) {
+            double lsum = l.sum();
+            if (counter > 100 || std::isnan(lsum)) {
                 break;
             }
+            ls.push_back(lsum);
             ++counter;
             first = false;
         }
         while (delta.norm() > 1e-2f);
 
-        octave_convenience oc;
-        oc.eval_plot_vector(ls);
-        exit(0);
+        //octave_convenience oc;
+        //oc.eval_plot_vector(ls);
+        //exit(0);
 
         l_old = l;
         //compute_likelihoods(l, X, y);
