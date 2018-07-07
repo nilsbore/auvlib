@@ -36,8 +36,9 @@ private:
     //double likelihood(const Eigen::Vector2d& x, double y);
     //double neg_log_likelihood(const Eigen::Vector2d& x, double y);
 public:
-    void reset();
+    void reset(int new_capacity=100);
     void train_parameters(const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
+    void train_log_parameters(const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
     //void compute_derivatives_fast(Eigen::MatrixXd& dX, const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
     int size();
     void add_measurements(const Eigen::MatrixXd& X,const Eigen::VectorXd& y);
@@ -46,6 +47,7 @@ public:
     double neg_log_likelihood(const Eigen::VectorXd& X_star, double y);
     //void compute_derivatives(Eigen::MatrixXd& dX, const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
     void compute_neg_log_derivatives(Eigen::MatrixXd& dX, const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
+    void compute_neg_log_theta_derivatives_fast(Eigen::VectorXd& ll, Eigen::VectorXd& dtheta, const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
     void compute_neg_log_derivatives_fast(Eigen::VectorXd& ll, Eigen::MatrixXd& dX, const Eigen::MatrixXd& X,
                                           const Eigen::VectorXd& y, bool compute_derivatives=true);
     //void compute_likelihoods(Eigen::VectorXd& l, const Eigen::MatrixXd& X, const Eigen::VectorXd& y);

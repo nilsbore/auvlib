@@ -66,8 +66,8 @@ int main(int argc, char** argv)
 
     gp_submaps ss = read_data<gp_submaps>(input_path);
     subsample_cloud(ss.points[0], subsample);
-    ss.gps[0].reset();
-    ss.gps[0].train_parameters(ss.points[0].leftCols<2>(), ss.points[0].col(2));
+    ss.gps[0].reset(300);
+    ss.gps[0].train_log_parameters(ss.points[0].leftCols<2>(), ss.points[0].col(2));
 
     return 0;
 }

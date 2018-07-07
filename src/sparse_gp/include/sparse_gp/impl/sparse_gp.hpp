@@ -537,8 +537,8 @@ void sparse_gp<Kernel, Noise>::compute_neg_log_derivatives_fast(VectorXd& ll, Ma
 
     // begin derivative computation
     // separate into k_dx1 and k_dx2, both MxN matrices, where M is number of basis vectors
-    MatrixXd K_dx1(X.rows(), BV.rows()); // OK
-    MatrixXd K_dx2(X.rows(), BV.rows()); // OK
+    MatrixXd K_dx1(X.rows(), BV.cols()); // OK
+    MatrixXd K_dx2(X.rows(), BV.cols()); // OK
 
     //MatrixXd k_star_dx;
     kernel.template kernel_dx_fast<2>(K_dx1, K_dx2, X, BV); // OK
@@ -697,8 +697,9 @@ void sparse_gp<Kernel, Noise>::construct_covariance(VectorXd& K, const Vector2d&
 
 // reset all parameters of gp so that it can be trained again
 template <class Kernel, class Noise>
-void sparse_gp<Kernel, Noise>::reset()
+void sparse_gp<Kernel, Noise>::reset(int new_capacity)
 {
+    capacity = new_capacity;
     total_count = 0;
     current_size = 0;
     alpha.resize(0); // just to empty memory
@@ -736,14 +737,14 @@ void sparse_gp<Kernel, Noise>::train_parameters(const MatrixXd& X, const VectorX
         if (first && BV.cols() < 20) { // DEBUG
             return;
         }
-        ArrayXXd dlPdK = -0.5f*(alpha*alpha.transpose() + C.transpose());
+        //ArrayXXd dlPdK = -0.5f*(alpha*alpha.transpose() + C.transpose());
         int counter = 0;
         do { // iterate until derivative is small enough
-            kernel.dKdtheta(dKs, BV);
+            /*kernel.dKdtheta(dKs, BV);
             for (int i = 0; i < n; ++i) {
                 delta(i) = (dlPdK*dKs[i]).sum();
-            }
-            //delta.setZero();
+            }*/
+            delta.setZero();
             for (int i = 0; i < X.rows(); ++i) {
                 likelihood_dtheta(deltai, X.row(i).transpose(), y(i));
                 delta += deltai;
@@ -751,8 +752,8 @@ void sparse_gp<Kernel, Noise>::train_parameters(const MatrixXd& X, const VectorX
             //kernel.param()(0) += step*delta(0);
             kernel.param() += step*delta;
             compute_neg_log_derivatives_fast(l, dX, X, y, false);
-            std::cout << "Delta norm: " << delta(0) << std::endl;
-            std::cout << "L norm: " << l.norm() << std::endl;
+            std::cout << "Delta: " << delta.transpose() << std::endl;
+            std::cout << "L norm: " << l.sum() << std::endl;
             std::cout << "P: " << kernel.param().transpose() << std::endl;
             double lsum = l.sum();
             if (counter > 100 || std::isnan(lsum)) {
@@ -764,9 +765,9 @@ void sparse_gp<Kernel, Noise>::train_parameters(const MatrixXd& X, const VectorX
         }
         while (delta.norm() > 1e-2f);
 
-        //octave_convenience oc;
-        //oc.eval_plot_vector(ls);
-        //exit(0);
+        octave_convenience oc;
+        oc.eval_plot_vector(ls);
+        exit(0);
 
         l_old = l;
         //compute_likelihoods(l, X, y);
@@ -775,6 +776,155 @@ void sparse_gp<Kernel, Noise>::train_parameters(const MatrixXd& X, const VectorX
         std::cout << "L norm: " << (l - l_old).norm() << std::endl;
     }
     while ((l - l_old).norm() > 1e0f);
+    octave_convenience oc;
+    oc.eval_plot_vector(ls);
+}
+
+// note, if you do not want dtheta, use the other derivatives function
+template <class Kernel, class Noise>
+void sparse_gp<Kernel, Noise>::compute_neg_log_theta_derivatives_fast(VectorXd& ll, VectorXd& dtheta, const MatrixXd& X, const VectorXd& y)
+{
+    // k_star should be a Nx1 vector, but it is constant!
+    double k_star = kernel.kernel_function(X.row(0), X.row(0)); // this is always constant!
+
+    // k should be a MxN matrix
+    MatrixXd K(X.rows(), BV.rows()); // OK
+    kernel.template construct_covariance_fast<2>(K, X, BV);
+    
+    // begin likelihood computation
+    static const double logsqrt2pi = 0.5f*log(2.0f*M_PI); // OK
+
+    ArrayXd sigma; // OK
+    ArrayXd mu; // OK
+    //This is pretty much prediction
+    if (current_size == 0) {
+        sigma = k_star + s20; // ok
+        mu.resize(X.rows());
+        mu.setZero(); // OK
+    }
+    else {
+        // Nx1 vector
+        sigma = s20 + ((K*C).array()*K.array()).rowwise().sum() + k_star; // OK
+        // Nx1 vector
+        mu = K*alpha; // OK
+    }
+    // Nx1 vector
+    ArrayXd offset = y.array() - mu; // OK
+
+    // this is actually the log likelihood, NOT the neg log likelihood
+    ll = -logsqrt2pi - 0.5f*sigma.log() - 0.5f*offset*offset/sigma; // OK
+    // end likelihood computation
+
+    // begin derivative computation
+    // separate into k_dx1 and k_dx2, both MxN matrices, where M is number of basis vectors
+    MatrixXd K_dtheta1(X.rows(), BV.cols()); // OK
+    MatrixXd K_dtheta2(X.rows(), BV.cols()); // OK
+
+    //MatrixXd k_star_dx;
+    //kernel.template kernel_dx_fast<2>(K_dx1, K_dx2, X, BV); // OK
+    for (int i = 0; i < X.rows(); ++i) {
+        MatrixXd k_dtheta;
+        Vector2d x = X.row(i).transpose();
+        kernel.kernel_dtheta(k_dtheta, x, BV);
+        K_dtheta1.row(i) = k_dtheta.col(0).transpose();
+        K_dtheta2.row(i) = k_dtheta.col(1).transpose();
+    }
+
+    // goal should be that sigma_dx and mu_dx is 2xN instead
+    ArrayXXd sigma_dtheta(X.rows(), 2);
+    // TODO: the 1 at the end is the RBF derivative of k(p, p) wrt p(0) (sigmaf_sq)
+    sigma_dtheta.col(0) = 2.*((K_dtheta1*C).array()*K.array()).rowwise().sum() + 1.; // OK 
+    sigma_dtheta.col(1) = 2.*((K_dtheta2*C).array()*K.array()).rowwise().sum(); // OK
+    
+    // 2xN matrix
+    ArrayXXd mu_dtheta(X.rows(), 2); // OK
+    mu_dtheta.col(0) = K_dtheta1*alpha; // OK
+    mu_dtheta.col(1) = K_dtheta2*alpha; // OK
+
+    ArrayXXd temp1 = sigma_dtheta.colwise()*(offset*offset/sigma);
+    ArrayXXd temp2 = 2.*(mu_dtheta.colwise()*offset);
+    ArrayXXd temp3 = (-sigma_dtheta+temp1+temp2);
+
+    //std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+
+    // this should be ok given that we can broadcast Nx2 and Nx1
+    dtheta = 0.5*(temp3.colwise()/sigma).colwise().mean().transpose().matrix();
+    std::cout << "dheta size: " << dtheta.rows() << "x" << dtheta.cols() << std::endl;
+}
+
+template <class Kernel, class Noise>
+void sparse_gp<Kernel, Noise>::train_log_parameters(const MatrixXd& X, const VectorXd& y)
+{
+    if (this->size() > 0) {
+        if (DEBUG) {
+            printf("Not training because process not empty.");
+        }
+        return;
+    }
+    int n = kernel.param_size();
+    VectorXd dtheta(n);
+    //VectorXd deltai(n);
+    VectorXd ll(X.rows());
+    VectorXd l_old(X.rows());
+    MatrixXd dX;
+    ll.setZero();
+    l_old.setZero();
+    std::vector<double> ls;
+    std::vector<ArrayXXd> dKs;
+    dKs.resize(n);
+    double step = 1e-5f;
+    bool first = true;
+    int iter_counter = 0;
+    do { // iterate until likelihood difference between runs is small
+        reset(capacity);
+        add_measurements(X, y);
+        if (first && BV.cols() < 20) { // DEBUG
+            return;
+        }
+        l_old = ll;
+        int counter = 0;
+        ArrayXXd dlPdK = -0.5f*(alpha*alpha.transpose() + C.transpose());
+        do { // iterate until derivative is small enough
+            VectorXd delta(n);
+            kernel.dKdtheta(dKs, BV);
+            for (int i = 0; i < n; ++i) {
+                delta(i) = (dlPdK*dKs[i]).sum();
+            }
+            /*delta.setZero();
+            for (int i = 0; i < X.rows(); ++i) {
+                likelihood_dtheta(deltai, X.row(i).transpose(), y(i));
+                delta += deltai;
+            }
+            */
+            //kernel.param()(0) += step*delta(0);
+            compute_neg_log_theta_derivatives_fast(ll, dtheta, X, y);
+            kernel.param() += step*(dtheta + delta);
+            std::cout << "Delta: " << dtheta.transpose() << std::endl;
+            std::cout << "L norm: " << ll.mean() << std::endl;
+            std::cout << "P: " << kernel.param().transpose() << std::endl;
+            std::cout << "Counter: " << iter_counter << std::endl;
+
+            double lsum = ll.mean();
+            if (counter > 100 || std::isnan(lsum)) {
+                break;
+            }
+            ls.push_back(lsum);
+            ++counter;
+            first = false;
+        }
+        while (dtheta.norm() > 1e-2f);
+
+        //octave_convenience oc;
+        //oc.eval_plot_vector(ls);
+        //exit(0);
+
+        //compute_likelihoods(l, X, y);
+        //compute_neg_log_derivatives_fast(ll, dX, X, y, false); // NOTE: this should be exp'd!
+        //ls.push_back(ll.mean());
+        std::cout << "L norm: " << (ll - l_old).norm() << std::endl;
+        ++iter_counter;
+    }
+    while ((ll - l_old).norm() > 1e0f && iter_counter < 50);
     octave_convenience oc;
     oc.eval_plot_vector(ls);
 }
