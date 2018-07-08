@@ -327,6 +327,7 @@ void track_error_benchmark::add_benchmark(mbes_ping::PingsT& pings, const std::s
     cv::Mat error_img;
     double consistency_rms_error;
     tie(consistency_rms_error, error_img) = compute_draw_consistency_map(pings);
+    //tie(consistency_rms_error, error_img) = compute_draw_error_consistency_map(pings);
     draw_track_img(pings, error_img, cv::Scalar(0, 0, 0), name);
     string error_img_path = dataset_name + "_" + name + "_rms_consistency_error.png";
     cv::imwrite(error_img_path, error_img);
@@ -466,4 +467,124 @@ mbes_ping::PingsT registration_summary_benchmark::get_submap_pings_pair(const mb
     pings_pair.insert(pings_pair.end(), pings_j.begin(), pings_j.end());
 
     return pings_pair;
+}
+
+pair<double, cv::Mat> track_error_benchmark::compute_draw_error_consistency_map(mbes_ping::PingsT& pings)
+{
+    int rows = 500;
+    int cols = 500;
+
+    double res, minx, miny, x0, y0;
+    res = params[0]; minx = params[1]; miny = params[2]; x0 = params[3]; y0 = params[4];
+
+    cout << __FILE__ << ", " << __LINE__ << endl;
+
+    int nbr_maps = std::accumulate(pings.begin(), pings.end(), 0, [](int sum, const mbes_ping& ping) {
+        return sum + int(ping.first_in_file_);
+    });
+    cout << "Number maps: " << nbr_maps << endl;
+    cout << __FILE__ << ", " << __LINE__ << endl;
+
+    vector<vector<vector<vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > > > > grid_maps(rows);
+    for (int i = 0; i < rows; ++i) {
+        grid_maps[i].resize(cols);
+        for (int j = 0; j < cols; ++j) {
+            grid_maps[i][j].resize(nbr_maps);
+        }
+    }
+    cout << __FILE__ << ", " << __LINE__ << endl;
+
+    int k = 0;
+    for (auto pos = pings.begin(); pos != pings.end(); ) {
+        auto next = std::find_if(pos, pings.end(), [&](const mbes_ping& ping) {
+            return ping.first_in_file_ && (&ping != &(*pos));
+        });
+        for (auto iter = pos; iter < next; ++iter) {
+            for (const Eigen::Vector3d& pos : iter->beams) {
+                int col = int(x0+res*(pos[0]-minx));
+                int row = int(y0+res*(pos[1]-miny));
+                if (col >= 0 && col < cols && row >= 0 && row < rows) {
+                    grid_maps[row][col][k].push_back(pos);
+                }
+            }
+        }
+        ++k;
+        pos = next;
+    }
+    cout << __FILE__ << ", " << __LINE__ << endl;
+
+    Eigen::MatrixXd values(rows, cols); values.setZero();
+    //Eigen::MatrixXd counts(rows, cols); counts.setZero();
+
+
+    double value_sum = 0.;
+    double value_count = 0.;
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            cout << "i: " << i << ", j: " << j << endl;
+            double maxp = 0.;
+            for (int m = 0; m < nbr_maps; ++m) {
+                Eigen::MatrixXd neighborhood_points;
+                bool neighborhood_present = true;
+                for (int ii = std::max(i-1, 0); ii < std::min(i+1, rows-1); ++ii) {
+                    for (int jj = std::max(j-1, 0); jj < std::min(j+1, cols-1); ++jj) {
+                        neighborhood_present = neighborhood_present && !grid_maps[ii][jj][m].empty();
+                        for (int n = 0; n < nbr_maps; ++n) {
+                            if (n == m) {
+                                continue;
+                            }
+                            int offset = neighborhood_points.rows();
+                            neighborhood_points.conservativeResize(offset + grid_maps[ii][jj][n].size(), 3);
+                            for (int p = 0; p < grid_maps[ii][jj][n].size(); ++p) {
+                                neighborhood_points.row(offset + p) = grid_maps[ii][jj][n][p].transpose();
+                            }
+                        }
+                    }
+                }
+                //cout << "Neighborhood present: " << neighborhood_present[m] << endl;
+                //cout << "Neighborhood points: " << neighborhood_points[m].rows() << endl;
+                if (!neighborhood_present || neighborhood_points.rows() == 0) {
+                    continue;
+                }
+
+                double maxm = 0.;
+                for (int p = 0; p < grid_maps[i][j][m].size(); ++p) { //p += 10) {
+                    maxm = std::max((neighborhood_points.rowwise() - grid_maps[i][j][m][p].transpose()).rowwise().norm().minCoeff(), maxm);
+                }
+
+                maxp = std::max(maxm, maxp);
+            }
+
+            values(i, j) = maxp;
+            if (maxp > 0) {
+                value_sum = maxp;
+                value_count += 1.;
+            }
+
+            cout << "Value: " << maxp << endl;
+        }
+    }
+    cout << __FILE__ << ", " << __LINE__ << endl;
+
+    Eigen::ArrayXXd bad = (values.array() == 0.).cast<double>();
+
+    double maxv = values.maxCoeff();
+    values.array() += maxv*bad;
+    double minv = values.minCoeff();
+
+    values.array() -= minv;
+    values.array() /= (maxv - minv);
+
+    cv::Mat error_img = cv::Mat(rows, cols, CV_8UC3, cv::Scalar(255, 255, 255));
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            if (bad(i, j) == 1.) {
+                continue;
+            }
+            cv::Point3_<uchar>* p = error_img.ptr<cv::Point3_<uchar> >(rows-i-1, j);
+            tie(p->z, p->y, p->x) = jet(values(i, j));
+        }
+    }
+
+    return make_pair(value_sum/value_count, error_img);
 }
