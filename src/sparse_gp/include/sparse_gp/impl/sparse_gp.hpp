@@ -872,7 +872,7 @@ void sparse_gp<Kernel, Noise>::train_log_parameters(const MatrixXd& X, const Vec
     std::vector<double> ls;
     std::vector<ArrayXXd> dKs;
     dKs.resize(n);
-    double step = 1e-5f;
+    double step = 1e0f;
     bool first = true;
     int iter_counter = 0;
     do { // iterate until likelihood difference between runs is small
@@ -885,11 +885,14 @@ void sparse_gp<Kernel, Noise>::train_log_parameters(const MatrixXd& X, const Vec
         int counter = 0;
         ArrayXXd dlPdK = -0.5f*(alpha*alpha.transpose() + C.transpose());
         do { // iterate until derivative is small enough
+            /*
             VectorXd delta(n);
             kernel.dKdtheta(dKs, BV);
             for (int i = 0; i < n; ++i) {
                 delta(i) = (dlPdK*dKs[i]).sum();
             }
+            */
+
             /*delta.setZero();
             for (int i = 0; i < X.rows(); ++i) {
                 likelihood_dtheta(deltai, X.row(i).transpose(), y(i));
@@ -898,7 +901,10 @@ void sparse_gp<Kernel, Noise>::train_log_parameters(const MatrixXd& X, const Vec
             */
             //kernel.param()(0) += step*delta(0);
             compute_neg_log_theta_derivatives_fast(ll, dtheta, X, y);
-            kernel.param() += step*(dtheta + delta);
+            dtheta(0) = 0.;
+            //delta(0) = 0.;
+            //kernel.param() += step*(dtheta + delta);
+            kernel.param() += step*dtheta;
             std::cout << "Delta: " << dtheta.transpose() << std::endl;
             std::cout << "L norm: " << ll.mean() << std::endl;
             std::cout << "P: " << kernel.param().transpose() << std::endl;
