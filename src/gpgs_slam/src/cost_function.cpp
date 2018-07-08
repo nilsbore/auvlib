@@ -127,7 +127,8 @@ bool GaussianProcessCostFunction::Evaluate(double const* const* parameters, doub
     gp1.compute_neg_log_derivatives_fast(ll, dX, points2in1.leftCols<2>(), points2in1.col(2), compute_derivatives);
 
     //gp1.compute_neg_log_likelihoods(ll, points2in1.leftCols(2), points2in1.col(2));
-    residuals[0] = -ll.mean();
+    residuals[0] = 1.-ll.mean();
+    //residuals[0] = -ll.mean();
     cout << "Residual: " << residuals[0] << endl;
     
     // Compute the Jacobian if asked for.
