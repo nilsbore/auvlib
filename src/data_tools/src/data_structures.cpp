@@ -565,7 +565,7 @@ pair<double, cv::Mat> track_error_benchmark::compute_draw_error_consistency_map(
             }
 
             double value = 0.;
-            int nbr_averages = 100;
+            int nbr_averages = 10;
             for (int c = 0; c < nbr_averages; ++c) {
                 double maxm = 0.;
                 for (int m = 0; m < nbr_maps; ++m) {
@@ -586,7 +586,7 @@ pair<double, cv::Mat> track_error_benchmark::compute_draw_error_consistency_map(
 
             values(i, j) = value;
             if (value > 0) {
-                value_sum += value;
+                value_sum += value*value;
                 value_count += 1.;
             }
 
@@ -619,7 +619,7 @@ pair<double, cv::Mat> track_error_benchmark::compute_draw_error_consistency_map(
         }
     }
 
-    return make_pair(value_sum/value_count, error_img);
+    return make_pair(sqrt(value_sum/value_count), error_img);
 }
 
 /*
