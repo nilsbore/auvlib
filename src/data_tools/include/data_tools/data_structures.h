@@ -133,6 +133,8 @@ struct track_error_benchmark {
     //std::map<std::string, pt_submaps::TransT> tracks;
     std::map<std::string, double> track_rms_errors;
     std::map<std::string, double> consistency_rms_errors;
+    double min_consistency_error;
+    double max_consistency_error;
 
     // TODO: get this from on of the dicts instead
     //int nbr_tracks_drawn;
@@ -145,12 +147,14 @@ struct track_error_benchmark {
 
     track_error_benchmark() : dataset_name("default")
     {
-
+        min_consistency_error = -1.;
+        max_consistency_error = -1.;
     }
 
     track_error_benchmark(const std::string& dataset_name) : dataset_name(dataset_name)
     {
-
+        min_consistency_error = -1.;
+        max_consistency_error = -1.;
     }
 
     // these 5 functions should be the main way of interfacing with this class
@@ -175,13 +179,15 @@ struct track_error_benchmark {
         if (track_img.rows > 0) {
             cv::imwrite(track_img_path, track_img);
         }
-        ar(dataset_name, track_img_path, error_img_paths, input_pings, gt_track, track_rms_errors, consistency_rms_errors, params, submap_origin);
+        ar(dataset_name, track_img_path, error_img_paths, input_pings, gt_track, track_rms_errors,
+           consistency_rms_errors, min_consistency_error, max_consistency_error, params, submap_origin);
     }
 
     template <class Archive>
     void load(Archive& ar)
     {
-        ar(dataset_name, track_img_path, error_img_paths, input_pings, gt_track, track_rms_errors, consistency_rms_errors, params, submap_origin);
+        ar(dataset_name, track_img_path, error_img_paths, input_pings, gt_track, track_rms_errors,
+           consistency_rms_errors, min_consistency_error, max_consistency_error, params, submap_origin);
         if (!track_img_path.empty()) {
             track_img = cv::imread(track_img_path);
         }
