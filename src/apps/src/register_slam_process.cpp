@@ -28,6 +28,22 @@ void subsample_cloud(Eigen::MatrixXd& points, int subsample)
     points.conservativeResize(counter, 3);
 }
 
+vector<pair<int, int> > get_medgaz_matches()
+{
+    vector<pair<int, int> > matches;
+    for (int i = 0; i < 3; ++i) {
+
+        for (int j = 3; j < 5; ++j) {
+            matches.push_back(make_pair(i, j));
+        }
+
+        for (int j = 5; j < 7; ++j) {
+            matches.push_back(make_pair(i, j));
+        }
+    }
+    return matches;
+}
+
 pair<vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> >,
      vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> > >
 get_transform_jacobians(const Eigen::MatrixXd& X,
@@ -179,6 +195,7 @@ int main(int argc, char** argv)
 	cout << "Input file : " << path << endl;
     
     gp_submaps ss = read_data<gp_submaps>(path);
+    ss.matches = get_medgaz_matches();
 	//ss.trans[first].head<2>().array() += -5.0;
     //ss.angles[first](2) += 0.2;
     for (Eigen::MatrixXd& points : ss.points) {
