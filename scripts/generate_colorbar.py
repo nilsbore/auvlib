@@ -23,5 +23,5 @@ plt.colorbar(orientation="vertical")
 plt.savefig(path)
 
 image = cv2.imread(path)
-cropped = image[:, -image.shape[1]/2:]
+cropped = image[:, -image.shape[1]/2+90:]
 cv2.imwrite(path, cropped)
