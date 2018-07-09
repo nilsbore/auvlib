@@ -190,7 +190,7 @@ int main(int argc, char** argv)
 {
     string file_str;
     string output_str = "gp_results.cereal";
-    int subsample = 1;
+    int subsample = 300;
     bool norot = false;
 
 	cxxopts::Options options("MyProgram", "One line description of MyProgram");

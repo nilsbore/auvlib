@@ -202,9 +202,9 @@ int main(int argc, char** argv)
 {
     string folder_str;
     string file_str;
-	double lsq = 3.; //2.;
+	double lsq = 7.; //3.;
 	double sigma = 1.;
-	double s0 = 0.01; //.5;
+	double s0 = 0.01;
     double minx = -10000.;
     double maxx = 10000.;
     double pose_sigma = 0.2;

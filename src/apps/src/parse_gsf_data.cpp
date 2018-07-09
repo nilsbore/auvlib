@@ -58,10 +58,10 @@ int main(int argc, char** argv)
     string sounds_file_str;
     string poses_file_str;
     string file_str;
-	double lsq = 10.;
-	double sigma = 5.;
-	double s0 = .2;
-    double pose_sigma = 0.4;
+	double lsq = 7; //10.;
+	double sigma = 1.; //5.;
+	double s0 = 0.05; //.2;
+    double pose_sigma = 0.2; //0.4;
     string dataset_name = "pockmarks";
 
 	cxxopts::Options options("MyProgram", "One line description of MyProgram");
