@@ -207,7 +207,7 @@ int main(int argc, char** argv)
 	double s0 = 0.01;
     double minx = -10000.;
     double maxx = 10000.;
-    double pose_sigma = 0.2;
+    double pose_sigma = 0.1; //0.2;
     string dataset_name = "medgaz";
 
 	cxxopts::Options options("MyProgram", "One line description of MyProgram");
