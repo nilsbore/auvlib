@@ -15,7 +15,7 @@ print "Got minv: ", minv, " maxv: ", maxv
 print "Saving to image file: ", path
 
 plt.figure(figsize=(3.5,7))
-img = plt.imshow(np.array([[0,11]]), cmap="jet")
+img = plt.imshow(np.array([[minv,maxv]]), cmap="jet")
 img.set_visible(False)
 img.axes.set_visible(False)
 
