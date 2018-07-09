@@ -60,7 +60,7 @@ int main(int argc, char** argv)
     string file_str;
 	double lsq = 7; //10.;
 	double sigma = 1.; //5.;
-	double s0 = 0.05; //.2;
+	double s0 = 0.03; //.2;
     double pose_sigma = 0.2; //0.4;
     string dataset_name = "pockmarks";
 
