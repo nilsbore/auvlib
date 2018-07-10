@@ -476,6 +476,26 @@ mbes_ping::PingsT registration_summary_benchmark::get_submap_pings_pair(const mb
     return pings_pair;
 }
 
+mbes_ping::PingsT registration_summary_benchmark::get_submap_pings_index(const mbes_ping::PingsT& pings, int i)
+{
+    mbes_ping::PingsT pings_i;
+
+    int k = 0;
+    for (auto pos = pings.begin(); pos != pings.end(); ) {
+        auto next = std::find_if(pos, pings.end(), [&](const mbes_ping& ping) {
+            return ping.first_in_file_ && (&ping != &(*pos));
+        });
+        if (k == i) {
+            pings_i.insert(pings_i.end(), pos, next);
+            break;
+        }
+        ++k;
+        pos = next;
+    }
+
+    return pings_i;
+}
+
 pair<double, cv::Mat> track_error_benchmark::compute_draw_error_consistency_map(mbes_ping::PingsT& pings)
 {
     int rows = 500;

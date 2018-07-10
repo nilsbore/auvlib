@@ -204,6 +204,7 @@ struct registration_summary_benchmark {
     pt_submaps::MatchesT registration_pairs;
 
     static mbes_ping::PingsT get_submap_pings_pair(const mbes_ping::PingsT& pings, int i, int j);
+    static mbes_ping::PingsT get_submap_pings_index(const mbes_ping::PingsT& pings, int i);
     void add_registration_benchmark(mbes_ping::PingsT& initial_pings, mbes_ping::PingsT& optimized_pings, int i, int j);
     void add_registration_benchmark(mbes_ping::PingsT& initial_pings, pt_submaps::TransT& trans_corr, pt_submaps::RotsT& rots_corr, int i, int j);
     void print_summary();
