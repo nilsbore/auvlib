@@ -14,14 +14,14 @@ path = name + "_colorbar_jet.png"
 print "Got minv: ", minv, " maxv: ", maxv
 print "Saving to image file: ", path
 
-plt.figure(figsize=(3.5,7))
+plt.figure(figsize=(3.5,3.5))
 img = plt.imshow(np.array([[minv,maxv]]), cmap="jet")
 img.set_visible(False)
 img.axes.set_visible(False)
 
-plt.colorbar(orientation="vertical")
+plt.colorbar(orientation="vertical", label="Consistency Error (m)")
 plt.savefig(path)
 
 image = cv2.imread(path)
-cropped = image[:, -image.shape[1]/2+90:]
+cropped = image[30:-30, -image.shape[1]/2+90:]
 cv2.imwrite(path, cropped)
