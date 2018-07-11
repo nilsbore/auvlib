@@ -504,13 +504,10 @@ pair<double, cv::Mat> track_error_benchmark::compute_draw_error_consistency_map(
     double res, minx, miny, x0, y0;
     res = params[0]; minx = params[1]; miny = params[2]; x0 = params[3]; y0 = params[4];
 
-    cout << __FILE__ << ", " << __LINE__ << endl;
-
     int nbr_maps = std::accumulate(pings.begin(), pings.end(), 0, [](int sum, const mbes_ping& ping) {
         return sum + int(ping.first_in_file_);
     });
-    cout << "Number maps: " << nbr_maps << endl;
-    cout << __FILE__ << ", " << __LINE__ << endl;
+    cout << "Number maps for error benchmark: " << nbr_maps << endl;
 
     vector<vector<vector<Eigen::MatrixXd> > > grid_maps(rows);
     for (int i = 0; i < rows; ++i) {
@@ -519,7 +516,6 @@ pair<double, cv::Mat> track_error_benchmark::compute_draw_error_consistency_map(
             grid_maps[i][j].resize(nbr_maps);
         }
     }
-    cout << __FILE__ << ", " << __LINE__ << endl;
 
     int k = 0;
     for (auto pos = pings.begin(); pos != pings.end(); ) {
@@ -539,7 +535,6 @@ pair<double, cv::Mat> track_error_benchmark::compute_draw_error_consistency_map(
         ++k;
         pos = next;
     }
-    cout << __FILE__ << ", " << __LINE__ << endl;
 
     Eigen::MatrixXd values(rows, cols); values.setZero();
     //Eigen::MatrixXd counts(rows, cols); counts.setZero();
@@ -547,7 +542,7 @@ pair<double, cv::Mat> track_error_benchmark::compute_draw_error_consistency_map(
         for (int j = 0; j < cols; ++j) {
             for (int m = 0; m < nbr_maps; ++m) {
                 if (grid_maps[i][j][m].rows() > 20) {
-                    cout << "map " << m << " size: " << grid_maps[i][j][m].rows() << endl;
+                    //cout << "map " << m << " size: " << grid_maps[i][j][m].rows() << endl;
                     int subsample = int(double(grid_maps[i][j][m].rows())/20.);
                     int counter = 0;
                     for (int p = 0; p < grid_maps[i][j][m].rows(); ++p) {
@@ -566,7 +561,7 @@ pair<double, cv::Mat> track_error_benchmark::compute_draw_error_consistency_map(
     double value_count = 0.;
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
-            cout << "i: " << i << ", j: " << j << endl;
+            //cout << "i: " << i << ", j: " << j << endl;
 
             vector<Eigen::MatrixXd> neighborhood_points(nbr_maps);
             vector<bool> neighborhood_present(nbr_maps, true);
@@ -610,10 +605,9 @@ pair<double, cv::Mat> track_error_benchmark::compute_draw_error_consistency_map(
                 value_count += 1.;
             }
 
-            cout << "Value: " << value << endl;
+            //cout << "Value: " << value << endl;
         }
     }
-    cout << __FILE__ << ", " << __LINE__ << endl;
 
     Eigen::ArrayXXd bad = (values.array() == 0.).cast<double>();
 
