@@ -11,6 +11,8 @@
 #include <sparse_gp/rbf_kernel.h>
 #include <sparse_gp/gaussian_noise.h>
 
+#include <chrono>
+
 using namespace std;
 
 void divide_gsf_map(mbes_ping::PingsT& pings)
@@ -124,6 +126,7 @@ int main(int argc, char** argv)
     ss.dataset_name = dataset_name;
     tie(ss.points, ss.trans, ss.angles, ss.matches, ss.bounds, ss.tracks) = create_submaps(new_pings);
 
+    auto start = chrono::high_resolution_clock::now();
     for (int i = 0; i < ss.points.size(); ++i) {
 
         //clip_submap(ss.points[i], ss.bounds[i], minx, maxx);
@@ -145,6 +148,9 @@ int main(int argc, char** argv)
 
         ss.rots.push_back(euler_to_matrix(ss.angles[i](0), ss.angles[i](1), ss.angles[i](2)));
     }
+    auto stop = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::milliseconds>(stop - start);
+
     for (int i = 0; i < ss.points.size(); ++i) {
         cout << "======== Track " << i << " ===========" << endl;
         cout << "First point: " << ss.points[i].topRows<1>() << endl;
@@ -164,6 +170,7 @@ int main(int argc, char** argv)
 
     write_data(ss, path);
 
+    cout << "Time to train processes: " << duration.count() << " milliseconds" << endl;
     cout << "Wrote output submaps file " << path << endl;
     
     track_error_benchmark benchmark(ss.dataset_name);

@@ -17,6 +17,8 @@
 
 #include <gpgs_slam/igl_visualizer.h>
 
+#include <chrono>
+
 using namespace std;
 
 void clip_submap(Eigen::MatrixXd& points, Eigen::Matrix2d& bounds, double minx, double maxx)
@@ -142,9 +144,11 @@ int main(int argc, char** argv)
     }
     
     for (int i = 0; i < ss.points.size(); ++i) {
-
         clip_submap(ss.points[i], ss.bounds[i], minx, maxx);
+    }
 
+    auto start = chrono::high_resolution_clock::now();
+    for (int i = 0; i < ss.points.size(); ++i) {
         gp_submaps::ProcessT gp(100, s0);
         gp.kernel.sigmaf_sq = sigma;
         gp.kernel.l_sq = lsq*lsq;
@@ -166,6 +170,8 @@ int main(int argc, char** argv)
         cout << "Length of submap " << i << ": " << len << endl;
         ss.track_end_covs.push_back(len*pose_sigma*pose_sigma*Eigen::Matrix3d::Identity());
     }
+    auto stop = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::milliseconds>(stop - start);
 
     // compute the matches of the submaps to be included in the optimization
     ss.matches = compute_matches(ss.trans, ss.rots, ss.bounds);
@@ -175,6 +181,9 @@ int main(int argc, char** argv)
     vis.display();
 
     write_data(ss, path);
+    
+    cout << "Time to train processes: " << duration.count() << " milliseconds" << endl;
+    cout << "Wrote output submaps file " << path << endl;
 
     return 0;
 }
