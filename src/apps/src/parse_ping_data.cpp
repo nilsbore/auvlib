@@ -60,14 +60,37 @@ int main(int argc, char** argv)
 
 	cout << "Input folder : " << folder << endl;
 	cout << "Output file : " << path << endl;
+
     gsf_mbes_ping::PingsT pings_unfiltered = parse_folder<gsf_mbes_ping>(folder);
     std::stable_sort(pings_unfiltered.begin(), pings_unfiltered.end(), [](const gsf_mbes_ping& ping1, const gsf_mbes_ping& ping2) {
         return ping1.time_stamp_ < ping2.time_stamp_;
     });
 
     csv_nav_entry::EntriesT entries = parse_file<csv_nav_entry>(poses_path);
+    mbes_ping::PingsT pings = convert_matched_entries(pings_unfiltered, entries);
 
-    write_data(entries, path);
+    /*int counter = 0;
+    for (csv_nav_entry entry : entries) {
+        if (counter % 100000 == 0) {
+            cereal::JSONOutputArchive ar(std::cout);
+            ar(entry);
+        }
+        ++counter;
+    }*/
+
+    track_error_benchmark benchmark(dataset_name);
+    
+    benchmark.add_ground_truth(pings);
+
+    benchmark.add_benchmark(pings, "initial");
+    benchmark.add_initial(pings);
+
+    benchmark.submap_origin = Eigen::Vector3d::Zero(); // this should be a method
+
+    boost::filesystem::path benchmark_path(dataset_name + "_benchmark.cereal");
+    write_data(benchmark, benchmark_path);
+
+    //write_data(entries, path);
 
     return 0;
 }

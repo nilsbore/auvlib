@@ -43,6 +43,6 @@ struct csv_nav_entry
 template <>
 csv_nav_entry::EntriesT parse_file(const boost::filesystem::path& file);
 
-//mbes_ping::PingsT convert_matched_entries(gsf_mbes_ping::PingsT& pings, csv_nav_entry::EntriesT& entries);
+mbes_ping::PingsT convert_matched_entries(gsf_mbes_ping::PingsT& pings, csv_nav_entry::EntriesT& entries);
 
 #endif // CSV_DATA_H
