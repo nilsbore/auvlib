@@ -16,6 +16,39 @@
 
 using namespace std;
 
+pair<gsf_mbes_ping::PingsT, csv_nav_entry::EntriesT> load_or_parse_data(const boost::filesystem::path& swaths_folder,
+                                                                        const boost::filesystem::path& poses_path)
+{
+    cout << "Parsing pings..." << endl;
+    gsf_mbes_ping::PingsT pings = parse_folder<gsf_mbes_ping>(swaths_folder);
+    std::stable_sort(pings.begin(), pings.end(), [](const gsf_mbes_ping& ping1, const gsf_mbes_ping& ping2) {
+        return ping1.time_stamp_ < ping2.time_stamp_;
+    });
+
+    csv_nav_entry::EntriesT entries;
+    if (boost::filesystem::exists("ping_poses.cereal")) {
+        cout << "Reading saved poses..." << endl;
+        std::ifstream is("ping_poses.cereal", std::ifstream::binary);
+        {
+			cereal::BinaryInputArchive archive(is);
+			archive(entries);
+        }
+        is.close();
+    }
+    else {
+        cout << "Parsing poses..." << endl;
+        entries = parse_file<csv_nav_entry>(poses_path);
+        std::ofstream os("ping_poses.cereal", std::ofstream::binary);
+        {
+            cereal::BinaryOutputArchive archive(os);
+			archive(entries);
+        }
+        os.close();
+    }
+
+    return make_pair(pings, entries);
+}
+
 int main(int argc, char** argv)
 {
     string folder_str;
@@ -61,22 +94,31 @@ int main(int argc, char** argv)
 	cout << "Input folder : " << folder << endl;
 	cout << "Output file : " << path << endl;
 
-    gsf_mbes_ping::PingsT pings_unfiltered = parse_folder<gsf_mbes_ping>(folder);
-    std::stable_sort(pings_unfiltered.begin(), pings_unfiltered.end(), [](const gsf_mbes_ping& ping1, const gsf_mbes_ping& ping2) {
-        return ping1.time_stamp_ < ping2.time_stamp_;
-    });
+    gsf_mbes_ping::PingsT pings_unfiltered;
+    csv_nav_entry::EntriesT entries;
+    tie(pings_unfiltered, entries) = load_or_parse_data(folder, poses_path);
 
-    csv_nav_entry::EntriesT entries = parse_file<csv_nav_entry>(poses_path);
     mbes_ping::PingsT pings = convert_matched_entries(pings_unfiltered, entries);
 
-    /*int counter = 0;
-    for (csv_nav_entry entry : entries) {
-        if (counter % 100000 == 0) {
-            cereal::JSONOutputArchive ar(std::cout);
-            ar(entry);
+    int counter = 0;
+    for (gsf_mbes_ping ping : pings_unfiltered) {
+        if (counter % 1000 == 0) {
+            //cereal::JSONOutputArchive ar(std::cout);
+            //ar(ping);
+            cout << "Time string: " << ping.time_string_ << ", time stamp: " << ping.time_stamp_ << endl;
         }
         ++counter;
-    }*/
+    }
+    counter = 0;
+    for (csv_nav_entry entry : entries) {
+        if (counter % 100000 == 0) {
+            //cereal::JSONOutputArchive ar(std::cout);
+            //ar(entry);
+            cout << "Time string: " << entry.time_string_ << ", time stamp: " << entry.time_stamp_ << endl;
+        }
+        ++counter;
+    }
+    view_cloud(pings);
 
     track_error_benchmark benchmark(dataset_name);
     

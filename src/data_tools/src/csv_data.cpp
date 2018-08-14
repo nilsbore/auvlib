@@ -45,7 +45,8 @@ csv_nav_entry::EntriesT parse_file(const boost::filesystem::path& file)
     double roll, pitch, yaw, roll_std, pitch_std, yaw_std;
     double time_seconds;
     // NOTE: this is the Sunday before the survey, i.e. the start of the GPS week time
-    const boost::posix_time::ptime epoch = boost::posix_time::time_from_string("2018-08-05 00:00:00.000");
+    const boost::posix_time::ptime gps_epoch = boost::posix_time::time_from_string("2018-08-05 00:00:00.000");
+    const boost::posix_time::ptime unix_epoch = boost::posix_time::time_from_string("1970-01-01 00:00:00.000");
 	
     string line;
     std::ifstream infile(file.string());
@@ -70,7 +71,9 @@ csv_nav_entry::EntriesT parse_file(const boost::filesystem::path& file)
 
         entry.time_stamp_ = (long long)(1000. * time_seconds); // double seconds to milliseconds
 
-        boost::posix_time::ptime t = epoch + boost::posix_time::milliseconds(entry.time_stamp_);
+        boost::posix_time::ptime t = gps_epoch + boost::posix_time::milliseconds(entry.time_stamp_);
+        boost::posix_time::time_duration duration = t - unix_epoch;
+        entry.time_stamp_ = (long long)(duration.total_milliseconds());
 
         stringstream time_ss;
         time_ss << t;
@@ -100,7 +103,9 @@ mbes_ping::PingsT convert_matched_entries(gsf_mbes_ping::PingsT& pings, csv_nav_
         new_ping.time_stamp_ = ping.time_stamp_;
         new_ping.time_string_ = ping.time_string_;
         new_ping.first_in_file_ = ping.first_in_file_;
+        cout << "Ping has time: " << ping.time_string_ << ", time stamp: " << ping.time_stamp_ << endl;
         if (pos == entries.end()) {
+            cout << "Found only last entry with time: " << entries.back().time_string_ << ", time stamp: " << entries.back().time_stamp_ << endl;
             new_ping.pos_ = entries.back().pos_;
             new_ping.heading_ = entries.back().yaw_;
             new_ping.pitch_ = entries.back().pitch_;
@@ -108,6 +113,7 @@ mbes_ping::PingsT convert_matched_entries(gsf_mbes_ping::PingsT& pings, csv_nav_
         }
         else {
             if (pos == entries.begin()) {
+                cout << "Found only first entry with time: " << pos->time_string_ << ", time stamp: " << pos->time_stamp_ << endl;
                 new_ping.pos_ = pos->pos_;
                 if (ping.heading_ == 0) {
                     new_ping.heading_ = pos->yaw_;
@@ -121,6 +127,7 @@ mbes_ping::PingsT convert_matched_entries(gsf_mbes_ping::PingsT& pings, csv_nav_
                 }
             }
             else {
+                cout << "Found entry with time: " << pos->time_string_ << ", time stamp: " << pos->time_stamp_ << endl;
                 csv_nav_entry& previous = *(pos - 1);
                 double ratio = double(ping.time_stamp_ - previous.time_stamp_)/double(pos->time_stamp_ - previous.time_stamp_);
                 new_ping.pos_ = previous.pos_ + ratio*(pos->pos_ - previous.pos_);
@@ -141,7 +148,7 @@ mbes_ping::PingsT convert_matched_entries(gsf_mbes_ping::PingsT& pings, csv_nav_
         }
 
         for (const Eigen::Vector3d& beam : ping.beams) {
-            new_ping.beams.push_back(beam);
+            new_ping.beams.push_back(new_ping.pos_ + beam);
         }
 
         new_pings.push_back(new_ping);

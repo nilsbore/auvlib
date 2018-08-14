@@ -145,8 +145,9 @@ int main(int argc, char** argv)
 {
     int handle;
     //int result = gsfOpen("/home/nbore/Data/ACFR-tas200810pockmarks/PROCESSED_DATA/r20081015_221314_butts_pockmarks_23_overlappinggrids/bpslam20110606/DT20081015_221314_gsf", GSF_READONLY, &handle);
-    if (gsfOpen("/home/nbore/Data/ACFR-tas200810pockmarks/PROCESSED_DATA/r20081015_221314_butts_pockmarks_23_overlappinggrids/bpslam20110606/DT20081015_221314_gsf/20081015_2213-001.gsf", GSF_READONLY, &handle) != 0 || handle < 0)
+    //if (gsfOpen("/home/nbore/Data/ACFR-tas200810pockmarks/PROCESSED_DATA/r20081015_221314_butts_pockmarks_23_overlappinggrids/bpslam20110606/DT20081015_221314_gsf/20081015_2213-001.gsf", GSF_READONLY, &handle) != 0 || handle < 0)
     //if (gsfOpen("/home/nbore/Data/ACFR-tas200810pockmarks/PROCESSED_DATA/r20081015_221314_butts_pockmarks_23_overlappinggrids/renav20090218_DT/20081015_2213-001_nav.gsf", GSF_READONLY, &handle) != 0 || handle < 0)
+    if (gsfOpen("/home/nbore/Data/KTH_GBG_PING/Ping_Processed/5-Products/MBES_GSF/Pre_Deployment_PROCESSED/test/0021 - KTH_KTH_Runin_Runout - 0001_RESON7125_STBD [Multibeam Echosounder].gsf", GSF_READONLY, &handle) != 0 || handle < 0)
     {
         cout << "File could not be opened!" << endl;
         exit(0);
@@ -156,8 +157,22 @@ int main(int argc, char** argv)
     gsfDataID data_id;
     gsfRecords records;
 
+/*
+#define GSF_RECORD_HEADER                                   1u
+#define GSF_RECORD_SWATH_BATHYMETRY_PING                    2u
+#define GSF_RECORD_SOUND_VELOCITY_PROFILE                   3u
+#define GSF_RECORD_PROCESSING_PARAMETERS                    4u
+#define GSF_RECORD_SENSOR_PARAMETERS                        5u
+#define GSF_RECORD_COMMENT                                  6u
+#define GSF_RECORD_HISTORY                                  7u
+#define GSF_RECORD_NAVIGATION_ERROR                         8u 
+#define GSF_RECORD_SWATH_BATHY_SUMMARY                      9u
+#define GSF_RECORD_SINGLE_BEAM_PING                         10u
+#define GSF_RECORD_HV_NAVIGATION_ERROR                      11u 
+#define GSF_RECORD_ATTITUDE                                 12u
+*/
     int counter = 0;
-    while (gsfRead(handle, GSF_NEXT_RECORD, &data_id, &records, nullptr, 0) != -1 && counter < 1000) {
+    while (gsfRead(handle, GSF_NEXT_RECORD, &data_id, &records, nullptr, 0) != -1) { // && counter < 1000) {
         switch (data_id.recordID) {
         case (GSF_RECORD_NAVIGATION_ERROR):
             cout << "Got navigation error" << endl;
@@ -178,8 +193,8 @@ int main(int argc, char** argv)
             cout << "Got header" << endl;
             break;
         case (GSF_RECORD_SWATH_BATHYMETRY_PING):
-            cout << "Got swath bathymetry ping" << endl;
-            cout << (gsfSwathBathyPing&)records.mb_ping << endl;
+            //cout << "Got swath bathymetry ping" << endl;
+            //cout << (gsfSwathBathyPing&)records.mb_ping << endl;
             /*if (records.mb_ping.depth_corrector != 0) {
                 cout << "Got depth corrector: " << records.mb_ping.depth_corrector << endl;
             }*/
@@ -189,6 +204,15 @@ int main(int argc, char** argv)
             break;
         case (GSF_RECORD_PROCESSING_PARAMETERS):
             cout << "Got processing parameters" << endl;
+            break;
+        case (GSF_RECORD_SINGLE_BEAM_PING):
+            cout << "Got single beam ping" << endl;
+            break;
+        case (GSF_RECORD_ATTITUDE):
+            //cout << "Got attitude" << endl;
+            break;
+        case (GSF_RECORD_HV_NAVIGATION_ERROR):
+            cout << "Got HV navigation error" << endl;
             break;
         default:
             cout << "Got unrecognized record" << endl;
