@@ -59,15 +59,15 @@ csv_nav_entry::EntriesT parse_file(const boost::filesystem::path& file)
         istringstream iss(line);
 
 		iss >> time_seconds >> distance >> x >> y >> z >> entry.lat_ >> entry.long_ >> entry.altitude >>
-               roll >> roll_std >> pitch >> pitch_std >> yaw >> yaw_std >> vx >> vy >> vz >> x_std >> y_std >> z_std;
+               yaw >> yaw_std >> pitch >> pitch_std >> roll >> roll_std >> vx >> vy >> vz >> x_std >> y_std >> z_std;
         entry.pos_ = Eigen::Vector3d(x, y, z);
         entry.vel_ = Eigen::Vector3d(vx, vy, vz);
-        entry.yaw_ = yaw;
-        entry.pitch_ = pitch;
-        entry.roll_ = roll;
-        entry.yaw_std_ = yaw_std;
-        entry.pitch_std_ = pitch_std;
-        entry.roll_std_ = roll_std;
+        entry.yaw_ = M_PI/180.*yaw;
+        entry.pitch_ = M_PI/180.*pitch;
+        entry.roll_ = M_PI/180.*roll;
+        entry.yaw_std_ = M_PI/180.*yaw_std;
+        entry.pitch_std_ = M_PI/180.*pitch_std;
+        entry.roll_std_ = M_PI/180.*roll_std;
 
         entry.time_stamp_ = (long long)(1000. * time_seconds); // double seconds to milliseconds
 
@@ -103,9 +103,9 @@ mbes_ping::PingsT convert_matched_entries(gsf_mbes_ping::PingsT& pings, csv_nav_
         new_ping.time_stamp_ = ping.time_stamp_;
         new_ping.time_string_ = ping.time_string_;
         new_ping.first_in_file_ = ping.first_in_file_;
-        cout << "Ping has time: " << ping.time_string_ << ", time stamp: " << ping.time_stamp_ << endl;
+        //cout << "Ping has time: " << ping.time_string_ << ", time stamp: " << ping.time_stamp_ << endl;
         if (pos == entries.end()) {
-            cout << "Found only last entry with time: " << entries.back().time_string_ << ", time stamp: " << entries.back().time_stamp_ << endl;
+            //cout << "Found only last entry with time: " << entries.back().time_string_ << ", time stamp: " << entries.back().time_stamp_ << endl;
             new_ping.pos_ = entries.back().pos_;
             new_ping.heading_ = entries.back().yaw_;
             new_ping.pitch_ = entries.back().pitch_;
@@ -113,7 +113,7 @@ mbes_ping::PingsT convert_matched_entries(gsf_mbes_ping::PingsT& pings, csv_nav_
         }
         else {
             if (pos == entries.begin()) {
-                cout << "Found only first entry with time: " << pos->time_string_ << ", time stamp: " << pos->time_stamp_ << endl;
+                //cout << "Found only first entry with time: " << pos->time_string_ << ", time stamp: " << pos->time_stamp_ << endl;
                 new_ping.pos_ = pos->pos_;
                 if (ping.heading_ == 0) {
                     new_ping.heading_ = pos->yaw_;
@@ -127,7 +127,7 @@ mbes_ping::PingsT convert_matched_entries(gsf_mbes_ping::PingsT& pings, csv_nav_
                 }
             }
             else {
-                cout << "Found entry with time: " << pos->time_string_ << ", time stamp: " << pos->time_stamp_ << endl;
+                //cout << "Found entry with time: " << pos->time_string_ << ", time stamp: " << pos->time_stamp_ << endl;
                 csv_nav_entry& previous = *(pos - 1);
                 double ratio = double(ping.time_stamp_ - previous.time_stamp_)/double(pos->time_stamp_ - previous.time_stamp_);
                 new_ping.pos_ = previous.pos_ + ratio*(pos->pos_ - previous.pos_);
@@ -140,15 +140,22 @@ mbes_ping::PingsT convert_matched_entries(gsf_mbes_ping::PingsT& pings, csv_nav_
                     new_ping.heading_ = ping.heading_;
                     new_ping.pitch_ = ping.pitch_;
                     new_ping.roll_ = ping.roll_;
-                    cout << "heading diff: " << previous.yaw_ + ratio*(pos->yaw_ - previous.yaw_) - new_ping.heading_ << endl;
-                    cout << "pitch diff: " << previous.pitch_ + ratio*(pos->pitch_ - previous.pitch_) - new_ping.pitch_ << endl;
-                    cout << "roll diff: " << previous.roll_ + ratio*(pos->roll_ - previous.roll_) - new_ping.roll_ << endl;
+                    //cout << "heading diff: " << previous.yaw_ + ratio*(pos->yaw_ - previous.yaw_) - new_ping.heading_ << endl;
+                    //cout << "pitch diff: " << previous.pitch_ + ratio*(pos->pitch_ - previous.pitch_) - new_ping.pitch_ << endl;
+                    //cout << "roll diff: " << previous.roll_ + ratio*(pos->roll_ - previous.roll_) - new_ping.roll_ << endl;
                 }
             }
         }
 
         for (const Eigen::Vector3d& beam : ping.beams) {
-            new_ping.beams.push_back(new_ping.pos_ + beam);
+            //new_ping.beams.push_back(new_ping.pos_ + beam);
+
+            Eigen::Matrix3d Rx = Eigen::AngleAxisd(new_ping.roll_, Eigen::Vector3d::UnitX()).matrix();
+            Eigen::Matrix3d Ry = Eigen::AngleAxisd(new_ping.pitch_, Eigen::Vector3d::UnitY()).matrix();
+            Eigen::Matrix3d Rz = Eigen::AngleAxisd(new_ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
+            Eigen::Matrix3d R = Rz*Ry*Rx;
+
+            new_ping.beams.push_back(new_ping.pos_ + R*beam);
         }
 
         new_pings.push_back(new_ping);

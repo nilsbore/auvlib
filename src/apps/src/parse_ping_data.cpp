@@ -19,11 +19,29 @@ using namespace std;
 pair<gsf_mbes_ping::PingsT, csv_nav_entry::EntriesT> load_or_parse_data(const boost::filesystem::path& swaths_folder,
                                                                         const boost::filesystem::path& poses_path)
 {
-    cout << "Parsing pings..." << endl;
-    gsf_mbes_ping::PingsT pings = parse_folder<gsf_mbes_ping>(swaths_folder);
-    std::stable_sort(pings.begin(), pings.end(), [](const gsf_mbes_ping& ping1, const gsf_mbes_ping& ping2) {
-        return ping1.time_stamp_ < ping2.time_stamp_;
-    });
+    gsf_mbes_ping::PingsT pings;
+    if (boost::filesystem::exists("ping_swaths.cereal")) {
+        cout << "Reading saved pings..." << endl;
+        std::ifstream is("ping_swaths.cereal", std::ifstream::binary);
+        {
+			cereal::BinaryInputArchive archive(is);
+			archive(pings);
+        }
+        is.close();
+    }
+    else {
+        cout << "Parsing pings..." << endl;
+        pings = parse_folder<gsf_mbes_ping>(swaths_folder);
+        std::stable_sort(pings.begin(), pings.end(), [](const gsf_mbes_ping& ping1, const gsf_mbes_ping& ping2) {
+            return ping1.time_stamp_ < ping2.time_stamp_;
+        });
+        std::ofstream os("ping_swaths.cereal", std::ofstream::binary);
+        {
+            cereal::BinaryOutputArchive archive(os);
+			archive(pings);
+        }
+        os.close();
+    }
 
     csv_nav_entry::EntriesT entries;
     if (boost::filesystem::exists("ping_poses.cereal")) {
@@ -118,7 +136,7 @@ int main(int argc, char** argv)
         }
         ++counter;
     }
-    view_cloud(pings);
+    //view_cloud(pings);
 
     track_error_benchmark benchmark(dataset_name);
     

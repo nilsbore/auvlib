@@ -208,7 +208,7 @@ gsf_mbes_ping::PingsT parse_file(const boost::filesystem::path& file)
             }
             if (records.mb_ping.heading != 0) {
                 ping.heading_ = M_PI/180.*records.mb_ping.heading;
-                ping.heading_ = 0.5*M_PI-ping.heading_;
+                ping.heading_ = 0.5*M_PI-ping.heading_; // TODO: need to keep this for old data
                 ping.roll_ = M_PI/180.*records.mb_ping.roll;
                 ping.pitch_ = M_PI/180.*records.mb_ping.pitch;
             }

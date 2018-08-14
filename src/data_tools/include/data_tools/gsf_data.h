@@ -28,7 +28,9 @@ struct gsf_mbes_ping {
 	template <class Archive>
     void serialize( Archive & ar )
     {
-        ar(CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_), CEREAL_NVP(travel_times), CEREAL_NVP(beam_angles), CEREAL_NVP(distances), CEREAL_NVP(amplitudes), CEREAL_NVP(first_in_file_), CEREAL_NVP(beams));
+        ar(CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_), CEREAL_NVP(travel_times), CEREAL_NVP(beam_angles),
+           CEREAL_NVP(distances), CEREAL_NVP(amplitudes), CEREAL_NVP(first_in_file_), CEREAL_NVP(heading_),
+           CEREAL_NVP(pitch_), CEREAL_NVP(roll_), CEREAL_NVP(lat_), CEREAL_NVP(long_), CEREAL_NVP(depth_), CEREAL_NVP(beams));
     }
 
 };
