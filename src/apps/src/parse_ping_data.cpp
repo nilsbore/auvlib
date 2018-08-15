@@ -116,7 +116,8 @@ int main(int argc, char** argv)
     csv_nav_entry::EntriesT entries;
     tie(pings_unfiltered, entries) = load_or_parse_data(folder, poses_path);
 
-    mbes_ping::PingsT pings = convert_matched_entries(pings_unfiltered, entries);
+    //mbes_ping::PingsT pings = convert_matched_entries(pings_unfiltered, entries);
+    mbes_ping::PingsT pings = convert_pings(pings_unfiltered);
 
     int counter = 0;
     for (gsf_mbes_ping ping : pings_unfiltered) {
@@ -136,14 +137,39 @@ int main(int argc, char** argv)
         }
         ++counter;
     }
+    counter = 0;
+    for (csv_nav_entry entry : entries) {
+        if (counter % 100000 == 0) {
+            double easting, northing;
+            string utm_zone;
+            tie(northing, easting, utm_zone) = lat_long_to_UTM(entry.lat_, entry.long_);
+            cout << "Original easting northing: " << std::setprecision(9) << entry.pos_(0) << ", " << std::setprecision(9) << entry.pos_(1) << endl;
+            cout << "New easting northing     : " << std::setprecision(9) << easting << ", " << std::setprecision(9) << northing << endl;
+            cout << "UTM Zone: " << utm_zone << endl;
+            cout << "Lat, long: " << entry.lat_ << ", " << entry.long_ << endl;
+        }
+        ++counter;
+    }
+    counter = 0;
+    for (gsf_mbes_ping ping : pings_unfiltered) {
+        if (counter % 1000 == 0) {
+            double easting, northing;
+            string utm_zone;
+            tie(northing, easting, utm_zone) = lat_long_to_UTM(ping.lat_, ping.long_);
+            cout << "New easting northing     : " << std::setprecision(9) << easting << ", " << std::setprecision(9) << northing << endl;
+            cout << "UTM Zone: " << utm_zone << endl;
+            cout << "Lat, long: " << ping.lat_ << ", " << ping.long_ << endl;
+        }
+        ++counter;
+    }
     //view_cloud(pings);
 
     track_error_benchmark benchmark(dataset_name);
     
     benchmark.add_ground_truth(pings);
 
-    benchmark.add_benchmark(pings, "initial");
-    benchmark.add_initial(pings);
+    //benchmark.add_benchmark(pings, "initial");
+    //benchmark.add_initial(pings);
 
     benchmark.submap_origin = Eigen::Vector3d::Zero(); // this should be a method
 

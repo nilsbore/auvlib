@@ -94,4 +94,8 @@ void match_sound_speeds(gsf_mbes_ping::PingsT& pings, gsf_sound_speed::SpeedsT& 
 
 mbes_ping::PingsT convert_matched_entries(gsf_mbes_ping::PingsT& pings, gsf_nav_entry::EntriesT& entries);
 
+mbes_ping::PingsT convert_pings(gsf_mbes_ping::PingsT& pings);
+
+std::tuple<double, double, std::string> lat_long_to_UTM(const double Lat, const double Long);
+
 #endif // GSF_DATA_H
