@@ -378,3 +378,171 @@ mbes_ping::PingsT convert_matched_entries(gsf_mbes_ping::PingsT& pings, gsf_nav_
 
     return new_pings;
 }
+
+mbes_ping::PingsT convert_pings(gsf_mbes_ping::PingsT& pings)
+{
+    mbes_ping::PingsT new_pings;
+
+    for (gsf_mbes_ping& ping : pings) {
+
+        mbes_ping new_ping;
+        new_ping.time_stamp_ = ping.time_stamp_;
+        new_ping.time_string_ = ping.time_string_;
+        new_ping.first_in_file_ = ping.first_in_file_;
+        new_ping.heading_ = ping.heading_;
+        new_ping.pitch_ = ping.pitch_;
+        new_ping.roll_ = ping.roll_;
+        double easting, northing;
+        string utm_zone;
+        tie(northing, easting, utm_zone) = lat_long_to_UTM(ping.lat_, ping.long_);
+        new_ping.pos_ = Eigen::Vector3d(easting, northing, -ping.depth_);
+
+        //ping.pos_ = new_ping.pos_;
+        for (const Eigen::Vector3d& beam : ping.beams) {
+            if (beam(2) > -5. || beam(2) < -25.) {
+                continue;
+            }
+            Eigen::Matrix3d Rz = Eigen::AngleAxisd(new_ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
+            /*Eigen::Matrix3d Ry = Eigen::AngleAxisd(new_ping.pitch_, Eigen::Vector3d::UnitY()).matrix();
+            Eigen::Matrix3d Rx = Eigen::AngleAxisd(new_ping.roll_, Eigen::Vector3d::UnitX()).matrix();
+            Eigen::Matrix3d R = Rx*Ry*Rz;*/
+
+            // it seems it has already been compensated for pitch, roll
+            new_ping.beams.push_back(new_ping.pos_ + Rz*beam);
+        }
+
+        new_pings.push_back(new_ping);
+    }
+
+    return new_pings;
+}
+
+/**
+ * Determine the correct UTM letter designator for the
+ * given latitude
+ *
+ * @returns 'Z' if latitude is outside the UTM limits of 84N to 80S
+ *
+ * Written by Chuck Gantz- chuck.gantz@globalstar.com
+ */
+#define WGS84_A		6378137.0		///< major axis
+#define WGS84_E		0.0818191908		///< first eccentricity
+#define UTM_E2		(WGS84_E*WGS84_E)	///< e^2
+#define UTM_K0		0.9996			///< scale factor
+
+static inline char UTMLetterDesignator(double Lat)
+{
+    char LetterDesignator;
+
+    if     ((84 >= Lat) && (Lat >= 72))  LetterDesignator = 'X';
+    else if ((72 > Lat) && (Lat >= 64))  LetterDesignator = 'W';
+    else if ((64 > Lat) && (Lat >= 56))  LetterDesignator = 'V';
+    else if ((56 > Lat) && (Lat >= 48))  LetterDesignator = 'U';
+    else if ((48 > Lat) && (Lat >= 40))  LetterDesignator = 'T';
+    else if ((40 > Lat) && (Lat >= 32))  LetterDesignator = 'S';
+    else if ((32 > Lat) && (Lat >= 24))  LetterDesignator = 'R';
+    else if ((24 > Lat) && (Lat >= 16))  LetterDesignator = 'Q';
+    else if ((16 > Lat) && (Lat >= 8))   LetterDesignator = 'P';
+    else if (( 8 > Lat) && (Lat >= 0))   LetterDesignator = 'N';
+    else if (( 0 > Lat) && (Lat >= -8))  LetterDesignator = 'M';
+    else if ((-8 > Lat) && (Lat >= -16)) LetterDesignator = 'L';
+    else if((-16 > Lat) && (Lat >= -24)) LetterDesignator = 'K';
+    else if((-24 > Lat) && (Lat >= -32)) LetterDesignator = 'J';
+    else if((-32 > Lat) && (Lat >= -40)) LetterDesignator = 'H';
+    else if((-40 > Lat) && (Lat >= -48)) LetterDesignator = 'G';
+    else if((-48 > Lat) && (Lat >= -56)) LetterDesignator = 'F';
+    else if((-56 > Lat) && (Lat >= -64)) LetterDesignator = 'E';
+    else if((-64 > Lat) && (Lat >= -72)) LetterDesignator = 'D';
+    else if((-72 > Lat) && (Lat >= -80)) LetterDesignator = 'C';
+    // 'Z' is an error flag, the Latitude is outside the UTM limits
+    else LetterDesignator = 'Z';
+    return LetterDesignator;
+}
+
+/**
+ * Convert lat/long to UTM coords.  Equations from USGS Bulletin 1532
+ *
+ * East Longitudes are positive, West longitudes are negative.
+ * North latitudes are positive, South latitudes are negative
+ * Lat and Long are in fractional degrees
+ *
+ * Written by Chuck Gantz- chuck.gantz@globalstar.com
+ * Modified by Nils Bore- nbore@kth.se
+ */
+tuple<double, double, string> lat_long_to_UTM(const double Lat, const double Long)
+{
+    double UTMNorthing;
+    double UTMEasting;
+    string UTMZone;
+
+    double a = WGS84_A;
+    double eccSquared = UTM_E2;
+    double k0 = UTM_K0;
+
+    double LongOrigin;
+    double eccPrimeSquared;
+    double N, T, C, A, M;
+
+    //Make sure the longitude is between -180.00 .. 179.9
+    double LongTemp = (Long+180)-int((Long+180)/360)*360-180;
+
+    double LatRad = Lat*M_PI/180.;
+    double LongRad = LongTemp*M_PI/180.;
+    double LongOriginRad;
+    int    ZoneNumber;
+
+    ZoneNumber = int((LongTemp + 180)/6) + 1;
+
+    if( Lat >= 56.0 && Lat < 64.0 && LongTemp >= 3.0 && LongTemp < 12.0 )
+        ZoneNumber = 32;
+
+    // Special zones for Svalbard
+    if( Lat >= 72.0 && Lat < 84.0 )
+    {
+        if(      LongTemp >= 0.0  && LongTemp <  9.0 ) ZoneNumber = 31;
+        else if( LongTemp >= 9.0  && LongTemp < 21.0 ) ZoneNumber = 33;
+        else if( LongTemp >= 21.0 && LongTemp < 33.0 ) ZoneNumber = 35;
+        else if( LongTemp >= 33.0 && LongTemp < 42.0 ) ZoneNumber = 37;
+    }
+    // +3 puts origin in middle of zone
+    LongOrigin = (ZoneNumber - 1)*6 - 180 + 3;
+    LongOriginRad = LongOrigin * M_PI/180.;
+
+    //compute the UTM Zone from the latitude and longitude
+    char buff[10];
+    snprintf(buff, sizeof(buff), "%d%c", ZoneNumber, UTMLetterDesignator(Lat));
+    UTMZone = buff;
+
+    eccPrimeSquared = (eccSquared)/(1-eccSquared);
+
+    N = a/sqrt(1-eccSquared*sin(LatRad)*sin(LatRad));
+    T = tan(LatRad)*tan(LatRad);
+    C = eccPrimeSquared*cos(LatRad)*cos(LatRad);
+    A = cos(LatRad)*(LongRad-LongOriginRad);
+
+    M = a*((1 - eccSquared/4 - 3*eccSquared*eccSquared/64
+            - 5*eccSquared*eccSquared*eccSquared/256) * LatRad
+           - (3*eccSquared/8 + 3*eccSquared*eccSquared/32
+              + 45*eccSquared*eccSquared*eccSquared/1024)*sin(2*LatRad)
+           + (15*eccSquared*eccSquared/256
+              + 45*eccSquared*eccSquared*eccSquared/1024)*sin(4*LatRad)
+           - (35*eccSquared*eccSquared*eccSquared/3072)*sin(6*LatRad));
+
+    UTMEasting = (double)
+    (k0*N*(A+(1-T+C)*A*A*A/6
+           + (5-18*T+T*T+72*C-58*eccPrimeSquared)*A*A*A*A*A/120)
+     + 500000.0);
+
+    UTMNorthing = (double)
+    (k0*(M+N*tan(LatRad)
+         *(A*A/2+(5-T+9*C+4*C*C)*A*A*A*A/24
+           + (61-58*T+T*T+600*C-330*eccPrimeSquared)*A*A*A*A*A*A/720)));
+
+    if(Lat < 0)
+    {
+        //10000000 meter offset for southern hemisphere
+        UTMNorthing += 10000000.0;
+    }
+
+    return make_tuple(UTMNorthing, UTMEasting, UTMZone);
+}
