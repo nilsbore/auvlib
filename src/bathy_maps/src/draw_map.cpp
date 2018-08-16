@@ -135,6 +135,20 @@ void bathy_map_image::draw_height_map(mbes_ping::PingsT& pings)
     }
 }
 
+void bathy_map_image::draw_targets(const TargetsT& targets, const cv::Scalar& color)
+{
+    double res, minx, miny, x0, y0;
+    res = params[0]; minx = params[1]; miny = params[2]; x0 = params[3]; y0 = params[4];
+
+    for (const pair<string, pair<double, double> >& item : targets) {
+        int col = int(x0+res*(item.second.first-minx));
+        int row = rows-int(y0+res*(item.second.second-miny))-1;
+        cv::circle(bathy_map, cv::Point(col, row), 10, color); //, int thickness=1, int lineType=8, int shift=0)
+        cv::putText(bathy_map, item.first, cv::Point(col+15, row), cv::FONT_HERSHEY_PLAIN, 1.0, color); //, 1, 8, false);
+    }
+
+}
+
 void bathy_map_image::save_image(const boost::filesystem::path& path)
 {
     cv::imwrite(path.string(), bathy_map);
