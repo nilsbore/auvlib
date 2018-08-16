@@ -36,13 +36,14 @@ struct mbes_ping
     Eigen::Vector3d pos_; // NOTE: this comes from associating ping with nav data
 
     std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > beams; // all 3d points in swath
+    std::vector<double> back_scatter;
 
 	template <class Archive>
     void serialize( Archive & ar )
     {
         ar(CEREAL_NVP(id_), CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_), CEREAL_NVP(heading_),
 		   CEREAL_NVP(heave_), CEREAL_NVP(pitch_), CEREAL_NVP(roll_), CEREAL_NVP(first_in_file_),
-           CEREAL_NVP(pos_), CEREAL_NVP(beams));
+           CEREAL_NVP(pos_), CEREAL_NVP(beams), CEREAL_NVP(back_scatter));
     }
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW

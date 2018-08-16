@@ -135,6 +135,21 @@ void bathy_map_image::draw_height_map(mbes_ping::PingsT& pings)
     }
 }
 
+void bathy_map_image::draw_back_scatter_map(mbes_ping::PingsT& pings)
+{
+    mbes_ping::PingsT back_scatter_pings = pings;
+    for (mbes_ping& ping : back_scatter_pings) {
+        for (int i = 0; i < ping.beams.size(); ++i) {
+            //ping.beams[i](2) = std::max(std::min(200., ping.back_scatter[i]), 50.);
+            //ping.beams[i](2) = std::min(ping.back_scatter[i]*ping.beams[i].norm()/20., 500.);
+            double dist = (ping.beams[i] - ping.pos_).norm();
+            //ping.beams[i](2) = std::min(std::max(ping.back_scatter[i]*ping.beams[i].norm()/20., 50.), 1000.);
+            ping.beams[i](2) = std::max(std::min(ping.back_scatter[i]*dist/20., 300.), 50.);
+        }
+    }
+    draw_height_map(back_scatter_pings);
+}
+
 void bathy_map_image::draw_targets(const TargetsT& targets, const cv::Scalar& color)
 {
     double res, minx, miny, x0, y0;

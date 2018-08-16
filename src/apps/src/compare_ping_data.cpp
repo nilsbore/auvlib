@@ -8,6 +8,8 @@
 
 #include <gpgs_slam/igl_visualizer.h>
 
+#include <bathy_maps/draw_map.h>
+
 #include <sparse_gp/sparse_gp.h>
 #include <sparse_gp/rbf_kernel.h>
 #include <sparse_gp/gaussian_noise.h>
@@ -15,6 +17,29 @@
 #include <chrono>
 
 using namespace std;
+
+using TargetsT = bathy_map_image::TargetsT;
+
+const static TargetsT targets = {
+    {"2", {669688.77, 6383451.93}},
+    {"4", {669672.77, 6383438.70}},
+    {"3", {669688.67, 6383435.70}},
+    {"1", {669703.95, 6383463.68}},
+    {"5", {669615.08, 6383448.17}},
+    {"17",{669560.04, 6383444.23}},
+    {"7", {669562.05, 6383409.46}},
+    {"8", {669554.40, 6383381.70}},
+    {"10",{669562.44, 6383351.06}},
+    {"16",{669565.93, 6383305.55}},
+    {"15",{669569.19, 6383271.05}},
+    {"6", {669628.60, 6383424.93}},
+    {"9", {669635.78, 6383383.61}},
+    {"12",{669620.12, 6383350.73}},
+    {"14",{669626.77, 6383319.10}},
+    {"11",{669700.32, 6383383.39}},
+    {"18",{669681.07, 6383347.11}},
+    {"13",{669718.03, 6383313.59}}
+};
 
 gsf_mbes_ping::PingsT load_or_parse_pings(const boost::filesystem::path& swaths_folder, const string& dataset_name)
 {
@@ -134,19 +159,26 @@ int main(int argc, char** argv)
     //mbes_ping::PingsT pings = convert_matched_entries(pings_unfiltered, entries);
     mbes_ping::PingsT pings = convert_pings(pings_unfiltered_pre);
 
-    track_error_benchmark benchmark(dataset_name);
+    //track_error_benchmark benchmark(dataset_name);
     
-    benchmark.add_ground_truth(pings);
+    //benchmark.add_ground_truth(pings);
 
     //benchmark.add_benchmark(pings, "initial");
     //benchmark.add_initial(pings);
 
-    benchmark.submap_origin = Eigen::Vector3d::Zero(); // this should be a method
+    //benchmark.submap_origin = Eigen::Vector3d::Zero(); // this should be a method
 
-    boost::filesystem::path benchmark_path(dataset_name + "_benchmark.cereal");
-    write_data(benchmark, benchmark_path);
+    //boost::filesystem::path benchmark_path(dataset_name + "_benchmark.cereal");
+    //write_data(benchmark, benchmark_path);
 
     //write_data(entries, path);
+    
+    bathy_map_image image(pings, 1000, 1000);
+    //image.draw_height_map(pings);
+    image.draw_back_scatter_map(pings);
+    image.draw_track(pings, cv::Scalar(0, 0, 0));
+    image.draw_targets(targets, cv::Scalar(255, 0, 0));
+    image.save_image(path);
 
     return 0;
 }

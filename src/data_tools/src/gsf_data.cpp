@@ -398,8 +398,10 @@ mbes_ping::PingsT convert_pings(gsf_mbes_ping::PingsT& pings)
         new_ping.pos_ = Eigen::Vector3d(easting, northing, -ping.depth_);
 
         //ping.pos_ = new_ping.pos_;
+        int i = 0;
         for (const Eigen::Vector3d& beam : ping.beams) {
             if (beam(2) > -5. || beam(2) < -25.) {
+                ++i;
                 continue;
             }
             Eigen::Matrix3d Rz = Eigen::AngleAxisd(new_ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
@@ -409,6 +411,8 @@ mbes_ping::PingsT convert_pings(gsf_mbes_ping::PingsT& pings)
 
             // it seems it has already been compensated for pitch, roll
             new_ping.beams.push_back(new_ping.pos_ + Rz*beam);
+            new_ping.back_scatter.push_back(ping.amplitudes[i]);
+            ++i;
         }
 
         new_pings.push_back(new_ping);
