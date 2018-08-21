@@ -6,20 +6,37 @@
 #include <boost/filesystem.hpp>
 #include <opencv2/core/core.hpp>
 
-struct xtf_sss_ping
+struct xtf_sss_ping_side
 {
-    using PingsT = std::vector<xtf_sss_ping, Eigen::aligned_allocator<xtf_sss_ping> >;
-
-    std::vector<int> port_pings;
-    std::vector<int> stbd_pings;
-    bool first_in_file_;
+    std::vector<int> pings;
+    double slant_range;
+    double time_duration;
 
 	template <class Archive>
     void serialize( Archive & ar )
     {
-        ar(CEREAL_NVP(port_pings), CEREAL_NVP(stbd_pings), CEREAL_NVP(first_in_file_));
+        ar(CEREAL_NVP(pings), CEREAL_NVP(slant_range), CEREAL_NVP(time_duration));
     }
+};
 
+struct xtf_sss_ping
+{
+    using PingsT = std::vector<xtf_sss_ping, Eigen::aligned_allocator<xtf_sss_ping> >;
+
+    std::string time_string_; // readable time stamp string
+    long long time_stamp_; // posix time stamp
+
+    xtf_sss_ping_side port;
+    xtf_sss_ping_side stbd;
+    bool first_in_file_;
+    double lat_;
+    double long_;
+
+	template <class Archive>
+    void serialize( Archive & ar )
+    {
+        ar(CEREAL_NVP(port), CEREAL_NVP(stbd), CEREAL_NVP(first_in_file_), CEREAL_NVP(lat_), CEREAL_NVP(long_));
+    }
 };
 
 template <>

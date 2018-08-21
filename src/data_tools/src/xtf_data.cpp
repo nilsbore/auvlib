@@ -2,6 +2,8 @@
 extern "C" {
 #include <libxtf/xtf_reader.h>
 }
+#include <boost/date_time.hpp>
+#include <boost/date_time/gregorian/gregorian.hpp>
 //#include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -15,21 +17,21 @@ using namespace std;
 cv::Mat make_waterfall_image(const xtf_sss_ping::PingsT& pings)
 {
     int rows = pings.size();
-    int cols = pings[0].port_pings.size() + pings[0].stbd_pings.size();
+    int cols = pings[0].port.pings.size() + pings[0].stbd.pings.size();
     cv::Mat swath_img = cv::Mat(rows, cols, CV_8UC3, cv::Scalar(255, 255, 255));
     for (int i = 0; i < pings.size(); ++i) {
-        for (int j = 0; j < pings[i].port_pings.size(); ++j) {
+        for (int j = 0; j < pings[i].port.pings.size(); ++j) {
             cv::Point3_<uchar>* p = swath_img.ptr<cv::Point3_<uchar> >(i, cols-j-1);
-            p->z = uchar(255.*(float(pings[i].port_pings[j]) + 32767.)/(2.*32767.));
-            p->y = uchar(255.*(float(pings[i].port_pings[j]) + 32767.)/(2.*32767.));
-            p->x = uchar(255.*(float(pings[i].port_pings[j]) + 32767.)/(2.*32767.));
+            p->z = uchar(255.*(float(pings[i].port.pings[j]) + 32767.)/(2.*32767.));
+            p->y = uchar(255.*(float(pings[i].port.pings[j]) + 32767.)/(2.*32767.));
+            p->x = uchar(255.*(float(pings[i].port.pings[j]) + 32767.)/(2.*32767.));
         }
-        for (int j = 0; j < pings[i].stbd_pings.size(); ++j) {
-            cv::Point3_<uchar>* p = swath_img.ptr<cv::Point3_<uchar> >(i, pings[0].stbd_pings.size()-j-1);
+        for (int j = 0; j < pings[i].stbd.pings.size(); ++j) {
+            cv::Point3_<uchar>* p = swath_img.ptr<cv::Point3_<uchar> >(i, pings[0].stbd.pings.size()-j-1);
             //tie(p->z, p->y, p->x) = uchar(255.*(float(pings[i].port_pings[j]) + 32767.)/(2.*65536));
-            p->z = uchar(255.*(float(pings[i].stbd_pings[j]) + 32767.)/(2.*32767.));
-            p->y = uchar(255.*(float(pings[i].stbd_pings[j]) + 32767.)/(2.*32767.));
-            p->x = uchar(255.*(float(pings[i].stbd_pings[j]) + 32767.)/(2.*32767.));
+            p->z = uchar(255.*(float(pings[i].stbd.pings[j]) + 32767.)/(2.*32767.));
+            p->y = uchar(255.*(float(pings[i].stbd.pings[j]) + 32767.)/(2.*32767.));
+            p->x = uchar(255.*(float(pings[i].stbd.pings[j]) + 32767.)/(2.*32767.));
         }
     }
     cv::Mat resized_swath_img;//dst image
@@ -54,6 +56,7 @@ xtf_sss_ping process_side_scan_ping(XTFPINGHEADER *PingHeader, XTFFILEHEADER *XT
 // 64 bytes    - XTFPINGCHANHEADER structure holds data about channel 2 (stbd)
 // 1024 bytes  - channel 2 imagery
 //
+   const boost::posix_time::ptime epoch = boost::posix_time::time_from_string("1970-01-01 00:00:00.000");
    WORD chan;
    int tmp;
    unsigned char *Ptr = (unsigned char *)PingHeader;
@@ -66,6 +69,16 @@ xtf_sss_ping process_side_scan_ping(XTFPINGHEADER *PingHeader, XTFFILEHEADER *XT
    Ptr += sizeof(XTFPINGHEADER);
 
    xtf_sss_ping ping;
+   ping.lat_ = PingHeader->SensorXcoordinate;
+   ping.long_ = PingHeader->SensorYcoordinate;
+
+   boost::posix_time::ptime data_time(boost::gregorian::date(PingHeader->Year, PingHeader->Month, PingHeader->Day), boost::posix_time::hours(PingHeader->Hour)+boost::posix_time::minutes(PingHeader->Minute)+boost::posix_time::seconds(PingHeader->Second)+boost::posix_time::milliseconds(10.*int(PingHeader->HSeconds))); 
+   stringstream time_ss;
+   time_ss << data_time;
+   ping.time_string_ = time_ss.str();
+   boost::posix_time::time_duration const diff = data_time - epoch;
+   ping.time_stamp_ = diff.total_milliseconds();
+
    for (chan=0; chan<PingHeader->NumChansToFollow; chan++) {
 
       XTFPINGCHANHEADER *ChanHeader;
@@ -105,15 +118,24 @@ xtf_sss_ping process_side_scan_ping(XTFPINGHEADER *PingHeader, XTFFILEHEADER *XT
       // If BytesPerSample is 1, then Imagery should point to 
       // a unsigned 8-bit value.
       Imagery = (short*)Ptr;
+      xtf_sss_ping_side* ping_channel;
+      if (ChannelNumber == 0) {
+          ping_channel = &ping.port;
+      }
+      else if (ChannelNumber == 1) {
+          ping_channel = &ping.stbd;
+      }
+      else {
+          // skip past the imagery;
+          Ptr += BytesThisChannel;
+          continue;
+      }
       for (int i = 0; i < SamplesPerChan; ++i) {
           // we should get port and starboard channel from header definition
-          if (ChannelNumber == 0) { // port channel
-              ping.port_pings.push_back(Imagery[i]);
-          }
-          else if (ChannelNumber == 1) { // stbd channel
-              ping.stbd_pings.push_back(Imagery[i]);
-          }
+          ping_channel->pings.push_back(Imagery[i]);
       }
+      ping_channel->time_duration = ChanHeader->TimeDuration;
+      ping_channel->slant_range = ChanHeader->SlantRange;
 
       // Do whatever processing on the sidescan imagery here.
       //cout << "Processing a side scan ping!!" << endl;
@@ -122,6 +144,10 @@ xtf_sss_ping process_side_scan_ping(XTFPINGHEADER *PingHeader, XTFFILEHEADER *XT
       //cout << "Channel name: " << ChannelName << endl;
       cout << "Bytes per sample: " << int(BytesPerSample) << endl;
       cout << "Samples per chan: " << int(SamplesPerChan) << endl;
+      cout << "Ground range: " << int(ChanHeader->GroundRange) << endl; // seems to always be 0
+      cout << "Slant range: " << int(ChanHeader->SlantRange) << endl;
+      cout << "Time duration: " << ChanHeader->TimeDuration << endl;
+      cout << "SecondsPerPing: " << ChanHeader->SecondsPerPing << endl; // seems to always be 0
 
       // skip past the imagery;
       Ptr += BytesThisChannel;
@@ -176,14 +202,20 @@ xtf_sss_ping::PingsT read_xtf_file(int infl, XTFFILEHEADER* XTFFileHeader, unsig
              << int(PingHeader->Hour) << " "
              << int(PingHeader->Minute) << " "
              << int(PingHeader->Second) << " "
+             << int(PingHeader->HSeconds) << " "
+             << "Sound vel=" << PingHeader->SoundVelocity << " "
+             << "Computed sound vel=" << PingHeader->ComputedSoundVelocity << " "
              << "Y=" << PingHeader->SensorYcoordinate << " "
              << "X=" << PingHeader->SensorXcoordinate << " "
+             << "altitude=" << PingHeader->SensorPrimaryAltitude << " "
+             << "depth=" << PingHeader->SensorDepth << " "
              << "pitch=" << PingHeader->SensorPitch << " "
              << "roll=" << PingHeader->SensorRoll << " "
              << "heading=" << PingHeader->SensorHeading << " "  // [h] Fish heading in degrees
              << "heave=" << PingHeader->Heave << " "            // Sensor heave at start of ping. 
                            // Positive value means sensor moved up.
              << "yaw=" << PingHeader->Yaw << endl;              // Sensor yaw.  Positive means turn to right.
+        cout << ping.time_string_ << endl;
     }
 
     if (!pings.empty()) {
