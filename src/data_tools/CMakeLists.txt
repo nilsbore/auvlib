@@ -13,7 +13,11 @@ add_library(gsf_data src/gsf_data.cpp)
 
 add_library(csv_data src/csv_data.cpp)
 
+add_library(xtf_data src/xtf_data.cpp)
+
 add_executable(test_gsf src/test_gsf.cpp)
+
+add_executable(test_xtf src/test_xtf.cpp)
 
 add_executable(test_submap_tracks src/test_submap_tracks.cpp)
 
@@ -50,7 +54,14 @@ target_include_directories(csv_data PUBLIC
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
 
+target_include_directories(xtf_data PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+    PRIVATE src)
+
 target_link_libraries(test_gsf gsf_data data_structures navi_data)
+
+target_link_libraries(test_xtf xtf_data data_structures navi_data)
 
 target_link_libraries(test_submap_tracks gsf_data data_structures navi_data ${OpenCV_LIBS})
 
@@ -65,8 +76,10 @@ target_link_libraries(gsf_data PUBLIC gsf data_structures navi_data)
 
 target_link_libraries(csv_data PUBLIC data_structures navi_data gsf_data)
 
+target_link_libraries(xtf_data PUBLIC data_structures navi_data xtf_reader)
+
 # 'make install' to the correct locations (provided by GNUInstallDirs).
-install(TARGETS data_transforms submaps data_structures navi_data gsf_data csv_data EXPORT DataToolsConfig
+install(TARGETS data_transforms submaps data_structures navi_data gsf_data csv_data xtf_data EXPORT DataToolsConfig
     ARCHIVE  DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR})  # This is for Windows
@@ -78,4 +91,4 @@ install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(EXPORT DataToolsConfig DESTINATION share/DataTools/cmake)
 
 # This makes the project importable from the build directory
-export(TARGETS data_transforms submaps data_structures navi_data gsf_data csv_data FILE DataToolsConfig.cmake)
+export(TARGETS data_transforms submaps data_structures navi_data gsf_data csv_data xtf_data FILE DataToolsConfig.cmake)
