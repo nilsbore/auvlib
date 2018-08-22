@@ -261,7 +261,7 @@ struct survey_viewer {
                 V.bottomRows(V2.rows()).array().rowwise() += (pings[i].pos_ - offset).transpose().array();
                 viewer.data().set_vertices(V);
                 //viewer.data().compute_normals();
-                ++i;
+                i += 10;
             }
             return true;
         default:
@@ -283,6 +283,8 @@ Eigen::MatrixXd bathy_map_mesh::overlay_sss(const Eigen::MatrixXd& V, const Eige
     Eigen::MatrixXd Cb(Vb.rows(), 3);
     Cb.rowwise() = Eigen::RowVector3d(1., 1., 0.);
     Vb.array() *= 0.01;
+    Eigen::Matrix3d Rz = Eigen::AngleAxisd(-0.5*M_PI, Eigen::Vector3d::UnitZ()).matrix();
+    Vb *= Rz.transpose();
     //display_mesh(Vb, Fb);
 
     Eigen::Vector3d offset(bounds(0, 0), bounds(0, 1), 0.);
