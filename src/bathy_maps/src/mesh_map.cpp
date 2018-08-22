@@ -3,6 +3,7 @@
 #include <igl/opengl/glfw/Viewer.h>
 #include <igl/opengl/gl.h>
 #include <igl/readSTL.h>
+#include <igl/ray_mesh_intersect.h>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -248,6 +249,63 @@ struct survey_viewer {
     {
         viewer.launch();
     }
+    
+    pair<Eigen::MatrixXd, Eigen::MatrixXd> compute_sss_dirs(const Eigen::Matrix3d& R)
+    {
+        const double min_theta = M_PI/180.*10.;
+        const double max_theta = M_PI/180.*60.;
+        const int nbr_lines = 40;
+
+        double min_c = 1./cos(min_theta);
+        double max_c = 1./cos(max_theta);
+        double step = (max_c - min_c)/double(nbr_lines-1);
+
+        Eigen::MatrixXd dirs_left(nbr_lines, 3);
+        Eigen::MatrixXd dirs_right(nbr_lines, 3);
+        for (int i = 0; i < nbr_lines; ++i) {
+            double ci = min_c + double(i)*step;
+            double bi = sqrt(ci*ci-1.);
+            Eigen::Vector3d dir_left(0., bi, -1.);
+            Eigen::Vector3d dir_right(0., -bi, -1.);
+            dirs_left.row(i) = (R*dir_left).transpose();
+            dirs_right.row(i) = (R*dir_right).transpose();
+        }
+
+        return make_pair(dirs_left, dirs_right);
+    }
+
+    pair<Eigen::MatrixXd, Eigen::MatrixXd> compute_hits(const Eigen::Vector3d& origin, const Eigen::Matrix3d& R)
+    {
+        igl::Hit hit;
+        Eigen::MatrixXd dirs_left;
+        Eigen::MatrixXd dirs_right;
+        tie(dirs_left, dirs_right) = compute_sss_dirs(R);
+        Eigen::MatrixXd hits_left(dirs_left.rows(), 3);
+        Eigen::MatrixXd hits_right(dirs_right.rows(), 3);
+        int hit_count = 0;
+        for (int i = 0; i < dirs_left.rows(); ++i) {
+            bool did_hit = ray_mesh_intersect(origin, dirs_left.row(i).transpose(), V1, F1, hit);
+            if (did_hit) {
+                int vind = F1(hit.id, 0);
+                // we actually get the coordinates within the triangle also, we could use that
+                hits_left.row(hit_count) = V1.row(vind);
+                ++hit_count;
+            }
+        }
+        hits_left.conservativeResize(hit_count, 3);
+        hit_count = 0;
+        for (int i = 0; i < dirs_right.rows(); ++i) {
+            bool did_hit = ray_mesh_intersect(origin, dirs_right.row(i).transpose(), V1, F1, hit);
+            if (did_hit) {
+                int vind = F1(hit.id, 0);
+                // we actually get the coordinates within the triangle also, we could use that
+                hits_right.row(hit_count) = V1.row(vind);
+                ++hit_count;
+            }
+        }
+        hits_right.conservativeResize(hit_count, 3);
+        return make_pair(hits_left, hits_right);
+    }
 
     bool callback_key_pressed(igl::opengl::glfw::Viewer& viewer, unsigned int key, int mods)
     {
@@ -261,6 +319,17 @@ struct survey_viewer {
                 V.bottomRows(V2.rows()).array().rowwise() += (pings[i].pos_ - offset).transpose().array();
                 viewer.data().set_vertices(V);
                 //viewer.data().compute_normals();
+                Eigen::MatrixXd hits_left;
+                Eigen::MatrixXd hits_right;
+                tie(hits_left, hits_right) = compute_hits(pings[i].pos_ - offset, Rz);
+                Eigen::MatrixXi E;
+                Eigen::MatrixXd P(hits_left.rows(), 3);
+                P.rowwise() = (pings[i].pos_ - offset).transpose();
+                viewer.data().set_edges(P, E, Eigen::RowVector3d(1., 0., 0.));
+                viewer.data().add_edges(P, hits_left, Eigen::RowVector3d(1., 0., 0.));
+                P = Eigen::MatrixXd(hits_right.rows(), 3);
+                P.rowwise() = (pings[i].pos_ - offset).transpose();
+                viewer.data().add_edges(P, hits_right, Eigen::RowVector3d(0., 1., 0.));
                 i += 10;
             }
             return true;
