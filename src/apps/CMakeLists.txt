@@ -12,7 +12,7 @@ add_executable(parse_gsf_data src/parse_gsf_data.cpp)
 target_link_libraries(parse_gsf_data gsf_data navi_data sparse_gp data_transforms submaps gpgs_igl_visualizer data_structures ${PCL_LIBRARIES})
 
 add_executable(parse_ping_data src/parse_ping_data.cpp)
-target_link_libraries(parse_ping_data gsf_data csv_data navi_data sparse_gp data_transforms submaps gpgs_igl_visualizer data_structures ${PCL_LIBRARIES})
+target_link_libraries(parse_ping_data lat_long_utm gsf_data csv_data navi_data sparse_gp data_transforms submaps gpgs_igl_visualizer data_structures ${PCL_LIBRARIES})
 
 add_executable(parse_sim_data src/parse_sim_data.cpp)
 target_link_libraries(parse_sim_data sparse_gp data_transforms submaps data_structures)

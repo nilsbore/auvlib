@@ -5,6 +5,7 @@
 #include <data_tools/csv_data.h>
 #include <data_tools/transforms.h>
 #include <data_tools/submaps.h>
+#include <data_tools/lat_long_utm.h>
 
 #include <gpgs_slam/igl_visualizer.h>
 
