@@ -83,7 +83,7 @@ target_link_libraries(gsf_data PUBLIC gsf data_structures navi_data lat_long_utm
 
 target_link_libraries(csv_data PUBLIC data_structures navi_data gsf_data)
 
-target_link_libraries(xtf_data PUBLIC data_structures navi_data xtf_reader)
+target_link_libraries(xtf_data PUBLIC data_structures navi_data xtf_reader lat_long_utm)
 
 # 'make install' to the correct locations (provided by GNUInstallDirs).
 install(TARGETS data_transforms submaps data_structures navi_data gsf_data csv_data xtf_data lat_long_utm EXPORT DataToolsConfig

@@ -29,14 +29,21 @@ struct xtf_sss_ping
     xtf_sss_ping_side port;
     xtf_sss_ping_side stbd;
     bool first_in_file_;
+    double heading_;
+    double pitch_;
+    double roll_;
     double lat_;
     double long_;
+    Eigen::Vector3d pos_; // NOTE: this comes from associating ping with nav data
 
 	template <class Archive>
     void serialize( Archive & ar )
     {
-        ar(CEREAL_NVP(port), CEREAL_NVP(stbd), CEREAL_NVP(first_in_file_), CEREAL_NVP(lat_), CEREAL_NVP(long_));
+        ar(CEREAL_NVP(port), CEREAL_NVP(stbd), CEREAL_NVP(first_in_file_), CEREAL_NVP(heading_),
+           CEREAL_NVP(pitch_), CEREAL_NVP(roll_), CEREAL_NVP(lat_), CEREAL_NVP(long_), CEREAL_NVP(pos_));
     }
+
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
 template <>

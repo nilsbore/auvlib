@@ -11,6 +11,7 @@ extern "C" {
 //#include <string.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <data_tools/lat_long_utm.h>
 
 using namespace std;
 
@@ -71,6 +72,12 @@ xtf_sss_ping process_side_scan_ping(XTFPINGHEADER *PingHeader, XTFFILEHEADER *XT
    xtf_sss_ping ping;
    ping.lat_ = PingHeader->SensorXcoordinate;
    ping.long_ = PingHeader->SensorYcoordinate;
+
+   double easting, northing;
+   string utm_zone;
+   tie(northing, easting, utm_zone) = lat_long_to_UTM(ping.lat_, ping.long_);
+   ping.pos_ = Eigen::Vector3d(easting, northing, -PingHeader->SensorDepth);
+   ping.heading_ = M_PI/180.*PingHeader->SensorHeading;
 
    boost::posix_time::ptime data_time(boost::gregorian::date(PingHeader->Year, PingHeader->Month, PingHeader->Day), boost::posix_time::hours(PingHeader->Hour)+boost::posix_time::minutes(PingHeader->Minute)+boost::posix_time::seconds(PingHeader->Second)+boost::posix_time::milliseconds(10.*int(PingHeader->HSeconds))); 
    stringstream time_ss;
