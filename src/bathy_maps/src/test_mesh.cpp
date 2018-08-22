@@ -3,6 +3,7 @@
 #include <cxxopts.hpp>
 #include <data_tools/gsf_data.h>
 #include <data_tools/csv_data.h>
+#include <data_tools/xtf_data.h>
 #include <data_tools/transforms.h>
 #include <data_tools/submaps.h>
 
@@ -17,9 +18,11 @@
 
 using namespace std;
 
-gsf_mbes_ping::PingsT load_or_parse_pings(const boost::filesystem::path& swaths_folder, const string& dataset_name)
+// we should probably put this in data_tools eventually, it's very convenient
+template <typename T>
+typename T::PingsT load_or_parse_pings(const boost::filesystem::path& swaths_folder, const string& dataset_name)
 {
-    gsf_mbes_ping::PingsT pings;
+    typename T::PingsT pings;
     if (boost::filesystem::exists("ping_swaths_" + dataset_name + ".cereal")) {
         cout << "Reading saved pings..." << endl;
         std::ifstream is("ping_swaths_" + dataset_name + ".cereal", std::ifstream::binary);
@@ -31,8 +34,8 @@ gsf_mbes_ping::PingsT load_or_parse_pings(const boost::filesystem::path& swaths_
     }
     else {
         cout << "Parsing pings..." << endl;
-        pings = parse_folder<gsf_mbes_ping>(swaths_folder);
-        std::stable_sort(pings.begin(), pings.end(), [](const gsf_mbes_ping& ping1, const gsf_mbes_ping& ping2) {
+        pings = parse_folder<T>(swaths_folder);
+        std::stable_sort(pings.begin(), pings.end(), [](const T& ping1, const T& ping2) {
             return ping1.time_stamp_ < ping2.time_stamp_;
         });
         std::ofstream os("ping_swaths_" + dataset_name + ".cereal", std::ofstream::binary);
@@ -72,7 +75,8 @@ csv_nav_entry::EntriesT load_or_parse_entries(const boost::filesystem::path& pos
 
 int main(int argc, char** argv)
 {
-    string folder_str;
+    string mbes_folder_str;
+    string sss_folder_str;
     string file_str;
 	double lsq = 7; //10.;
 	double sigma = 1.; //5.;
@@ -83,7 +87,8 @@ int main(int argc, char** argv)
 	cxxopts::Options options("MyProgram", "One line description of MyProgram");
 	options.add_options()
       ("help", "Print help")
-      ("swaths", "Input gsf mb swaths folder pre deployment", cxxopts::value(folder_str))
+      ("swaths", "Input gsf mb swaths folder pre deployment", cxxopts::value(mbes_folder_str))
+      ("sss", "Input gsf mb swaths folder pre deployment", cxxopts::value(sss_folder_str))
       ("file", "Output file", cxxopts::value(file_str))
       ("lsq", "RBF length scale", cxxopts::value(lsq))
       ("sigma", "RBF scale", cxxopts::value(sigma))
@@ -96,8 +101,8 @@ int main(int argc, char** argv)
         cout << options.help({"", "Group"}) << endl;
         exit(0);
 	}
-    if (result.count("swaths") == 0) {
-		cout << "Please provide input swaths and poses args..." << endl;
+    if (result.count("swaths") == 0 || result.count("sss") == 0) {
+		cout << "Please provide input swaths and sss args..." << endl;
 		exit(0);
     }
     if (result.count("file") == 0) {
@@ -105,20 +110,32 @@ int main(int argc, char** argv)
 		exit(0);
     }
 	
-	boost::filesystem::path folder(folder_str);
+	boost::filesystem::path mbes_folder(mbes_folder_str);
+	boost::filesystem::path sss_folder(sss_folder_str);
     boost::filesystem::path path(file_str);
 
-	cout << "Input folder : " << folder << endl;
+	cout << "Input mbes folder : " << mbes_folder << endl;
+	cout << "Input sss folder : " << sss_folder << endl;
 	cout << "Output file : " << path << endl;
-
-    gsf_mbes_ping::PingsT pings_unfiltered = load_or_parse_pings(folder, dataset_name);
-    mbes_ping::PingsT pings = convert_pings(pings_unfiltered);
 
     bathy_map_mesh mesh;
     Eigen::MatrixXd V;
     Eigen::MatrixXi F;
-    tie(V, F) = mesh.mesh_from_pings(pings);
-    mesh.display_mesh(V, F);
+    bathy_map_mesh::BoundsT bounds;
+
+    // we need to separate the reading of mbes and side scan pings since they consume a lot of memory
+    {
+        gsf_mbes_ping::PingsT pings_mbes = load_or_parse_pings<gsf_mbes_ping>(mbes_folder, dataset_name + "_mbes");
+        mbes_ping::PingsT pings = convert_pings(pings_mbes);
+
+        tie(V, F, bounds) = mesh.mesh_from_pings(pings);
+    }
+    //mesh.display_mesh(V, F);
+
+    {
+        xtf_sss_ping::PingsT pings_sss = load_or_parse_pings<xtf_sss_ping>(sss_folder, dataset_name + "_sss");
+        mesh.overlay_sss(V, F, bounds, pings_sss);
+    }
 
     return 0;
 }

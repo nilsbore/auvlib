@@ -2,6 +2,7 @@
 
 #include <igl/opengl/glfw/Viewer.h>
 #include <igl/opengl/gl.h>
+#include <igl/readSTL.h>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -181,14 +182,112 @@ pair<Eigen::MatrixXd, Eigen::MatrixXi> bathy_map_mesh::mesh_from_height_map(cons
     return make_pair(V, F);
 }
 
-pair<Eigen::MatrixXd, Eigen::MatrixXi> bathy_map_mesh::mesh_from_pings(const mbes_ping::PingsT& pings)
+tuple<Eigen::MatrixXd, Eigen::MatrixXi, bathy_map_mesh::BoundsT> bathy_map_mesh::mesh_from_pings(const mbes_ping::PingsT& pings)
 {
     Eigen::MatrixXd height_map;
     BoundsT bounds;
     tie(height_map, bounds) = height_map_from_pings(pings, 0.5);
-    display_height_map(height_map);
+    //display_height_map(height_map);
     Eigen::MatrixXd V;
     Eigen::MatrixXi F;
     tie(V, F) = mesh_from_height_map(height_map, bounds);
-    return make_pair(V, F);
+    return make_tuple(V, F, bounds);
+}
+
+struct survey_viewer {
+    igl::opengl::glfw::Viewer viewer;
+    const xtf_sss_ping::PingsT& pings;
+    int i;
+    Eigen::MatrixXd V1;
+    Eigen::MatrixXi F1;
+    Eigen::MatrixXd V2;
+    Eigen::MatrixXi F2;
+    Eigen::MatrixXd V;
+    Eigen::MatrixXi F;
+    Eigen::MatrixXd C;
+    Eigen::Vector3d offset;
+
+    survey_viewer(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1, const Eigen::MatrixXd& C1,
+        const Eigen::MatrixXd& V2, const Eigen::MatrixXi& F2, const Eigen::MatrixXd& C2,
+        const xtf_sss_ping::PingsT& pings, const Eigen::Vector3d& offset)
+        : pings(pings), i(0), V1(V1), F1(F1), V2(V2), F2(F2), offset(offset)
+    {
+        //double first_heading = pings[0].heading_;
+
+        V = Eigen::MatrixXd(V1.rows() + V2.rows(), V1.cols());
+        V << V1, this->V2;
+        F = Eigen::MatrixXi(F1.rows() + F2.rows(), F1.cols());
+        F << F1, (F2.array() + V1.rows());
+
+        V.bottomRows(V2.rows()) = V2;
+        Eigen::Matrix3d Rz = Eigen::AngleAxisd(pings[0].heading_, Eigen::Vector3d::UnitZ()).matrix();
+        V.bottomRows(V2.rows()) *= Rz.transpose();
+        V.bottomRows(V2.rows()).array().rowwise() += (pings[0].pos_ - offset).transpose().array();
+
+        Eigen::MatrixXd C = Eigen::MatrixXd(C1.rows()+C2.rows(), C1.cols());
+        C << C1, C2;
+
+        viewer.data().set_mesh(V, F);
+        // Add per-vertex colors
+        //viewer.data().set_colors(C);
+        // Add per-vertex colors
+        viewer.data().set_colors(C);
+
+        viewer.data().point_size = 10;
+        viewer.data().line_width = 1;
+
+        //viewer.callback_pre_draw = std::bind(&IglVisCallback::callback_pre_draw, this, std::placeholders::_1);
+        viewer.callback_key_pressed = std::bind(&survey_viewer::callback_key_pressed, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+        viewer.core.is_animating = true;
+        viewer.core.animation_max_fps = 30.;
+        //viewer.launch();
+        viewer.core.background_color << 1., 1., 1., 1.; // white background
+    }
+
+    void launch()
+    {
+        viewer.launch();
+    }
+
+    bool callback_key_pressed(igl::opengl::glfw::Viewer& viewer, unsigned int key, int mods)
+    {
+        switch (key) {
+        case 'n':
+            if (i < pings.size()) {
+                cout << "Setting new position: " << pings[i].pos_.transpose() << endl;
+                V.bottomRows(V2.rows()) = V2;
+                Eigen::Matrix3d Rz = Eigen::AngleAxisd(pings[i].heading_, Eigen::Vector3d::UnitZ()).matrix();
+                V.bottomRows(V2.rows()) *= Rz.transpose();
+                V.bottomRows(V2.rows()).array().rowwise() += (pings[i].pos_ - offset).transpose().array();
+                viewer.data().set_vertices(V);
+                //viewer.data().compute_normals();
+                ++i;
+            }
+            return true;
+        default:
+            return false;
+        }
+    }
+};
+
+Eigen::MatrixXd bathy_map_mesh::overlay_sss(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
+                                            const BoundsT& bounds, const xtf_sss_ping::PingsT& pings)
+{
+    Eigen::MatrixXd C_jet;
+    igl::jet(V.col(2), true, C_jet);
+
+    Eigen::MatrixXd Vb;
+    Eigen::MatrixXi Fb;
+    Eigen::MatrixXd Nb;
+    igl::readSTL("5TUM.stl", Vb, Fb, Nb);
+    Eigen::MatrixXd Cb(Vb.rows(), 3);
+    Cb.rowwise() = Eigen::RowVector3d(1., 1., 0.);
+    Vb.array() *= 0.01;
+    //display_mesh(Vb, Fb);
+
+    Eigen::Vector3d offset(bounds(0, 0), bounds(0, 1), 0.);
+    survey_viewer viewer(V, F, C_jet, Vb, Fb, Cb, pings, offset);
+    viewer.launch();
+
+    return C_jet;
 }
