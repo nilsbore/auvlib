@@ -79,6 +79,7 @@ xtf_sss_ping process_side_scan_ping(XTFPINGHEADER *PingHeader, XTFFILEHEADER *XT
    ping.pos_ = Eigen::Vector3d(easting, northing, -PingHeader->SensorDepth);
    ping.heading_ = M_PI/180.*PingHeader->SensorHeading;
    ping.heading_ = 0.5*M_PI-ping.heading_; // TODO: need to keep this for old data
+   ping.sound_vel_ = PingHeader->SoundVelocity;
 
    boost::posix_time::ptime data_time(boost::gregorian::date(PingHeader->Year, PingHeader->Month, PingHeader->Day), boost::posix_time::hours(PingHeader->Hour)+boost::posix_time::minutes(PingHeader->Minute)+boost::posix_time::seconds(PingHeader->Second)+boost::posix_time::milliseconds(10.*int(PingHeader->HSeconds))); 
    stringstream time_ss;
@@ -86,6 +87,11 @@ xtf_sss_ping process_side_scan_ping(XTFPINGHEADER *PingHeader, XTFFILEHEADER *XT
    ping.time_string_ = time_ss.str();
    boost::posix_time::time_duration const diff = data_time - epoch;
    ping.time_stamp_ = diff.total_milliseconds();
+
+   ping.port.tilt_angle = M_PI/180.*XTFFileHeader->ChanInfo[0].TiltAngle;
+   ping.port.beam_width = M_PI/180.*XTFFileHeader->ChanInfo[0].BeamWidth;
+   ping.stbd.tilt_angle = M_PI/180.*XTFFileHeader->ChanInfo[1].TiltAngle;
+   ping.stbd.beam_width = M_PI/180.*XTFFileHeader->ChanInfo[1].BeamWidth;
 
    for (chan=0; chan<PingHeader->NumChansToFollow; chan++) {
 
@@ -223,6 +229,10 @@ xtf_sss_ping::PingsT read_xtf_file(int infl, XTFFILEHEADER* XTFFileHeader, unsig
              << "heave=" << PingHeader->Heave << " "            // Sensor heave at start of ping. 
                            // Positive value means sensor moved up.
              << "yaw=" << PingHeader->Yaw << endl;              // Sensor yaw.  Positive means turn to right.
+        cout << "Tilt angle 0: " << XTFFileHeader->ChanInfo[0].TiltAngle << endl;        // Typically 30 degrees
+        cout << "Beam width 0: " << XTFFileHeader->ChanInfo[0].BeamWidth << endl;        // 3dB beam width, Typically 50 degrees
+        cout << "Tilt angle 1: " << XTFFileHeader->ChanInfo[1].TiltAngle << endl;        // Typically 30 degrees
+        cout << "Beam width 1: " << XTFFileHeader->ChanInfo[1].BeamWidth << endl;        // 3dB beam width, Typically 50 degrees
         cout << ping.time_string_ << endl;
     }
 

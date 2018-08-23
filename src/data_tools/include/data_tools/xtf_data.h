@@ -11,11 +11,13 @@ struct xtf_sss_ping_side
     std::vector<int> pings;
     double slant_range;
     double time_duration;
+    double tilt_angle;
+    double beam_width;
 
 	template <class Archive>
     void serialize( Archive & ar )
     {
-        ar(CEREAL_NVP(pings), CEREAL_NVP(slant_range), CEREAL_NVP(time_duration));
+        ar(CEREAL_NVP(pings), CEREAL_NVP(slant_range), CEREAL_NVP(time_duration), CEREAL_NVP(tilt_angle), CEREAL_NVP(beam_width));
     }
 };
 
@@ -34,13 +36,14 @@ struct xtf_sss_ping
     double roll_;
     double lat_;
     double long_;
+    double sound_vel_;
     Eigen::Vector3d pos_; // NOTE: this comes from associating ping with nav data
 
 	template <class Archive>
     void serialize( Archive & ar )
     {
         ar(CEREAL_NVP(port), CEREAL_NVP(stbd), CEREAL_NVP(first_in_file_), CEREAL_NVP(heading_),
-           CEREAL_NVP(pitch_), CEREAL_NVP(roll_), CEREAL_NVP(lat_), CEREAL_NVP(long_), CEREAL_NVP(pos_));
+           CEREAL_NVP(pitch_), CEREAL_NVP(roll_), CEREAL_NVP(lat_), CEREAL_NVP(long_), CEREAL_NVP(sound_vel_), CEREAL_NVP(pos_));
     }
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
