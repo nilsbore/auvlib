@@ -251,10 +251,10 @@ struct survey_viewer {
         viewer.launch();
     }
     
-    pair<Eigen::MatrixXd, Eigen::MatrixXd> compute_sss_dirs(const Eigen::Matrix3d& R)
+    pair<Eigen::MatrixXd, Eigen::MatrixXd> compute_sss_dirs(const Eigen::Matrix3d& R, double tilt_angle, double beam_width)
     {
-        const double min_theta = M_PI/180.*10.;
-        const double max_theta = M_PI/180.*60.;
+        const double min_theta = tilt_angle - 0.5*beam_width; // M_PI/180.*10.;
+        const double max_theta = tilt_angle + 0.5*beam_width; //M_PI/180.*60.;
         const int nbr_lines = 40;
 
         double min_c = 1./cos(min_theta);
@@ -275,12 +275,12 @@ struct survey_viewer {
         return make_pair(dirs_left, dirs_right);
     }
 
-    pair<Eigen::MatrixXd, Eigen::MatrixXd> compute_hits(const Eigen::Vector3d& origin, const Eigen::Matrix3d& R)
+    pair<Eigen::MatrixXd, Eigen::MatrixXd> compute_hits(const Eigen::Vector3d& origin, const Eigen::Matrix3d& R, double tilt_angle, double beam_width)
     {
         igl::Hit hit;
         Eigen::MatrixXd dirs_left;
         Eigen::MatrixXd dirs_right;
-        tie(dirs_left, dirs_right) = compute_sss_dirs(R);
+        tie(dirs_left, dirs_right) = compute_sss_dirs(R, tilt_angle, beam_width);
         Eigen::MatrixXd hits_left(dirs_left.rows(), 3);
         Eigen::MatrixXd hits_right(dirs_right.rows(), 3);
         int hit_count = 0;
@@ -308,12 +308,12 @@ struct survey_viewer {
         return make_pair(hits_left, hits_right);
     }
 
-    pair<Eigen::MatrixXd, Eigen::MatrixXd> embree_compute_hits(const Eigen::Vector3d& origin, const Eigen::Matrix3d& R)
+    pair<Eigen::MatrixXd, Eigen::MatrixXd> embree_compute_hits(const Eigen::Vector3d& origin, const Eigen::Matrix3d& R, double tilt_angle, double beam_width)
     {
         igl::Hit hit;
         Eigen::MatrixXd dirs_left;
         Eigen::MatrixXd dirs_right;
-        tie(dirs_left, dirs_right) = compute_sss_dirs(R);
+        tie(dirs_left, dirs_right) = compute_sss_dirs(R, tilt_angle, beam_width);
         Eigen::MatrixXd hits_left(dirs_left.rows(), 3);
         Eigen::MatrixXd hits_right(dirs_right.rows(), 3);
 
@@ -364,8 +364,8 @@ struct survey_viewer {
 
                 Eigen::MatrixXd hits_left;
                 Eigen::MatrixXd hits_right;
-                //tie(hits_left, hits_right) = compute_hits(pings[i].pos_ - offset, Rz);
-                tie(hits_left, hits_right) = embree_compute_hits(pings[i].pos_ - offset, Rz);
+                //tie(hits_left, hits_right) = compute_hits(pings[i].pos_ - offset, Rz, pings[i].port.tilt_angle, pings[i].port.beam_width);
+                tie(hits_left, hits_right) = embree_compute_hits(pings[i].pos_ - offset, Rz, pings[i].port.tilt_angle, pings[i].port.beam_width);
                 Eigen::MatrixXi E;
                 Eigen::MatrixXd P(hits_left.rows(), 3);
                 P.rowwise() = (pings[i].pos_ - offset).transpose();
