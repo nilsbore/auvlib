@@ -4,6 +4,7 @@
 #include <igl/opengl/gl.h>
 #include <igl/readSTL.h>
 #include <igl/ray_mesh_intersect.h>
+#include <igl/embree/line_mesh_intersection.h>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -307,6 +308,47 @@ struct survey_viewer {
         return make_pair(hits_left, hits_right);
     }
 
+    pair<Eigen::MatrixXd, Eigen::MatrixXd> embree_compute_hits(const Eigen::Vector3d& origin, const Eigen::Matrix3d& R)
+    {
+        igl::Hit hit;
+        Eigen::MatrixXd dirs_left;
+        Eigen::MatrixXd dirs_right;
+        tie(dirs_left, dirs_right) = compute_sss_dirs(R);
+        Eigen::MatrixXd hits_left(dirs_left.rows(), 3);
+        Eigen::MatrixXd hits_right(dirs_right.rows(), 3);
+
+        int nbr_lines = dirs_left.rows() + dirs_right.rows();
+        Eigen::MatrixXd dirs = Eigen::MatrixXd(nbr_lines, dirs_left.cols());
+        dirs << dirs_left, dirs_right;
+        Eigen::MatrixXd P = Eigen::MatrixXd(nbr_lines, 3);
+        P.rowwise() = origin.transpose();
+        Eigen::MatrixXd hits = igl::embree::line_mesh_intersection(P, dirs, V1, F1);
+
+        int hit_count = 0;
+        for (int i = 0; i < dirs_left.rows(); ++i) {
+            int hit = hits(i, 0);
+            if (hit > 0) {
+                int vind = F1(hit, 0);
+                // we actually get the coordinates within the triangle also, we could use that
+                hits_left.row(hit_count) = V1.row(vind);
+                ++hit_count;
+            }
+        }
+        hits_left.conservativeResize(hit_count, 3);
+        hit_count = 0;
+        for (int i = 0; i < dirs_right.rows(); ++i) {
+            int hit = hits(dirs_left.rows() + i, 0);
+            if (hit > 0) {
+                int vind = F1(hit, 0);
+                // we actually get the coordinates within the triangle also, we could use that
+                hits_right.row(hit_count) = V1.row(vind);
+                ++hit_count;
+            }
+        }
+        hits_right.conservativeResize(hit_count, 3);
+        return make_pair(hits_left, hits_right);
+    }
+
     bool callback_key_pressed(igl::opengl::glfw::Viewer& viewer, unsigned int key, int mods)
     {
         switch (key) {
@@ -319,9 +361,11 @@ struct survey_viewer {
                 V.bottomRows(V2.rows()).array().rowwise() += (pings[i].pos_ - offset).transpose().array();
                 viewer.data().set_vertices(V);
                 //viewer.data().compute_normals();
+
                 Eigen::MatrixXd hits_left;
                 Eigen::MatrixXd hits_right;
-                tie(hits_left, hits_right) = compute_hits(pings[i].pos_ - offset, Rz);
+                //tie(hits_left, hits_right) = compute_hits(pings[i].pos_ - offset, Rz);
+                tie(hits_left, hits_right) = embree_compute_hits(pings[i].pos_ - offset, Rz);
                 Eigen::MatrixXi E;
                 Eigen::MatrixXd P(hits_left.rows(), 3);
                 P.rowwise() = (pings[i].pos_ - offset).transpose();

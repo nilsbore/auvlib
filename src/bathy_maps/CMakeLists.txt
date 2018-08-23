@@ -1,6 +1,22 @@
 project(bathy_maps)
 
+include(ExternalProject)
+
+#set(EMBREE_ISPC_SUPPORT OFF)
+#add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../libigl/external/embree $${CMAKE_CURRENT_BINARY_DIR})
+ExternalProject_Add(libembree
+  PREFIX embree
+  DOWNLOAD_COMMAND ""
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../libigl/external/embree
+  BINARY_DIR ${CMAKE_BINARY_DIR}/embree
+  INSTALL_COMMAND ""
+  CMAKE_ARGS -DEMBREE_ISPC_SUPPORT=OFF
+)
+
+
 include_directories(../../libigl/external/glad/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../libigl/external/embree/include)
+link_directories(${CMAKE_BINARY_DIR}/embree)
 
 # Add some libraries
 add_library(draw_map src/draw_map.cpp)
@@ -24,10 +40,12 @@ target_include_directories(mesh_map PUBLIC
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
 
+add_dependencies(mesh_map libembree)
+
 # Link the libraries
 target_link_libraries(draw_map data_structures ${OpenCV_LIBS})
 
-target_link_libraries(mesh_map data_structures ${OpenCV_LIBS} glad ${GLFW3_LIBRARY} ${OPENGL_LIBRARY} ${OPENGL_glu_LIBRARY} -lpthread)
+target_link_libraries(mesh_map data_structures embree ${OpenCV_LIBS} glad ${GLFW3_LIBRARY} ${OPENGL_LIBRARY} ${OPENGL_glu_LIBRARY} -lpthread)
 
 target_link_libraries(test_mesh data_structures gsf_data xtf_data csv_data navi_data mesh_map draw_map)
 
