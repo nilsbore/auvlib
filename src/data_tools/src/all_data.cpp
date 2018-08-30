@@ -1,7 +1,10 @@
 #include <data_tools/all_data.h>
+#include <data_tools/lat_long_utm.h>
 #include <liball/all.h>
 #include <endian.h>
 #include <fstream>
+#include <boost/date_time.hpp>
+#include <boost/date_time/gregorian/gregorian.hpp>
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -169,15 +172,39 @@ vector<ReturnType, Eigen::aligned_allocator<ReturnType> > parse_file_impl(const 
 	return returns;
 }
 
+pair<long long, string> parse_all_time(unsigned int date, unsigned int time)
+{
+    const boost::posix_time::ptime epoch = boost::posix_time::time_from_string("1970-01-01 00:00:00.000");
+    const std::locale loc = std::locale(std::locale::classic(), new boost::posix_time::time_input_facet("YYYYmmdd"));
+
+    boost::posix_time::time_duration time_d = boost::posix_time::milliseconds(time);
+    //std::istringstream is(to_string(date));
+    cout << "Date: " << to_string(date) << endl;
+    //is.imbue(loc);
+    boost::gregorian::date date_t = boost::gregorian::date_from_iso_string(to_string(date));
+    boost::posix_time::ptime t(date_t, time_d);
+    //is >> date_t;
+    long long time_stamp_ = (t - epoch).total_milliseconds();
+    stringstream time_ss;
+    time_ss << t;
+    string time_string_ = time_ss.str();
+    cout << "Time string: " << time_string_ << endl;
+
+    return make_pair(time_stamp_, time_string_);
+}
+
 template <>
 all_mbes_ping read_datagram<all_mbes_ping, all_xyz88_datagram>(std::ifstream& input, const all_xyz88_datagram& header)
 {
 	cout << "Total number of beams: " << header.nbr_beams << endl;
 	all_mbes_ping new_ping;
 	new_ping.id_ = header.ping_count;
-	new_ping.heading_ = header.heading;
+	//new_ping.heading_ = header.heading;
+    new_ping.heading_ = M_PI/180.*double(header.heading);
+    new_ping.heading_ = 0.5*M_PI-new_ping.heading_; // TODO: need to keep this for old data
 	new_ping.sound_vel_ = header.sound_vel;
 	new_ping.transducer_depth_ = header.transducer_depth;
+    tie(new_ping.time_stamp_, new_ping.time_string_) = parse_all_time(header.date, header.time);
 	vector<all_xyz88_datagram_repeat> pings;
 	all_xyz88_datagram_repeat ping;
 	for (int i = 0; i < header.nbr_beams; ++i) {
@@ -201,6 +228,7 @@ all_nav_entry read_datagram<all_nav_entry, all_position_datagram>(std::ifstream&
 	entry.long_ = double(header.longitude)/10000000.;
 	entry.heading_ = double(header.heading)*0.01;
 	entry.course_over_ground_ = double(header.course_over_ground)*0.01;
+    tie(entry.time_stamp_, entry.time_string_) = parse_all_time(header.date, header.time);
 	return entry;
 }
 
@@ -214,4 +242,73 @@ template <>
 all_nav_entry::EntriesT parse_file<all_nav_entry>(const boost::filesystem::path& path) //, int code)
 {
     return parse_file_impl<all_nav_entry, all_position_datagram, 80>(path);
+}
+
+mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_entry::EntriesT& entries)
+{
+    mbes_ping::PingsT new_pings;
+
+    std::stable_sort(entries.begin(), entries.end(), [](const all_nav_entry& entry1, const all_nav_entry& entry2) {
+        return entry1.time_stamp_ < entry2.time_stamp_;
+    });
+    std::stable_sort(pings.begin(), pings.end(), [](const all_mbes_ping& ping1, const all_mbes_ping& ping2) {
+        return ping1.time_stamp_ < ping2.time_stamp_;
+    });
+
+    auto pos = entries.begin();
+    for (all_mbes_ping& ping : pings) {
+        pos = std::find_if(pos, entries.end(), [&](const all_nav_entry& entry) {
+            return entry.time_stamp_ > ping.time_stamp_;
+        });
+
+        mbes_ping new_ping;
+        new_ping.time_stamp_ = ping.time_stamp_;
+        new_ping.time_string_ = ping.time_string_;
+        new_ping.first_in_file_ = ping.first_in_file_;
+        new_ping.heading_ = -ping.heading_;
+        new_ping.pitch_ = 0.;
+        new_ping.roll_ = 0.;
+        if (pos == entries.end()) {
+            double easting, northing;
+            string utm_zone;
+            tie(northing, easting, utm_zone) = lat_long_to_UTM(entries.back().lat_, entries.back().long_);
+            new_ping.pos_ = Eigen::Vector3d(easting, northing, -ping.transducer_depth_);
+        }
+        else {
+            if (pos == entries.begin()) {
+                double easting, northing;
+                string utm_zone;
+                tie(northing, easting, utm_zone) = lat_long_to_UTM(pos->lat_, pos->long_);
+                new_ping.pos_ = Eigen::Vector3d(easting, northing, -ping.transducer_depth_);
+            }
+            else {
+                all_nav_entry& previous = *(pos - 1);
+                double ratio = double(ping.time_stamp_ - previous.time_stamp_)/double(pos->time_stamp_ - previous.time_stamp_);
+                double lat = previous.lat_ + ratio*(pos->lat_ - previous.lat_);
+                double lon = previous.long_ + ratio*(pos->long_ - previous.long_);
+                double easting, northing;
+                string utm_zone;
+                tie(northing, easting, utm_zone) = lat_long_to_UTM(lat, lon);
+                new_ping.pos_ = Eigen::Vector3d(easting, northing, -ping.transducer_depth_);
+            }
+        }
+
+        int i = 0;
+        for (const Eigen::Vector3d& beam : ping.beams) {
+            /*if (beam(2) > -5. || beam(2) < -25.) {
+                ++i;
+                continue;
+            }*/
+            Eigen::Matrix3d Rz = Eigen::AngleAxisd(new_ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
+
+            // it seems it has already been compensated for pitch, roll
+            new_ping.beams.push_back(new_ping.pos_ + Rz*beam);
+            new_ping.back_scatter.push_back(ping.reflectivities[i]);
+            ++i;
+        }
+
+        new_pings.push_back(new_ping);
+    }
+
+    return new_pings;
 }

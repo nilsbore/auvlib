@@ -64,4 +64,6 @@ all_mbes_ping::PingsT parse_file<all_mbes_ping>(const boost::filesystem::path& p
 template <>
 all_nav_entry::EntriesT parse_file<all_nav_entry>(const boost::filesystem::path& path);
 
+mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_entry::EntriesT& entries);
+
 #endif // ALL_DATA_H

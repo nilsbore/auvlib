@@ -8,12 +8,18 @@ int main(int argc, char** argv)
 
 	cout << "Parsing file " << path << endl;
 
-	//all_nav_entry::EntriesT entries = parse_file<all_nav_entry>(path);
-	//all_mbes_ping::PingsT pings = parse_file<all_mbes_ping>(path);
-	all_nav_entry::EntriesT entries = parse_folder<all_nav_entry>(path);
-	all_mbes_ping::PingsT pings = parse_folder<all_mbes_ping>(path);
+	all_nav_entry::EntriesT entries = parse_file<all_nav_entry>(path);
+	all_mbes_ping::PingsT pings = parse_file<all_mbes_ping>(path);
+	//all_nav_entry::EntriesT entries = parse_folder<all_nav_entry>(path);
+	//all_mbes_ping::PingsT pings = parse_folder<all_mbes_ping>(path);
 
 	cout << "Got " << pings.size() << " mbes pings, and " << entries.size() << " nav entries" << endl;
+
+    /*
+    for (const all_mbes_ping& ping : pings) {
+        cout << "Got back ping " << ping.id_ << " with time: " << ping.time_string_ << endl;
+    }
+    */
 
     return 0;
 }

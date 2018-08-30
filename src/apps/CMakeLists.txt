@@ -1,6 +1,7 @@
 project(gpgs_apps)
 
 include_directories(include)
+link_directories(${CMAKE_BINARY_DIR}/embree)
 
 add_executable(parse_navi_data src/parse_navi_data.cpp)
 target_link_libraries(parse_navi_data navi_data sparse_gp data_transforms submaps gpgs_igl_visualizer data_structures ${PCL_LIBRARIES})
@@ -61,3 +62,6 @@ target_link_libraries(test_parse_navi_data navi_data data_transforms data_struct
 
 add_executable(register_slam_process src/register_slam_process.cpp)
 target_link_libraries(register_slam_process data_structures submaps gpgs_cost_function gpgs_visualization gpgs_multi_visualizer gpgs_igl_visualizer data_structures data_transforms)
+
+add_executable(draw_all_map src/draw_all_map.cpp)
+target_link_libraries(draw_all_map xtf_data all_data mesh_map embree -lpthread)
