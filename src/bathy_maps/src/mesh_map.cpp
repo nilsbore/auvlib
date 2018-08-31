@@ -11,7 +11,7 @@
 
 using namespace std;
 
-std::tuple<uint8_t, uint8_t, uint8_t> jet(double x)
+std::tuple<uint8_t, uint8_t, uint8_t> jet_mesh(double x)
 {
     const double rone = 0.8;
     const double gone = 1.0;
@@ -85,7 +85,7 @@ void bathy_map_mesh::display_height_map(const Eigen::MatrixXd& height_map)
                 continue;
             }
             cv::Point3_<uchar>* p = bathy_map.ptr<cv::Point3_<uchar> >(rows-i-1, j);
-            tie(p->z, p->y, p->x) = jet(height_map_array(i, j));
+            tie(p->z, p->y, p->x) = jet_mesh(height_map_array(i, j));
         }
     }
 
@@ -184,12 +184,12 @@ pair<Eigen::MatrixXd, Eigen::MatrixXi> bathy_map_mesh::mesh_from_height_map(cons
     return make_pair(V, F);
 }
 
-tuple<Eigen::MatrixXd, Eigen::MatrixXi, bathy_map_mesh::BoundsT> bathy_map_mesh::mesh_from_pings(const mbes_ping::PingsT& pings)
+tuple<Eigen::MatrixXd, Eigen::MatrixXi, bathy_map_mesh::BoundsT> bathy_map_mesh::mesh_from_pings(const mbes_ping::PingsT& pings, double res)
 {
     Eigen::MatrixXd height_map;
     BoundsT bounds;
-    tie(height_map, bounds) = height_map_from_pings(pings, 0.5);
-    //display_height_map(height_map);
+    tie(height_map, bounds) = height_map_from_pings(pings, res);
+    display_height_map(height_map);
     Eigen::MatrixXd V;
     Eigen::MatrixXi F;
     tie(V, F) = mesh_from_height_map(height_map, bounds);

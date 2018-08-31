@@ -5,6 +5,7 @@
 #include <fstream>
 #include <boost/date_time.hpp>
 #include <boost/date_time/gregorian/gregorian.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -120,13 +121,17 @@ vector<ReturnType, Eigen::aligned_allocator<ReturnType> > parse_file_impl(const 
     unsigned char data_type;
 
     // end codes that we need to read
-	unsigned char spare; // Spare (always 0)
+	//unsigned char spare; // Spare (always 0)
 	unsigned char end_ident; // End identifier = ETX (Always 03h)
 	unsigned short checksum; // Check sum of data between STX and ETX
 
     //vector<vector<all_xyz88_datagram_repeat> > many_pings;
 
 	int pos_counter = 0;
+    int counters[255];
+    for (int i = 0; i < 255; ++i) {
+        counters[i] = 0;
+    }
 	vector<ReturnType, Eigen::aligned_allocator<ReturnType> > returns;
 	while (!input.eof()) {
 		cout << "Trying to read nbr_bytes with size " << sizeof(nbr_bytes) << endl;
@@ -138,17 +143,18 @@ vector<ReturnType, Eigen::aligned_allocator<ReturnType> > parse_file_impl(const 
 		input.read(reinterpret_cast<char*>(&data_type), sizeof(data_type));
 		cout << "Number bytes: " << nbr_bytes << endl;
 		cout << "Start id: " << int(start_id) << endl;
-		cout << "Data type must be " << 88 << endl;
+		cout << "Data type must be " << Code << endl;
 		if (data_type == 80) {
 		    ++pos_counter;
 		}
+        counters[data_type] += 1;
 	    if (data_type == Code) {
 	        //all_xyz88_datagram mbes_header;
 			AllHeaderType header;
 		    cout << "Is a MB reading, code: " << int(data_type) << endl;
 		    input.read(reinterpret_cast<char*>(&header), sizeof(header));
 			returns.push_back(read_datagram<ReturnType, AllHeaderType>(input, header));
-		    input.read(reinterpret_cast<char*>(&spare), sizeof(spare));
+		    //input.read(reinterpret_cast<char*>(&spare), sizeof(spare));
 		    input.read(reinterpret_cast<char*>(&end_ident), sizeof(end_ident));
 		    input.read(reinterpret_cast<char*>(&checksum), sizeof(checksum));
 			cout << "End identifier: " << end_ident << endl;
@@ -160,6 +166,10 @@ vector<ReturnType, Eigen::aligned_allocator<ReturnType> > parse_file_impl(const 
             input.ignore(skip_bytes);
 		}
 	}
+
+    for (int i = 0; i < 255; ++i) {
+        cout << std::dec << "Got " << counters[i] << " of type " << i << std::hex <<"with hex 0x"<< i << endl;
+    }
 
 	cout << "Got " << pos_counter << " position entries" << endl;
 
@@ -197,23 +207,36 @@ template <>
 all_mbes_ping read_datagram<all_mbes_ping, all_xyz88_datagram>(std::ifstream& input, const all_xyz88_datagram& header)
 {
 	cout << "Total number of beams: " << header.nbr_beams << endl;
+    cout << "Valid number of beams: " << header.nbr_valid << endl;
 	all_mbes_ping new_ping;
 	new_ping.id_ = header.ping_count;
 	//new_ping.heading_ = header.heading;
-    new_ping.heading_ = M_PI/180.*double(header.heading);
-    new_ping.heading_ = 0.5*M_PI-new_ping.heading_; // TODO: need to keep this for old data
+    new_ping.heading_ = M_PI/180.*double(header.heading)*0.01;
+    new_ping.heading_ = 0.5*M_PI-new_ping.heading_; // this basically converts to yaw, should have that as marker instead
 	new_ping.sound_vel_ = header.sound_vel;
 	new_ping.transducer_depth_ = header.transducer_depth;
     tie(new_ping.time_stamp_, new_ping.time_string_) = parse_all_time(header.date, header.time);
 	vector<all_xyz88_datagram_repeat> pings;
 	all_xyz88_datagram_repeat ping;
+    static unsigned char mask[] = {128, 64, 32, 16, 8, 4, 2, 1};
+    int nbr_valid = 0;
 	for (int i = 0; i < header.nbr_beams; ++i) {
 		input.read(reinterpret_cast<char*>(&ping), sizeof(ping));
+        //if (short(le16toh(ping.rt_cleaning_info)) < 0) { // (ping.detection_info & mask[5]) != 0) {
+        if (ping.rt_cleaning_info < 0 || (ping.detection_info & mask[0]) != 0 || ping.depth > 40.) {
+            continue;
+        }
 		pings.push_back(ping);
-		Eigen::Vector3d pos(ping.along_track, ping.across_track, -ping.depth);
+		Eigen::Vector3d pos(ping.along_track, -ping.across_track, -ping.depth);
 		new_ping.beams.push_back(pos);
 		new_ping.reflectivities.push_back(ping.reflectivity);
+        ++nbr_valid;
 	}
+    cout << "Computed nbr valid: " << nbr_valid << endl;
+
+	unsigned char spare; // Spare (always 0)
+	input.read(reinterpret_cast<char*>(&spare), sizeof(spare));
+
 	return new_ping;
 }
 
@@ -221,27 +244,77 @@ template <>
 all_nav_entry read_datagram<all_nav_entry, all_position_datagram>(std::ifstream& input, const all_position_datagram& header)
 {
 	cout << "Got a position datagram, skipping: " << int(header.nbr_bytes_input) << endl;
-    input.ignore(header.nbr_bytes_input);
+
+    //input.ignore(header.nbr_bytes_input);
+    char buffer[255];
+    input.read(buffer, header.nbr_bytes_input);
+    cout << "Got buffer: " << buffer << endl;
+    vector<string> strs;
+    boost::split(strs, buffer, boost::is_any_of(","));
+    cout << "Str number 6: " << strs[6] << endl;
 	all_nav_entry entry;
 	entry.id_ = header.pos_count;
 	entry.lat_ = double(header.latitude)/20000000.;
 	entry.long_ = double(header.longitude)/10000000.;
-	entry.heading_ = double(header.heading)*0.01;
+    entry.depth_ = stof(strs[6]);
+	entry.heading_ = M_PI/180.*double(header.heading)*0.01;
+    entry.heading_ = 0.5*M_PI-entry.heading_; // this basically converts to yaw
 	entry.course_over_ground_ = double(header.course_over_ground)*0.01;
     tie(entry.time_stamp_, entry.time_string_) = parse_all_time(header.date, header.time);
+
+	unsigned char spare; // Spare (always 0)
+	input.read(reinterpret_cast<char*>(&spare), sizeof(spare));
+
 	return entry;
 }
 
 template <>
-all_mbes_ping::PingsT parse_file<all_mbes_ping>(const boost::filesystem::path& path) //, int code)
+all_nav_depth read_datagram<all_nav_depth, all_depth_datagram>(std::ifstream& input, const all_depth_datagram& header)
+{
+	all_nav_depth entry;
+	entry.id_ = header.height_count;
+    tie(entry.time_stamp_, entry.time_string_) = parse_all_time(header.date, header.time);
+    
+    entry.height = 100.*double(header.height); // Height in cm
+    entry.height_type = header.height_type; // Height type
+	
+    return entry;
+}
+
+template <>
+all_echosounder_depth read_datagram<all_echosounder_depth, all_echosounder_depth_datagram>(std::ifstream& input, const all_echosounder_depth_datagram& header)
+{
+	all_echosounder_depth entry;
+	entry.id_ = header.echo_count;
+    tie(entry.time_stamp_, entry.time_string_) = parse_all_time(header.date, header.time);
+    
+    entry.depth_ = 100.*double(header.echo_depth); // Height in cm
+	
+    return entry;
+}
+
+template <>
+all_mbes_ping::PingsT parse_file<all_mbes_ping>(const boost::filesystem::path& path)
 {
     return parse_file_impl<all_mbes_ping, all_xyz88_datagram, 88>(path);
 }
 
 template <>
-all_nav_entry::EntriesT parse_file<all_nav_entry>(const boost::filesystem::path& path) //, int code)
+all_nav_entry::EntriesT parse_file<all_nav_entry>(const boost::filesystem::path& path)
 {
     return parse_file_impl<all_nav_entry, all_position_datagram, 80>(path);
+}
+
+template <>
+all_nav_depth::EntriesT parse_file<all_nav_depth>(const boost::filesystem::path& path)
+{
+    return parse_file_impl<all_nav_depth, all_depth_datagram, 104>(path);
+}
+
+template <>
+all_echosounder_depth::EntriesT parse_file<all_echosounder_depth>(const boost::filesystem::path& path)
+{
+    return parse_file_impl<all_echosounder_depth, all_echosounder_depth_datagram, 69>(path);
 }
 
 mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_entry::EntriesT& entries)
@@ -265,7 +338,7 @@ mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_
         new_ping.time_stamp_ = ping.time_stamp_;
         new_ping.time_string_ = ping.time_string_;
         new_ping.first_in_file_ = ping.first_in_file_;
-        new_ping.heading_ = -ping.heading_;
+        new_ping.heading_ = ping.heading_;
         new_ping.pitch_ = 0.;
         new_ping.roll_ = 0.;
         if (pos == entries.end()) {
@@ -273,6 +346,7 @@ mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_
             string utm_zone;
             tie(northing, easting, utm_zone) = lat_long_to_UTM(entries.back().lat_, entries.back().long_);
             new_ping.pos_ = Eigen::Vector3d(easting, northing, -ping.transducer_depth_);
+            //new_ping.pos_ = Eigen::Vector3d(easting, northing, -entries.back().depth_);
         }
         else {
             if (pos == entries.begin()) {
@@ -280,20 +354,24 @@ mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_
                 string utm_zone;
                 tie(northing, easting, utm_zone) = lat_long_to_UTM(pos->lat_, pos->long_);
                 new_ping.pos_ = Eigen::Vector3d(easting, northing, -ping.transducer_depth_);
+                //new_ping.pos_ = Eigen::Vector3d(easting, northing, -pos->depth_);
             }
             else {
                 all_nav_entry& previous = *(pos - 1);
                 double ratio = double(ping.time_stamp_ - previous.time_stamp_)/double(pos->time_stamp_ - previous.time_stamp_);
                 double lat = previous.lat_ + ratio*(pos->lat_ - previous.lat_);
                 double lon = previous.long_ + ratio*(pos->long_ - previous.long_);
+                double depth = previous.depth_ + ratio*(pos->depth_ - previous.depth_);
                 double easting, northing;
                 string utm_zone;
                 tie(northing, easting, utm_zone) = lat_long_to_UTM(lat, lon);
                 new_ping.pos_ = Eigen::Vector3d(easting, northing, -ping.transducer_depth_);
+                //new_ping.pos_ = Eigen::Vector3d(easting, northing, -depth);
             }
         }
 
         int i = 0;
+        cout << "Ping heading: " << new_ping.heading_ << endl;
         for (const Eigen::Vector3d& beam : ping.beams) {
             /*if (beam(2) > -5. || beam(2) < -25.) {
                 ++i;
@@ -303,6 +381,7 @@ mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_
 
             // it seems it has already been compensated for pitch, roll
             new_ping.beams.push_back(new_ping.pos_ + Rz*beam);
+            //new_ping.beams.push_back(new_ping.pos_ + beam);
             new_ping.back_scatter.push_back(ping.reflectivities[i]);
             ++i;
         }

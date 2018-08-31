@@ -10,7 +10,6 @@ struct all_common_header {
 
 struct all_common_end {
     // end of repeat cycle
-	unsigned char spare; // Spare (always 0)
 	unsigned char end_ident; // End identifier = ETX (Always 03h)
 	unsigned short checksum; // Check sum of data between STX and ETX
 } __attribute__((packed));
@@ -59,6 +58,40 @@ struct all_position_datagram {
 	unsigned char nbr_bytes_input; // Number of bytes in input datagram
 
     // Position input datagram as received
+
+    // end of repeat cycle, see all_common_end
+} __attribute__((packed));
+
+struct all_depth_datagram {
+    // common header, see all_common_header
+
+    // data description
+    unsigned short model_nbr; // EM model number (Example: EM 710 = 710)
+    unsigned int date; // Date = year*10000 + month*100 + day (Example: Sep 26, 2005 = 20050926)
+    unsigned int time; // Time since midnight in milliseconds (Example: 08:12:51.234 = 29570234)
+    unsigned short height_count; // Height counter (sequential counter)
+    unsigned short serial_nbr; // System serial number
+
+    int height; // Height in cm
+    unsigned char height_type; // Height type
+
+    // end of repeat cycle, see all_common_end
+} __attribute__((packed));
+
+struct all_echosounder_depth_datagram {
+    // common header, see all_common_header
+
+    // data description
+    unsigned short model_nbr; // EM model number (Example: EM 710 = 710)
+    unsigned int date; // Date = year*10000 + month*100 + day (Example: Sep 26, 2005 = 20050926)
+    unsigned int time; // Time since midnight in milliseconds (Example: 08:12:51.234 = 29570234)
+    unsigned short echo_count; // Echo sounder counter (sequential counter)
+    unsigned short serial_nbr; // System serial number
+
+    unsigned int meas_date; // Date = year*10000 + month*100 + day (Example: Sep 26, 2005 = 20050926)
+    unsigned int meas_time; // Time since midnight in milliseconds (Example: 08:12:51.234 = 29570234)
+    unsigned int echo_depth; // Echo sounder depth from waterline in cm
+    char source_id; // Source identifier (S, T, 1, 2 or 3)
 
     // end of repeat cycle, see all_common_end
 } __attribute__((packed));

@@ -40,6 +40,7 @@ struct all_nav_entry {
     long long time_stamp_; // posix time stamp
     double lat_;
     double long_;
+    double depth_;
 	double heading_;
 	double course_over_ground_;
     bool first_in_file_;
@@ -56,6 +57,31 @@ struct all_nav_entry {
 
 };
 
+struct all_nav_depth {
+
+    using EntriesT = std::vector<all_nav_depth, Eigen::aligned_allocator<all_nav_depth> >;
+
+    unsigned int id_;
+    std::string time_string_; // readable time stamp string
+    long long time_stamp_; // posix time stamp
+    double height;
+    int height_type;
+    bool first_in_file_;
+
+};
+
+struct all_echosounder_depth {
+
+    using EntriesT = std::vector<all_echosounder_depth, Eigen::aligned_allocator<all_echosounder_depth> >;
+
+    unsigned int id_;
+    std::string time_string_; // readable time stamp string
+    long long time_stamp_; // posix time stamp
+    double depth_;
+    bool first_in_file_;
+
+};
+
 //template <typename ReturnType>
 //std::vector<ReturnType, Eigen::aligned_allocator<ReturnType> > parse_file(const boost::filesystem::path& path);
 template <>
@@ -63,6 +89,9 @@ all_mbes_ping::PingsT parse_file<all_mbes_ping>(const boost::filesystem::path& p
 
 template <>
 all_nav_entry::EntriesT parse_file<all_nav_entry>(const boost::filesystem::path& path);
+
+template <>
+all_nav_depth::EntriesT parse_file<all_nav_depth>(const boost::filesystem::path& path);
 
 mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_entry::EntriesT& entries);
 
