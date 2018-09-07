@@ -22,7 +22,7 @@ cv::Mat make_waterfall_image(const xtf_sss_ping::PingsT& pings)
     cv::Mat swath_img = cv::Mat(rows, cols, CV_8UC3, cv::Scalar(255, 255, 255));
     for (int i = 0; i < pings.size(); ++i) {
         for (int j = 0; j < pings[i].port.pings.size(); ++j) {
-            cv::Point3_<uchar>* p = swath_img.ptr<cv::Point3_<uchar> >(i, cols-j-1);
+            cv::Point3_<uchar>* p = swath_img.ptr<cv::Point3_<uchar> >(i, pings[0].stbd.pings.size()+j);
             p->z = uchar(255.*(float(pings[i].port.pings[j]) + 32767.)/(2.*32767.));
             p->y = uchar(255.*(float(pings[i].port.pings[j]) + 32767.)/(2.*32767.));
             p->x = uchar(255.*(float(pings[i].port.pings[j]) + 32767.)/(2.*32767.));
@@ -166,6 +166,8 @@ xtf_sss_ping process_side_scan_ping(XTFPINGHEADER *PingHeader, XTFFILEHEADER *XT
       // skip past the imagery;
       Ptr += BytesThisChannel;
    }
+
+   std::reverse(ping.port.pings.begin(), ping.port.pings.end());
 
    return ping;
 }

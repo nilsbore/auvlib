@@ -134,6 +134,9 @@ int main(int argc, char** argv)
 
     {
         xtf_sss_ping::PingsT pings_sss = load_or_parse_pings<xtf_sss_ping>(sss_folder, dataset_name + "_sss");
+        cv::Mat waterfall_img = make_waterfall_image(pings_sss);
+        cv::imshow("My image", waterfall_img);
+        cv::waitKey();
         mesh.overlay_sss(V, F, bounds, pings_sss);
     }
 

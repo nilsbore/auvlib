@@ -210,6 +210,7 @@ struct survey_viewer {
     Eigen::Vector3d offset;
     Eigen::VectorXd hit_sums;
     Eigen::VectorXi hit_counts;
+    Eigen::MatrixXd N_faces; // the normals of F1, V1
 
     survey_viewer(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1, const Eigen::MatrixXd& C1,
         const Eigen::MatrixXd& V2, const Eigen::MatrixXi& F2, const Eigen::MatrixXd& C2,
@@ -233,6 +234,9 @@ struct survey_viewer {
         C = Eigen::MatrixXd(C1.rows()+C2.rows(), C1.cols());
         C << C1, C2;
 
+        // Compute per-face normals
+        igl::per_face_normals(V1, F1, N_faces);
+
         viewer.data().set_mesh(V, F);
         // Add per-vertex colors
         //viewer.data().set_colors(C);
@@ -242,7 +246,7 @@ struct survey_viewer {
         viewer.data().point_size = 10;
         viewer.data().line_width = 1;
 
-        //viewer.callback_pre_draw = std::bind(&IglVisCallback::callback_pre_draw, this, std::placeholders::_1);
+        //viewer.callback_pre_draw = std::bind(&survey_viewer::callback_pre_draw, this, std::placeholders::_1);
         viewer.callback_key_pressed = std::bind(&survey_viewer::callback_key_pressed, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         viewer.core.is_animating = true;
         viewer.core.animation_max_fps = 30.;
@@ -318,7 +322,7 @@ struct survey_viewer {
         return make_tuple(hits_left, hits_right, hits_left_inds, hits_right_inds);
     }
 
-    tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi> embree_compute_hits(const Eigen::Vector3d& origin, const Eigen::Matrix3d& R, double tilt_angle, double beam_width)
+    tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi, Eigen::VectorXd, Eigen::VectorXd> embree_compute_hits(const Eigen::Vector3d& origin, const Eigen::Matrix3d& R, double tilt_angle, double beam_width)
     {
         igl::Hit hit;
         Eigen::MatrixXd dirs_left;
@@ -328,6 +332,8 @@ struct survey_viewer {
         Eigen::MatrixXd hits_right(dirs_right.rows(), 3);
         Eigen::VectorXi hits_left_inds(dirs_left.rows());
         Eigen::VectorXi hits_right_inds(dirs_right.rows());
+        Eigen::VectorXd mod_left(dirs_left.rows());
+        Eigen::VectorXd mod_right(dirs_right.rows());
 
         int nbr_lines = dirs_left.rows() + dirs_right.rows();
         Eigen::MatrixXd dirs = Eigen::MatrixXd(nbr_lines, dirs_left.cols());
@@ -344,6 +350,10 @@ struct survey_viewer {
                 hits_left_inds(hit_count) = hit;
                 // we actually get the coordinates within the triangle also, we could use that
                 hits_left.row(hit_count) = V1.row(vind);
+                double nn = (origin - hits_left.row(hit_count).transpose()).norm();
+                Eigen::Vector3d dir = origin - hits_left.row(hit_count).transpose();
+                dir.normalize();
+                mod_left(hit_count) = (1./dir.dot(N_faces.row(hit).transpose()))*(nn/60.);
                 ++hit_count;
             }
         }
@@ -357,30 +367,41 @@ struct survey_viewer {
                 hits_right_inds(hit_count) = hit;
                 // we actually get the coordinates within the triangle also, we could use that
                 hits_right.row(hit_count) = V1.row(vind);
+                double nn = (origin - hits_right.row(hit_count).transpose()).norm();
+                Eigen::Vector3d dir = origin - hits_right.row(hit_count).transpose();
+                dir.normalize();
+                mod_right(hit_count) = (1./dir.dot(N_faces.row(hit).transpose()))*(nn/60.);
                 ++hit_count;
             }
         }
         hits_right.conservativeResize(hit_count, 3);
         hits_right_inds.conservativeResize(hit_count);
-        return make_tuple(hits_left, hits_right, hits_left_inds, hits_right_inds);
+        return make_tuple(hits_left, hits_right, hits_left_inds, hits_right_inds, mod_left, mod_right);
     }
 
-    void correlate_hits(const Eigen::MatrixXd& hits_port, const Eigen::MatrixXd& hits_stbd,
-                        const Eigen::VectorXi& hits_port_inds, const Eigen::VectorXi& hits_stbd_inds,
-                        const xtf_sss_ping& ping)
+    void correlate_hits(const Eigen::MatrixXd& hits_port,
+                        const Eigen::VectorXi& hits_port_inds,
+                        const Eigen::VectorXd& mod_port,
+                        const xtf_sss_ping_side& ping,
+                        const Eigen::Vector3d& origin,
+                        double sound_vel)
     {
-        Eigen::Vector3d origin = ping.pos_ - offset;
-        Eigen::VectorXd times_port = 2.*(hits_port.rowwise() - origin.transpose()).rowwise().norm()/ping.sound_vel_;
-        Eigen::VectorXd times_stbd = 2.*(hits_stbd.rowwise() - origin.transpose()).rowwise().norm()/ping.sound_vel_;
-        cout << "Port ping duration: " << ping.port.time_duration << endl;
+        //Eigen::Vector3d origin = ping.pos_ - offset;
+        Eigen::VectorXd times_port = 1.*(hits_port.rowwise() - origin.transpose()).rowwise().norm()/sound_vel; //ping.sound_vel_;
+        //Eigen::VectorXd times_stbd = 1.*(hits_stbd.rowwise() - origin.transpose()).rowwise().norm()/ping.sound_vel_;
+        cout << "Port ping duration: " << ping.time_duration << endl;
         cout << "Port times: " << times_port.transpose() << endl;
-        cout << "Stbd ping duration: " << ping.stbd.time_duration << endl;
-        cout << "Stbd times: " << times_stbd.transpose() << endl;
+        //cout << "Stbd ping duration: " << ping.stbd.time_duration << endl;
+        //cout << "Stbd times: " << times_stbd.transpose() << endl;
+        //
+        if (times_port.rows() == 0) {
+            return;
+        }
 
-        double port_step = ping.port.time_duration / double(ping.port.pings.size());
+        double port_step = ping.time_duration / double(ping.pings.size());
         cout << "port step: " << port_step << endl;
         int pos = 0;
-        for (int i = 0; i < ping.port.pings.size(); ++i) {
+        for (int i = 0; i < ping.pings.size(); ++i) {
             if (times_port(0) > double(i)*port_step) {
                 continue;
             }
@@ -388,7 +409,8 @@ struct survey_viewer {
                 break;
             }
 
-            double intensity = (double(ping.port.pings[i]) + 32767.)/(2.*32767.);
+            //double intensity = (double(ping.port.pings[i]) + 32767.)/(2.*32767.);
+            //double intensity = double(ping.pings[ping.pings.size()-i-1])/(10000.);
             /*if (intensity < 0.2) { // no hit?
                 continue;
             }*/
@@ -400,7 +422,9 @@ struct survey_viewer {
             if (pos >= hits_port.rows()) {
                 break;
             }
+            double intensity = mod_port(pos)*double(ping.pings[i])/(10000.);
             cout << "Found one: " << double(i)*port_step << ", " << times_port(pos) << endl;
+            cout << "With intensity: " << intensity << endl;
             int vind = F1(hits_port_inds(pos), 0);
             hit_sums(vind) += intensity;
             hit_counts(vind) += 1;
@@ -410,39 +434,61 @@ struct survey_viewer {
 
     }
 
+    void project_sss()
+    {
+        if (i >= pings.size()) {
+            return;
+        }
+        cout << "Setting new position: " << pings[i].pos_.transpose() << endl;
+        V.bottomRows(V2.rows()) = V2;
+        Eigen::Matrix3d Rz = Eigen::AngleAxisd(pings[i].heading_, Eigen::Vector3d::UnitZ()).matrix();
+        V.bottomRows(V2.rows()) *= Rz.transpose();
+        V.bottomRows(V2.rows()).array().rowwise() += (pings[i].pos_ - offset).transpose().array();
+        viewer.data().set_vertices(V);
+        //viewer.data().compute_normals();
+
+        Eigen::MatrixXd hits_left;
+        Eigen::MatrixXd hits_right;
+        Eigen::VectorXi hits_left_inds;
+        Eigen::VectorXi hits_right_inds;
+        Eigen::VectorXd mod_left;
+        Eigen::VectorXd mod_right;
+        //tie(hits_left, hits_right, hits_left_inds, hits_right_inds) = compute_hits(pings[i].pos_ - offset, Rz, pings[i].port.tilt_angle, pings[i].port.beam_width);
+        tie(hits_left, hits_right, hits_left_inds, hits_right_inds, mod_left, mod_right) = embree_compute_hits(pings[i].pos_ - offset, Rz, 1.4*pings[i].port.tilt_angle, pings[i].port.beam_width);
+        Eigen::MatrixXi E;
+        Eigen::MatrixXd P(hits_left.rows(), 3);
+        P.rowwise() = (pings[i].pos_ - offset).transpose();
+        viewer.data().set_edges(P, E, Eigen::RowVector3d(1., 0., 0.));
+        viewer.data().add_edges(P, hits_left, Eigen::RowVector3d(1., 0., 0.));
+        P = Eigen::MatrixXd(hits_right.rows(), 3);
+        P.rowwise() = (pings[i].pos_ - offset).transpose();
+        viewer.data().add_edges(P, hits_right, Eigen::RowVector3d(0., 1., 0.));
+
+        correlate_hits(hits_left, hits_left_inds, mod_left, pings[i].port, pings[i].pos_ - offset, pings[i].sound_vel_);
+        correlate_hits(hits_right, hits_right_inds, mod_right, pings[i].stbd, pings[i].pos_ - offset, pings[i].sound_vel_);
+        viewer.data().set_colors(C);
+
+    }
+
+    bool callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
+    {
+        glEnable(GL_CULL_FACE);
+
+        if (viewer.core.is_animating) {
+            project_sss();
+        }
+    }
+
     bool callback_key_pressed(igl::opengl::glfw::Viewer& viewer, unsigned int key, int mods)
     {
         switch (key) {
         case 'n':
-            if (i < pings.size()) {
-                cout << "Setting new position: " << pings[i].pos_.transpose() << endl;
-                V.bottomRows(V2.rows()) = V2;
-                Eigen::Matrix3d Rz = Eigen::AngleAxisd(pings[i].heading_, Eigen::Vector3d::UnitZ()).matrix();
-                V.bottomRows(V2.rows()) *= Rz.transpose();
-                V.bottomRows(V2.rows()).array().rowwise() += (pings[i].pos_ - offset).transpose().array();
-                viewer.data().set_vertices(V);
-                //viewer.data().compute_normals();
-
-                Eigen::MatrixXd hits_left;
-                Eigen::MatrixXd hits_right;
-                Eigen::VectorXi hits_left_inds;
-                Eigen::VectorXi hits_right_inds;
-                //tie(hits_left, hits_right, hits_left_inds, hits_right_inds) = compute_hits(pings[i].pos_ - offset, Rz, pings[i].port.tilt_angle, pings[i].port.beam_width);
-                tie(hits_left, hits_right, hits_left_inds, hits_right_inds) = embree_compute_hits(pings[i].pos_ - offset, Rz, pings[i].port.tilt_angle, pings[i].port.beam_width);
-                Eigen::MatrixXi E;
-                Eigen::MatrixXd P(hits_left.rows(), 3);
-                P.rowwise() = (pings[i].pos_ - offset).transpose();
-                viewer.data().set_edges(P, E, Eigen::RowVector3d(1., 0., 0.));
-                viewer.data().add_edges(P, hits_left, Eigen::RowVector3d(1., 0., 0.));
-                P = Eigen::MatrixXd(hits_right.rows(), 3);
-                P.rowwise() = (pings[i].pos_ - offset).transpose();
-                viewer.data().add_edges(P, hits_right, Eigen::RowVector3d(0., 1., 0.));
-                
-                correlate_hits(hits_left, hits_right, hits_left_inds, hits_right_inds, pings[i]);
-                viewer.data().set_colors(C);
-
-                i += 1;
-            }
+            project_sss();
+            i += 1;
+            return true;
+        case 'm':
+            project_sss();
+            i += 100;
             return true;
         default:
             return false;
