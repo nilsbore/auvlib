@@ -64,4 +64,4 @@ add_executable(register_slam_process src/register_slam_process.cpp)
 target_link_libraries(register_slam_process data_structures submaps gpgs_cost_function gpgs_visualization gpgs_multi_visualizer gpgs_igl_visualizer data_structures data_transforms)
 
 add_executable(draw_all_map src/draw_all_map.cpp)
-target_link_libraries(draw_all_map xtf_data all_data mesh_map embree -lpthread)
+target_link_libraries(draw_all_map xtf_data all_data mesh_map -lpthread)
