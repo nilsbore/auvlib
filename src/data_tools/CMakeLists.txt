@@ -84,11 +84,11 @@ target_link_libraries(test_submap_tracks gsf_data data_structures navi_data ${Op
 target_link_libraries(test_all all_data ${OpenCV_LIBS})
 
 # Link the libraries
-target_link_libraries(submaps ${PCL_LIBRARIES})
+target_link_libraries(submaps eigen_cereal ${PCL_LIBRARIES})
 
-target_link_libraries(data_structures PUBLIC sparse_gp rbf_kernel gaussian_noise ${OpenCV_LIBS})
+target_link_libraries(data_structures PUBLIC eigen_cereal sparse_gp rbf_kernel gaussian_noise ${OpenCV_LIBS})
 
-target_link_libraries(navi_data PUBLIC sparse_gp data_transforms ${PCL_LIBRARIES})
+target_link_libraries(navi_data PUBLIC eigen_cereal sparse_gp data_transforms ${PCL_LIBRARIES})
 
 target_link_libraries(gsf_data PUBLIC gsf data_structures navi_data lat_long_utm)
 

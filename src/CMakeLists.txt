@@ -45,7 +45,7 @@ add_definitions(${PCL_DEFINITIONS})
 add_definitions(-DCERES_GFLAGS_NAMESPACE=${GFLAGS_NAMESPACE})
 
 include_directories(${CERES_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS})
-include_directories(eigen_cereal/include)
+#include_directories(eigen_cereal/include)
 
 add_subdirectory(libgsf)
 add_subdirectory(libxtf)
