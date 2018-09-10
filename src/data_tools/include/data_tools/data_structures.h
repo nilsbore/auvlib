@@ -3,7 +3,7 @@
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 #include <map>
 
 #include <eigen_cereal/eigen_cereal.h>

@@ -1,7 +1,7 @@
 #ifndef NAVI_DATA_H
 #define NAVI_DATA_H
 
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 #include <boost/filesystem.hpp>
 #include <boost/range.hpp>
 

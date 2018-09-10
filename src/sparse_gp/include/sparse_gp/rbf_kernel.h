@@ -1,7 +1,7 @@
 #ifndef RBF_KERNEL_H
 #define RBF_KERNEL_H
 
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 #include <vector>
 
 class rbf_kernel

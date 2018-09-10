@@ -2,7 +2,7 @@
 #define GPGS_VISUALIZATION_H
 
 #include <pcl/visualization/cloud_viewer.h>
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 #include <ceres/ceres.h>
 
 #include <sparse_gp/sparse_gp.h>
