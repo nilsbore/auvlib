@@ -1,7 +1,7 @@
 project(gpgs_apps)
 
 include_directories(include)
-link_directories(${CMAKE_BINARY_DIR}/embree)
+#link_directories(${CMAKE_BINARY_DIR}/embree)
 
 add_executable(parse_navi_data src/parse_navi_data.cpp)
 target_link_libraries(parse_navi_data navi_data sparse_gp data_transforms submaps gpgs_igl_visualizer data_structures ${PCL_LIBRARIES})
