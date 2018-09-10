@@ -33,6 +33,10 @@ Now, we can optimize it by running
 ```
 Again, the results `example_results.cereal` can be viewed using the visualizer.
 
+## Using as a library
+
+[Check out the example projects](https://github.com/nilsbore/gpgs_slam/tree/fix_build/example_projects).
+
 ## data_tools
 
 ### navi_data
