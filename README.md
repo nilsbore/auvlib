@@ -11,7 +11,8 @@ sudo apt-get install libcereal-dev libglfw3-dev libceres-dev
 ## Building
 
 Once cloned, get the libigl submodule via `git submodule init`, `git submodule update`.
-Then go into the libigl folder and execute `git submodule update --init external/embree`.
+Then go into the libigl folder and execute `git submodule update --init external/embree`
+and `git submodule update --init external/glfw`.
 Finally, create a build folder in the repo root, and run `cmake ..`, followed by `make` within that folder.
 
 ## Running
