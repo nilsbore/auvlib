@@ -12,7 +12,7 @@ Then, run cmake using:
 cmake -DCMAKE_INSTALL_PREFIX=../gpgs_install ../../..
 ```
 followed by make: `make && make install`.
-Now, go to the example directory and create a build folder for that project:
+Now, go to the `data_project` directory and create a build folder for that project:
 ```
 cd ..
 mkdir build
