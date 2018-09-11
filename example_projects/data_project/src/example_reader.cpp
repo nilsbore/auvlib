@@ -1,14 +1,9 @@
-#include <cereal/archives/json.hpp>
-
 #include <cxxopts.hpp>
 #include <data_tools/gsf_data.h>
 #include <data_tools/csv_data.h>
 #include <data_tools/xtf_data.h>
 #include <data_tools/navi_data.h>
 #include <data_tools/all_data.h>
-#include <data_tools/transforms.h>
-
-#include <chrono>
 
 using namespace std;
 
@@ -18,7 +13,7 @@ int main(int argc, char** argv)
     string file_str;
     string type;
 
-	cxxopts::Options options("MyProgram", "One line description of MyProgram");
+	cxxopts::Options options("example_reader", "Reads different mbes and sss file formats and saves them to a common format");
 	options.add_options()
       ("help", "Print help")
       ("folder", "Input folder containing mbes files", cxxopts::value(folder_str))
@@ -49,7 +44,7 @@ int main(int argc, char** argv)
 	cout << "Input mbes folder : " << folder << endl;
 	cout << "Output file : " << path << endl;
 
-    // if side scan, read and save, the return
+    // if side scan, read and save, then return
     if (type == "xtf") {
         xtf_sss_ping::PingsT pings = parse_folder<xtf_sss_ping>(folder);
         write_data(pings, path);
