@@ -203,7 +203,7 @@ int main(int argc, char** argv)
 ```
 To know which files to look at, it may also help to look at the [tests in `data_tools`](https://github.com/nilsbore/gpgs_slam/blob/master/src/data_tools/src/test_gsf.cpp).
 
-## Benchmarking
+## Benchmarking SLAM and registration
 
 The tests also [contains an example](https://github.com/nilsbore/gpgs_slam/blob/master/src/apps/test/test_parse_navi_data.cpp)
 of how to use the benchmark system. After having read your files like above, simply do something like the following:
