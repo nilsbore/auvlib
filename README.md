@@ -23,11 +23,11 @@ First, initialize the submodules, same as for the previous section. For using au
 [check out the example projects](https://github.com/nilsbore/gpgs_slam/tree/fix_build/example_projects).
 If you just want to use auvlib for reading data, please see the minimal [data project](https://github.com/nilsbore/auvlib/tree/fix_build/example_projects/data_project).
 
-### Data interfaces
+## Data interfaces
 
 The main interfaces are defined in the [data_structures](https://github.com/nilsbore/auvlib/blob/master/src/data_tools/include/data_tools/data_structures.h) header.
 
-## mbes_ping
+### mbes_ping
 
 For example, it contains the data structure `mbes_ping` that is the common
 data structure for representing multibeam swath data. Similar to other data
@@ -40,25 +40,55 @@ was the first one of a parsed file, and otherwise to `false`.
 All multibeam data structures defined below can be converted into this
 common `mbes_ping` type through conversion functions (see [the example](https://github.com/nilsbore/auvlib/blob/fix_build/example_projects/data_project/src/example_reader.cpp)).
 
-## Other data structures
+### Other data structures
 
 The `data_tools` project contains the following libraries: `navi_data`, `all_data`, `xtf_data`, `gsf_data`, `csv_data`
 for reading data of different types.
 
-* `navi_data` - for reading ASCII data exported from NaviEdit
+* `navi_data` - for reading ASCII data exported from NaviEdit, contains data structures:
+  * a
+  * b
 * `all_data` - for reading `.all` data files from Kongsberg
 * `xtf_data` - for reading `.xtf` sidescan files
 * `gsf_data` - for reading `.gsf` files containing various sensor data
 * `csv_data` - for reading `.csv` navigation files collected for the change detection experiment
 
-## Common patterns
+### Common patterns
 
 All data structures contain equivalents to `PingsT` of `mbes_ping` for
 representing arrays of the data. Similarly, all data types also have the
 `first_in_file_` flag. Moreover, they also contain a readable time stamp
 called `time_string_` and a counter of milliseconds since `1970-01-01 00:00`, called `time_stamp_`.
 
-## Parsing 
+### Parsing different formats
+
+The library supports parsing many different data types, as specified above.
+Parsing is always done through the templated interfaces `parse_file` and `parse_folder`.
+For example, if you want parse multibeam data from a folder of `.all` files, write:
+```cpp
+all_mbes_ping::PingsT pings = parse_folder<all_mbes_ping>(boost::filesystem::path("/path/to/folder"));
+```
+Or, if you want to read just one sidescan `.xtf` file:
+```cpp
+xtf_sss_ping pings = parse_file<xtf_sss_ping>(boost::filesystem::path("/path/to/file.xtf"));
+```
+
+### Writing and reading binary files
+
+Parsing, especially of ASCII data, can take a long time.
+We might therefore want to save our data structures in a binary for
+after we have parsed them so that we can read them faster next time.
+This can be achieved by the templated `write_data` and `read_data` functions.
+They can be used with all data structures defined in this library.
+To save a bunch of `gsf` multibeam data that we have just parsed, write
+```cpp
+gsf_mbes_ping::PingsT pings = parse_folder<gsf_mbes_ping>(boost::filesystem::path("/path/to/folder"));
+write_data(pings, boost::filesystem::path("/path/to/file.cereal"));
+```
+Then you can use the following code to read them faster next time:
+```cpp
+gsf_mbes_ping::PingsT pings = read_data<gsf_mbes_ping>(boost::filesystem::path("/path/to/file.cereal"));
+```
 
 ## Running
 
