@@ -17,6 +17,16 @@ Then go into the libigl folder and execute `git submodule update --init external
 and `git submodule update --init external/glfw`.
 Finally, create a build folder in the repo root, and run `cmake ..`, followed by `make` within that folder.
 
+## Using as a library
+
+First, initialize the submodules, same as for the previous section. For using auvlib as a library in an external project,
+[check out the example projects](https://github.com/nilsbore/gpgs_slam/tree/fix_build/example_projects).
+If you just want to use auvlib for reading data, please see the minimal [data project](https://github.com/nilsbore/auvlib/tree/fix_build/example_projects/data_project).
+
+### Data interfaces
+
+
+
 ## Running
 
 You can run a toy example with data provided in this repo.
@@ -35,10 +45,6 @@ Now, we can optimize it by running
 ./slam_process_ceres --file example_problem.cereal --output example_results.cereal
 ```
 Again, the results `example_results.cereal` can be viewed using the visualizer.
-
-## Using as a library
-
-[Check out the example projects](https://github.com/nilsbore/gpgs_slam/tree/fix_build/example_projects).
 
 ## Processing to create SLAM submaps
 
