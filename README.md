@@ -20,7 +20,7 @@ Finally, create a build folder in the repo root, and run `cmake ..`, followed by
 ## Using as a library
 
 First, initialize the submodules, same as for the previous section. For using auvlib as a library in an external project,
-[check out the example projects](https://github.com/nilsbore/gpgs_slam/tree/master/example_projects).
+[check out the example projects](https://github.com/nilsbore/auvlib/tree/master/example_projects).
 If you just want to use auvlib for reading data, please see the minimal [data project](https://github.com/nilsbore/auvlib/tree/master/example_projects/data_project).
 
 ## Library data interfaces
@@ -128,7 +128,7 @@ Again, the results `example_results.cereal` can be viewed using the visualizer.
 ### navi_data
 
 The `navi_data` library contains tools for parsing files exported from NaviEdit.
-See this example program, also available in [the test folder](https://github.com/nilsbore/gpgs_slam/blob/master/src/apps/test/test_parse_navi_data.cpp).
+See this example program, also available in [the test folder](https://github.com/nilsbore/auvlib/blob/master/src/apps/test/test_parse_navi_data.cpp).
 
 ```cpp
 #include <boost/filesystem.hpp>
@@ -196,7 +196,7 @@ int main(int argc, char** argv)
 
 You read the gsf-based data in much the same way, using the `data_tools` library.
 The main differences are highlighted in the example below, with a full example in
-the [apps directory](https://github.com/nilsbore/gpgs_slam/blob/master/src/apps/src/parse_gsf_data.cpp):
+the [apps directory](https://github.com/nilsbore/auvlib/blob/master/src/apps/src/parse_gsf_data.cpp):
 
 ```cpp
 #include <cxxopts.hpp>
@@ -284,11 +284,11 @@ int main(int argc, char** argv)
     return 0;
 }
 ```
-To know which files to look at, it may also help to look at the [tests in `data_tools`](https://github.com/nilsbore/gpgs_slam/blob/master/src/data_tools/src/test_gsf.cpp).
+To know which files to look at, it may also help to look at the [tests in `data_tools`](https://github.com/nilsbore/auvlib/blob/master/src/data_tools/src/test_gsf.cpp).
 
 ## Benchmarking SLAM and registration
 
-The tests also [contains an example](https://github.com/nilsbore/gpgs_slam/blob/master/src/apps/test/test_parse_navi_data.cpp)
+The tests also [contains an example](https://github.com/nilsbore/auvlib/blob/master/src/apps/test/test_parse_navi_data.cpp)
 of how to use the benchmark system. Also check out the [benchmark headers](https://github.com/nilsbore/auvlib/blob/master/src/data_tools/include/data_tools/benchmark.h) for details.
 After having read your files like above, simply do something like the following:
 ```cpp
