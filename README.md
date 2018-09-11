@@ -84,7 +84,7 @@ all_mbes_ping::PingsT pings = parse_folder<all_mbes_ping>(boost::filesystem::pat
 ```
 Or, if you want to read just one sidescan `.xtf` file:
 ```cpp
-xtf_sss_ping pings = parse_file<xtf_sss_ping>(boost::filesystem::path("/path/to/file.xtf"));
+xtf_sss_ping::PingsT pings = parse_file<xtf_sss_ping>(boost::filesystem::path("/path/to/file.xtf"));
 ```
 
 ### Writing and reading binary files
