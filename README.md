@@ -1,5 +1,7 @@
-# gpgs_slam
-Gaussian Process Graph Slam Multibeam SLAM System
+# auvlib
+
+Tools for reading AUV deployment data files and for
+processing and visualization of side scan and multibeam data.
 
 ## Dependencies
 
