@@ -3,6 +3,7 @@
 #include <data_tools/data_structures.h>
 #include <data_tools/navi_data.h>
 #include <data_tools/transforms.h>
+#include <data_tools/benchmark.h>
 
 using namespace std;
 

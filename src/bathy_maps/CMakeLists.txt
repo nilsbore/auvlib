@@ -49,7 +49,7 @@ target_link_libraries(draw_map data_structures ${OpenCV_LIBS})
 #target_link_libraries(mesh_map data_structures igl::embree ${OpenCV_LIBS} glad ${GLFW3_LIBRARY} ${OPENGL_LIBRARY} ${OPENGL_glu_LIBRARY} -lpthread)
 target_link_libraries(mesh_map data_structures igl::embree ${OpenCV_LIBS} igl::core igl::opengl_glfw -lpthread)
 
-target_link_libraries(test_mesh data_structures gsf_data xtf_data csv_data navi_data mesh_map draw_map)
+target_link_libraries(test_mesh data_structures gsf_data xtf_data csv_data navi_data mesh_map draw_map ${OpenCV_LIBS})
 
 # 'make install' to the correct locations (provided by GNUInstallDirs).
 install(TARGETS draw_map mesh_map EXPORT BathyMapsConfig

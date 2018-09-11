@@ -14,6 +14,7 @@
 #include <sparse_gp/rbf_kernel.h>
 #include <sparse_gp/gaussian_noise.h>
 
+#include <opencv2/highgui/highgui.hpp>
 #include <chrono>
 
 using namespace std;

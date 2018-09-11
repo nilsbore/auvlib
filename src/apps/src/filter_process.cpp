@@ -8,7 +8,9 @@
 #include <sparse_gp/gaussian_noise.h>
 
 #include <data_tools/submaps.h>
+#include <gpgs_slam/gp_submaps.h>
 #include <data_tools/data_structures.h>
+#include <data_tools/benchmark.h>
 #include <data_tools/transforms.h>
 
 #include <eigen_cereal/eigen_cereal.h>

@@ -14,6 +14,8 @@ add_library(gpgs_multi_visualizer src/multi_visualizer.cpp)
 
 add_library(gpgs_igl_visualizer src/igl_visualizer.cpp)
 
+add_library(gp_submaps src/gp_submaps.cpp)
+
 # Define headers for this library. PUBLIC headers are used for
 # compiling the library, and will be added to consumers' build
 # paths.
@@ -39,14 +41,20 @@ target_include_directories(gpgs_igl_visualizer PUBLIC
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
 
+target_include_directories(gp_submaps PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+    PRIVATE src)
+
 target_link_libraries(gpgs_cost_function data_transforms ${CERES_LIBRARIES} sparse_gp rbf_kernel gaussian_noise submaps)
 target_link_libraries(gpgs_visualization data_transforms ${CERES_LIBRARIES} sparse_gp rbf_kernel gaussian_noise ${PCL_LIBRARIES} ${OpenCV_LIBS} submaps)
 target_link_libraries(gpgs_multi_visualizer gpgs_visualization data_transforms ${CERES_LIBRARIES} sparse_gp rbf_kernel gaussian_noise ${PCL_LIBRARIES} ${OpenCV_LIBS} submaps)
 #target_link_libraries(gpgs_igl_visualizer gpgs_visualization data_transforms ${CERES_LIBRARIES} sparse_gp rbf_kernel gaussian_noise ${OpenCV_LIBS} submaps glad ${GLFW3_LIBRARY} ${OPENGL_LIBRARY} ${OPENGL_glu_LIBRARY} -lpthread)
 target_link_libraries(gpgs_igl_visualizer gpgs_visualization data_transforms ${CERES_LIBRARIES} sparse_gp rbf_kernel gaussian_noise ${OpenCV_LIBS} submaps igl::core igl::opengl_glfw -lpthread)
+target_link_libraries(gp_submaps data_structures sparse_gp rbf_kernel gaussian_noise)
 
 # 'make install' to the correct locations (provided by GNUInstallDirs).
-install(TARGETS gpgs_cost_function gpgs_visualization
+install(TARGETS gpgs_cost_function gpgs_visualization gp_submaps
                 gpgs_multi_visualizer gpgs_igl_visualizer EXPORT GPGSSlamConfig
     ARCHIVE  DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -59,5 +67,5 @@ install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(EXPORT GPGSSlamConfig DESTINATION share/GPGSSlam/cmake)
 
 # This makes the project importable from the build directory
-export(TARGETS data_transforms gpgs_cost_function gpgs_visualization
+export(TARGETS data_transforms gpgs_cost_function gpgs_visualization gp_submaps
                gpgs_multi_visualizer gpgs_igl_visualizer FILE GPGSSlamConfig.cmake)

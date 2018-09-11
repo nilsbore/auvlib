@@ -43,7 +43,7 @@ add_definitions(${PCL_DEFINITIONS})
 include_directories(include ${CERES_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS})
 
 add_executable(example_slam src/example_slam.cpp)
-target_link_libraries(example_slam submaps gpgs_cost_function gpgs_visualization gpgs_multi_visualizer gpgs_igl_visualizer data_structures)
+target_link_libraries(example_slam submaps gp_submaps gpgs_cost_function gpgs_visualization gpgs_multi_visualizer gpgs_igl_visualizer data_structures)
 
 add_executable(example_mesh src/example_mesh.cpp)
-target_link_libraries(example_mesh data_structures gsf_data xtf_data csv_data navi_data mesh_map draw_map)
+target_link_libraries(example_mesh data_structures gsf_data xtf_data csv_data navi_data mesh_map draw_map ${OpenCV_LIBS})

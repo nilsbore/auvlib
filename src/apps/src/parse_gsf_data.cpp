@@ -4,6 +4,8 @@
 #include <data_tools/gsf_data.h>
 #include <data_tools/transforms.h>
 #include <data_tools/submaps.h>
+#include <gpgs_slam/gp_submaps.h>
+#include <data_tools/benchmark.h>
 
 #include <gpgs_slam/igl_visualizer.h>
 
