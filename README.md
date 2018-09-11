@@ -23,7 +23,7 @@ First, initialize the submodules, same as for the previous section. For using au
 [check out the example projects](https://github.com/nilsbore/gpgs_slam/tree/fix_build/example_projects).
 If you just want to use auvlib for reading data, please see the minimal [data project](https://github.com/nilsbore/auvlib/tree/fix_build/example_projects/data_project).
 
-## Data interfaces
+## Library data interfaces
 
 The main interfaces are defined in the [data_structures](https://github.com/nilsbore/auvlib/blob/master/src/data_tools/include/data_tools/data_structures.h) header.
 
