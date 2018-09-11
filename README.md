@@ -20,8 +20,8 @@ Finally, create a build folder in the repo root, and run `cmake ..`, followed by
 ## Using as a library
 
 First, initialize the submodules, same as for the previous section. For using auvlib as a library in an external project,
-[check out the example projects](https://github.com/nilsbore/gpgs_slam/tree/fix_build/example_projects).
-If you just want to use auvlib for reading data, please see the minimal [data project](https://github.com/nilsbore/auvlib/tree/fix_build/example_projects/data_project).
+[check out the example projects](https://github.com/nilsbore/gpgs_slam/tree/master/example_projects).
+If you just want to use auvlib for reading data, please see the minimal [data project](https://github.com/nilsbore/auvlib/tree/master/example_projects/data_project).
 
 ## Library data interfaces
 
@@ -38,7 +38,7 @@ It also contains a flag, `first_in_file_`, that is set to `true` if the swath
 was the first one of a parsed file, and otherwise to `false`.
 
 All multibeam data structures defined below can be converted into this
-common `mbes_ping` type through conversion functions (see [the example](https://github.com/nilsbore/auvlib/blob/fix_build/example_projects/data_project/src/example_reader.cpp)).
+common `mbes_ping` type through conversion functions (see [the example](https://github.com/nilsbore/auvlib/blob/master/example_projects/data_project/src/example_reader.cpp)).
 
 ### Other data structures
 
@@ -289,7 +289,7 @@ To know which files to look at, it may also help to look at the [tests in `data_
 ## Benchmarking SLAM and registration
 
 The tests also [contains an example](https://github.com/nilsbore/gpgs_slam/blob/master/src/apps/test/test_parse_navi_data.cpp)
-of how to use the benchmark system. Also check out the [benchmark headers](https://github.com/nilsbore/auvlib/blob/fix_build/src/data_tools/include/data_tools/benchmark.h) for details.
+of how to use the benchmark system. Also check out the [benchmark headers](https://github.com/nilsbore/auvlib/blob/master/src/data_tools/include/data_tools/benchmark.h) for details.
 After having read your files like above, simply do something like the following:
 ```cpp
 // create a new benchmark object with some arbitrary name
