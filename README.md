@@ -25,7 +25,40 @@ If you just want to use auvlib for reading data, please see the minimal [data pr
 
 ### Data interfaces
 
+The main interfaces are defined in the [data_structures](https://github.com/nilsbore/auvlib/blob/master/src/data_tools/include/data_tools/data_structures.h) header.
 
+## mbes_ping
+
+For example, it contains the data structure `mbes_ping` that is the common
+data structure for representing multibeam swath data. Similar to other data
+structures, it defines a vector of itself, `PingsT`. In this way, `mbes_ping::PingsT`
+can be used to represent all multibeam swaths from the deployment.
+The data structure also contains information about the vehicle positions if avaialable.
+It also contains a flag, `first_in_file_`, that is set to `true` if the swath
+was the first one of a parsed file, and otherwise to `false`.
+
+All multibeam data structures defined below can be converted into this
+common `mbes_ping` type through conversion functions (see [the example](https://github.com/nilsbore/auvlib/blob/fix_build/example_projects/data_project/src/example_reader.cpp)).
+
+## Other data structures
+
+The `data_tools` project contains the following libraries: `navi_data`, `all_data`, `xtf_data`, `gsf_data`, `csv_data`
+for reading data of different types.
+
+* `navi_data` - for reading ASCII data exported from NaviEdit
+* `all_data` - for reading `.all` data files from Kongsberg
+* `xtf_data` - for reading `.xtf` sidescan files
+* `gsf_data` - for reading `.gsf` files containing various sensor data
+* `csv_data` - for reading `.csv` navigation files collected for the change detection experiment
+
+## Common patterns
+
+All data structures contain equivalents to `PingsT` of `mbes_ping` for
+representing arrays of the data. Similarly, all data types also have the
+`first_in_file_` flag. Moreover, they also contain a readable time stamp
+called `time_string_` and a counter of milliseconds since `1970-01-01 00:00`, called `time_stamp_`.
+
+## Parsing 
 
 ## Running
 
