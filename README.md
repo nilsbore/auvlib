@@ -1,5 +1,7 @@
-# gpgs_slam
-Gaussian Process Graph Slam Multibeam SLAM System
+# auvlib
+
+Tools for reading AUV deployment data files and for
+processing and visualization of side scan and multibeam data.
 
 ## Dependencies
 
@@ -11,10 +13,98 @@ sudo apt-get install libcereal-dev libglfw3-dev libceres-dev
 ## Building
 
 Once cloned, get the libigl submodule via `git submodule init`, `git submodule update`.
-Then go into the libigl folder and execute `git submodule update --init external/embree`.
-Finally, create a build folder, and run `cmake ../src`, followed by `make` within that folder.
+Then go into the libigl folder and execute `git submodule update --init external/embree`
+and `git submodule update --init external/glfw`.
+Finally, create a build folder in the repo root, and run `cmake ..`, followed by `make` within that folder.
 
-## Running
+## Using as a library
+
+First, initialize the submodules, same as for the previous section. For using auvlib as a library in an external project,
+[check out the example projects](https://github.com/nilsbore/gpgs_slam/tree/fix_build/example_projects).
+If you just want to use auvlib for reading data, please see the minimal [data project](https://github.com/nilsbore/auvlib/tree/fix_build/example_projects/data_project).
+
+## Library data interfaces
+
+The main interfaces are defined in the [data_structures](https://github.com/nilsbore/auvlib/blob/master/src/data_tools/include/data_tools/data_structures.h) header.
+
+### mbes_ping
+
+For example, it contains the data structure `mbes_ping` that is the common
+data structure for representing multibeam swath data. Similar to other data
+structures, it defines a vector of itself, `PingsT`. In this way, `mbes_ping::PingsT`
+can be used to represent all multibeam swaths from the deployment.
+The data structure also contains information about the vehicle positions if available.
+It also contains a flag, `first_in_file_`, that is set to `true` if the swath
+was the first one of a parsed file, and otherwise to `false`.
+
+All multibeam data structures defined below can be converted into this
+common `mbes_ping` type through conversion functions (see [the example](https://github.com/nilsbore/auvlib/blob/fix_build/example_projects/data_project/src/example_reader.cpp)).
+
+### Other data structures
+
+The `data_tools` project contains the following libraries: `navi_data`, `all_data`, `xtf_data`, `gsf_data`, `csv_data`
+for reading data of different types.
+
+* `navi_data` - for reading ASCII data exported from NaviEdit, contains parsers for:
+  * `mbes_ping` - standard auvlib multibeam swath data structure
+  * `nav_entry` - NaviEdit navigation exports
+* `all_data` - for reading `.all` data files from Kongsberg, contains data structures and parsers for:
+  * `all_mbes_ping` - Kongsberg multibeam swath data structure
+  * `all_nav_entry` - Kongsberg navigation info
+  * `all_nav_depth` - Kongsberg depth info
+  * `all_echosounder_depth` - Kongsberg single echosounder depth data
+* `xtf_data` - for reading `.xtf` sidescan files
+  * `xtf_sss_ping` - xtf side scan swath data structure
+* `gsf_data` - for reading `.gsf` files containing various sensor data
+  * `gsf_mbes_ping` - Kongsberg multibeam swath data structure
+  * `gsf_nav_entry` - Kongsberg navigation info
+  * `gsf_sound_speed` - Kongsberg depth info
+* `csv_data` - for reading `.csv` navigation files collected for the change detection experiment
+  * `csv_nav_entry` - csv navigation exports
+
+Again, note that all multibeam data can be converted into `mbes_ping`.
+This is the recommended path for software using the library, since the
+same software can then be used for different data types.
+See the [corresponding headers](https://github.com/nilsbore/auvlib/tree/master/src/data_tools/include/data_tools) to identify the conversion functions.
+
+### Common patterns
+
+All data structures contain equivalents to `PingsT` of `mbes_ping` for
+representing arrays of the data. Similarly, all data types also have the
+`first_in_file_` flag. Moreover, they also contain a readable time stamp
+called `time_string_` and a counter of milliseconds since `1970-01-01 00:00`, called `time_stamp_`.
+
+### Parsing different formats
+
+The library supports parsing many different data types, as specified above.
+Parsing is always done through the templated interfaces `parse_file` and `parse_folder`.
+For example, if you want parse multibeam data from a folder of `.all` files, write:
+```cpp
+all_mbes_ping::PingsT pings = parse_folder<all_mbes_ping>(boost::filesystem::path("/path/to/folder"));
+```
+Or, if you want to read just one sidescan `.xtf` file:
+```cpp
+xtf_sss_ping pings = parse_file<xtf_sss_ping>(boost::filesystem::path("/path/to/file.xtf"));
+```
+
+### Writing and reading binary files
+
+Parsing, especially of ASCII data, can take a long time.
+We might therefore want to save our data structures in a binary for
+after we have parsed them so that we can read them faster next time.
+This can be achieved by the templated `write_data` and `read_data` functions.
+They can be used with all data structures defined in this library.
+To save a bunch of `gsf` multibeam data that we have just parsed, write
+```cpp
+gsf_mbes_ping::PingsT pings = parse_folder<gsf_mbes_ping>(boost::filesystem::path("/path/to/folder"));
+write_data(pings, boost::filesystem::path("/path/to/file.cereal"));
+```
+Then you can use the following code to read them faster next time:
+```cpp
+gsf_mbes_ping::PingsT pings = read_data<gsf_mbes_ping>(boost::filesystem::path("/path/to/file.cereal"));
+```
+
+## Running the SLAM toy example
 
 You can run a toy example with data provided in this repo.
 In the `scripts` folder, execute `./generate_submaps.py`. This creates
@@ -33,7 +123,7 @@ Now, we can optimize it by running
 ```
 Again, the results `example_results.cereal` can be viewed using the visualizer.
 
-## data_tools
+## Processing to create real SLAM submaps
 
 ### navi_data
 
@@ -196,10 +286,11 @@ int main(int argc, char** argv)
 ```
 To know which files to look at, it may also help to look at the [tests in `data_tools`](https://github.com/nilsbore/gpgs_slam/blob/master/src/data_tools/src/test_gsf.cpp).
 
-### Benchmarking
+## Benchmarking SLAM and registration
 
 The tests also [contains an example](https://github.com/nilsbore/gpgs_slam/blob/master/src/apps/test/test_parse_navi_data.cpp)
-of how to use the benchmark system. After having read your files like above, simply do something like the following:
+of how to use the benchmark system. Also check out the [benchmark headers](https://github.com/nilsbore/auvlib/blob/fix_build/src/data_tools/include/data_tools/benchmark.h) for details.
+After having read your files like above, simply do something like the following:
 ```cpp
 // create a new benchmark object with some arbitrary name
 track_error_benchmark benchmark("medgaz");

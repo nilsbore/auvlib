@@ -1,7 +1,7 @@
 #ifndef SUBMAPS_H
 #define SUBMAPS_H
 
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 #include <iostream>
 #include <boost/filesystem.hpp>
 

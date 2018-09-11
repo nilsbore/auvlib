@@ -1,6 +1,7 @@
 #include <cereal/archives/json.hpp>
 
 #include <cxxopts.hpp>
+#include <data_tools/benchmark.h>
 #include <data_tools/gsf_data.h>
 #include <data_tools/csv_data.h>
 #include <data_tools/transforms.h>

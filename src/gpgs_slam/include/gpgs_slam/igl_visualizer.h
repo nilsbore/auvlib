@@ -1,7 +1,7 @@
 #ifndef GPGS_IGL_VISUALIZER_H
 #define GPGS_IGL_VISUALIZER_H
 
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 #include <ceres/ceres.h>
 #include <igl/opengl/glfw/Viewer.h>
 

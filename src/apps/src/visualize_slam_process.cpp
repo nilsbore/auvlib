@@ -10,6 +10,7 @@
 #include <cereal/types/utility.hpp>
 
 #include <data_tools/data_structures.h>
+#include <gpgs_slam/gp_submaps.h>
 #include <gpgs_slam/igl_visualizer.h>
 
 using namespace std;

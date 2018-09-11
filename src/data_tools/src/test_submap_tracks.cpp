@@ -3,6 +3,7 @@
 #include <data_tools/gsf_data.h>
 #include <data_tools/colormap.h>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 using namespace std;
 

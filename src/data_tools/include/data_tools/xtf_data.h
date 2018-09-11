@@ -2,7 +2,7 @@
 #define XTF_DATA_H
 
 #include <data_tools/navi_data.h>
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 #include <boost/filesystem.hpp>
 #include <opencv2/core/core.hpp>
 

@@ -1,9 +1,11 @@
 #include <cxxopts.hpp>
 #include <data_tools/navi_data.h>
 #include <data_tools/data_structures.h>
+#include <data_tools/benchmark.h>
 #include <data_tools/transforms.h>
 #include <data_tools/colormap.h>
 #include <data_tools/submaps.h>
+#include <gpgs_slam/gp_submaps.h>
 #include <boost/filesystem.hpp>
 #include <random>
 

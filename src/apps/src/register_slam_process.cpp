@@ -7,9 +7,11 @@
 #include <sparse_gp/gaussian_noise.h>
 
 #include <data_tools/data_structures.h>
+#include <data_tools/benchmark.h>
 #include <data_tools/colormap.h>
 #include <data_tools/submaps.h>
 #include <data_tools/transforms.h>
+#include <gpgs_slam/gp_submaps.h>
 
 #include <gpgs_slam/cost_function.h>
 #include <gpgs_slam/visualization.h>

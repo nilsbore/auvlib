@@ -1,7 +1,7 @@
 #ifndef SPARSE_GP_H
 #define SPARSE_GP_H
 
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 #include <vector>
 
 template <class Kernel, class Noise>

@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cereal/archives/json.hpp>
 #include <data_tools/xtf_data.h>
+#include <opencv2/highgui/highgui.hpp>
 
 using namespace std;
 

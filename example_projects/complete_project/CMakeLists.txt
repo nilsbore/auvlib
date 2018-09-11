@@ -1,23 +1,15 @@
 cmake_minimum_required(VERSION 2.8)
-project(gpgs_slam_project)
+project(complete_project)
 
-#add_definitions(-std=c++11 -O3)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -O3")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-
-# Must use GNUInstallDirs to install libraries into correct
-# locations on all platforms.
-include(GNUInstallDirs)
 
 find_package(Ceres REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(PCL 1.7 REQUIRED)
 find_package(OpenCV REQUIRED)
-find_package(OpenGL REQUIRED)
-find_package(glfw3 REQUIRED)
 
-# libigl
 option(LIBIGL_USE_STATIC_LIBRARY "Use libigl as static library" OFF)
 option(LIBIGL_WITH_ANTTWEAKBAR       "Use AntTweakBar"    OFF)
 option(LIBIGL_WITH_CGAL              "Use CGAL"           OFF)
@@ -38,20 +30,20 @@ option(LIBIGL_WITH_VIEWER            "Use OpenGL viewer"  ON)
 option(LIBIGL_WITH_XML               "Use XML"            OFF)
 
 find_package(LIBIGL REQUIRED QUIET)
+find_package(LibXTF REQUIRED)
+find_package(LibGSF REQUIRED)
+find_package(EigenCereal REQUIRED)
+find_package(SparseGP REQUIRED)
+find_package(DataTools REQUIRED)
+find_package(GPGSSlam REQUIRED)
+find_package(BathyMaps REQUIRED)
 
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
+include_directories(include ${CERES_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS})
 
-add_definitions(-DCERES_GFLAGS_NAMESPACE=${GFLAGS_NAMESPACE})
+add_executable(example_slam src/example_slam.cpp)
+target_link_libraries(example_slam submaps gp_submaps gpgs_cost_function gpgs_visualization gpgs_multi_visualizer gpgs_igl_visualizer data_structures)
 
-include_directories(${CERES_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS})
-#include_directories(eigen_cereal/include)
-
-add_subdirectory(libgsf)
-add_subdirectory(libxtf)
-add_subdirectory(eigen_cereal)
-add_subdirectory(sparse_gp)
-add_subdirectory(data_tools)
-add_subdirectory(bathy_maps)
-add_subdirectory(gpgs_slam)
-add_subdirectory(apps)
+add_executable(example_mesh src/example_mesh.cpp)
+target_link_libraries(example_mesh data_structures gsf_data xtf_data csv_data navi_data mesh_map draw_map ${OpenCV_LIBS})
