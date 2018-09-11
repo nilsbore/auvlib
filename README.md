@@ -212,7 +212,8 @@ To know which files to look at, it may also help to look at the [tests in `data_
 ## Benchmarking SLAM and registration
 
 The tests also [contains an example](https://github.com/nilsbore/gpgs_slam/blob/master/src/apps/test/test_parse_navi_data.cpp)
-of how to use the benchmark system. After having read your files like above, simply do something like the following:
+of how to use the benchmark system. Also check out the [benchmark headers](https://github.com/nilsbore/auvlib/blob/fix_build/src/data_tools/include/data_tools/benchmark.h) for details.
+After having read your files like above, simply do something like the following:
 ```cpp
 // create a new benchmark object with some arbitrary name
 track_error_benchmark benchmark("medgaz");
