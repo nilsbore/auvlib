@@ -104,7 +104,7 @@ Then you can use the following code to read them faster next time:
 gsf_mbes_ping::PingsT pings = read_data<gsf_mbes_ping>(boost::filesystem::path("/path/to/file.cereal"));
 ```
 
-## Running
+## Running the SLAM toy example
 
 You can run a toy example with data provided in this repo.
 In the `scripts` folder, execute `./generate_submaps.py`. This creates
@@ -123,7 +123,7 @@ Now, we can optimize it by running
 ```
 Again, the results `example_results.cereal` can be viewed using the visualizer.
 
-## Processing to create SLAM submaps
+## Processing to create real SLAM submaps
 
 ### navi_data
 
