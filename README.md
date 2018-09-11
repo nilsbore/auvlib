@@ -45,13 +45,27 @@ common `mbes_ping` type through conversion functions (see [the example](https://
 The `data_tools` project contains the following libraries: `navi_data`, `all_data`, `xtf_data`, `gsf_data`, `csv_data`
 for reading data of different types.
 
-* `navi_data` - for reading ASCII data exported from NaviEdit, contains data structures:
-  * a
-  * b
-* `all_data` - for reading `.all` data files from Kongsberg
+* `navi_data` - for reading ASCII data exported from NaviEdit, contains parsers for:
+  * `mbes_ping` - standard auvlib multibeam swath data structure
+  * `nav_entry` - NaviEdit navigation exports
+* `all_data` - for reading `.all` data files from Kongsberg, contains data structures and parsers for:
+  * `all_mbes_ping` - Kongsberg multibeam swath data structure
+  * `all_nav_entry` - Kongsberg navigation info
+  * `all_nav_depth` - Kongsberg depth info
+  * `all_echosounder_depth` - Kongsberg single echosounder depth data
 * `xtf_data` - for reading `.xtf` sidescan files
+  * `xtf_sss_ping` - xtf side scan swath data structure
 * `gsf_data` - for reading `.gsf` files containing various sensor data
+  * `gsf_mbes_ping` - Kongsberg multibeam swath data structure
+  * `gsf_nav_entry` - Kongsberg navigation info
+  * `gsf_sound_speed` - Kongsberg depth info
 * `csv_data` - for reading `.csv` navigation files collected for the change detection experiment
+  * `csv_nav_entry` - csv navigation exports
+
+Again, note that all multibeam data can be converted into `mbes_ping`.
+This is the recommended path for software using the library, since the
+same software can then be used for different data types.
+See the [corresponding headers](https://github.com/nilsbore/auvlib/tree/master/src/data_tools/include/data_tools) to identify the conversion functions.
 
 ### Common patterns
 
