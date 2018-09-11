@@ -33,7 +33,7 @@ For example, it contains the data structure `mbes_ping` that is the common
 data structure for representing multibeam swath data. Similar to other data
 structures, it defines a vector of itself, `PingsT`. In this way, `mbes_ping::PingsT`
 can be used to represent all multibeam swaths from the deployment.
-The data structure also contains information about the vehicle positions if avaialable.
+The data structure also contains information about the vehicle positions if available.
 It also contains a flag, `first_in_file_`, that is set to `true` if the swath
 was the first one of a parsed file, and otherwise to `false`.
 
