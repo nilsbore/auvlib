@@ -40,7 +40,7 @@ Again, the results `example_results.cereal` can be viewed using the visualizer.
 
 [Check out the example projects](https://github.com/nilsbore/gpgs_slam/tree/fix_build/example_projects).
 
-## data_tools
+## Processing to create SLAM submaps
 
 ### navi_data
 
@@ -203,7 +203,7 @@ int main(int argc, char** argv)
 ```
 To know which files to look at, it may also help to look at the [tests in `data_tools`](https://github.com/nilsbore/gpgs_slam/blob/master/src/data_tools/src/test_gsf.cpp).
 
-### Benchmarking
+## Benchmarking
 
 The tests also [contains an example](https://github.com/nilsbore/gpgs_slam/blob/master/src/apps/test/test_parse_navi_data.cpp)
 of how to use the benchmark system. After having read your files like above, simply do something like the following:
