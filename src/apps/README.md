@@ -21,11 +21,19 @@ This is for generating the submaps for the pipeline dataset.
 ```
 
 ## slam_process_ceres
+
+This is for global alignment of all the submaps, use
+corresponding files for the pockamarks dataset.
+
 ```
 ./slam_process_ceres --file medgaz_submaps.cereal --output medgaz_submaps_optimized.cereal --norot
 ```
 
 ## filter_process
+
+This is to filter noisy points in the submaps, use
+corresponding files for the pockmarks dataset.
+
 ```
 ./filter_process --input medgaz_submaps.cereal --result medgaz_submaps_optimized.cereal
 ```
