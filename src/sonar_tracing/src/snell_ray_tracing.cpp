@@ -80,7 +80,7 @@ pair<double, Eigen::VectorXd> trace_single_layers(const Eigen::VectorXd& layer_d
     cout << "Is usable?: " << summary.IsSolutionUsable() << endl;
 
     // return the final ray time and the optimized intermediary points
-    return make_pair(summary.final_cost, layer_widths);
+    return make_pair(2.*summary.final_cost, layer_widths);
 }
 
 void visualize_rays(const Eigen::MatrixXd& end_points, const Eigen::VectorXd& layer_depths, Eigen::MatrixXd& layer_widths, double max_depth)
@@ -119,5 +119,5 @@ void visualize_rays(const Eigen::MatrixXd& end_points, const Eigen::VectorXd& la
     }
 
     cv::imshow("Raybending", image);
-    cv::waitKey();
+    cv::waitKey(100);
 }

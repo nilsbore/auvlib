@@ -26,6 +26,8 @@ int main(int argc, char** argv)
     
     cout << "Got final times: " << end_times.transpose() << endl;
 
+    cout << "Time of first ray: " << end_points.row(0).norm()/1. << endl;
+
     visualize_rays(end_points, layer_depths, layer_widths, -45.);
 
     return 0;
