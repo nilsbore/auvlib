@@ -1,5 +1,9 @@
 #include <sonar_tracing/snell_ray_tracing.h>
 
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+
 using namespace std;
 
 // here, we assume that the origin is at (0, 0), and the points all have x > 0
@@ -77,4 +81,43 @@ pair<double, Eigen::VectorXd> trace_single_layers(const Eigen::VectorXd& layer_d
 
     // return the final ray time and the optimized intermediary points
     return make_pair(summary.final_cost, layer_widths);
+}
+
+void visualize_rays(const Eigen::MatrixXd& end_points, const Eigen::VectorXd& layer_depths, Eigen::MatrixXd& layer_widths)
+{
+    const int image_width = 1000;
+    const int image_height = 400;
+
+    cv::Mat image(image_height, image_width, CV_8UC3, cv::Scalar(255, 255, 255));
+
+    double vscale = double(image_height)/-45.;
+    double hscale = -vscale;
+
+    for (int i = 0; i < end_points.rows(); ++i) {
+        cv::Point center(hscale*end_points(i, 0), vscale*end_points(i, 1));
+        cv::circle(image, center, 5, cv::Scalar(255, 0, 0), 1);
+        cv::line(image, cv::Point(0, 0), center, cv::Scalar(255, 0, 0), 1);
+    }
+
+    for (int i = 0; i < layer_depths.rows(); ++i) {
+        int row = int(vscale*layer_depths(i));
+        cv::line(image, cv::Point(0, row), cv::Point(image_width-1, row), cv::Scalar(0, 0, 255), 1);
+    }
+
+    for (int i = 0; i < end_points.rows(); ++i) {
+        cv::Point last_point(0, 0);
+        for (int j = 0; j < layer_depths.rows(); ++j) {
+            if (end_points(i, 1) > layer_depths(j)) {
+                break;
+            }
+            cv::Point new_point(hscale*layer_widths(j+1, i), vscale*layer_depths(j));
+            cv::line(image, last_point, new_point, cv::Scalar(0, 255, 0), 1);
+            last_point = new_point;
+        }
+        cv::Point new_point(hscale*end_points(i, 0), vscale*end_points(i, 1));
+        cv::line(image, last_point, new_point, cv::Scalar(0, 255, 0), 1);
+    }
+
+    cv::imshow("Raybending", image);
+    cv::waitKey();
 }
