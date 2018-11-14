@@ -3,17 +3,22 @@
 using namespace std;
 
 // here, we assume that the origin is at (0, 0), and the points all have x > 0
-Eigen::MatrixXd trace_multiple_layers(const Eigen::VectorXd& layer_depths, const Eigen::VectorXd& layer_speeds, const Eigen::MatrixXd& end_points)
+pair<Eigen::VectorXd, Eigen::MatrixXd> trace_multiple_layers(const Eigen::VectorXd& layer_depths, const Eigen::VectorXd& layer_speeds, const Eigen::MatrixXd& end_points)
 {
     Eigen::MatrixXd layer_widths(layer_depths.rows()+2, end_points.rows());
+    Eigen::VectorXd end_times(end_points.rows());
     for (int i = 0; i < end_points.rows(); ++i) {
-        Eigen::VectorXd point_results = trace_single_layers(layer_depths, layer_speeds, end_points.row(i).transpose()).transpose();
+        double ray_time;
+        Eigen::VectorXd point_results;
+        tie(ray_time, point_results) = trace_single_layers(layer_depths, layer_speeds, end_points.row(i).transpose());
+        end_times(i) = ray_time;
+        layer_widths.col(i).setConstant(point_results(point_results.rows()-1));
         layer_widths.col(i).head(point_results.rows()) = point_results;
     }
-    return layer_widths;
+    return make_pair(end_times, layer_widths);
 }
 
-Eigen::VectorXd trace_single_layers(const Eigen::VectorXd& layer_depths, const Eigen::VectorXd& layer_speeds, const Eigen::Vector2d& end_point)
+pair<double, Eigen::VectorXd> trace_single_layers(const Eigen::VectorXd& layer_depths, const Eigen::VectorXd& layer_speeds, const Eigen::Vector2d& end_point)
 {
     Eigen::VectorXd layer_widths(layer_depths.rows()+2);
     layer_widths(0) = 0.;
@@ -31,7 +36,7 @@ Eigen::VectorXd trace_single_layers(const Eigen::VectorXd& layer_depths, const E
 
     Eigen::VectorXd layer_depths_full(nbr_layers);
     layer_depths_full(0) = 0.;
-    layer_depths_full.segment(1, layer_depths.rows()) = layer_depths;
+    layer_depths_full.segment(1, i) = layer_depths.head(i);
     layer_depths_full(nbr_layers-1) = end_point(1);
 
     ceres::Problem problem;
@@ -70,5 +75,6 @@ Eigen::VectorXd trace_single_layers(const Eigen::VectorXd& layer_depths, const E
     cout << summary.FullReport() << endl;
     cout << "Is usable?: " << summary.IsSolutionUsable() << endl;
 
-    return layer_widths;
+    // return the final ray time and the optimized intermediary points
+    return make_pair(summary.final_cost, layer_widths);
 }
