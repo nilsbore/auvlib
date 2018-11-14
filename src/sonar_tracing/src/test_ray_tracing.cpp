@@ -26,7 +26,7 @@ int main(int argc, char** argv)
     
     cout << "Got final times: " << end_times.transpose() << endl;
 
-    visualize_rays(end_points, layer_depths, layer_widths);
+    visualize_rays(end_points, layer_depths, layer_widths, -45.);
 
     return 0;
 }

@@ -83,14 +83,14 @@ pair<double, Eigen::VectorXd> trace_single_layers(const Eigen::VectorXd& layer_d
     return make_pair(summary.final_cost, layer_widths);
 }
 
-void visualize_rays(const Eigen::MatrixXd& end_points, const Eigen::VectorXd& layer_depths, Eigen::MatrixXd& layer_widths)
+void visualize_rays(const Eigen::MatrixXd& end_points, const Eigen::VectorXd& layer_depths, Eigen::MatrixXd& layer_widths, double max_depth)
 {
     const int image_width = 1000;
     const int image_height = 400;
 
     cv::Mat image(image_height, image_width, CV_8UC3, cv::Scalar(255, 255, 255));
 
-    double vscale = double(image_height)/-45.;
+    double vscale = double(image_height)/max_depth;
     double hscale = -vscale;
 
     for (int i = 0; i < end_points.rows(); ++i) {
