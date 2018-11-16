@@ -74,6 +74,7 @@ int main(int argc, char** argv)
 {
     string mbes_folder_str;
     string sss_folder_str;
+    string entries_file_str;
     string file_str;
 	double lsq = 7; //10.;
 	double sigma = 1.; //5.;
@@ -86,6 +87,7 @@ int main(int argc, char** argv)
       ("help", "Print help")
       ("swaths", "Input gsf mb swaths folder pre deployment", cxxopts::value(mbes_folder_str))
       ("sss", "Input gsf mb swaths folder pre deployment", cxxopts::value(sss_folder_str))
+      ("nav", "Nav entries file", cxxopts::value(entries_file_str))
       ("file", "Output file", cxxopts::value(file_str))
       ("lsq", "RBF length scale", cxxopts::value(lsq))
       ("sigma", "RBF scale", cxxopts::value(sigma))
@@ -109,11 +111,17 @@ int main(int argc, char** argv)
 	
 	boost::filesystem::path mbes_folder(mbes_folder_str);
 	boost::filesystem::path sss_folder(sss_folder_str);
+	boost::filesystem::path entries_file(entries_file_str);
     boost::filesystem::path path(file_str);
 
 	cout << "Input mbes folder : " << mbes_folder << endl;
 	cout << "Input sss folder : " << sss_folder << endl;
 	cout << "Output file : " << path << endl;
+
+    csv_nav_entry::EntriesT entries = load_or_parse_entries(entries_file);
+    for (int counter = 0; counter < entries.size(); counter += 10000) {
+        cout << "Time stamp: " << entries[counter].time_string_ << endl;
+    }
 
     bathy_map_mesh mesh;
     Eigen::MatrixXd V;
@@ -128,9 +136,20 @@ int main(int argc, char** argv)
         tie(V, F, bounds) = mesh.mesh_from_pings(pings);
     }
     //mesh.display_mesh(V, F);
+    cout << "SSS" << endl;
 
     {
         xtf_sss_ping::PingsT pings_sss = load_or_parse_pings<xtf_sss_ping>(sss_folder, dataset_name + "_sss");
+        for (int counter = 0; counter < pings_sss.size(); counter += 100) {
+            cout << "Time stamp: " << pings_sss[counter].time_string_ << endl;
+        }
+        pings_sss = convert_matched_entries(pings_sss, entries);
+        cout << "Number of entries in file " << entries_file << ": " << entries.size() << endl;
+        /*for (xtf_sss_ping& ping : pings_sss) {
+            ping.pitch_ = 0.2;
+            //cereal::JSONOutputArchive ar(std::cout);
+            //ar(ping);
+        }*/
         cv::Mat waterfall_img = make_waterfall_image(pings_sss);
         cv::imshow("My image", waterfall_img);
         cv::waitKey();
