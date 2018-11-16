@@ -101,7 +101,7 @@ target_link_libraries(navi_data PUBLIC eigen_cereal data_transforms ${PCL_LIBRAR
 
 target_link_libraries(gsf_data PUBLIC gsf data_structures navi_data lat_long_utm)
 
-target_link_libraries(csv_data PUBLIC data_structures navi_data gsf_data)
+target_link_libraries(csv_data PUBLIC data_structures navi_data gsf_data xtf_data)
 
 target_link_libraries(xtf_data PUBLIC data_structures navi_data xtf_reader lat_long_utm ${OpenCV_LIBS})
 

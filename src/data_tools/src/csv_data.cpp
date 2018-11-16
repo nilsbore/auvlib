@@ -1,4 +1,5 @@
 #include <data_tools/csv_data.h>
+#include <data_tools/xtf_data.h>
 
 #include <boost/date_time.hpp>
 #include <ctype.h>
@@ -42,7 +43,7 @@ csv_nav_entry::EntriesT parse_file(const boost::filesystem::path& file)
 
     csv_nav_entry entry;
     double distance, x, y, z, x_std, y_std, z_std, vx, vy, vz;
-    double roll, pitch, yaw, roll_std, pitch_std, yaw_std;
+    double roll, pitch, heading, roll_std, pitch_std, heading_std;
     double time_seconds;
     // NOTE: this is the Sunday before the survey, i.e. the start of the GPS week time
     const boost::posix_time::ptime gps_epoch = boost::posix_time::time_from_string("2018-08-05 00:00:00.000");
@@ -59,13 +60,14 @@ csv_nav_entry::EntriesT parse_file(const boost::filesystem::path& file)
         istringstream iss(line);
 
 		iss >> time_seconds >> distance >> x >> y >> z >> entry.lat_ >> entry.long_ >> entry.altitude >>
-               yaw >> yaw_std >> pitch >> pitch_std >> roll >> roll_std >> vx >> vy >> vz >> x_std >> y_std >> z_std;
+               roll >> pitch >> heading >> vx >> vy >> vz >> x_std >> y_std >> z_std >> roll_std >> pitch_std >> heading_std;
         entry.pos_ = Eigen::Vector3d(x, y, z);
         entry.vel_ = Eigen::Vector3d(vx, vy, vz);
-        entry.yaw_ = M_PI/180.*yaw;
+        entry.heading_ = M_PI/180.*heading;
+        entry.heading_ = 0.5*M_PI-entry.heading_; // TODO: need to keep this for old data. basically heading -> yaw
         entry.pitch_ = M_PI/180.*pitch;
         entry.roll_ = M_PI/180.*roll;
-        entry.yaw_std_ = M_PI/180.*yaw_std;
+        entry.heading_std_ = M_PI/180.*heading_std;
         entry.pitch_std_ = M_PI/180.*pitch_std;
         entry.roll_std_ = M_PI/180.*roll_std;
 
@@ -107,7 +109,7 @@ mbes_ping::PingsT convert_matched_entries(gsf_mbes_ping::PingsT& pings, csv_nav_
         if (pos == entries.end()) {
             //cout << "Found only last entry with time: " << entries.back().time_string_ << ", time stamp: " << entries.back().time_stamp_ << endl;
             new_ping.pos_ = entries.back().pos_;
-            new_ping.heading_ = entries.back().yaw_;
+            new_ping.heading_ = entries.back().heading_;
             new_ping.pitch_ = entries.back().pitch_;
             new_ping.roll_ = entries.back().roll_;
         }
@@ -116,7 +118,7 @@ mbes_ping::PingsT convert_matched_entries(gsf_mbes_ping::PingsT& pings, csv_nav_
                 //cout << "Found only first entry with time: " << pos->time_string_ << ", time stamp: " << pos->time_stamp_ << endl;
                 new_ping.pos_ = pos->pos_;
                 if (ping.heading_ == 0) {
-                    new_ping.heading_ = pos->yaw_;
+                    new_ping.heading_ = pos->heading_;
                     new_ping.pitch_ = pos->pitch_;
                     new_ping.roll_ = pos->roll_;
                 }
@@ -132,7 +134,7 @@ mbes_ping::PingsT convert_matched_entries(gsf_mbes_ping::PingsT& pings, csv_nav_
                 double ratio = double(ping.time_stamp_ - previous.time_stamp_)/double(pos->time_stamp_ - previous.time_stamp_);
                 new_ping.pos_ = previous.pos_ + ratio*(pos->pos_ - previous.pos_);
                 if (ping.heading_ == 0) {
-                    new_ping.heading_ = previous.yaw_ + ratio*(pos->yaw_ - previous.yaw_);
+                    new_ping.heading_ = previous.heading_ + ratio*(pos->heading_ - previous.heading_);
                     new_ping.pitch_ = previous.pitch_ + ratio*(pos->pitch_ - previous.pitch_);
                     new_ping.roll_ = previous.roll_ + ratio*(pos->roll_ - previous.roll_);
                 }
@@ -160,6 +162,100 @@ mbes_ping::PingsT convert_matched_entries(gsf_mbes_ping::PingsT& pings, csv_nav_
 
         new_pings.push_back(new_ping);
     }
+
+    return new_pings;
+}
+
+xtf_sss_ping::PingsT convert_matched_entries_pitch(xtf_sss_ping::PingsT& pings, csv_nav_entry::EntriesT& entries)
+{
+    xtf_sss_ping::PingsT new_pings;
+
+    std::stable_sort(entries.begin(), entries.end(), [](const csv_nav_entry& entry1, const csv_nav_entry& entry2) {
+        return entry1.time_stamp_ < entry2.time_stamp_;
+    });
+
+    auto pos = entries.begin();
+    for (xtf_sss_ping& ping : pings) {
+        pos = std::find_if(pos, entries.end(), [&](const csv_nav_entry& entry) {
+            return entry.time_stamp_ > ping.time_stamp_;
+        });
+
+        xtf_sss_ping new_ping = ping;
+        if (pos == entries.end()) {
+            new_ping.pitch_ = entries.back().pitch_;
+        }
+        else {
+            if (pos == entries.begin()) {
+                new_ping.pitch_ = pos->pitch_;
+            }
+            else {
+                csv_nav_entry& previous = *(pos - 1);
+                double ratio = double(ping.time_stamp_ - previous.time_stamp_)/double(pos->time_stamp_ - previous.time_stamp_);
+                new_ping.pitch_ = previous.pitch_ + ratio*(pos->pitch_ - previous.pitch_);
+            }
+        }
+
+        new_pings.push_back(new_ping);
+    }
+
+    return new_pings;
+}
+
+xtf_sss_ping::PingsT convert_matched_entries(xtf_sss_ping::PingsT& pings, csv_nav_entry::EntriesT& entries)
+{
+    xtf_sss_ping::PingsT new_pings;
+
+    std::stable_sort(entries.begin(), entries.end(), [](const csv_nav_entry& entry1, const csv_nav_entry& entry2) {
+        return entry1.time_stamp_ < entry2.time_stamp_;
+    });
+
+    auto pos = entries.begin();
+    int bcount = 0;
+    int ecount = 0;
+    int mcount = 0;
+    for (xtf_sss_ping& ping : pings) {
+        pos = std::find_if(pos, entries.end(), [&](const csv_nav_entry& entry) {
+            return entry.time_stamp_ > ping.time_stamp_;
+        });
+
+        xtf_sss_ping new_ping = ping;
+        if (pos == entries.end()) {
+            new_ping.roll_ = entries.back().roll_;
+            new_ping.pitch_ = entries.back().pitch_;
+            //new_ping.heading_ = entries.back().heading_;
+            new_ping.pos_ = entries.back().pos_;
+            ++ecount;
+        }
+        else {
+            if (pos == entries.begin()) {
+                new_ping.roll_ = pos->roll_;
+                new_ping.pitch_ = pos->pitch_;
+                //new_ping.heading_ = pos->heading_;
+                new_ping.pos_ = pos->pos_;
+                ++bcount;
+            }
+            else {
+                csv_nav_entry& previous = *(pos - 1);
+                double ratio = double(ping.time_stamp_ - previous.time_stamp_)/double(pos->time_stamp_ - previous.time_stamp_);
+                new_ping.roll_ = previous.roll_ + ratio*(pos->roll_ - previous.roll_);
+                new_ping.pitch_ = previous.pitch_ + ratio*(pos->pitch_ - previous.pitch_);
+                //new_ping.heading_ = previous.heading_ + ratio*(pos->heading_ - previous.heading_);
+                new_ping.pos_ = previous.pos_ + ratio*(pos->pos_ - previous.pos_);
+                ++mcount;
+            }
+        }
+        
+        Eigen::Matrix3d Rz = Eigen::AngleAxisd(new_ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
+        // these are my estimated values for the
+        // sidescan offset from the center of motion
+        //new_ping.pos_[0] += 2.;
+        //new_ping.pos_[1] += 1.5;
+        new_ping.pos_.array() += (-1.5*Rz.col(0) + -1.5*Rz.col(1)).array();
+        new_ping.pos_[2] = ping.pos_[2];
+
+        new_pings.push_back(new_ping);
+    }
+    cout << "Got " << bcount << " at beginning, " << ecount << " at end and " << mcount << " in the middle" << endl;
 
     return new_pings;
 }
