@@ -1,13 +1,17 @@
 #include <bathy_maps/mesh_map.h>
+#include <sonar_tracing/snell_ray_tracing.h>
 
 #include <igl/opengl/glfw/Viewer.h>
 #include <igl/opengl/gl.h>
 #include <igl/readSTL.h>
 #include <igl/ray_mesh_intersect.h>
 #include <igl/embree/line_mesh_intersection.h>
+#include <igl/unproject_onto_mesh.h>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+
+#include <chrono>
 
 using namespace std;
 
@@ -247,6 +251,7 @@ struct survey_viewer {
         viewer.data().line_width = 1;
 
         //viewer.callback_pre_draw = std::bind(&survey_viewer::callback_pre_draw, this, std::placeholders::_1);
+        viewer.callback_mouse_down = std::bind(&survey_viewer::callback_mouse_down, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         viewer.callback_key_pressed = std::bind(&survey_viewer::callback_key_pressed, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         viewer.core.is_animating = true;
         viewer.core.animation_max_fps = 30.;
@@ -324,10 +329,16 @@ struct survey_viewer {
 
     tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi, Eigen::VectorXd, Eigen::VectorXd> embree_compute_hits(const Eigen::Vector3d& origin, const Eigen::Matrix3d& R, double tilt_angle, double beam_width)
     {
+        auto start = chrono::high_resolution_clock::now();
         igl::Hit hit;
         Eigen::MatrixXd dirs_left;
         Eigen::MatrixXd dirs_right;
         tie(dirs_left, dirs_right) = compute_sss_dirs(R, tilt_angle, beam_width);
+        auto stop = chrono::high_resolution_clock::now();
+        auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
+        cout << "compute_sss_dirs time: " << duration.count() << " microseconds" << endl;
+
+        start = chrono::high_resolution_clock::now();
         Eigen::MatrixXd hits_left(dirs_left.rows(), 3);
         Eigen::MatrixXd hits_right(dirs_right.rows(), 3);
         Eigen::VectorXi hits_left_inds(dirs_left.rows());
@@ -341,7 +352,11 @@ struct survey_viewer {
         Eigen::MatrixXd P = Eigen::MatrixXd(nbr_lines, 3);
         P.rowwise() = origin.transpose();
         Eigen::MatrixXd hits = igl::embree::line_mesh_intersection(P, dirs, V1, F1);
+        stop = chrono::high_resolution_clock::now();
+        duration = chrono::duration_cast<chrono::microseconds>(stop - start);
+        cout << "line_mesh_intersection time: " << duration.count() << " microseconds" << endl;
 
+        start = chrono::high_resolution_clock::now();
         int hit_count = 0;
         for (int i = 0; i < dirs_left.rows(); ++i) {
             int hit = hits(i, 0);
@@ -353,12 +368,17 @@ struct survey_viewer {
                 double nn = (origin - hits_left.row(hit_count).transpose()).norm();
                 Eigen::Vector3d dir = origin - hits_left.row(hit_count).transpose();
                 dir.normalize();
-                mod_left(hit_count) = (1./dir.dot(N_faces.row(hit).transpose()))*(nn/60.);
+                mod_left(hit_count) = 1.; //(1./dir.dot(N_faces.row(hit).transpose()))*(nn/60.);
                 ++hit_count;
             }
         }
         hits_left.conservativeResize(hit_count, 3);
         hits_left_inds.conservativeResize(hit_count);
+        stop = chrono::high_resolution_clock::now();
+        duration = chrono::duration_cast<chrono::microseconds>(stop - start);
+        cout << "hits_left loop time: " << duration.count() << " microseconds" << endl;
+
+        start = chrono::high_resolution_clock::now();
         hit_count = 0;
         for (int i = 0; i < dirs_right.rows(); ++i) {
             int hit = hits(dirs_left.rows() + i, 0);
@@ -370,12 +390,16 @@ struct survey_viewer {
                 double nn = (origin - hits_right.row(hit_count).transpose()).norm();
                 Eigen::Vector3d dir = origin - hits_right.row(hit_count).transpose();
                 dir.normalize();
-                mod_right(hit_count) = (1./dir.dot(N_faces.row(hit).transpose()))*(nn/60.);
+                mod_right(hit_count) = 1.; //(1./dir.dot(N_faces.row(hit).transpose()))*(nn/60.);
                 ++hit_count;
             }
         }
         hits_right.conservativeResize(hit_count, 3);
         hits_right_inds.conservativeResize(hit_count);
+        stop = chrono::high_resolution_clock::now();
+        duration = chrono::duration_cast<chrono::microseconds>(stop - start);
+        cout << "hits_right loop time: " << duration.count() << " microseconds" << endl;
+
         return make_tuple(hits_left, hits_right, hits_left_inds, hits_right_inds, mod_left, mod_right);
     }
 
@@ -386,14 +410,47 @@ struct survey_viewer {
                         const Eigen::Vector3d& origin,
                         double sound_vel)
     {
+
+        Eigen::VectorXd layer_depths(4);
+        layer_depths << -5., -10., -15., -20.;
+        Eigen::VectorXd layer_speeds(5);
+        layer_speeds << 1506.43, 1504.47, 1498.61, 1495.05, 1492.64;
+        //layer_speeds << 1706.43, 1604.47, 1498.61, 1395.05, 1292.64;
+
+        // we do not take roll into account but we do need to account for the pitch
+        // if the vehicle has pitch, we need to extend the layer depths
+        // ok, let's just take the norm of the first two coordinates to begin with
+        // actually, that already fixes the pitch rotation
+        
         //Eigen::Vector3d origin = ping.pos_ - offset;
-        Eigen::VectorXd times_port = 1.*(hits_port.rowwise() - origin.transpose()).rowwise().norm()/sound_vel; //ping.sound_vel_;
+        Eigen::VectorXd times_port_simple = 1.*(hits_port.rowwise() - origin.transpose()).rowwise().norm()/sound_vel; //ping.sound_vel_;
+
+        Eigen::VectorXd times_port;
+        if (false) {
+            Eigen::VectorXd x = (hits_port.leftCols<2>().rowwise() - origin.head<2>().transpose()).rowwise().norm();
+            Eigen::MatrixXd end_points(x.rows(), 2);
+            end_points.col(0) = x;
+            end_points.col(1) = hits_port.col(2);
+        
+            Eigen::MatrixXd layer_widths;
+            tie(times_port, layer_widths) = trace_multiple_layers(layer_depths, layer_speeds, end_points);
+            times_port.array() *= 2.; // back and forth
+            cout << "Got final times: " << times_port.transpose() << endl;
+
+            visualize_rays(end_points, layer_depths, layer_widths, -25.);
+        }
+        else {
+            times_port = times_port_simple;
+        }
+
+        cout << "Compared to simple: " << times_port_simple.transpose() << endl;
         //Eigen::VectorXd times_stbd = 1.*(hits_stbd.rowwise() - origin.transpose()).rowwise().norm()/ping.sound_vel_;
         cout << "Port ping duration: " << ping.time_duration << endl;
-        cout << "Port times: " << times_port.transpose() << endl;
+        //cout << "Port times: " << times_port.transpose() << endl;
         //cout << "Stbd ping duration: " << ping.stbd.time_duration << endl;
         //cout << "Stbd times: " << times_stbd.transpose() << endl;
-        //
+        
+
         if (times_port.rows() == 0) {
             return;
         }
@@ -414,17 +471,18 @@ struct survey_viewer {
             /*if (intensity < 0.2) { // no hit?
                 continue;
             }*/
-            cout << "Pos: " << pos << ", size: " << hits_port.rows() << endl;
+
+            //cout << "Pos: " << pos << ", size: " << hits_port.rows() << endl;
             while (pos < hits_port.rows() && double(i)*port_step > times_port(pos)) {
-                cout << "Not good: " << double(i)*port_step << ", " << times_port(pos) << endl;
+                //cout << "Not good: " << double(i)*port_step << ", " << times_port(pos) << endl;
                 ++pos;
             }
             if (pos >= hits_port.rows()) {
                 break;
             }
             double intensity = mod_port(pos)*double(ping.pings[i])/(10000.);
-            cout << "Found one: " << double(i)*port_step << ", " << times_port(pos) << endl;
-            cout << "With intensity: " << intensity << endl;
+            //cout << "Found one: " << double(i)*port_step << ", " << times_port(pos) << endl;
+            //cout << "With intensity: " << intensity << endl;
             int vind = F1(hits_port_inds(pos), 0);
             hit_sums(vind) += intensity;
             hit_counts(vind) += 1;
@@ -440,12 +498,10 @@ struct survey_viewer {
             return;
         }
         cout << "Setting new position: " << pings[i].pos_.transpose() << endl;
-        V.bottomRows(V2.rows()) = V2;
-        Eigen::Matrix3d Rz = Eigen::AngleAxisd(pings[i].heading_, Eigen::Vector3d::UnitZ()).matrix();
-        V.bottomRows(V2.rows()) *= Rz.transpose();
-        V.bottomRows(V2.rows()).array().rowwise() += (pings[i].pos_ - offset).transpose().array();
-        viewer.data().set_vertices(V);
         //viewer.data().compute_normals();
+        Eigen::Matrix3d Ry = Eigen::AngleAxisd(pings[i].pitch_, Eigen::Vector3d::UnitY()).matrix();
+        Eigen::Matrix3d Rz = Eigen::AngleAxisd(pings[i].heading_, Eigen::Vector3d::UnitZ()).matrix();
+        Eigen::Matrix3d R = Rz*Ry;
 
         Eigen::MatrixXd hits_left;
         Eigen::MatrixXd hits_right;
@@ -453,21 +509,70 @@ struct survey_viewer {
         Eigen::VectorXi hits_right_inds;
         Eigen::VectorXd mod_left;
         Eigen::VectorXd mod_right;
-        //tie(hits_left, hits_right, hits_left_inds, hits_right_inds) = compute_hits(pings[i].pos_ - offset, Rz, pings[i].port.tilt_angle, pings[i].port.beam_width);
-        tie(hits_left, hits_right, hits_left_inds, hits_right_inds, mod_left, mod_right) = embree_compute_hits(pings[i].pos_ - offset, Rz, 1.4*pings[i].port.tilt_angle, pings[i].port.beam_width);
-        Eigen::MatrixXi E;
-        Eigen::MatrixXd P(hits_left.rows(), 3);
-        P.rowwise() = (pings[i].pos_ - offset).transpose();
-        viewer.data().set_edges(P, E, Eigen::RowVector3d(1., 0., 0.));
-        viewer.data().add_edges(P, hits_left, Eigen::RowVector3d(1., 0., 0.));
-        P = Eigen::MatrixXd(hits_right.rows(), 3);
-        P.rowwise() = (pings[i].pos_ - offset).transpose();
-        viewer.data().add_edges(P, hits_right, Eigen::RowVector3d(0., 1., 0.));
+        //tie(hits_left, hits_right, hits_left_inds, hits_right_inds) = compute_hits(pings[i].pos_ - offset, R, pings[i].port.tilt_angle, pings[i].port.beam_width);
+        auto start = chrono::high_resolution_clock::now();
+        tie(hits_left, hits_right, hits_left_inds, hits_right_inds, mod_left, mod_right) = embree_compute_hits(pings[i].pos_ - offset, R, 1.4*pings[i].port.tilt_angle, pings[i].port.beam_width);
+        auto stop = chrono::high_resolution_clock::now();
+        auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
+        cout << "embree_compute_hits time: " << duration.count() << " microseconds" << endl;
 
+        start = chrono::high_resolution_clock::now();
         correlate_hits(hits_left, hits_left_inds, mod_left, pings[i].port, pings[i].pos_ - offset, pings[i].sound_vel_);
-        correlate_hits(hits_right, hits_right_inds, mod_right, pings[i].stbd, pings[i].pos_ - offset, pings[i].sound_vel_);
-        viewer.data().set_colors(C);
+        stop = chrono::high_resolution_clock::now();
+        duration = chrono::duration_cast<chrono::microseconds>(stop - start);
+        cout << "left correlate_hits time: " << duration.count() << " microseconds" << endl;
 
+        start = chrono::high_resolution_clock::now();
+        correlate_hits(hits_right, hits_right_inds, mod_right, pings[i].stbd, pings[i].pos_ - offset, pings[i].sound_vel_);
+        stop = chrono::high_resolution_clock::now();
+        duration = chrono::duration_cast<chrono::microseconds>(stop - start);
+        cout << "right correlate_hits time: " << duration.count() << " microseconds" << endl;
+
+        if (i % 10 == 0) {
+            start = chrono::high_resolution_clock::now();
+            V.bottomRows(V2.rows()) = V2;
+            V.bottomRows(V2.rows()) *= R.transpose();
+            V.bottomRows(V2.rows()).array().rowwise() += (pings[i].pos_ - offset).transpose().array();
+            viewer.data().set_vertices(V);
+
+            Eigen::MatrixXi E;
+            Eigen::MatrixXd P(hits_left.rows(), 3);
+            P.rowwise() = (pings[i].pos_ - offset).transpose();
+            viewer.data().set_edges(P, E, Eigen::RowVector3d(1., 0., 0.));
+            viewer.data().add_edges(P, hits_left, Eigen::RowVector3d(1., 0., 0.));
+            P = Eigen::MatrixXd(hits_right.rows(), 3);
+            P.rowwise() = (pings[i].pos_ - offset).transpose();
+            viewer.data().add_edges(P, hits_right, Eigen::RowVector3d(0., 1., 0.));
+            viewer.data().set_colors(C);
+            stop = chrono::high_resolution_clock::now();
+            duration = chrono::duration_cast<chrono::microseconds>(stop - start);
+            cout << "vis time: " << duration.count() << " microseconds" << endl;
+        }
+
+    }
+
+    bool point_in_view(const xtf_sss_ping& ping, const Eigen::Vector3d& point)
+    {
+        Eigen::Matrix3d Ry = Eigen::AngleAxisd(ping.pitch_, Eigen::Vector3d::UnitY()).matrix();
+        Eigen::Matrix3d Rz = Eigen::AngleAxisd(ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
+        Eigen::Matrix3d R = Rz*Ry;
+
+        // first, let's transform the point to a coordinate system defined by the sonar
+        Eigen::Vector3d p = R.transpose()*(point - ping.pos_);
+
+        // now, let's get the yaw and pitch components
+        double yaw = atan2(p(1), p(0));
+
+        double xy_dist = sqrt(p(1)*p(1)+p(0)*p(0));
+        double pitch = atan(p(2)/xy_dist);
+
+        // check if point is in view of either of the side scans
+        bool yaw_in_view = fabs(yaw) < M_PI/2. + M_PI/8. && fabs(yaw) > M_PI/2. - M_PI/8.;
+
+        bool pitch_in_view = pitch < 1.4*ping.port.tilt_angle + 0.5*ping.port.beam_width &&
+                             pitch > 1.4*ping.port.tilt_angle - 0.5*ping.port.beam_width;
+
+        return pitch_in_view && yaw_in_view;
     }
 
     bool callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
@@ -477,6 +582,27 @@ struct survey_viewer {
         if (viewer.core.is_animating) {
             project_sss();
         }
+    }
+
+    bool callback_mouse_down(igl::opengl::glfw::Viewer& viewer, int, int)
+    {
+        cout << "Got mouse callback!" << endl;
+        int fid;
+        Eigen::Vector3f bc;
+        // Cast a ray in the view direction starting from the mouse position
+        double x = viewer.current_mouse_x;
+        double y = viewer.core.viewport(3) - viewer.current_mouse_y;
+        if (igl::unproject_onto_mesh(Eigen::Vector2f(x, y), viewer.core.view * viewer.core.model,
+                viewer.core.proj, viewer.core.viewport, V1, F1, fid, bc)) {
+            // paint hit red
+            cout << "Got point in mesh!" << endl;
+            int vind = F1(fid, 0);
+            C.row(vind) << 1, 0, 0;
+            viewer.data().set_colors(C);
+            return true;
+        }
+        cout << "Not in mesh!" << endl;
+        return false;
     }
 
     bool callback_key_pressed(igl::opengl::glfw::Viewer& viewer, unsigned int key, int mods)
