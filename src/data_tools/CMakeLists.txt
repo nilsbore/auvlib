@@ -29,6 +29,11 @@ add_executable(test_submap_tracks src/test_submap_tracks.cpp)
 
 add_executable(test_all src/test_all.cpp)
 
+#pybind11_add_module(pydata_structures src/pydata_structures.cpp)
+add_library(pydata_structures MODULE src/pydata_structures.cpp)
+add_library(pygsf_data MODULE src/pygsf_data.cpp)
+add_library(pyxtf_data MODULE src/pyxtf_data.cpp)
+
 # Define headers for this library. PUBLIC headers are used for
 # compiling the library, and will be added to consumers' build
 # paths.
@@ -82,6 +87,21 @@ target_include_directories(all_data PUBLIC
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
 
+target_include_directories(pydata_structures PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+    PRIVATE src)
+
+target_include_directories(pygsf_data PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+    PRIVATE src)
+
+target_include_directories(pyxtf_data PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+    PRIVATE src)
+
 target_link_libraries(test_gsf gsf_data data_structures navi_data)
 
 target_link_libraries(test_xtf xtf_data data_structures navi_data ${OpenCV_LIBS})
@@ -106,6 +126,19 @@ target_link_libraries(csv_data PUBLIC data_structures navi_data gsf_data xtf_dat
 target_link_libraries(xtf_data PUBLIC data_structures navi_data xtf_reader lat_long_utm ${OpenCV_LIBS})
 
 target_link_libraries(all_data navi_data lat_long_utm ${OpenCV_LIBS})
+
+#target_link_libraries(pydata_structures data_structures eigen_cereal)
+target_link_libraries(pydata_structures PRIVATE data_structures eigen_cereal ${BOOST_LIBRARIES} pybind11::module)
+set_target_properties(pydata_structures PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
+                                                   SUFFIX "${PYTHON_MODULE_EXTENSION}")
+
+target_link_libraries(pygsf_data PRIVATE data_structures gsf_data eigen_cereal ${BOOST_LIBRARIES} pybind11::module)
+set_target_properties(pygsf_data PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
+                                            SUFFIX "${PYTHON_MODULE_EXTENSION}")
+
+target_link_libraries(pyxtf_data PRIVATE data_structures xtf_data eigen_cereal ${BOOST_LIBRARIES} pybind11::module)
+set_target_properties(pyxtf_data PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
+                                            SUFFIX "${PYTHON_MODULE_EXTENSION}")
 
 # 'make install' to the correct locations (provided by GNUInstallDirs).
 install(TARGETS data_transforms submaps data_structures benchmark navi_data gsf_data csv_data xtf_data all_data lat_long_utm EXPORT DataToolsConfig

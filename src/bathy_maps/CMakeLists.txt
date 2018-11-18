@@ -26,6 +26,8 @@ add_library(mesh_map src/mesh_map.cpp)
 
 add_executable(test_mesh src/test_mesh.cpp)
 
+add_library(pymesh_map MODULE src/pymesh_map.cpp)
+
 # Define headers for this library. PUBLIC headers are used for
 # compiling the library, and will be added to consumers' build
 # paths.
@@ -41,6 +43,11 @@ target_include_directories(mesh_map PUBLIC
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
 
+target_include_directories(pymesh_map PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+    PRIVATE src)
+
 #add_dependencies(mesh_map libembree)
 
 # Link the libraries
@@ -50,6 +57,10 @@ target_link_libraries(draw_map data_structures ${OpenCV_LIBS})
 target_link_libraries(mesh_map data_structures snell_ray_tracing igl::embree ${OpenCV_LIBS} igl::core igl::opengl_glfw -lpthread)
 
 target_link_libraries(test_mesh data_structures gsf_data xtf_data csv_data navi_data mesh_map draw_map ${OpenCV_LIBS})
+
+target_link_libraries(pymesh_map PRIVATE data_structures mesh_map snell_ray_tracing igl::embree ${OpenCV_LIBS} ${BOOST_LIBRARIES} igl::core igl::opengl_glfw -lpthread pybind11::module)
+set_target_properties(pymesh_map PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
+                                            SUFFIX "${PYTHON_MODULE_EXTENSION}")
 
 # 'make install' to the correct locations (provided by GNUInstallDirs).
 install(TARGETS draw_map mesh_map EXPORT BathyMapsConfig
