@@ -94,6 +94,6 @@ PYBIND11_MODULE(gsf_data, m) {
 
     m.def("write_data", &write_data_from_str<gsf_mbes_ping::PingsT>, "Write gsf_mbes_ping::PingsT to .cereal file");
     m.def("write_data", &write_data_from_str<gsf_nav_entry::EntriesT>, "Write gsf_nav_entry::EntriesT to .cereal file");
-    m.def("write_data", &write_data_from_str<gsf_sound_speed::SpeedsT>, "Write gsf_sound_speed::SpeedsT to a .cereal file");
+    m.def("write_data", &write_data_from_str<gsf_sound_speed::SpeedsT>, "Write gsf_sound_speed::SpeedsT to .cereal file");
     m.def("convert_pings", &convert_pings, "Convert gsf_mbes_ping::EntriesT to mbes_ping::EntriesT");
 }
