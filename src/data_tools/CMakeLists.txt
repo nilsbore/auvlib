@@ -33,6 +33,7 @@ add_executable(test_all src/test_all.cpp)
 add_library(pydata_structures MODULE src/pydata_structures.cpp)
 add_library(pygsf_data MODULE src/pygsf_data.cpp)
 add_library(pyxtf_data MODULE src/pyxtf_data.cpp)
+add_library(pycsv_data MODULE src/pycsv_data.cpp)
 
 # Define headers for this library. PUBLIC headers are used for
 # compiling the library, and will be added to consumers' build
@@ -102,6 +103,11 @@ target_include_directories(pyxtf_data PUBLIC
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
 
+target_include_directories(pycsv_data PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+    PRIVATE src)
+
 target_link_libraries(test_gsf gsf_data data_structures navi_data)
 
 target_link_libraries(test_xtf xtf_data data_structures navi_data ${OpenCV_LIBS})
@@ -138,6 +144,10 @@ set_target_properties(pygsf_data PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
 
 target_link_libraries(pyxtf_data PRIVATE data_structures xtf_data eigen_cereal ${BOOST_LIBRARIES} pybind11::module)
 set_target_properties(pyxtf_data PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
+                                            SUFFIX "${PYTHON_MODULE_EXTENSION}")
+
+target_link_libraries(pycsv_data PRIVATE data_structures csv_data eigen_cereal ${BOOST_LIBRARIES} pybind11::module)
+set_target_properties(pycsv_data PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
                                             SUFFIX "${PYTHON_MODULE_EXTENSION}")
 
 # 'make install' to the correct locations (provided by GNUInstallDirs).
