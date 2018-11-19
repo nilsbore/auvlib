@@ -3,6 +3,8 @@
 Library for tracing sonar beams through horizontal layers with different sound speeds.
 For an example usage, see [this file](https://github.com/nilsbore/auvlib/blob/master/src/pysonar_tracing/examples/test_ray_tracing.py).
 
+For the full documentation, see below.
+
 # pysonar_tracing.snell_ray_tracing
 Data structure for constructing and viewing a bathymetry mesh and for draping the mesh with sidescan data
 ## trace_multiple_layers
