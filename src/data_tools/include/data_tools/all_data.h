@@ -20,14 +20,13 @@ struct all_mbes_ping {
     std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > beams; // all 3d points in swath
     bool first_in_file_;
 
-	/*
 	template <class Archive>
     void serialize( Archive & ar )
     {
-        ar(CEREAL_NVP(id_), CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_),
-		   CEREAL_NVP(reflectivities), CEREAL_NVP(beams), CEREAL_NVP(first_in_file_));
+        ar(CEREAL_NVP(id_), CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_), CEREAL_NVP(heading_),
+		   CEREAL_NVP(sound_vel_), CEREAL_NVP(transducer_depth_), CEREAL_NVP(reflectivities),
+           CEREAL_NVP(beams), CEREAL_NVP(first_in_file_));
     }
-	*/
 
 };
 
@@ -45,15 +44,13 @@ struct all_nav_entry {
 	double course_over_ground_;
     bool first_in_file_;
 
-	/*
 	template <class Archive>
     void serialize( Archive & ar )
     {
         ar(CEREAL_NVP(id_), CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_),
-		   CEREAL_NVP(lat_), CEREAL_NVP(long_), CEREAL_NVP(heading_),
+		   CEREAL_NVP(lat_), CEREAL_NVP(long_), CEREAL_NVP(depth_), CEREAL_NVP(heading_),
 		   CEREAL_NVP(course_over_ground_), CEREAL_NVP(first_in_file_));
     }
-	*/
 
 };
 
@@ -68,6 +65,13 @@ struct all_nav_depth {
     int height_type;
     bool first_in_file_;
 
+	template <class Archive>
+    void serialize( Archive & ar )
+    {
+        ar(CEREAL_NVP(id_), CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_),
+		   CEREAL_NVP(height), CEREAL_NVP(height_type), CEREAL_NVP(first_in_file_));
+    }
+
 };
 
 struct all_echosounder_depth {
@@ -79,6 +83,13 @@ struct all_echosounder_depth {
     long long time_stamp_; // posix time stamp
     double depth_;
     bool first_in_file_;
+
+	template <class Archive>
+    void serialize( Archive & ar )
+    {
+        ar(CEREAL_NVP(id_), CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_),
+		   CEREAL_NVP(depth_), CEREAL_NVP(first_in_file_));
+    }
 
 };
 

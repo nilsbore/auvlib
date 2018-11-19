@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 2.8)
 project(gpgs_slam_project)
 
 #add_definitions(-std=c++11 -O3)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -O3")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3 -fPIC")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -O3 -fPIC")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 # Must use GNUInstallDirs to install libraries into correct
@@ -44,7 +44,16 @@ add_definitions(${PCL_DEFINITIONS})
 
 add_definitions(-DCERES_GFLAGS_NAMESPACE=${GFLAGS_NAMESPACE})
 
-include_directories(${CERES_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS})
+set(PYBIND11_CPP_STANDARD -std=c++11)
+#add_definitions(-DPYBIND11_PYTHON_VERSION=2.7)
+#set(PYBIND11_PYTHON_VERSION 2.7)
+#set(PYTHON_LIBRARIES /usr/lib/x86_64-linux-gnu/libpython2.7.so)
+set(PYTHON_EXECUTABLE /usr/bin/python2.7)
+add_subdirectory(pybind11)
+
+message("Pybind11: " ${PYBIND11_INCLUDE_DIR})
+
+include_directories(${PYBIND11_INCLUDE_DIR} ${CERES_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS})
 #include_directories(eigen_cereal/include)
 
 add_subdirectory(libgsf)
@@ -56,3 +65,6 @@ add_subdirectory(bathy_maps)
 add_subdirectory(gpgs_slam)
 add_subdirectory(apps)
 add_subdirectory(sonar_tracing)
+add_subdirectory(pydata_tools)
+add_subdirectory(pybathy_maps)
+add_subdirectory(pysonar_tracing)

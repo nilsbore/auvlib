@@ -102,6 +102,12 @@ std::vector<T, Eigen::aligned_allocator<T> > parse_file(const boost::filesystem:
 }
 
 template <typename T>
+std::vector<T, Eigen::aligned_allocator<T> > parse_file_from_str(const std::string& file)
+{
+    return parse_file<T>(boost::filesystem::path(file));
+}
+
+template <typename T>
 std::vector<T, Eigen::aligned_allocator<T> > parse_folder(const boost::filesystem::path& folder)
 {
 	
@@ -125,6 +131,12 @@ std::vector<T, Eigen::aligned_allocator<T> > parse_folder(const boost::filesyste
 }
 
 template <typename T>
+std::vector<T, Eigen::aligned_allocator<T> > parse_folder_from_str(const std::string& folder)
+{
+    return parse_folder<T>(boost::filesystem::path(folder));
+}
+
+template <typename T>
 T read_data(const boost::filesystem::path& path)
 {
     if (!boost::filesystem::exists(path)) {
@@ -144,6 +156,13 @@ T read_data(const boost::filesystem::path& path)
 }
 
 template <typename T>
+T read_data_from_str(const std::string& path)
+{
+    return read_data<T>(boost::filesystem::path(path));
+}
+
+
+template <typename T>
 void write_data(T& data, const boost::filesystem::path& path)
 {
     std::ofstream os(path.string(), std::ofstream::binary);
@@ -152,6 +171,12 @@ void write_data(T& data, const boost::filesystem::path& path)
         archive(data);
 	}
     os.close();
+}
+
+template <typename T>
+void write_data_from_str(T& data, const std::string& path)
+{
+    write_data<T>(data, boost::filesystem::path(path));
 }
 
 #endif // DATA_STRUCTURES_H

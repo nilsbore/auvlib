@@ -83,7 +83,7 @@ pair<double, Eigen::VectorXd> trace_single_layers(const Eigen::VectorXd& layer_d
     return make_pair(2.*summary.final_cost, layer_widths);
 }
 
-void visualize_rays(const Eigen::MatrixXd& end_points, const Eigen::VectorXd& layer_depths, Eigen::MatrixXd& layer_widths, double max_depth)
+void visualize_rays(const Eigen::MatrixXd& end_points, const Eigen::VectorXd& layer_depths, Eigen::MatrixXd& layer_widths, double max_depth, bool wait)
 {
     const int image_width = 1000;
     const int image_height = 400;
@@ -119,5 +119,10 @@ void visualize_rays(const Eigen::MatrixXd& end_points, const Eigen::VectorXd& la
     }
 
     cv::imshow("Raybending", image);
-    cv::waitKey(100);
+    if (wait) {
+        cv::waitKey();
+    }
+    else {
+        cv::waitKey(100);
+    }
 }

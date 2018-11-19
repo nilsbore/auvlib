@@ -67,6 +67,11 @@ bathy_map_image::bathy_map_image(mbes_ping::PingsT& pings, int rows, int cols) :
     bathy_map = cv::Mat(rows, cols, CV_8UC3, cv::Scalar(255, 255, 255));
 }
 
+void bathy_map_image::draw_track(mbes_ping::PingsT& pings)
+{
+    draw_track(pings, cv::Scalar(0, 0, 255));
+}
+
 void bathy_map_image::draw_track(mbes_ping::PingsT& pings, const cv::Scalar& color)
 {
     //nbr_tracks_drawn += 1; // we should based the color on this instead
@@ -167,4 +172,9 @@ void bathy_map_image::draw_targets(const TargetsT& targets, const cv::Scalar& co
 void bathy_map_image::save_image(const boost::filesystem::path& path)
 {
     cv::imwrite(path.string(), bathy_map);
+}
+
+void bathy_map_image::save_image_from_str(const std::string& path)
+{
+    save_image(boost::filesystem::path(path));
 }
