@@ -7,7 +7,7 @@
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(pymesh_map, m) {
+PYBIND11_MODULE(mesh_map, m) {
     m.doc() = "Data structure for constructing and viewing a bathymetry mesh"; // optional module docstring
     py::class_<bathy_map_mesh>(m, "bathy_map_mesh")
         .def(py::init<>())
