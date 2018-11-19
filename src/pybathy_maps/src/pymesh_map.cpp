@@ -10,7 +10,7 @@ namespace py = pybind11;
 PYBIND11_MODULE(mesh_map, m) {
     m.doc() = "Data structure for constructing and viewing a bathymetry mesh and for draping the mesh with sidescan data"; // optional module docstring
     py::class_<bathy_map_mesh>(m, "bathy_map_mesh", "Class for constructing mesh from multibeam data")
-        .def(py::init<>())
+        .def(py::init<>(), "Constructor")
         .def("mesh_from_height_map", &bathy_map_mesh::mesh_from_height_map, "Construct mesh from height map")
         .def("height_map_from_pings", &bathy_map_mesh::height_map_from_pings, "Construct height map from mbes_ping::PingsT")
         .def("mesh_from_pings", &bathy_map_mesh::mesh_from_pings, "Construct mesh from mbes_ping::PingsT")
