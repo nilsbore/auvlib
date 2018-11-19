@@ -19,7 +19,10 @@ PYBIND11_MODULE(all_data, m) {
         .def_readwrite("transducer_depth_", &all_mbes_ping::transducer_depth_)
         .def_readwrite("reflectivities", &all_mbes_ping::reflectivities)
         .def_readwrite("beams", &all_mbes_ping::beams)
-        .def_readwrite("first_in_file_", &all_mbes_ping::first_in_file_);
+        .def_readwrite("first_in_file_", &all_mbes_ping::first_in_file_)
+        .def_static("parse_file", &parse_file_from_str<all_mbes_ping>)
+        .def_static("parse_folder", &parse_folder_from_str<all_mbes_ping>)
+        .def_static("read_data", &read_data_from_str<all_mbes_ping::PingsT>);
 
     py::class_<all_nav_entry>(m, "all_nav_entry")
         .def(py::init<>())
@@ -31,7 +34,10 @@ PYBIND11_MODULE(all_data, m) {
         .def_readwrite("depth_", &all_nav_entry::depth_)
         .def_readwrite("heading_", &all_nav_entry::heading_)
         .def_readwrite("course_over_ground_", &all_nav_entry::course_over_ground_)
-        .def_readwrite("first_in_file_", &all_nav_entry::first_in_file_);
+        .def_readwrite("first_in_file_", &all_nav_entry::first_in_file_)
+        .def_static("parse_file", &parse_file_from_str<all_nav_entry>)
+        .def_static("parse_folder", &parse_folder_from_str<all_nav_entry>)
+        .def_static("read_data", &read_data_from_str<all_nav_entry::EntriesT>);
 
     py::class_<all_nav_depth>(m, "all_nav_depth")
         .def(py::init<>())
@@ -40,7 +46,10 @@ PYBIND11_MODULE(all_data, m) {
         .def_readwrite("time_stamp_", &all_nav_depth::time_stamp_)
         .def_readwrite("height", &all_nav_depth::height)
         .def_readwrite("height_type", &all_nav_depth::height_type)
-        .def_readwrite("first_in_file_", &all_nav_depth::first_in_file_);
+        .def_readwrite("first_in_file_", &all_nav_depth::first_in_file_)
+        .def_static("parse_file", &parse_file_from_str<all_nav_depth>)
+        .def_static("parse_folder", &parse_folder_from_str<all_nav_depth>)
+        .def_static("read_data", &read_data_from_str<all_nav_depth::EntriesT>);
 
     py::class_<all_echosounder_depth>(m, "all_echosounder_depth")
         .def(py::init<>())
@@ -48,11 +57,14 @@ PYBIND11_MODULE(all_data, m) {
         .def_readwrite("time_string_", &all_echosounder_depth::time_string_)
         .def_readwrite("time_stamp_", &all_echosounder_depth::time_stamp_)
         .def_readwrite("depth_", &all_echosounder_depth::depth_)
-        .def_readwrite("first_in_file_", &all_echosounder_depth::first_in_file_);
+        .def_readwrite("first_in_file_", &all_echosounder_depth::first_in_file_)
+        .def_static("parse_file", &parse_file_from_str<all_echosounder_depth>)
+        .def_static("parse_folder", &parse_folder_from_str<all_echosounder_depth>)
+        .def_static("read_data", &read_data_from_str<all_echosounder_depth::EntriesT>);
 
-    m.def("parse_file", &parse_file_from_str<all_mbes_ping>, "A function which parses all mbes pings");
-    m.def("parse_folder", &parse_folder_from_str<all_mbes_ping>, "A function which parses all mbes pings from folder");
-    m.def("read_data", &read_data_from_str<all_mbes_ping::PingsT>, "A function which reads all pings from a .cereal file");
-    m.def("write_data", &write_data_from_str<all_mbes_ping::PingsT>, "A function which writes all pings to a .cereal file");
+    m.def("write_data", &write_data_from_str<all_mbes_ping::PingsT>, "A function which writes all mbes pings to a .cereal file");
+    m.def("write_data", &write_data_from_str<all_nav_entry::EntriesT>, "A function which writes all nav entries to a .cereal file");
+    m.def("write_data", &write_data_from_str<all_nav_depth::EntriesT>, "A function which writes all nav depths to a .cereal file");
+    m.def("write_data", &write_data_from_str<all_echosounder_depth::EntriesT>, "A function which writes all echosounder depths to a .cereal file");
     m.def("convert_matched_entries", (all_mbes_ping::PingsT (*)(all_mbes_ping::PingsT&, all_nav_entry::EntriesT&) ) &convert_matched_entries, "A function which matches xtf pings and csv nav entries");
 }

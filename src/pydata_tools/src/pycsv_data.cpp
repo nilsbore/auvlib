@@ -23,9 +23,11 @@ PYBIND11_MODULE(csv_data, m) {
         .def_readwrite("long_", &csv_nav_entry::long_)
         .def_readwrite("altitude", &csv_nav_entry::altitude)
         .def_readwrite("pos_", &csv_nav_entry::pos_)
-        .def_readwrite("vel_", &csv_nav_entry::pos_);
+        .def_readwrite("vel_", &csv_nav_entry::pos_)
+        .def_static("parse_file", &parse_file_from_str<csv_nav_entry>)
+        .def_static("parse_folder", &parse_folder_from_str<csv_nav_entry>)
+        .def_static("read_data", &read_data_from_str<csv_nav_entry::EntriesT>);
 
-    m.def("parse_file", &parse_file_from_str<csv_nav_entry>, "A function which parses xtf sss pings");
-    m.def("parse_folder", &parse_folder_from_str<csv_nav_entry>, "A function which parses xtf sss pings from folder");
+    m.def("write_data", &write_data_from_str<csv_nav_entry::EntriesT>, "A function which writes csv nav entries to a .cereal file");
     m.def("convert_matched_entries", (xtf_sss_ping::PingsT (*)(xtf_sss_ping::PingsT&, csv_nav_entry::EntriesT&) ) &convert_matched_entries, "A function which matches xtf pings and csv nav entries");
 }

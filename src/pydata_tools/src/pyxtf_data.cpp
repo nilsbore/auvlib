@@ -28,11 +28,11 @@ PYBIND11_MODULE(xtf_data, m) {
         .def_readwrite("lat_", &xtf_sss_ping::lat_)
         .def_readwrite("long_", &xtf_sss_ping::long_)
         .def_readwrite("sound_vel_", &xtf_sss_ping::sound_vel_)
-        .def_readwrite("pos_", &xtf_sss_ping::pos_);
+        .def_readwrite("pos_", &xtf_sss_ping::pos_)
+        .def_static("parse_file", &parse_file_from_str<xtf_sss_ping>)
+        .def_static("parse_folder", &parse_folder_from_str<xtf_sss_ping>)
+        .def_static("read_data", &read_data_from_str<xtf_sss_ping::PingsT>);
 
-    m.def("parse_file", &parse_file_from_str<xtf_sss_ping>, "A function which parses xtf sss pings");
-    m.def("parse_folder", &parse_folder_from_str<xtf_sss_ping>, "A function which parses xtf sss pings from folder");
-    m.def("read_data", &read_data_from_str<xtf_sss_ping::PingsT>, "A function which reads xtf pings from a .cereal file");
     m.def("write_data", &write_data_from_str<xtf_sss_ping::PingsT>, "A function which writes xtf pings to a .cereal file");
     m.def("make_waterfall_image", &make_waterfall_image, "A function which creates and opencv waterfall image");
 }

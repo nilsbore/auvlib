@@ -59,7 +59,10 @@ PYBIND11_MODULE(gsf_data, m) {
         .def_readwrite("lat_", &gsf_mbes_ping::lat_)
         .def_readwrite("long_", &gsf_mbes_ping::long_)
         .def_readwrite("depth_", &gsf_mbes_ping::depth_)
-        .def_readwrite("beams", &gsf_mbes_ping::beams);
+        .def_readwrite("beams", &gsf_mbes_ping::beams)
+        .def_static("parse_file", &parse_file_from_str<gsf_mbes_ping>)
+        .def_static("parse_folder", &parse_folder_from_str<gsf_mbes_ping>)
+        .def_static("read_data", &read_data_from_str<gsf_mbes_ping::PingsT>);
     //PybindCerealArchive<gsf_mbes_ping> archive(c);
     //gsf_mbes_ping example; example.serialize(archive);
 
@@ -68,7 +71,10 @@ PYBIND11_MODULE(gsf_data, m) {
         .def_readwrite("time_string_", &gsf_sound_speed::time_string_)
         .def_readwrite("time_stamp_", &gsf_sound_speed::time_stamp_)
         .def_readwrite("near_speed", &gsf_sound_speed::near_speed)
-        .def_readwrite("below_speed", &gsf_sound_speed::below_speed);
+        .def_readwrite("below_speed", &gsf_sound_speed::below_speed)
+        .def_static("parse_file", &parse_file_from_str<gsf_sound_speed>)
+        .def_static("parse_folder", &parse_folder_from_str<gsf_sound_speed>)
+        .def_static("read_data", &read_data_from_str<gsf_sound_speed::SpeedsT>);
 
     py::class_<gsf_nav_entry>(m, "gsf_nav_entry")
         .def(py::init<>())
@@ -81,11 +87,18 @@ PYBIND11_MODULE(gsf_data, m) {
         .def_readwrite("lat_", &gsf_nav_entry::lat_)
         .def_readwrite("long_", &gsf_nav_entry::long_)
         .def_readwrite("altitude", &gsf_nav_entry::altitude)
-        .def_readwrite("pos_", &gsf_nav_entry::pos_);
+        .def_readwrite("pos_", &gsf_nav_entry::pos_)
+        .def_static("parse_file", &parse_file_from_str<gsf_nav_entry>)
+        .def_static("parse_folder", &parse_folder_from_str<gsf_nav_entry>)
+        .def_static("read_data", &read_data_from_str<gsf_nav_entry::EntriesT>);
 
-    m.def("parse_file", &parse_file_from_str<gsf_mbes_ping>, "A function which parses gsf mbes pings");
-    m.def("parse_folder", &parse_folder_from_str<gsf_mbes_ping>, "A function which parses gsf mbes pings from folder");
-    m.def("read_data", &read_data_from_str<gsf_mbes_ping::PingsT>, "A function which reads gsf pings from a .cereal file");
+    //m.def("gsf_mbes_ping.parse_file", &parse_file_from_str<gsf_mbes_ping>, "A function which parses gsf mbes pings");
+    //m.def("gsf_nav_entry.parse_file", &parse_file_from_str<gsf_nav_entry>, "A function which parses gsf nav entries");
+    //m.def("gsf_sound_speed.parse_file", &parse_file_from_str<gsf_sound_speed>, "A function which parses gsf sound speeds");
+    //m.def("parse_folder", &parse_folder_from_str<gsf_mbes_ping>, "A function which parses gsf mbes pings from folder");
+    //m.def("read_data", &read_data_from_str<gsf_mbes_ping::PingsT>, "A function which reads gsf pings from a .cereal file");
     m.def("write_data", &write_data_from_str<gsf_mbes_ping::PingsT>, "A function which writes gsf pings to a .cereal file");
+    m.def("write_data", &write_data_from_str<gsf_nav_entry::EntriesT>, "A function which writes gsf nav entries to a .cereal file");
+    m.def("write_data", &write_data_from_str<gsf_sound_speed::SpeedsT>, "A function which writes gsf sound speeds to a .cereal file");
     m.def("convert_pings", &convert_pings, "A function which converts gsf_mbes_ping::EntriesT to mbes_ping::EntriesT");
 }
