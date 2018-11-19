@@ -60,3 +60,9 @@ target_link_libraries(pyall_data PRIVATE data_structures all_data eigen_cereal $
 set_target_properties(pyall_data PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
                                             OUTPUT_NAME "all_data"
                                             SUFFIX "${PYTHON_MODULE_EXTENSION}")
+
+install(TARGETS pydata_structures pygsf_data pyxtf_data pycsv_data pyall_data
+    LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}/pydata_tools
+)  # This is for Windows
+
+install(FILES module/__init__.py DESTINATION ${CMAKE_INSTALL_LIBDIR}/pydata_tools)
