@@ -1,5 +1,13 @@
 # pydata_tools
 
+This library contains the following modules: `data_structures`, `gsf_data`, `xtf_data`, `all_data` and `csv_data`.
+They contain data structures corresponding to types of those file formats, and functions for reading them from data.
+A basic usage is demonstrated in
+[this file](https://github.com/nilsbore/auvlib/blob/master/src/pydata_tools/examples/parse_or_load_gsf.py),
+but the other libraries have all of the corresponding methods defined for those data types.
+
+For the complete documentation, see below.
+
 # pydata_tools.gsf_data
 Basic utilities for working with the .gsf file format
 ## convert_pings
