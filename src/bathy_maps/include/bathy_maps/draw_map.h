@@ -15,11 +15,13 @@ public:
     int rows, cols;
 
     bathy_map_image(mbes_ping::PingsT& pings, int rows=500, int cols=500);
+    void draw_track(mbes_ping::PingsT& pings);
     void draw_track(mbes_ping::PingsT& pings, const cv::Scalar& color);
     void draw_height_map(mbes_ping::PingsT& pings);
     void draw_back_scatter_map(mbes_ping::PingsT& pings);
     void draw_targets(const TargetsT& targets, const cv::Scalar& color);
     void save_image(const boost::filesystem::path& path);
+    void save_image_from_str(const std::string& path);
 };
 
 #endif // DRAW_MAP_H
