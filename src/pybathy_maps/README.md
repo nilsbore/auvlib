@@ -5,6 +5,8 @@ There are examples of how to use it with
 [images](https://github.com/nilsbore/auvlib/blob/master/src/pybathy_maps/examples/draw_height_map.py) and
 [meshes](https://github.com/nilsbore/auvlib/blob/master/src/pybathy_maps/examples/view_gsf_mesh.py).
 
+For the full documentation, see below.
+
 # pybathy_maps.draw_map
 Data structure for constructing and viewing a bathymetry mesh and for draping the mesh with sidescan data
 ## bathy_map_image
