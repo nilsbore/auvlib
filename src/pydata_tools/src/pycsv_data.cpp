@@ -6,7 +6,7 @@
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(pycsv_data, m) {
+PYBIND11_MODULE(csv_data, m) {
     m.doc() = "Basic utilities for reading csv based data"; // optional module docstring
 
     py::class_<csv_nav_entry>(m, "csv_nav_entry")

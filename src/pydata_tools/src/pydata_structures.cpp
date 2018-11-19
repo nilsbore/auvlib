@@ -6,7 +6,7 @@
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(pydata_structures, m) {
+PYBIND11_MODULE(data_structures, m) {
     m.doc() = "Basic data structures for sonar data"; // optional module docstring
 
     py::class_<mbes_ping>(m, "mbes_ping")

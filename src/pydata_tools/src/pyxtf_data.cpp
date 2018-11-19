@@ -6,7 +6,7 @@
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(pyxtf_data, m) {
+PYBIND11_MODULE(xtf_data, m) {
     m.doc() = "Basic utilities for reading xtf based data"; // optional module docstring
 
     py::class_<xtf_sss_ping_side>(m, "xtf_sss_ping_side")

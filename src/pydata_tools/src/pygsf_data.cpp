@@ -6,7 +6,42 @@
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(pygsf_data, m) {
+/*
+ * Screw this for now. Idea would be to instantiate a class
+ * and automatically get the member pointer from the instance
+ * by subtracting the class offset from the pointer. if pybind
+ * accepts merely the type pointer (as opposed to member pointer
+ * this should be fine. But it's a bit to hacky and risky for now
+ */
+
+/*
+template <typename T>
+class PybindCerealArchive {
+
+private:
+
+    py::class_<T>& c;
+
+public:
+
+    PybindCerealArchive(py::class_<T>& c) : c(c) {}
+
+    template <typename A>
+    void bind_values(A&& key_value)
+    {
+        c.def_readwrite(key_value.name, key_value.value);
+    }
+
+    template<typename ... Args>
+    void operator()(Args&& ... args)
+    {
+        bind_values(args)...;
+    }
+
+};
+*/
+
+PYBIND11_MODULE(gsf_data, m) {
     m.doc() = "Basic data structures for sonar data"; // optional module docstring
 
     py::class_<gsf_mbes_ping>(m, "gsf_mbes_ping")
@@ -25,6 +60,8 @@ PYBIND11_MODULE(pygsf_data, m) {
         .def_readwrite("long_", &gsf_mbes_ping::long_)
         .def_readwrite("depth_", &gsf_mbes_ping::depth_)
         .def_readwrite("beams", &gsf_mbes_ping::beams);
+    //PybindCerealArchive<gsf_mbes_ping> archive(c);
+    //gsf_mbes_ping example; example.serialize(archive);
 
     py::class_<gsf_sound_speed>(m, "gsf_sound_speed")
         .def(py::init<>())
