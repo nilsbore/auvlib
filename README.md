@@ -15,9 +15,25 @@ sudo apt-get install libcereal-dev libglfw3-dev libceres-dev
 Once cloned, get the libigl submodule via `git submodule init`, `git submodule update`.
 Then go into the libigl folder and execute `git submodule update --init external/embree`
 and `git submodule update --init external/glfw`.
-Finally, create a build folder in the repo root, and run `cmake ..`, followed by `make` within that folder.
+Finally, create a `build` folder in the repo root, and run
+```
+cmake -DCMAKE_INSTALL_PREFIX=../install ..
+```
+within the `build` folder. Then run `make` and `make install`.
+You should now have a compiled version of auvlib in the folder
+`/path/to/auvlib/install`. When done, please execute
+```
+export PYTHONPATH=$PYTHONPATH:/path/to/auvlib/install/lib
+```
+in any terminal where you want to use the python version of
+the library, or add this line to your `~/.bashrc`.
 
-## Using as a library
+## Using as a python library
+
+Python is the preferred interface for auvlib. In general, the python bindings have more
+complete documentation and supports most of the use cases of the c++ library.
+
+## Using as a c++ library
 
 First, initialize the submodules, same as for the previous section. For using auvlib as a library in an external project,
 [check out the example projects](https://github.com/nilsbore/auvlib/tree/master/example_projects).
