@@ -14,12 +14,14 @@ def parse_or_load_gsf(path):
         gsf_data.write_data(gsf_pings, "gsf_cache.cereal")
     return gsf_pings
 
-def parse_or_load_xtf(path):
+def parse_or_load_xtf(xtf_path, csv_path):
 
     if os.path.exists("xtf_cache.cereal"):
         xtf_pings = xtf_data.xtf_sss_ping.read_data("xtf_cache.cereal")
     else:
-        xtf_pings = xtf_data.xtf_sss_ping.parse_folder(path)
+        xtf_pings = xtf_data.xtf_sss_ping.parse_folder(xtf_path)
+        nav_entries = csv_data.csv_nav_entry.parse_file(csv_path)
+        xtf_pings = csv_data.convert_matched_entries(xtf_pings, nav_entries)
         xtf_data.write_data(xtf_pings, "xtf_cache.cereal")
     return xtf_pings
 
@@ -35,8 +37,6 @@ def create_mesh(path):
 m, V, F, bounds = create_mesh(sys.argv[1])
 #m.display_mesh(V, F)
 
-xtf_pings = parse_or_load_xtf(sys.argv[2])
-nav_entries = csv_data.csv_nav_entry.parse_file(sys.argv[3])
-xtf_pings = csv_data.convert_matched_entries(xtf_pings, nav_entries)
+xtf_pings = parse_or_load_xtf(sys.argv[2], sys.argv[3])
 
 m.overlay_sss(V, F, bounds, xtf_pings)
