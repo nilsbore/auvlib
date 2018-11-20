@@ -108,13 +108,19 @@ ReturnType read_datagram(std::ifstream& input, const AllHeaderType& header)
 template <typename ReturnType, typename AllHeaderType, int Code>
 vector<ReturnType, Eigen::aligned_allocator<ReturnType> > parse_file_impl(const boost::filesystem::path& path)
 {
+	vector<ReturnType, Eigen::aligned_allocator<ReturnType> > returns;
+    if (boost::filesystem::extension(path) != ".all") {
+        cout << "Not an .all file, skipping..." << endl;
+        return returns;
+    }
+
     std::ifstream input;
 	input.open(path.string(), std::ios::binary);
 	if (input.fail()) {
         cout << "ERROR: Cannot open the file..." << endl;
         exit(0);
     }
-    cout << "Opened " << path << " for reading..." << endl;
+    //cout << "Opened " << path << " for reading..." << endl;
 
     unsigned int nbr_bytes;
     unsigned char start_id;
@@ -125,59 +131,49 @@ vector<ReturnType, Eigen::aligned_allocator<ReturnType> > parse_file_impl(const 
 	unsigned char end_ident; // End identifier = ETX (Always 03h)
 	unsigned short checksum; // Check sum of data between STX and ETX
 
-    //vector<vector<all_xyz88_datagram_repeat> > many_pings;
-
 	int pos_counter = 0;
     int counters[255];
     for (int i = 0; i < 255; ++i) {
         counters[i] = 0;
     }
-	vector<ReturnType, Eigen::aligned_allocator<ReturnType> > returns;
 	while (!input.eof()) {
-		cout << "Trying to read nbr_bytes with size " << sizeof(nbr_bytes) << endl;
+		//cout << "Trying to read nbr_bytes with size " << sizeof(nbr_bytes) << endl;
 		input.read(reinterpret_cast<char*>(&nbr_bytes), sizeof(nbr_bytes));
-		cout << "Number bytes has little endian: " << nbr_bytes << endl;
-		cout << "Trying to read start_id with size " << sizeof(start_id) << endl;
+		//cout << "Number bytes has little endian: " << nbr_bytes << endl;
+		//cout << "Trying to read start_id with size " << sizeof(start_id) << endl;
 		input.read(reinterpret_cast<char*>(&start_id), sizeof(start_id));
-		cout << "Trying to read data_type with size " << sizeof(data_type) << endl;
+		//cout << "Trying to read data_type with size " << sizeof(data_type) << endl;
 		input.read(reinterpret_cast<char*>(&data_type), sizeof(data_type));
-		cout << "Number bytes: " << nbr_bytes << endl;
-		cout << "Start id: " << int(start_id) << endl;
-		cout << "Data type must be " << Code << endl;
+		//cout << "Number bytes: " << nbr_bytes << endl;
+		//cout << "Start id: " << int(start_id) << endl;
+		//cout << "Data type must be " << Code << endl;
 		if (data_type == 80) {
 		    ++pos_counter;
 		}
         counters[data_type] += 1;
 	    if (data_type == Code) {
-	        //all_xyz88_datagram mbes_header;
 			AllHeaderType header;
-		    cout << "Is a MB reading, code: " << int(data_type) << endl;
+		    //cout << "Is a MB reading, code: " << int(data_type) << endl;
 		    input.read(reinterpret_cast<char*>(&header), sizeof(header));
 			returns.push_back(read_datagram<ReturnType, AllHeaderType>(input, header));
 		    //input.read(reinterpret_cast<char*>(&spare), sizeof(spare));
 		    input.read(reinterpret_cast<char*>(&end_ident), sizeof(end_ident));
 		    input.read(reinterpret_cast<char*>(&checksum), sizeof(checksum));
-			cout << "End identifier: " << end_ident << endl;
-			//many_pings.push_back(pings);
+			//cout << "End identifier: " << end_ident << endl;
 		}
 		else {
-		    cout << "No MB reading, code: " << int(data_type) << endl;
+		    //cout << "No MB reading, code: " << int(data_type) << endl;
             int skip_bytes = nbr_bytes-sizeof(start_id)-sizeof(data_type);
             input.ignore(skip_bytes);
 		}
 	}
 
+    /*
     for (int i = 0; i < 255; ++i) {
         cout << std::dec << "Got " << counters[i] << " of type " << i << std::hex <<"with hex 0x"<< i << endl;
     }
-
 	cout << "Got " << pos_counter << " position entries" << endl;
-
-	/*
-    cv::Mat img = make_waterfall_image(many_pings);
-	cv::imshow("My image", img);
-	cv::waitKey();
-	*/
+    */
 
 	return returns;
 }
@@ -189,7 +185,7 @@ pair<long long, string> parse_all_time(unsigned int date, unsigned int time)
 
     boost::posix_time::time_duration time_d = boost::posix_time::milliseconds(time);
     //std::istringstream is(to_string(date));
-    cout << "Date: " << to_string(date) << endl;
+    //cout << "Date: " << to_string(date) << endl;
     //is.imbue(loc);
     boost::gregorian::date date_t = boost::gregorian::date_from_iso_string(to_string(date));
     boost::posix_time::ptime t(date_t, time_d);
@@ -198,7 +194,7 @@ pair<long long, string> parse_all_time(unsigned int date, unsigned int time)
     stringstream time_ss;
     time_ss << t;
     string time_string_ = time_ss.str();
-    cout << "Time string: " << time_string_ << endl;
+    //cout << "Time string: " << time_string_ << endl;
 
     return make_pair(time_stamp_, time_string_);
 }
@@ -206,8 +202,8 @@ pair<long long, string> parse_all_time(unsigned int date, unsigned int time)
 template <>
 all_mbes_ping read_datagram<all_mbes_ping, all_xyz88_datagram>(std::ifstream& input, const all_xyz88_datagram& header)
 {
-	cout << "Total number of beams: " << header.nbr_beams << endl;
-    cout << "Valid number of beams: " << header.nbr_valid << endl;
+	//cout << "Total number of beams: " << header.nbr_beams << endl;
+    //cout << "Valid number of beams: " << header.nbr_valid << endl;
 	all_mbes_ping new_ping;
 	new_ping.id_ = header.ping_count;
 	//new_ping.heading_ = header.heading;
@@ -232,7 +228,7 @@ all_mbes_ping read_datagram<all_mbes_ping, all_xyz88_datagram>(std::ifstream& in
 		new_ping.reflectivities.push_back(ping.reflectivity);
         ++nbr_valid;
 	}
-    cout << "Computed nbr valid: " << nbr_valid << endl;
+    //cout << "Computed nbr valid: " << nbr_valid << endl;
 
 	unsigned char spare; // Spare (always 0)
 	input.read(reinterpret_cast<char*>(&spare), sizeof(spare));
@@ -243,15 +239,15 @@ all_mbes_ping read_datagram<all_mbes_ping, all_xyz88_datagram>(std::ifstream& in
 template <>
 all_nav_entry read_datagram<all_nav_entry, all_position_datagram>(std::ifstream& input, const all_position_datagram& header)
 {
-	cout << "Got a position datagram, skipping: " << int(header.nbr_bytes_input) << endl;
+	//cout << "Got a position datagram, skipping: " << int(header.nbr_bytes_input) << endl;
 
     //input.ignore(header.nbr_bytes_input);
     char buffer[255];
     input.read(buffer, header.nbr_bytes_input);
-    cout << "Got buffer: " << buffer << endl;
+    //cout << "Got buffer: " << buffer << endl;
     vector<string> strs;
     boost::split(strs, buffer, boost::is_any_of(","));
-    cout << "Str number 6: " << strs[6] << endl;
+    //cout << "Str number 6: " << strs[6] << endl;
 	all_nav_entry entry;
 	entry.id_ = header.pos_count;
 	entry.lat_ = double(header.latitude)/20000000.;
@@ -371,7 +367,7 @@ mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_
         }
 
         int i = 0;
-        cout << "Ping heading: " << new_ping.heading_ << endl;
+        //cout << "Ping heading: " << new_ping.heading_ << endl;
         for (const Eigen::Vector3d& beam : ping.beams) {
             /*if (beam(2) > -5. || beam(2) < -25.) {
                 ++i;
