@@ -15,6 +15,6 @@ PYBIND11_MODULE(mesh_map, m) {
         .def("height_map_from_pings", &bathy_map_mesh::height_map_from_pings, "Construct height map from mbes_ping::PingsT")
         .def("mesh_from_pings", &bathy_map_mesh::mesh_from_pings, "Construct mesh from mbes_ping::PingsT")
         .def("display_mesh", &bathy_map_mesh::display_mesh, "Display mesh using igl viewer")
-        .def("overlay_sss", &bathy_map_mesh::overlay_sss, "Overlay xtf_sss_ping::PingsT sidescan data on the mesh")
+        //.def("overlay_sss", &bathy_map_mesh::overlay_sss, "Overlay xtf_sss_ping::PingsT sidescan data on the mesh")
         .def("display_height_map", &bathy_map_mesh::display_height_map, "Display height map using opencv");
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 from pydata_tools import data_structures, gsf_data, xtf_data, csv_data
-from pybathy_maps import mesh_map
+from pybathy_maps import mesh_map, draping_viewer
 import sys
 import os
 
@@ -39,4 +39,4 @@ m, V, F, bounds = create_mesh(sys.argv[1])
 
 xtf_pings = parse_or_load_xtf(sys.argv[2], sys.argv[3])
 
-m.overlay_sss(V, F, bounds, xtf_pings)
+draping_viewer.overlay_sss(V, F, bounds, xtf_pings)

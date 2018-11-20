@@ -14,7 +14,6 @@ public:
     std::tuple<Eigen::MatrixXd, Eigen::MatrixXi, BoundsT> mesh_from_pings(const mbes_ping::PingsT& pings, double res=0.5);
     void display_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F);
     void display_height_map(const Eigen::MatrixXd& height_map);
-    Eigen::MatrixXd overlay_sss(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const BoundsT& bounds, const xtf_sss_ping::PingsT& pings);
 };
 
 #endif // MESH_MAP_H

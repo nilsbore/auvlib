@@ -9,6 +9,7 @@
 
 #include <bathy_maps/draw_map.h>
 #include <bathy_maps/mesh_map.h>
+#include <bathy_maps/draping_viewer.h>
 
 #include <opencv2/highgui/highgui.hpp>
 #include <chrono>
@@ -153,7 +154,7 @@ int main(int argc, char** argv)
         cv::Mat waterfall_img = make_waterfall_image(pings_sss);
         cv::imshow("My image", waterfall_img);
         cv::waitKey();
-        mesh.overlay_sss(V, F, bounds, pings_sss);
+        overlay_sss(V, F, bounds, pings_sss);
     }
 
     return 0;

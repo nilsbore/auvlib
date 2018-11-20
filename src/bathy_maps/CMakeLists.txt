@@ -24,6 +24,10 @@ add_library(draw_map src/draw_map.cpp)
 
 add_library(mesh_map src/mesh_map.cpp)
 
+add_library(drape_mesh src/drape_mesh.cpp)
+
+add_library(draping_viewer src/draping_viewer.cpp)
+
 add_executable(test_mesh src/test_mesh.cpp)
 
 # Define headers for this library. PUBLIC headers are used for
@@ -36,8 +40,16 @@ target_include_directories(draw_map PUBLIC
 
 target_include_directories(mesh_map PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    #$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../libigl/include>
-    #$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../libigl/external/glad/include>
+    $<INSTALL_INTERFACE:include>
+    PRIVATE src)
+
+target_include_directories(drape_mesh PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+    PRIVATE src)
+
+target_include_directories(draping_viewer PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
 
@@ -47,12 +59,16 @@ target_include_directories(mesh_map PUBLIC
 target_link_libraries(draw_map data_structures ${OpenCV_LIBS})
 
 #target_link_libraries(mesh_map data_structures igl::embree ${OpenCV_LIBS} glad ${GLFW3_LIBRARY} ${OPENGL_LIBRARY} ${OPENGL_glu_LIBRARY} -lpthread)
-target_link_libraries(mesh_map data_structures snell_ray_tracing igl::embree ${OpenCV_LIBS} igl::core igl::opengl_glfw -lpthread)
+target_link_libraries(mesh_map data_structures ${OpenCV_LIBS} igl::core igl::opengl_glfw -lpthread)
 
-target_link_libraries(test_mesh data_structures gsf_data xtf_data csv_data navi_data mesh_map draw_map ${OpenCV_LIBS})
+target_link_libraries(test_mesh data_structures gsf_data xtf_data csv_data navi_data mesh_map draw_map draping_viewer ${OpenCV_LIBS})
+
+target_link_libraries(drape_mesh snell_ray_tracing xtf_data igl::embree igl::core igl::opengl_glfw)
+
+target_link_libraries(draping_viewer drape_mesh xtf_data igl::core igl::opengl_glfw -lpthread)
 
 # 'make install' to the correct locations (provided by GNUInstallDirs).
-install(TARGETS draw_map mesh_map EXPORT BathyMapsConfig
+install(TARGETS draw_map mesh_map drape_mesh draping_viewer EXPORT BathyMapsConfig
     ARCHIVE  DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR})  # This is for Windows
@@ -64,4 +80,4 @@ install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(EXPORT BathyMapsConfig DESTINATION share/BathyMaps/cmake)
 
 # This makes the project importable from the build directory
-export(TARGETS draw_map mesh_map FILE BathyMapsConfig.cmake)
+export(TARGETS draw_map mesh_map drape_mesh draping_viewer FILE BathyMapsConfig.cmake)
