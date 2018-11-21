@@ -27,6 +27,8 @@ survey_viewer::survey_viewer(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F
     C = Eigen::MatrixXd(C1.rows()+C2.rows(), C1.cols());
     C << C1, C2;
 
+    is_active = Eigen::VectorXi(pings.size()); is_active.setOnes();
+
     // Compute per-face normals
     igl::per_face_normals(V1, F1, N_faces);
 
@@ -56,9 +58,12 @@ void survey_viewer::launch()
 
 void survey_viewer::project_sss()
 {
+    for (; i < pings.size() && is_active[i] == 0; ++i) {}
+
     if (i >= pings.size()) {
         return;
     }
+
     cout << "Setting new position: " << pings[i].pos_.transpose() << endl;
     //viewer.data().compute_normals();
     Eigen::Matrix3d Ry = Eigen::AngleAxisd(pings[i].pitch_, Eigen::Vector3d::UnitY()).matrix();
@@ -138,6 +143,16 @@ bool survey_viewer::callback_mouse_down(igl::opengl::glfw::Viewer& viewer, int, 
         int vind = F1(fid, 0);
         C.row(vind) << 1, 0, 0;
         viewer.data().set_colors(C);
+        Eigen::Vector3d point = offset + V1.row(vind).transpose();
+        int nbr_in_view = 0;
+        for (int j = 0; j < pings.size(); ++j) {
+            is_active(j) = int(point_in_view(pings[j], point));
+            nbr_in_view += is_active(j);
+        }
+        i = 0;
+
+        cout << "Number in view: " << nbr_in_view << " out of: " << pings.size() << endl;
+
         return true;
     }
     cout << "Not in mesh!" << endl;

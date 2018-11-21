@@ -254,11 +254,18 @@ bool point_in_view(const xtf_sss_ping& ping, const Eigen::Vector3d& point)
     double xy_dist = sqrt(p(1)*p(1)+p(0)*p(0));
     double pitch = atan(p(2)/xy_dist);
 
-    // check if point is in view of either of the side scans
-    bool yaw_in_view = fabs(yaw) < M_PI/2. + M_PI/8. && fabs(yaw) > M_PI/2. - M_PI/8.;
+    double min_pitch = -1.4*ping.port.tilt_angle - 0.5*ping.port.beam_width;
+    double max_pitch = -1.4*ping.port.tilt_angle + 0.5*ping.port.beam_width;
 
-    bool pitch_in_view = pitch < 1.4*ping.port.tilt_angle + 0.5*ping.port.beam_width &&
-                         pitch > 1.4*ping.port.tilt_angle - 0.5*ping.port.beam_width;
+    // check if point is in view of either of the side scans
+    bool yaw_in_view = fabs(yaw) < M_PI/2. + M_PI/16. && fabs(yaw) > M_PI/2. - M_PI/16.;
+
+
+    bool pitch_in_view = pitch < max_pitch && pitch > min_pitch;
+
+    cout << "Pitch: " << pitch << ", min pitch: " << min_pitch << ", max pitch: " << max_pitch << endl;
+
+    cout << "Pitch in view?: " << pitch_in_view << " and yaw in view?: " << yaw_in_view << endl;
 
     return pitch_in_view && yaw_in_view;
 }

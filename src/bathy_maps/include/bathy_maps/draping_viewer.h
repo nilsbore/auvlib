@@ -30,6 +30,8 @@ private:
     Eigen::VectorXi hit_counts;
     Eigen::MatrixXd N_faces; // the normals of F1, V1
 
+    Eigen::VectorXi is_active;
+
 public:
 
     survey_viewer(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1, const Eigen::MatrixXd& C1,
