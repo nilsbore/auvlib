@@ -291,6 +291,7 @@ xtf_sss_ping::PingsT parse_file(const boost::filesystem::path& file)
    unsigned char* buffer = (unsigned char*)malloc((WORD)32768);
    if (buffer == NULL) {
        cout << "Can't allocate memory!" << endl;
+       exit(-1);
        return pings;
    }
 

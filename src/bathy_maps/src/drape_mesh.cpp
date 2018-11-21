@@ -251,15 +251,15 @@ bool point_in_view(const xtf_sss_ping& ping, const Eigen::Vector3d& point)
     // now, let's get the yaw and pitch components
     double yaw = atan2(p(1), p(0));
 
-    double xy_dist = sqrt(p(1)*p(1)+p(0)*p(0));
+    double xy_dist = fabs(p(1)); //sqrt(p(1)*p(1)+p(0)*p(0));
     double pitch = atan(p(2)/xy_dist);
 
     double min_pitch = -1.4*ping.port.tilt_angle - 0.5*ping.port.beam_width;
     double max_pitch = -1.4*ping.port.tilt_angle + 0.5*ping.port.beam_width;
 
     // check if point is in view of either of the side scans
-    bool yaw_in_view = fabs(yaw) < M_PI/2. + M_PI/16. && fabs(yaw) > M_PI/2. - M_PI/16.;
-
+    //bool yaw_in_view = fabs(yaw) < M_PI/2. + M_PI/16. && fabs(yaw) > M_PI/2. - M_PI/16.;
+    bool yaw_in_view = fabs(p(0)) < 5.;
 
     bool pitch_in_view = pitch < max_pitch && pitch > min_pitch;
 

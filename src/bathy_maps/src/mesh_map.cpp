@@ -188,7 +188,7 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXi, bathy_map_mesh::BoundsT> bathy_map_mesh:
     Eigen::MatrixXd height_map;
     BoundsT bounds;
     tie(height_map, bounds) = height_map_from_pings(pings, res);
-    display_height_map(height_map);
+    //display_height_map(height_map);
     Eigen::MatrixXd V;
     Eigen::MatrixXi F;
     tie(V, F) = mesh_from_height_map(height_map, bounds);
