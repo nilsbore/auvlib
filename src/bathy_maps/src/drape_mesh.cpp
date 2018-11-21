@@ -241,9 +241,9 @@ void correlate_hits(const Eigen::MatrixXd& hits_port,
 
 bool point_in_view(const xtf_sss_ping& ping, const Eigen::Vector3d& point)
 {
-    Eigen::Matrix3d Ry = Eigen::AngleAxisd(ping.pitch_, Eigen::Vector3d::UnitY()).matrix();
+    //Eigen::Matrix3d Ry = Eigen::AngleAxisd(ping.pitch_, Eigen::Vector3d::UnitY()).matrix();
     Eigen::Matrix3d Rz = Eigen::AngleAxisd(ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
-    Eigen::Matrix3d R = Rz*Ry;
+    Eigen::Matrix3d R = Rz; //*Ry;
 
     // first, let's transform the point to a coordinate system defined by the sonar
     Eigen::Vector3d p = R.transpose()*(point - ping.pos_);
@@ -266,6 +266,10 @@ bool point_in_view(const xtf_sss_ping& ping, const Eigen::Vector3d& point)
     cout << "Pitch: " << pitch << ", min pitch: " << min_pitch << ", max pitch: " << max_pitch << endl;
 
     cout << "Pitch in view?: " << pitch_in_view << " and yaw in view?: " << yaw_in_view << endl;
+
+    cout << "XTF pos height: " << ping.pos_(2) << endl;
+    cout << "Clicked oint height: " << point(2) << endl;
+    cout << "Pos height: " << p(2) << endl;
 
     return pitch_in_view && yaw_in_view;
 }

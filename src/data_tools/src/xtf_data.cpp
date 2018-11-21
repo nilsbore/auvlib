@@ -144,6 +144,7 @@ xtf_sss_ping process_side_scan_ping(XTFPINGHEADER *PingHeader, XTFFILEHEADER *XT
           Ptr += BytesThisChannel;
           continue;
       }
+      ping_channel->pings.reserve(SamplesPerChan);
       for (int i = 0; i < SamplesPerChan; ++i) {
           // we should get port and starboard channel from header definition
           ping_channel->pings.push_back(Imagery[i]);
