@@ -209,6 +209,10 @@ xtf_sss_ping::PingsT convert_matched_entries(xtf_sss_ping::PingsT& pings, csv_na
         return entry1.time_stamp_ < entry2.time_stamp_;
     });
 
+    std::stable_sort(pings.begin(), pings.end(), [](const xtf_sss_ping& ping1, const xtf_sss_ping& ping2) {
+        return ping1.time_stamp_ < ping2.time_stamp_;
+    });
+
     auto pos = entries.begin();
     int bcount = 0;
     int ecount = 0;
