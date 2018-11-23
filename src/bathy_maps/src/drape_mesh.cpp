@@ -1,6 +1,7 @@
 #include <bathy_maps/drape_mesh.h>
 
 #include <igl/ray_mesh_intersect.h>
+#include <igl/barycentric_to_global.h>
 #include <igl/embree/line_mesh_intersection.h>
 
 #include <sonar_tracing/snell_ray_tracing.h>
@@ -100,6 +101,12 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi, Eigen:
     cout << "line_mesh_intersection time: " << duration.count() << " microseconds" << endl;
 
     start = chrono::high_resolution_clock::now();
+    Eigen::MatrixXd global_hits = igl::barycentric_to_global(V1, F1, hits);
+    stop = chrono::high_resolution_clock::now();
+    duration = chrono::duration_cast<chrono::microseconds>(stop - start);
+    cout << "barycentric_to_global time: " << duration.count() << " microseconds" << endl;
+
+    start = chrono::high_resolution_clock::now();
     int hit_count = 0;
     for (int i = 0; i < dirs_left.rows(); ++i) {
         int hit = hits(i, 0);
@@ -107,7 +114,8 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi, Eigen:
             int vind = F1(hit, 0);
             hits_left_inds(hit_count) = hit;
             // we actually get the coordinates within the triangle also, we could use that
-            hits_left.row(hit_count) = V1.row(vind);
+            //hits_left.row(hit_count) = V1.row(vind);
+            hits_left.row(hit_count) = global_hits.row(i);
             double nn = (origin - hits_left.row(hit_count).transpose()).norm();
             Eigen::Vector3d dir = origin - hits_left.row(hit_count).transpose();
             dir.normalize();
@@ -129,7 +137,8 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi, Eigen:
             int vind = F1(hit, 0);
             hits_right_inds(hit_count) = hit;
             // we actually get the coordinates within the triangle also, we could use that
-            hits_right.row(hit_count) = V1.row(vind);
+            //hits_right.row(hit_count) = V1.row(vind);
+            hits_right.row(hit_count) = global_hits.row(dirs_left.rows() + i);
             double nn = (origin - hits_right.row(hit_count).transpose()).norm();
             Eigen::Vector3d dir = origin - hits_right.row(hit_count).transpose();
             dir.normalize();
@@ -146,16 +155,16 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi, Eigen:
     return make_tuple(hits_left, hits_right, hits_left_inds, hits_right_inds, mod_left, mod_right);
 }
 
-void correlate_hits(const Eigen::MatrixXd& hits_port,
-                    const Eigen::VectorXi& hits_port_inds,
-                    const Eigen::VectorXd& mod_port,
-                    const xtf_sss_ping_side& ping,
-                    const Eigen::Vector3d& origin,
-                    double sound_vel,
-                    const Eigen::MatrixXi& F1,
-                    Eigen::MatrixXd& C,
-                    Eigen::VectorXd& hit_sums,
-                    Eigen::VectorXi& hit_counts)
+Eigen::MatrixXd correlate_hits(const Eigen::MatrixXd& hits_port,
+                               const Eigen::VectorXi& hits_port_inds,
+                               const Eigen::VectorXd& mod_port,
+                               const xtf_sss_ping_side& ping,
+                               const Eigen::Vector3d& origin,
+                               double sound_vel,
+                               const Eigen::MatrixXi& F1,
+                               Eigen::MatrixXd& C,
+                               Eigen::VectorXd& hit_sums,
+                               Eigen::VectorXi& hit_counts)
 {
 
     Eigen::VectorXd layer_depths(4);
@@ -199,12 +208,16 @@ void correlate_hits(const Eigen::MatrixXd& hits_port,
     
 
     if (times_port.rows() == 0) {
-        return;
+        cout << "There were no times computed!" << endl;
+        return Eigen::MatrixXd(0, 4);
     }
+
+    Eigen::MatrixXd hits_intensities(ping.pings.size(), 4);
 
     double port_step = ping.time_duration / double(ping.pings.size());
     cout << "port step: " << port_step << endl;
     int pos = 0;
+    int match_counter = 0;
     for (int i = 0; i < ping.pings.size(); ++i) {
         if (times_port(0) > double(i)*port_step) {
             continue;
@@ -228,6 +241,9 @@ void correlate_hits(const Eigen::MatrixXd& hits_port,
             break;
         }
         double intensity = mod_port(pos)*double(ping.pings[i])/(10000.);
+        hits_intensities.row(match_counter).head<3>() = hits_port.row(pos);
+        hits_intensities(match_counter, 3) = double(ping.pings[i])/10000.;
+
         //cout << "Found one: " << double(i)*port_step << ", " << times_port(pos) << endl;
         //cout << "With intensity: " << intensity << endl;
         int vind = F1(hits_port_inds(pos), 0);
@@ -235,8 +251,11 @@ void correlate_hits(const Eigen::MatrixXd& hits_port,
         hit_counts(vind) += 1;
         Eigen::Vector3d color = hit_sums(vind)/double(hit_counts(vind))*Eigen::Vector3d::Ones();
         C.row(vind) = color.transpose();
+        ++match_counter;
     }
+    hits_intensities.conservativeResize(match_counter, 4);
 
+    return hits_intensities;
 }
 
 bool point_in_view(const xtf_sss_ping& ping, const Eigen::Vector3d& point)

@@ -58,9 +58,16 @@ void survey_viewer::launch()
 
 void survey_viewer::project_sss()
 {
-    for (; i < pings.size() && is_active[i] == 0; ++i) {}
+    int skipped = 0;
+    for (; i < pings.size() && is_active[i] == 0; ++i, ++skipped) {}
+    if (patch_assembler.is_active() && skipped > 0) {
+        patch_assembler.split();
+    }
 
     if (i >= pings.size()) {
+        if (patch_assembler.is_active() && !patch_assembler.empty()) {
+            patch_views.push_back(patch_assembler.finish());
+        }
         return;
     }
 
@@ -84,16 +91,19 @@ void survey_viewer::project_sss()
     cout << "embree_compute_hits time: " << duration.count() << " microseconds" << endl;
 
     start = chrono::high_resolution_clock::now();
-    correlate_hits(hits_left, hits_left_inds, mod_left, pings[i].port, pings[i].pos_ - offset, pings[i].sound_vel_, F1, C, hit_sums, hit_counts);
+    Eigen::MatrixXd hits_left_intensities = correlate_hits(hits_left, hits_left_inds, mod_left, pings[i].port, pings[i].pos_ - offset, pings[i].sound_vel_, F1, C, hit_sums, hit_counts);
     stop = chrono::high_resolution_clock::now();
     duration = chrono::duration_cast<chrono::microseconds>(stop - start);
     cout << "left correlate_hits time: " << duration.count() << " microseconds" << endl;
 
     start = chrono::high_resolution_clock::now();
-    correlate_hits(hits_right, hits_right_inds, mod_right, pings[i].stbd, pings[i].pos_ - offset, pings[i].sound_vel_, F1, C, hit_sums, hit_counts);
+    Eigen::MatrixXd hits_right_intensities = correlate_hits(hits_right, hits_right_inds, mod_right, pings[i].stbd, pings[i].pos_ - offset, pings[i].sound_vel_, F1, C, hit_sums, hit_counts);
     stop = chrono::high_resolution_clock::now();
     duration = chrono::duration_cast<chrono::microseconds>(stop - start);
     cout << "right correlate_hits time: " << duration.count() << " microseconds" << endl;
+
+    patch_assembler.add_hits(hits_left_intensities, pings[i].pos_ - offset);
+    patch_assembler.add_hits(hits_right_intensities, pings[i].pos_ - offset);
 
     if (i % 10 == 0) {
         start = chrono::high_resolution_clock::now();
@@ -151,6 +161,9 @@ bool survey_viewer::callback_mouse_down(igl::opengl::glfw::Viewer& viewer, int, 
         }
         i = 0;
 
+        patch_assembler = sss_patch_assembler();
+        patch_assembler.activate(point - offset);
+
         cout << "Number in view: " << nbr_in_view << " out of: " << pings.size() << endl;
 
         return true;
@@ -175,8 +188,14 @@ bool survey_viewer::callback_key_pressed(igl::opengl::glfw::Viewer& viewer, unsi
     }
 }
 
-void overlay_sss(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
-                 const survey_viewer::BoundsT& bounds, const xtf_sss_ping::PingsT& pings)
+
+sss_patch_views::ViewsT survey_viewer::get_patch_views()
+{
+    return patch_views;
+}
+
+sss_patch_views::ViewsT overlay_sss(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
+                        const survey_viewer::BoundsT& bounds, const xtf_sss_ping::PingsT& pings)
 {
     Eigen::MatrixXd C_jet;
     igl::jet(V.col(2), true, C_jet);
@@ -195,4 +214,7 @@ void overlay_sss(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
     Eigen::Vector3d offset(bounds(0, 0), bounds(0, 1), 0.);
     survey_viewer viewer(V, F, C_jet, Vb, Fb, Cb, pings, offset);
     viewer.launch();
+
+    sss_patch_views::ViewsT views;
+    return views;
 }

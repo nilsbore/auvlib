@@ -65,7 +65,7 @@ target_link_libraries(test_mesh data_structures gsf_data xtf_data csv_data navi_
 
 target_link_libraries(drape_mesh snell_ray_tracing xtf_data igl::embree igl::core igl::opengl_glfw)
 
-target_link_libraries(draping_viewer drape_mesh xtf_data igl::core igl::opengl_glfw -lpthread)
+target_link_libraries(draping_viewer drape_mesh xtf_data ${OpenCV_LIBS} igl::core igl::opengl_glfw -lpthread)
 
 # 'make install' to the correct locations (provided by GNUInstallDirs).
 install(TARGETS draw_map mesh_map drape_mesh draping_viewer EXPORT BathyMapsConfig
