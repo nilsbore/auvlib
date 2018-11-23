@@ -161,6 +161,9 @@ bool survey_viewer::callback_mouse_down(igl::opengl::glfw::Viewer& viewer, int, 
         }
         i = 0;
 
+        if (patch_assembler.is_active() && !patch_assembler.empty()) {
+            patch_views.push_back(patch_assembler.finish());
+        }
         patch_assembler = sss_patch_assembler();
         patch_assembler.activate(point - offset);
 
@@ -215,6 +218,9 @@ sss_patch_views::ViewsT overlay_sss(const Eigen::MatrixXd& V, const Eigen::Matri
     survey_viewer viewer(V, F, C_jet, Vb, Fb, Cb, pings, offset);
     viewer.launch();
 
-    sss_patch_views::ViewsT views;
+    sss_patch_views::ViewsT views = viewer.get_patch_views();
+
+    cout << "Got " << views.size() << " patch views..." << endl;
+
     return views;
 }

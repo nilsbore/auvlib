@@ -25,7 +25,7 @@ struct sss_patch_views {
         ar(CEREAL_NVP(patch_height), CEREAL_NVP(sss_views), CEREAL_NVP(patch_view_pos));
     }
 
-    //EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 };
 
@@ -65,45 +65,38 @@ public:
 
     bool empty()
     {
-        return current_pos_count == 0;
+        return patch_views.sss_views.empty(); // current_pos_count == 0;
     }
 
     void activate(const Eigen::Vector3d& new_origin)
     {
-        std::cout << __FILE__ << ", " << __LINE__ << std::endl;
         origin = new_origin;
         height_count.setZero(); // = Eigen::MatrixXd::Zero(image_size, image_size);
         height_value.setZero(); // = Eigen::MatrixXd::Zero(image_size, image_size);
         is_active_ = true;
-        std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
+        patch_views = sss_patch_views();
         current_pos_value.setZero(); // = Eigen::Vector3d::Zero();
         current_pos_count = 0;
         current_view_count.setZero(); // = Eigen::MatrixXd::Zero(image_size, image_size);
         current_view_value.setZero(); // = Eigen::MatrixXd::Zero(image_size, image_size);
 
         nbr_splits = 0;
-
-        std::cout << __FILE__ << ", " << __LINE__ << std::endl;
     }
 
     bool is_active()
     {
-        std::cout << __FILE__ << ", " << __LINE__ << std::endl;
         return is_active_;
     }
 
     void split()
     {
-        std::cout << __FILE__ << ", " << __LINE__ << std::endl;
         if (current_pos_count > 0 && current_view_count.sum() > 0) {
             Eigen::MatrixXd current_view(image_size, image_size);
             current_view_count.array() += (current_view_count.array() == 0).cast<double>();
             current_view.array() = current_view_value.array() / current_view_count.array();
-        std::cout << __FILE__ << ", " << __LINE__ << std::endl;
             patch_views.sss_views.push_back(current_view);
             patch_views.patch_view_pos.push_back(1./double(current_pos_count)*current_pos_value);
-        std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
             cv::Mat img = cv::Mat(image_size, image_size, CV_8UC1, cv::Scalar(0));
             for (int row = 0; row < image_size; ++row) {
@@ -117,18 +110,12 @@ public:
                 }
             }
             cv::imshow(std::string("Patch")+std::to_string(patch_views.sss_views.size()), img);
-        std::cout << __FILE__ << ", " << __LINE__ << std::endl;
             cv::waitKey(10);
-        std::cout << __FILE__ << ", " << __LINE__ << std::endl;
         }
 
-        std::cout << __FILE__ << ", " << __LINE__ << std::endl;
-
         current_pos_value.setZero(); // = Eigen::Vector3d::Zero();
-        std::cout << __FILE__ << ", " << __LINE__ << std::endl;
         current_pos_count = 0;
         current_view_count.setZero(); // = Eigen::MatrixXd::Zero(image_size, image_size);
-        std::cout << __FILE__ << ", " << __LINE__ << std::endl;
         current_view_value.setZero(); // = Eigen::MatrixXd::Zero(image_size, image_size);
 
         nbr_splits += 1;
@@ -136,29 +123,25 @@ public:
 
     sss_patch_views finish()
     {
-        std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+        split();
         is_active_ = false;
         patch_views.patch_height = Eigen::MatrixXd::Zero(image_size, image_size);
         if (height_count.sum() > 0) {
             patch_views.patch_height.array() = height_value.array() / height_count.array();
         }
-        std::cout << __FILE__ << ", " << __LINE__ << std::endl;
         return patch_views;
     }
 
     void add_hits(const Eigen::MatrixXd& hits, const Eigen::Vector3d& pos)
     {
-        std::cout << __FILE__ << ", " << __LINE__ << std::endl;
         if (hits.rows() == 0) {
             return;
         }
 
-        std::cout << __FILE__ << ", " << __LINE__ << std::endl;
         Eigen::VectorXd intensities = hits.col(3);
         Eigen::MatrixXd points = hits.leftCols<3>();
         points.array().rowwise() -= origin.array().transpose();
         points.leftCols<2>().array() = double(image_size)/world_size*points.leftCols<2>().array() + double(image_size)/2.;
-        std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
         std::cout << "Is active?: " << is_active_ << ", nbr pos: " << current_pos_count << std::endl;
         std::cout << "Hits rows: " << hits.rows() << std::endl;
@@ -176,12 +159,11 @@ public:
                 current_view_count(y, x) += 1.;
 
                 height_value(y, x) += points(i, 2);
-                height_value(y, x) += 1.;
+                height_count(y, x) += 1.;
                 ++inside_image;
             }
         }
         std::cout << "Number inside image: " << inside_image << std::endl;
-        std::cout << __FILE__ << ", " << __LINE__ << std::endl;
         std::cout << "Is active?: " << is_active_ << ", nbr pos: " << current_pos_count << std::endl;
         std::cout << "number splits: " << nbr_splits << ", nbr added: " << patch_views.sss_views.size() << std::endl;
     }

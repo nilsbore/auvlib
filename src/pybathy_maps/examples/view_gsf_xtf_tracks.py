@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 from pydata_tools import data_structures, gsf_data, xtf_data, csv_data
-from pybathy_maps import mesh_map, draping_viewer
+from pybathy_maps import draw_map, mesh_map, draping_viewer
 import sys
 import os
 
@@ -25,20 +25,27 @@ def parse_or_load_xtf(xtf_path, csv_path):
         xtf_data.write_data(xtf_pings, "xtf_cache.cereal")
     return xtf_pings
 
-def create_mesh(path):
-
-    gsf_pings = parse_or_load_gsf(path)
-    mbes_pings = gsf_data.convert_pings(gsf_pings)
-    m = mesh_map.bathy_map_mesh()
-    V, F, bounds = m.mesh_from_pings(mbes_pings, 0.5)
-
-    return m, V, F, bounds
-
-m, V, F, bounds = create_mesh(sys.argv[1])
-#m.display_mesh(V, F)
-
+gsf_pings = parse_or_load_gsf(sys.argv[1])
+mbes_pings = gsf_data.convert_pings(gsf_pings)
 xtf_pings = parse_or_load_xtf(sys.argv[2], sys.argv[3])
 
-patch_views = draping_viewer.overlay_sss(V, F, bounds, xtf_pings)
+print "Time stamp of first xtf ping: ", xtf_pings[0].time_string_
+print "Time stamp of last xtf ping: ", xtf_pings[-1].time_string_
 
-draping_viewer.write_data(patch_views, "patch_views.cereal")
+d = draw_map.bathy_map_image(mbes_pings, 500, 500)
+d.draw_height_map(mbes_pings)
+d.draw_track(mbes_pings)
+d.save_image("gsf_height_map.png")
+
+sim_pings = []
+for ping in xtf_pings:
+    p = data_structures.mbes_ping()
+    p.time_stamp_ = ping.time_stamp_
+    p.time_string_ = ping.time_string_
+    p.pos_ = ping.pos_
+    sim_pings.append(p)
+
+d = draw_map.bathy_map_image(mbes_pings, 500, 500)
+d.draw_height_map(mbes_pings)
+d.draw_track(sim_pings)
+d.save_image("xtf_height_map.png")
