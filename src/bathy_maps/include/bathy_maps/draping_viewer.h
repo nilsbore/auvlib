@@ -15,6 +15,8 @@ struct sss_patch_views {
 
     using ViewsT = std::vector<sss_patch_views, Eigen::aligned_allocator<sss_patch_views> >;
 
+    double patch_size;
+    Eigen::Vector3d patch_origin;
     Eigen::MatrixXd patch_height;
     std::vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> > sss_views;
     std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > patch_view_pos;
@@ -22,7 +24,8 @@ struct sss_patch_views {
 	template <class Archive>
     void serialize( Archive & ar )
     {
-        ar(CEREAL_NVP(patch_height), CEREAL_NVP(sss_views), CEREAL_NVP(patch_view_pos));
+        ar(CEREAL_NVP(patch_height), CEREAL_NVP(sss_views), CEREAL_NVP(patch_height),
+           CEREAL_NVP(sss_views), CEREAL_NVP(patch_view_pos));
     }
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -76,6 +79,7 @@ public:
         is_active_ = true;
 
         patch_views = sss_patch_views();
+        patch_views.patch_origin = origin;
         current_pos_value.setZero(); // = Eigen::Vector3d::Zero();
         current_pos_count = 0;
         current_view_count.setZero(); // = Eigen::MatrixXd::Zero(image_size, image_size);
@@ -96,7 +100,7 @@ public:
             current_view_count.array() += (current_view_count.array() == 0).cast<double>();
             current_view.array() = current_view_value.array() / current_view_count.array();
             patch_views.sss_views.push_back(current_view);
-            patch_views.patch_view_pos.push_back(1./double(current_pos_count)*current_pos_value);
+            patch_views.patch_view_pos.push_back(1./double(current_pos_count)*current_pos_value - origin);
 
             cv::Mat img = cv::Mat(image_size, image_size, CV_8UC1, cv::Scalar(0));
             for (int row = 0; row < image_size; ++row) {
