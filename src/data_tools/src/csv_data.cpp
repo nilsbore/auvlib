@@ -87,6 +87,75 @@ csv_nav_entry::EntriesT parse_file(const boost::filesystem::path& file)
 	return entries;
 }
 
+template<typename T, typename Char, typename Traits>
+inline std::basic_istream<Char, Traits>& skip(std::basic_istream<Char, Traits>& stream) {
+    T unused;
+    return stream >> unused;
+}
+
+template <>
+csv_asvp_sound_speed::EntriesT parse_file(const boost::filesystem::path& file)
+{
+    csv_asvp_sound_speed entry;
+
+    // NOTE: this is the Sunday before the survey, i.e. the start of the GPS week time
+    const boost::posix_time::ptime unix_epoch = boost::posix_time::time_from_string("1970-01-01 00:00:00.000");
+	
+    string line;
+    std::ifstream infile(file.string());
+
+    if (!std::getline(infile, line)) {
+        cout << "File " << file << " did not contain any header!" << endl;
+        exit(-1);
+    }
+    else {
+        istringstream iss(line.substr(1, line.size()-1));
+
+
+        cout << "ISS: " << iss.str() << endl;
+
+        string date_string;
+		iss >> skip<string> >> skip<double> >> skip<double> >> date_string >> entry.lat_ >> entry.long_;
+
+        cout << "Date string: " << date_string << endl;
+    
+        const std::locale loc = std::locale(std::locale::classic(), new boost::posix_time::time_input_facet("%Y%m%d%H%M%S"));
+
+        std::istringstream is(date_string);
+        is.imbue(loc);
+        boost::posix_time::ptime t;
+        is >> t;
+        boost::posix_time::time_duration const diff = t - unix_epoch;
+        entry.time_stamp_ = diff.total_milliseconds();
+        stringstream time_ss;
+        time_ss << t;
+        cout << "Time string: " << time_ss.str() << endl;
+        entry.time_string_ = time_ss.str();
+    }
+
+    double dbar, vel;
+    entry.dbars.resize(100);
+    entry.vels.resize(100);
+    int counter = 0;
+    while (std::getline(infile, line))  // this does the checking!
+    {
+        line.erase(0, line.find_first_not_of(" ")); // remove initial space if there
+        if (line.empty() || line[0] == '\n' || !isdigit(line[0])) {
+            continue;
+        }
+        istringstream iss(line);
+
+		iss >> dbar >> vel;
+        entry.dbars(counter) = dbar;
+        entry.vels(counter) = vel;
+        ++counter;
+    }
+    entry.dbars.conservativeResize(counter);
+    entry.vels.conservativeResize(counter);
+
+	return { entry };
+}
+
 mbes_ping::PingsT convert_matched_entries(gsf_mbes_ping::PingsT& pings, csv_nav_entry::EntriesT& entries)
 {
     mbes_ping::PingsT new_pings;

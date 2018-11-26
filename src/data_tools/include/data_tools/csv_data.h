@@ -41,8 +41,34 @@ struct csv_nav_entry
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
+struct csv_asvp_sound_speed
+{
+    using EntriesT = std::vector<csv_asvp_sound_speed, Eigen::aligned_allocator<csv_asvp_sound_speed> >;
+
+    std::string time_string_; // readable time stamp string
+    long long time_stamp_; // posix time stamp
+
+    double lat_;
+    double long_;
+
+    Eigen::VectorXd dbars;
+    Eigen::VectorXd vels;
+
+	template <class Archive>
+    void serialize( Archive & ar )
+    {
+        ar(CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_), CEREAL_NVP(lat_),
+           CEREAL_NVP(long_), CEREAL_NVP(dbars), CEREAL_NVP(vels));
+    }
+
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+};
+
 template <>
 csv_nav_entry::EntriesT parse_file(const boost::filesystem::path& file);
+
+template <>
+csv_asvp_sound_speed::EntriesT parse_file(const boost::filesystem::path& file);
 
 mbes_ping::PingsT convert_matched_entries(gsf_mbes_ping::PingsT& pings, csv_nav_entry::EntriesT& entries);
 xtf_sss_ping::PingsT convert_matched_entries(xtf_sss_ping::PingsT& pings, csv_nav_entry::EntriesT& entries);
