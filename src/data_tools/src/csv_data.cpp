@@ -323,7 +323,7 @@ xtf_sss_ping::PingsT convert_matched_entries(xtf_sss_ping::PingsT& pings, csv_na
         // sidescan offset from the center of motion
         //new_ping.pos_[0] += 2.;
         //new_ping.pos_[1] += 1.5;
-        new_ping.pos_.array() += (-1.5*Rz.col(0) + -1.5*Rz.col(1)).array();
+        new_ping.pos_.array() += (0.*Rz.col(0) + -1.5*Rz.col(1)).array();
         new_ping.pos_[2] = ping.pos_[2];
 
         new_pings.push_back(new_ping);

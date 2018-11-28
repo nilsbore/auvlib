@@ -7,8 +7,9 @@ using namespace std;
 
 survey_viewer::survey_viewer(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1, const Eigen::MatrixXd& C1,
     const Eigen::MatrixXd& V2, const Eigen::MatrixXi& F2, const Eigen::MatrixXd& C2,
-    const xtf_sss_ping::PingsT& pings, const Eigen::Vector3d& offset)
-    : pings(pings), i(0), V1(V1), F1(F1), V2(V2), F2(F2), offset(offset)
+    const xtf_sss_ping::PingsT& pings, const Eigen::Vector3d& offset,
+    const csv_asvp_sound_speed::EntriesT& sound_speeds)
+    : pings(pings), i(0), V1(V1), F1(F1), V2(V2), F2(F2), offset(offset), sound_speeds(sound_speeds)
 {
     //double first_heading = pings[0].heading_;
     hit_sums = Eigen::VectorXd(V1.rows()); hit_sums.setZero();
@@ -28,6 +29,9 @@ survey_viewer::survey_viewer(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F
     C << C1, C2;
 
     is_active = Eigen::VectorXi(pings.size()); is_active.setOnes();
+
+
+    // Initialize viewer
 
     // Compute per-face normals
     igl::per_face_normals(V1, F1, N_faces);
@@ -73,9 +77,10 @@ void survey_viewer::project_sss()
 
     cout << "Setting new position: " << pings[i].pos_.transpose() << endl;
     //viewer.data().compute_normals();
+    Eigen::Matrix3d Rcomp = Eigen::AngleAxisd(5.*M_PI/180., Eigen::Vector3d::UnitZ()).matrix();
     Eigen::Matrix3d Ry = Eigen::AngleAxisd(pings[i].pitch_, Eigen::Vector3d::UnitY()).matrix();
     Eigen::Matrix3d Rz = Eigen::AngleAxisd(pings[i].heading_, Eigen::Vector3d::UnitZ()).matrix();
-    Eigen::Matrix3d R = Rz*Ry;
+    Eigen::Matrix3d R = Rz*Ry*Rcomp ;
 
     Eigen::MatrixXd hits_left;
     Eigen::MatrixXd hits_right;
@@ -91,13 +96,13 @@ void survey_viewer::project_sss()
     cout << "embree_compute_hits time: " << duration.count() << " microseconds" << endl;
 
     start = chrono::high_resolution_clock::now();
-    Eigen::MatrixXd hits_left_intensities = correlate_hits(hits_left, hits_left_inds, mod_left, pings[i].port, pings[i].pos_ - offset, pings[i].sound_vel_, F1, C, hit_sums, hit_counts);
+    Eigen::MatrixXd hits_left_intensities = correlate_hits(hits_left, hits_left_inds, mod_left, pings[i].port, pings[i].pos_ - offset, pings[i].sound_vel_, F1, sound_speeds, C, hit_sums, hit_counts);
     stop = chrono::high_resolution_clock::now();
     duration = chrono::duration_cast<chrono::microseconds>(stop - start);
     cout << "left correlate_hits time: " << duration.count() << " microseconds" << endl;
 
     start = chrono::high_resolution_clock::now();
-    Eigen::MatrixXd hits_right_intensities = correlate_hits(hits_right, hits_right_inds, mod_right, pings[i].stbd, pings[i].pos_ - offset, pings[i].sound_vel_, F1, C, hit_sums, hit_counts);
+    Eigen::MatrixXd hits_right_intensities = correlate_hits(hits_right, hits_right_inds, mod_right, pings[i].stbd, pings[i].pos_ - offset, pings[i].sound_vel_, F1, sound_speeds, C, hit_sums, hit_counts);
     stop = chrono::high_resolution_clock::now();
     duration = chrono::duration_cast<chrono::microseconds>(stop - start);
     cout << "right correlate_hits time: " << duration.count() << " microseconds" << endl;
@@ -198,7 +203,8 @@ sss_patch_views::ViewsT survey_viewer::get_patch_views()
 }
 
 sss_patch_views::ViewsT overlay_sss(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
-                        const survey_viewer::BoundsT& bounds, const xtf_sss_ping::PingsT& pings)
+                        const survey_viewer::BoundsT& bounds, const xtf_sss_ping::PingsT& pings,
+                        const csv_asvp_sound_speed::EntriesT& sound_speeds)
 {
     Eigen::MatrixXd C_jet;
     igl::jet(V.col(2), true, C_jet);
@@ -215,7 +221,7 @@ sss_patch_views::ViewsT overlay_sss(const Eigen::MatrixXd& V, const Eigen::Matri
     //display_mesh(Vb, Fb);
 
     Eigen::Vector3d offset(bounds(0, 0), bounds(0, 1), 0.);
-    survey_viewer viewer(V, F, C_jet, Vb, Fb, Cb, pings, offset);
+    survey_viewer viewer(V, F, C_jet, Vb, Fb, Cb, pings, offset, sound_speeds);
     viewer.launch();
 
     sss_patch_views::ViewsT views = viewer.get_patch_views();

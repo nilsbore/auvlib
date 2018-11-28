@@ -154,7 +154,8 @@ int main(int argc, char** argv)
         cv::Mat waterfall_img = make_waterfall_image(pings_sss);
         cv::imshow("My image", waterfall_img);
         cv::waitKey();
-        overlay_sss(V, F, bounds, pings_sss);
+        csv_asvp_sound_speed::EntriesT sound_speeds;
+        overlay_sss(V, F, bounds, pings_sss, sound_speeds);
     }
 
     return 0;

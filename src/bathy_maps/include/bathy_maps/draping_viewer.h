@@ -7,6 +7,7 @@
 
 #include <eigen3/Eigen/Dense>
 #include <data_tools/xtf_data.h>
+#include <data_tools/csv_data.h>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -20,12 +21,13 @@ struct sss_patch_views {
     Eigen::MatrixXd patch_height;
     std::vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> > sss_views;
     std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > patch_view_pos;
+    std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > patch_view_dirs;
 
 	template <class Archive>
     void serialize( Archive & ar )
     {
         ar(CEREAL_NVP(patch_height), CEREAL_NVP(sss_views), CEREAL_NVP(patch_height),
-           CEREAL_NVP(sss_views), CEREAL_NVP(patch_view_pos));
+           CEREAL_NVP(sss_views), CEREAL_NVP(patch_view_pos), CEREAL_NVP(patch_view_dirs));
     }
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -43,6 +45,7 @@ private:
     Eigen::Vector3d origin;
 
     Eigen::Vector3d current_pos_value;
+    Eigen::Vector3d first_pos;
     int current_pos_count;
     Eigen::MatrixXd current_view_value;
     Eigen::MatrixXd current_view_count;
@@ -101,6 +104,8 @@ public:
             current_view.array() = current_view_value.array() / current_view_count.array();
             patch_views.sss_views.push_back(current_view);
             patch_views.patch_view_pos.push_back(1./double(current_pos_count)*current_pos_value - origin);
+            Eigen::Vector3d direction = 1./double(current_pos_count)*current_pos_value - first_pos;
+            patch_views.patch_view_dirs.push_back(1./direction.norm()*direction);
 
             cv::Mat img = cv::Mat(image_size, image_size, CV_8UC1, cv::Scalar(0));
             for (int row = 0; row < image_size; ++row) {
@@ -140,6 +145,10 @@ public:
     {
         if (hits.rows() == 0) {
             return;
+        }
+
+        if (current_pos_count == 0) {
+            first_pos = pos;
         }
 
         Eigen::VectorXd intensities = hits.col(3);
@@ -197,6 +206,7 @@ private:
     Eigen::VectorXd hit_sums;
     Eigen::VectorXi hit_counts;
     Eigen::MatrixXd N_faces; // the normals of F1, V1
+    csv_asvp_sound_speed::EntriesT sound_speeds;
 
     sss_patch_assembler patch_assembler;
     sss_patch_views::ViewsT patch_views;
@@ -206,7 +216,8 @@ public:
 
     survey_viewer(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1, const Eigen::MatrixXd& C1,
         const Eigen::MatrixXd& V2, const Eigen::MatrixXi& F2, const Eigen::MatrixXd& C2,
-        const xtf_sss_ping::PingsT& pings, const Eigen::Vector3d& offset);
+        const xtf_sss_ping::PingsT& pings, const Eigen::Vector3d& offset,
+        const csv_asvp_sound_speed::EntriesT& sound_speeds = csv_asvp_sound_speed::EntriesT());
 
     void launch();
     void project_sss();
@@ -217,6 +228,7 @@ public:
 };
 
 sss_patch_views::ViewsT overlay_sss(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
-                                    const survey_viewer::BoundsT& bounds, const xtf_sss_ping::PingsT& pings);
+                                    const survey_viewer::BoundsT& bounds, const xtf_sss_ping::PingsT& pings,
+                                    const csv_asvp_sound_speed::EntriesT& sound_speeds);
 
 #endif // DRAPING_VIEWER_H

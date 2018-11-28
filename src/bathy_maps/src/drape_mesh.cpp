@@ -12,7 +12,7 @@ pair<Eigen::MatrixXd, Eigen::MatrixXd> compute_sss_dirs(const Eigen::Matrix3d& R
 {
     const double min_theta = tilt_angle - 0.5*beam_width; // M_PI/180.*10.;
     const double max_theta = tilt_angle + 0.5*beam_width; //M_PI/180.*60.;
-    const int nbr_lines = 200;
+    const int nbr_lines = 500;
 
     double min_c = 1./cos(min_theta);
     double max_c = 1./cos(max_theta);
@@ -162,16 +162,24 @@ Eigen::MatrixXd correlate_hits(const Eigen::MatrixXd& hits_port,
                                const Eigen::Vector3d& origin,
                                double sound_vel,
                                const Eigen::MatrixXi& F1,
+                               const csv_asvp_sound_speed::EntriesT& sound_speeds,
                                Eigen::MatrixXd& C,
                                Eigen::VectorXd& hit_sums,
-                               Eigen::VectorXi& hit_counts)
+                               Eigen::VectorXi& hit_counts
+                               )
 {
 
+    /*
     Eigen::VectorXd layer_depths(4);
     layer_depths << -5., -10., -15., -20.;
     Eigen::VectorXd layer_speeds(5);
     layer_speeds << 1506.43, 1504.47, 1498.61, 1495.05, 1492.64;
-    //layer_speeds << 1706.43, 1604.47, 1498.61, 1395.05, 1292.64;
+    */
+    
+    bool sound_speed_layers = false; //!sound_speeds.empty();
+    if (!sound_speeds.empty()) {
+        sound_vel = sound_speeds[0].vels.head(sound_speeds[0].vels.rows()-1).mean();
+    }
 
     // we do not take roll into account but we do need to account for the pitch
     // if the vehicle has pitch, we need to extend the layer depths
@@ -179,10 +187,13 @@ Eigen::MatrixXd correlate_hits(const Eigen::MatrixXd& hits_port,
     // actually, that already fixes the pitch rotation
     
     //Eigen::Vector3d origin = ping.pos_ - offset;
-    Eigen::VectorXd times_port_simple = 1.*(hits_port.rowwise() - origin.transpose()).rowwise().norm()/sound_vel; //ping.sound_vel_;
+    Eigen::VectorXd times_port_simple = 2.*(hits_port.rowwise() - origin.transpose()).rowwise().norm()/sound_vel; //ping.sound_vel_;
 
     Eigen::VectorXd times_port;
-    if (false) {
+    if (sound_speed_layers) {
+        Eigen::VectorXd layer_depths = -sound_speeds[0].dbars.segment(1, sound_speeds[0].dbars.rows()-2);
+        Eigen::VectorXd layer_speeds = sound_speeds[0].vels.head(sound_speeds[0].vels.rows()-1);
+
         Eigen::VectorXd x = (hits_port.leftCols<2>().rowwise() - origin.head<2>().transpose()).rowwise().norm();
         Eigen::MatrixXd end_points(x.rows(), 2);
         end_points.col(0) = x;
@@ -261,8 +272,9 @@ Eigen::MatrixXd correlate_hits(const Eigen::MatrixXd& hits_port,
 bool point_in_view(const xtf_sss_ping& ping, const Eigen::Vector3d& point)
 {
     //Eigen::Matrix3d Ry = Eigen::AngleAxisd(ping.pitch_, Eigen::Vector3d::UnitY()).matrix();
+    Eigen::Matrix3d Rcomp = Eigen::AngleAxisd(5.*M_PI/180., Eigen::Vector3d::UnitZ()).matrix();
     Eigen::Matrix3d Rz = Eigen::AngleAxisd(ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
-    Eigen::Matrix3d R = Rz; //*Ry;
+    Eigen::Matrix3d R = Rz*Rcomp; //*Ry;
 
     // first, let's transform the point to a coordinate system defined by the sonar
     Eigen::Vector3d p = R.transpose()*(point - ping.pos_);

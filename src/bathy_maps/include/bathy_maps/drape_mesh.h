@@ -3,6 +3,7 @@
 
 #include <eigen3/Eigen/Dense>
 #include <data_tools/xtf_data.h>
+#include <data_tools/csv_data.h>
 
 std::pair<Eigen::MatrixXd, Eigen::MatrixXd> compute_sss_dirs(const Eigen::Matrix3d& R, double tilt_angle, double beam_width);
 
@@ -18,6 +19,7 @@ Eigen::MatrixXd correlate_hits(const Eigen::MatrixXd& hits_port,
                                const Eigen::Vector3d& origin,
                                double sound_vel,
                                const Eigen::MatrixXi& F1,
+                               const csv_asvp_sound_speed::EntriesT& sound_speeds,
                                Eigen::MatrixXd& C,
                                Eigen::VectorXd& hit_sums,
                                Eigen::VectorXi& hit_counts);
