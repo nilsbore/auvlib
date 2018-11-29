@@ -1,4 +1,5 @@
 #include <bathy_maps/draping_viewer.h>
+#include <bathy_maps/draping_generator.h>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>
@@ -19,5 +20,6 @@ PYBIND11_MODULE(draping_viewer, m) {
         .def_static("read_data", &read_data_from_str<sss_patch_views::ViewsT>, "Read sss_patch_views::ViewsT from .cereal file");
 
     m.def("overlay_sss", &overlay_sss, "Overlay xtf_sss_ping::PingsT sidescan data on a mesh and get sss_patch_views::ViewsT");
+    m.def("generate_draping", &generate_draping, "Overlay xtf_sss_ping::PingsT sidescan data on a mesh and get sss_patch_views::ViewsT");
     m.def("write_data", &write_data_from_str<sss_patch_views::ViewsT>, "Write sss_patch_views::ViewsT to .cereal file");
 }
