@@ -23,7 +23,7 @@ PYBIND11_MODULE(csv_data, m) {
         .def_readwrite("long_", &csv_nav_entry::long_, "Member")
         .def_readwrite("altitude", &csv_nav_entry::altitude, "Member")
         .def_readwrite("pos_", &csv_nav_entry::pos_, "Member")
-        .def_readwrite("vel_", &csv_nav_entry::pos_, "Member")
+        .def_readwrite("vel_", &csv_nav_entry::vel_, "Member")
         .def_static("parse_file", &parse_file_from_str<csv_nav_entry>, "Parse csv_nav_entry from .csv file")
         .def_static("parse_folder", &parse_folder_from_str<csv_nav_entry>, "Parse csv_nav_entry from folder of .csv files")
         .def_static("read_data", &read_data_from_str<csv_nav_entry::EntriesT>, "Read csv_nav_entry::EntriesT from .cereal file");

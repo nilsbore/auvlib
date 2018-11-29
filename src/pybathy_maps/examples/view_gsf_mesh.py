@@ -45,7 +45,7 @@ def create_mesh(path):
 def match_or_load_xtf(xtf_path, csv_path):
 
     if os.path.exists("matched_cache.cereal"):
-        xtf_pings = xtf_data.xtf_sss_ping.read_data("xtf_cache.cereal")
+        xtf_pings = xtf_data.xtf_sss_ping.read_data("matched_cache.cereal")
     else:
         xtf_pings = parse_or_load_xtf(xtf_path)
         nav_entries = parse_or_load_csv(csv_path)

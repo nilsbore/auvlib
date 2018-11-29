@@ -12,7 +12,7 @@ pair<Eigen::MatrixXd, Eigen::MatrixXd> compute_sss_dirs(const Eigen::Matrix3d& R
 {
     const double min_theta = tilt_angle - 0.5*beam_width; // M_PI/180.*10.;
     const double max_theta = tilt_angle + 0.5*beam_width; //M_PI/180.*60.;
-    const int nbr_lines = 500;
+    const int nbr_lines = 200;
 
     double min_c = 1./cos(min_theta);
     double max_c = 1./cos(max_theta);
@@ -272,7 +272,7 @@ Eigen::MatrixXd correlate_hits(const Eigen::MatrixXd& hits_port,
 bool point_in_view(const xtf_sss_ping& ping, const Eigen::Vector3d& point)
 {
     //Eigen::Matrix3d Ry = Eigen::AngleAxisd(ping.pitch_, Eigen::Vector3d::UnitY()).matrix();
-    Eigen::Matrix3d Rcomp = Eigen::AngleAxisd(5.*M_PI/180., Eigen::Vector3d::UnitZ()).matrix();
+    Eigen::Matrix3d Rcomp = Eigen::AngleAxisd(1.*5.*M_PI/180., Eigen::Vector3d::UnitZ()).matrix();
     Eigen::Matrix3d Rz = Eigen::AngleAxisd(ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
     Eigen::Matrix3d R = Rz*Rcomp; //*Ry;
 

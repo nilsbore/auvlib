@@ -77,7 +77,7 @@ void survey_viewer::project_sss()
 
     cout << "Setting new position: " << pings[i].pos_.transpose() << endl;
     //viewer.data().compute_normals();
-    Eigen::Matrix3d Rcomp = Eigen::AngleAxisd(5.*M_PI/180., Eigen::Vector3d::UnitZ()).matrix();
+    Eigen::Matrix3d Rcomp = Eigen::AngleAxisd(1.*5.*M_PI/180., Eigen::Vector3d::UnitZ()).matrix();
     Eigen::Matrix3d Ry = Eigen::AngleAxisd(pings[i].pitch_, Eigen::Vector3d::UnitY()).matrix();
     Eigen::Matrix3d Rz = Eigen::AngleAxisd(pings[i].heading_, Eigen::Vector3d::UnitZ()).matrix();
     Eigen::Matrix3d R = Rz*Ry*Rcomp ;
