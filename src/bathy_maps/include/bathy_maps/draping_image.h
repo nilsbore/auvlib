@@ -15,21 +15,24 @@ protected:
     BoundsT bounds;
     double resolution;
     const std::function<void(sss_map_image)>& save_callback;
+    sss_map_image::ImagesT map_images;
+    sss_map_image_builder map_image_builder;
 
 public:
 
     draping_image(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1, const Eigen::MatrixXd& C1,
         const Eigen::MatrixXd& V2, const Eigen::MatrixXi& F2, const Eigen::MatrixXd& C2,
         const xtf_sss_ping::PingsT& pings, const Eigen::Vector3d& offset,
-        const csv_asvp_sound_speed::EntriesT& sound_speeds = csv_asvp_sound_speed::EntriesT(),
+        const csv_asvp_sound_speed::EntriesT& sound_speeds,
         const BoundsT& bounds, double resolution, const std::function<void(sss_map_image)>&);
 
     bool callback_pre_draw(igl::opengl::glfw::Viewer& viewer);
+    sss_map_image::ImagesT get_images();
 };
 
-void drape_images(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
-                  const draping_image::BoundsT& bounds, const xtf_sss_ping::PingsT& pings,
-                  const csv_asvp_sound_speed::EntriesT& sound_speeds,
-                  double resolution, const std::function<void(sss_map_image)>& save_callback);
+sss_map_image::ImagesT drape_images(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
+    const draping_image::BoundsT& bounds, const xtf_sss_ping::PingsT& pings,
+    const csv_asvp_sound_speed::EntriesT& sound_speeds,
+    double resolution, const std::function<void(sss_map_image)>& save_callback);
 
 #endif // DRAPING_IMAGE_H

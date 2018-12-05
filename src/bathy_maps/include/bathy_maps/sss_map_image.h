@@ -1,6 +1,11 @@
 #ifndef SSS_MAP_IMAGE_H
 #define SSS_MAP_IMAGE_H
 
+#include <eigen3/Eigen/Dense>
+#include <eigen_cereal/eigen_cereal.h>
+#include <cereal/archives/binary.hpp>
+#include <cereal/types/vector.hpp>
+
 struct sss_map_image {
 
     using BoundsT = Eigen::Matrix2d;
@@ -14,12 +19,12 @@ struct sss_map_image {
     Eigen::MatrixXd sss_waterfall_cross_track;
     Eigen::MatrixXd sss_waterfall_depth;
 
-    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > pos;
+    std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > pos;
 
 	template <class Archive>
     void serialize( Archive & ar )
     {
-        ar(CEREAL_NVP(sss_map_image), CEREAL_NVP(sss_waterfall_image),
+        ar(CEREAL_NVP(bounds), CEREAL_NVP(sss_map_image), CEREAL_NVP(sss_waterfall_image),
            CEREAL_NVP(sss_waterfall_cross_track), CEREAL_NVP(sss_waterfall_depth),
            CEREAL_NVP(pos));
     }
@@ -30,7 +35,9 @@ struct sss_map_image {
 
 class sss_map_image_builder {
 
-    BoundsT bounds;
+private:
+
+    sss_map_image::BoundsT bounds;
     double resolution;
 
     Eigen::Vector3d global_origin;
@@ -44,9 +51,11 @@ class sss_map_image_builder {
     Eigen::MatrixXd sss_waterfall_cross_track;
     Eigen::MatrixXd sss_waterfall_depth;
 
-    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > poss;
+    std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > poss;
 
-    sss_map_image_builder(const BoundsT& bounds, double resolution) : 
+public:
+
+    sss_map_image_builder(const sss_map_image::BoundsT& bounds, double resolution) : 
         bounds(bounds), resolution(resolution)
     {
         global_origin = Eigen::Vector3d(bounds(0, 0), bounds(0, 1), 0.);
@@ -60,9 +69,10 @@ class sss_map_image_builder {
 
     bool empty()
     {
-
+        return sss_map_image_counts.sum() == 0;
     }
 
+    /*
     void activate(int nbr_pings)
     {
 
@@ -77,6 +87,7 @@ class sss_map_image_builder {
     {
 
     }
+    */
 
     sss_map_image finish()
     {
@@ -86,9 +97,12 @@ class sss_map_image_builder {
             sss_map_image_sums.array() += (sss_map_image_sums.array() == 0).cast<double>();
             map_image.sss_map_image.array() = sss_map_image_sums.array() / sss_map_image_counts.array();
         }
+        map_image.pos = poss;
         map_image.sss_waterfall_image = sss_waterfall_image;
         map_image.sss_waterfall_cross_track = sss_waterfall_cross_track;
         map_image.sss_waterfall_depth = sss_waterfall_depth;
+
+        return map_image;
     }
 
     void add_hits(const Eigen::MatrixXd& hits, const Eigen::Vector3d& pos, bool is_left)
@@ -101,7 +115,8 @@ class sss_map_image_builder {
 
         Eigen::VectorXd intensities = hits.col(3);
         Eigen::MatrixXd points = hits.leftCols<3>();
-        points.array().rowwise() -= global_origin.array().transpose();
+        // The hits are already compensated to start at bounds.row(0)
+        //points.array().rowwise() -= global_origin.array().transpose();
         points.leftCols<2>().array() *= resolution; //*points.leftCols<2>().array();
 
         std::cout << "Hits rows: " << hits.rows() << std::endl;

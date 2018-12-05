@@ -1,7 +1,8 @@
 #!/usr/bin/python
 
 from pydata_tools import data_structures, gsf_data, xtf_data, csv_data
-from pybathy_maps import mesh_map, draping_viewer
+from pybathy_maps import mesh_map, draping_viewer, draping_image
+import matplotlib.pyplot as plt
 import sys
 import os
 
@@ -53,6 +54,20 @@ def match_or_load_xtf(xtf_path, csv_path):
         xtf_data.write_data(xtf_pings, "matched_cache.cereal")
     return xtf_pings
 
+class MapImageSaver(object):
+
+    def __init__(self):
+
+        self.map_images = []
+
+    def save_callback(self, map_image):
+
+        print "Got sss map image callback!"
+        #plt.imshow(map_image.sss_map_image, cmap=plt.jet())
+        #plt.show()
+        self.map_images.append(map_image)
+        draping_image.write_data(self.map_images, "map_images_cache.cereal")
+
 m, V, F, bounds = create_mesh(sys.argv[1])
 #m.display_mesh(V, F)
 
@@ -60,8 +75,9 @@ xtf_pings = match_or_load_xtf(sys.argv[2], sys.argv[3])
 
 sound_speeds = csv_data.csv_asvp_sound_speed.parse_file(sys.argv[4])
 
-
 #draping_viewer.generate_draping(V, F, bounds, xtf_pings, sound_speeds)
+resolution = 30./8.
 
-patch_views = draping_viewer.overlay_sss(V, F, bounds, xtf_pings, sound_speeds)
-draping_viewer.write_data(patch_views, "patch_views.cereal")
+saver = MapImageSaver()
+map_images = draping_image.drape_images(V, F, bounds, xtf_pings, sound_speeds, resolution, saver.save_callback)
+draping_image.write_data(map_images, "map_images.cereal")
