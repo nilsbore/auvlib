@@ -28,7 +28,7 @@ bool draping_image::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
     }
 
     if (i >= pings.size()) {
-        return true;
+        return false;
     }
 
     Eigen::MatrixXd hits_left_intensities, hits_right_intensities;

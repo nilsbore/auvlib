@@ -6,6 +6,8 @@
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/vector.hpp>
 
+#include <bathy_maps/patch_views.h>
+
 struct sss_map_image {
 
     using BoundsT = Eigen::Matrix2d;
@@ -93,8 +95,8 @@ public:
     {
         sss_map_image map_image;
         map_image.bounds = bounds;
-        if (sss_map_image_sums.sum() > 0) {
-            sss_map_image_sums.array() += (sss_map_image_sums.array() == 0).cast<double>();
+        if (sss_map_image_counts.sum() > 0) {
+            sss_map_image_counts.array() += (sss_map_image_counts.array() == 0).cast<double>();
             map_image.sss_map_image.array() = sss_map_image_sums.array() / sss_map_image_counts.array();
         }
         map_image.pos = poss;
@@ -138,5 +140,7 @@ public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 };
+
+sss_patch_views::ViewsT convert_maps_to_patches(const sss_map_image::ImagesT& map_images, const Eigen::MatrixXd& height_map, double patch_size);
 
 #endif // SSS_MAP_IMAGE_H
