@@ -42,7 +42,7 @@ sss_patch_views::ViewsT convert_maps_to_patches(const sss_map_image::ImagesT& ma
                 Eigen::MatrixXd view = map_images[n].sss_map_image.block(i*image_size, j*image_size, image_size, image_size);
                 //cout << "view mean: " << view.mean() << endl;
                 double fraction_zeros = (view.array() == 0).mean(); // / patch_area;
-                if (std::isinf(view.mean()) || fraction_zeros > 0.2) {
+                if (std::isinf(view.mean()) || fraction_zeros > 0.4) {
                     continue;
                 }
 
