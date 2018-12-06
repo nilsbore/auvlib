@@ -21,6 +21,20 @@ def parse_or_load_gsf(path):
         gsf_data.write_data(gsf_pings, "gsf_cache.cereal")
     return gsf_pings
 
+def generate_or_load_height_map(path, resolution):
+
+    if os.path.exists("height_map.npz"):
+        #height_map = gsf_data.gsf_mbes_ping.read_data("gsf_cache.cereal")
+        height_map = np.load("height_map.npz")["height_map"]
+    else:
+        gsf_pings = parse_or_load_gsf(path)
+        mbes_pings = gsf_data.convert_pings(gsf_pings)
+        m = mesh_map.bathy_map_mesh()
+        height_map, bounds = m.height_map_from_pings(mbes_pings, resolution)
+        #gsf_data.write_data(gsf_pings, "gsf_cache.cereal")
+        np.savez("height_map.npz", height_map=height_map)
+    return height_map
+
 def plot_patch_views(patch_views):
     world_size = 8.
 
@@ -68,10 +82,7 @@ map_images = draping_image.sss_map_image.read_data("map_images_cache.cereal")
 map_image = map_images[0]
 resolution = (map_image.bounds[1, 0]-map_image.bounds[0, 0])/float(map_image.sss_map_image.shape[1])
 
-gsf_pings = parse_or_load_gsf(sys.argv[1])
-mbes_pings = gsf_data.convert_pings(gsf_pings)
-m = mesh_map.bathy_map_mesh()
-height_map, bounds = m.height_map_from_pings(mbes_pings, resolution)
+height_map = generate_or_load_height_map(sys.argv[1], resolution)
 
 print "Height map shape: ", height_map.shape
 print "SSS map shape: ", map_image.sss_map_image.shape
