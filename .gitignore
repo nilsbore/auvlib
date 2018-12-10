@@ -33,3 +33,15 @@
 
 # XYZ Point Clouds
 *.xyz
+
+# Archive files
+*.cereal
+*.npz
+*.zip
+
+# Images
+*.png
+
+# Folders
+build
+install
