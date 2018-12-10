@@ -155,19 +155,19 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi, Eigen:
     return make_tuple(hits_left, hits_right, hits_left_inds, hits_right_inds, mod_left, mod_right);
 }
 
-Eigen::MatrixXd correlate_hits(const Eigen::MatrixXd& hits_port,
-                               const Eigen::VectorXi& hits_port_inds,
-                               const Eigen::VectorXd& mod_port,
-                               const xtf_sss_ping_side& ping,
-                               const Eigen::Vector3d& origin,
-                               double sound_vel,
-                               const Eigen::MatrixXi& F1,
-                               const csv_asvp_sound_speed::EntriesT& sound_speeds,
-                               bool sound_speed_layers,
-                               Eigen::MatrixXd& C,
-                               Eigen::VectorXd& hit_sums,
-                               Eigen::VectorXi& hit_counts,
-                               bool is_left)
+pair<Eigen::MatrixXd, Eigen::VectorXi> correlate_hits(const Eigen::MatrixXd& hits_port,
+                                       const Eigen::VectorXi& hits_port_inds,
+                                       const Eigen::VectorXd& mod_port,
+                                       const xtf_sss_ping_side& ping,
+                                       const Eigen::Vector3d& origin,
+                                       double sound_vel,
+                                       const Eigen::MatrixXi& F1,
+                                       const csv_asvp_sound_speed::EntriesT& sound_speeds,
+                                       bool sound_speed_layers,
+                                       Eigen::MatrixXd& C,
+                                       Eigen::VectorXd& hit_sums,
+                                       Eigen::VectorXi& hit_counts,
+                                       bool is_left)
 {
 
     /*
@@ -221,10 +221,11 @@ Eigen::MatrixXd correlate_hits(const Eigen::MatrixXd& hits_port,
 
     if (times_port.rows() == 0) {
         cout << "There were no times computed!" << endl;
-        return Eigen::MatrixXd(0, 4);
+        return make_pair(Eigen::MatrixXd(0, 4), Eigen::VectorXi(0));
     }
 
     Eigen::MatrixXd hits_intensities(ping.pings.size(), 4);
+    Eigen::VectorXi hits_pings_indices(ping.pings.size());
 
     double port_step = ping.time_duration / double(ping.pings.size());
     cout << "port step: " << port_step << endl;
@@ -255,6 +256,7 @@ Eigen::MatrixXd correlate_hits(const Eigen::MatrixXd& hits_port,
         double intensity = mod_port(pos)*double(ping.pings[i])/(10000.);
         hits_intensities.row(match_counter).head<3>() = hits_port.row(pos);
         hits_intensities(match_counter, 3) = double(ping.pings[i])/10000.;
+        hits_pings_indices(match_counter) = i;
 
         //cout << "Found one: " << double(i)*port_step << ", " << times_port(pos) << endl;
         //cout << "With intensity: " << intensity << endl;
@@ -266,8 +268,9 @@ Eigen::MatrixXd correlate_hits(const Eigen::MatrixXd& hits_port,
         ++match_counter;
     }
     hits_intensities.conservativeResize(match_counter, 4);
+    hits_pings_indices.conservativeResize(match_counter);
 
-    return hits_intensities;
+    return make_pair(hits_intensities, hits_pings_indices);
 }
 
 bool point_in_view(const xtf_sss_ping& ping, const Eigen::Vector3d& point, double sensor_yaw)

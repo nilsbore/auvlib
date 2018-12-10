@@ -37,8 +37,9 @@ void survey_viewer::handle_patches()
     }
 
     Eigen::MatrixXd hits_left_intensities, hits_right_intensities;
+    Eigen::VectorXi hits_left_pings_indices, hits_right_pings_indices;
     Eigen::Vector3d pos;
-    tie(hits_left_intensities, hits_right_intensities, pos) = project_sss();
+    tie(hits_left_intensities, hits_right_intensities, hits_left_pings_indices, hits_right_pings_indices, pos) = project_sss();
 
     patch_assembler.add_hits(hits_left_intensities, pos);
     patch_assembler.add_hits(hits_right_intensities, pos);

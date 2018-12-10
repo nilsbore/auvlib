@@ -43,7 +43,7 @@ public:
         double sensor_yaw = 0.);
 
     void launch();
-    std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::Vector3d> project_sss();
+    std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::VectorXi, Eigen::VectorXi, Eigen::Vector3d> project_sss();
     bool callback_pre_draw(igl::opengl::glfw::Viewer& viewer);
     void set_ray_tracing_enabled(bool enabled);
 };

@@ -5,6 +5,8 @@ from pybathy_maps import mesh_map, draping_viewer, draping_image
 import matplotlib.pyplot as plt
 import sys
 import os
+import numpy as np
+import math
 
 def parse_or_load_gsf(path):
 

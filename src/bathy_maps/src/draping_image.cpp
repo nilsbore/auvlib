@@ -12,7 +12,7 @@ draping_image::draping_image(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F
     const csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw,
     const BoundsT& bounds, double resolution, const std::function<void(sss_map_image)>& save_callback)
     : draping_generator(V1, F1, C1, V2, F2, C2, pings, offset, sound_speeds, sensor_yaw),
-      bounds(bounds), resolution(resolution), save_callback(save_callback), map_image_builder(bounds, resolution)
+      bounds(bounds), resolution(resolution), save_callback(save_callback), map_image_builder(bounds, resolution, pings[0].port.pings.size())
 {
     viewer.callback_pre_draw = std::bind(&draping_image::callback_pre_draw, this, std::placeholders::_1);
 }
@@ -24,7 +24,7 @@ bool draping_image::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
         sss_map_image map_image = map_image_builder.finish();
         save_callback(map_image);
         map_images.push_back(map_image);
-        map_image_builder = sss_map_image_builder(bounds, resolution);
+        map_image_builder = sss_map_image_builder(bounds, resolution, pings[i].port.pings.size());
     }
 
     if (i >= pings.size()) {
@@ -32,11 +32,12 @@ bool draping_image::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
     }
 
     Eigen::MatrixXd hits_left_intensities, hits_right_intensities;
+    Eigen::VectorXi hits_left_pings_indices, hits_right_pings_indices;
     Eigen::Vector3d pos;
-    tie(hits_left_intensities, hits_right_intensities, pos) = project_sss();
+    tie(hits_left_intensities, hits_right_intensities, hits_left_pings_indices, hits_right_pings_indices, pos) = project_sss();
 
-    map_image_builder.add_hits(hits_left_intensities, pos, true);
-    map_image_builder.add_hits(hits_right_intensities, pos, false);
+    map_image_builder.add_hits(hits_left_intensities, hits_left_pings_indices, pings[i].port, pos, true);
+    map_image_builder.add_hits(hits_right_intensities, hits_right_pings_indices, pings[i].stbd, pos, false);
 
     ++i;
 

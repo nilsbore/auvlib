@@ -57,7 +57,7 @@ void draping_generator::launch()
     viewer.launch();
 }
 
-tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::Vector3d> draping_generator::project_sss()
+tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::VectorXi, Eigen::VectorXi, Eigen::Vector3d> draping_generator::project_sss()
 {
 
     cout << "Setting new position: " << pings[i].pos_.transpose() << endl;
@@ -81,13 +81,17 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::Vector3d> draping_generator::proj
     cout << "embree_compute_hits time: " << duration.count() << " microseconds" << endl;
 
     start = chrono::high_resolution_clock::now();
-    Eigen::MatrixXd hits_left_intensities = correlate_hits(hits_left, hits_left_inds, mod_left, pings[i].port, pings[i].pos_ - offset, pings[i].sound_vel_, F1, sound_speeds, ray_tracing_enabled, C, hit_sums, hit_counts, true);
+    Eigen::MatrixXd hits_left_intensities;
+    Eigen::VectorXi hits_left_pings_indices;
+    tie(hits_left_intensities, hits_left_pings_indices) = correlate_hits(hits_left, hits_left_inds, mod_left, pings[i].port, pings[i].pos_ - offset, pings[i].sound_vel_, F1, sound_speeds, ray_tracing_enabled, C, hit_sums, hit_counts, true);
     stop = chrono::high_resolution_clock::now();
     duration = chrono::duration_cast<chrono::microseconds>(stop - start);
     cout << "left correlate_hits time: " << duration.count() << " microseconds" << endl;
 
     start = chrono::high_resolution_clock::now();
-    Eigen::MatrixXd hits_right_intensities = correlate_hits(hits_right, hits_right_inds, mod_right, pings[i].stbd, pings[i].pos_ - offset, pings[i].sound_vel_, F1, sound_speeds, ray_tracing_enabled, C, hit_sums, hit_counts, false);
+    Eigen::MatrixXd hits_right_intensities;
+    Eigen::VectorXi hits_right_pings_indices;
+    tie(hits_right_intensities, hits_right_pings_indices)= correlate_hits(hits_right, hits_right_inds, mod_right, pings[i].stbd, pings[i].pos_ - offset, pings[i].sound_vel_, F1, sound_speeds, ray_tracing_enabled, C, hit_sums, hit_counts, false);
     stop = chrono::high_resolution_clock::now();
     duration = chrono::duration_cast<chrono::microseconds>(stop - start);
     cout << "right correlate_hits time: " << duration.count() << " microseconds" << endl;
@@ -113,7 +117,7 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::Vector3d> draping_generator::proj
         cout << "vis time: " << duration.count() << " microseconds" << endl;
     }
 
-    return make_tuple(hits_left_intensities, hits_right_intensities, pings[i].pos_ - offset);
+    return make_tuple(hits_left_intensities, hits_right_intensities, hits_left_pings_indices, hits_right_pings_indices, pings[i].pos_ - offset);
 }
 
 
