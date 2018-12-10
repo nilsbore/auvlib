@@ -48,6 +48,8 @@ public:
     void set_ray_tracing_enabled(bool enabled);
 };
 
+std::tuple<Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXd> get_vehicle_mesh();
+Eigen::MatrixXd color_jet_from_mesh(const Eigen::MatrixXd& V);
 void generate_draping(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
                       const draping_generator::BoundsT& bounds, const xtf_sss_ping::PingsT& pings,
                       const csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw);

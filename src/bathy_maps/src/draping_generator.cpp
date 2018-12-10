@@ -134,13 +134,8 @@ void draping_generator::set_ray_tracing_enabled(bool enabled)
     ray_tracing_enabled = enabled;
 }
 
-void generate_draping(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
-                      const draping_generator::BoundsT& bounds, const xtf_sss_ping::PingsT& pings,
-                      const csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw)
+tuple<Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXd> get_vehicle_mesh()
 {
-    Eigen::MatrixXd C_jet;
-    igl::jet(V.col(2), true, C_jet);
-
     Eigen::MatrixXd Vb;
     Eigen::MatrixXi Fb;
     Eigen::MatrixXd Nb;
@@ -150,9 +145,30 @@ void generate_draping(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
     Vb.array() *= 0.01;
     Eigen::Matrix3d Rz = Eigen::AngleAxisd(-0.5*M_PI, Eigen::Vector3d::UnitZ()).matrix();
     Vb *= Rz.transpose();
-    //display_mesh(Vb, Fb);
+
+    return make_tuple(Vb, Fb, Cb);
+}
+
+Eigen::MatrixXd color_jet_from_mesh(const Eigen::MatrixXd& V)
+{
+    Eigen::MatrixXd C_jet;
+    igl::jet(V.col(2), true, C_jet);
+    return C_jet;
+}
+
+void generate_draping(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
+                      const draping_generator::BoundsT& bounds, const xtf_sss_ping::PingsT& pings,
+                      const csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw)
+{
+    Eigen::MatrixXd Vb;
+    Eigen::MatrixXi Fb;
+    Eigen::MatrixXd Cb;
+    tie(Vb, Fb, Cb) = get_vehicle_mesh();
+
+    Eigen::MatrixXd C_jet = color_jet_from_mesh(V);
 
     Eigen::Vector3d offset(bounds(0, 0), bounds(0, 1), 0.);
+    // maybe just make draping generator take bounds as an argument instead?
     draping_generator viewer(V, F, C_jet, Vb, Fb, Cb, pings, offset, sound_speeds, sensor_yaw);
     viewer.launch();
 

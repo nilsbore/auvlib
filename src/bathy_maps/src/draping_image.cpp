@@ -53,19 +53,12 @@ sss_map_image::ImagesT drape_images(const Eigen::MatrixXd& V, const Eigen::Matri
                   const csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw,
                   double resolution, const std::function<void(sss_map_image)>& save_callback)
 {
-    Eigen::MatrixXd C_jet;
-    igl::jet(V.col(2), true, C_jet);
-
     Eigen::MatrixXd Vb;
     Eigen::MatrixXi Fb;
-    Eigen::MatrixXd Nb;
-    igl::readSTL("5TUM.stl", Vb, Fb, Nb);
-    Eigen::MatrixXd Cb(Vb.rows(), 3);
-    Cb.rowwise() = Eigen::RowVector3d(1., 1., 0.);
-    Vb.array() *= 0.01;
-    Eigen::Matrix3d Rz = Eigen::AngleAxisd(-0.5*M_PI, Eigen::Vector3d::UnitZ()).matrix();
-    Vb *= Rz.transpose();
-    //display_mesh(Vb, Fb);
+    Eigen::MatrixXd Cb;
+    tie(Vb, Fb, Cb) = get_vehicle_mesh();
+
+    Eigen::MatrixXd C_jet = color_jet_from_mesh(V);
 
     Eigen::Vector3d offset(bounds(0, 0), bounds(0, 1), 0.);
     draping_image viewer(V, F, C_jet, Vb, Fb, Cb, pings, offset, sound_speeds, sensor_yaw, bounds, resolution, save_callback);
