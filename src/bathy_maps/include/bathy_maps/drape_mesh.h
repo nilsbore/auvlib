@@ -23,7 +23,8 @@ Eigen::MatrixXd correlate_hits(const Eigen::MatrixXd& hits_port,
                                bool sound_speed_layers,
                                Eigen::MatrixXd& C,
                                Eigen::VectorXd& hit_sums,
-                               Eigen::VectorXi& hit_counts);
+                               Eigen::VectorXi& hit_counts,
+                               bool is_left = false);
 
 bool point_in_view(const xtf_sss_ping& ping, const Eigen::Vector3d& point, double sensor_yaw);
 

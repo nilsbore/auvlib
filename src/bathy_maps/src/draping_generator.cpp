@@ -81,13 +81,13 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::Vector3d> draping_generator::proj
     cout << "embree_compute_hits time: " << duration.count() << " microseconds" << endl;
 
     start = chrono::high_resolution_clock::now();
-    Eigen::MatrixXd hits_left_intensities = correlate_hits(hits_left, hits_left_inds, mod_left, pings[i].port, pings[i].pos_ - offset, pings[i].sound_vel_, F1, sound_speeds, ray_tracing_enabled, C, hit_sums, hit_counts);
+    Eigen::MatrixXd hits_left_intensities = correlate_hits(hits_left, hits_left_inds, mod_left, pings[i].port, pings[i].pos_ - offset, pings[i].sound_vel_, F1, sound_speeds, ray_tracing_enabled, C, hit_sums, hit_counts, true);
     stop = chrono::high_resolution_clock::now();
     duration = chrono::duration_cast<chrono::microseconds>(stop - start);
     cout << "left correlate_hits time: " << duration.count() << " microseconds" << endl;
 
     start = chrono::high_resolution_clock::now();
-    Eigen::MatrixXd hits_right_intensities = correlate_hits(hits_right, hits_right_inds, mod_right, pings[i].stbd, pings[i].pos_ - offset, pings[i].sound_vel_, F1, sound_speeds, ray_tracing_enabled, C, hit_sums, hit_counts);
+    Eigen::MatrixXd hits_right_intensities = correlate_hits(hits_right, hits_right_inds, mod_right, pings[i].stbd, pings[i].pos_ - offset, pings[i].sound_vel_, F1, sound_speeds, ray_tracing_enabled, C, hit_sums, hit_counts, false);
     stop = chrono::high_resolution_clock::now();
     duration = chrono::duration_cast<chrono::microseconds>(stop - start);
     cout << "right correlate_hits time: " << duration.count() << " microseconds" << endl;
@@ -170,6 +170,7 @@ void generate_draping(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
     Eigen::Vector3d offset(bounds(0, 0), bounds(0, 1), 0.);
     // maybe just make draping generator take bounds as an argument instead?
     draping_generator viewer(V, F, C_jet, Vb, Fb, Cb, pings, offset, sound_speeds, sensor_yaw);
+    //viewer.set_ray_tracing_enabled(true);
     viewer.launch();
 
 }

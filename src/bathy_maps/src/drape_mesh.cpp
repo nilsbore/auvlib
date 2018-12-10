@@ -166,8 +166,8 @@ Eigen::MatrixXd correlate_hits(const Eigen::MatrixXd& hits_port,
                                bool sound_speed_layers,
                                Eigen::MatrixXd& C,
                                Eigen::VectorXd& hit_sums,
-                               Eigen::VectorXi& hit_counts
-                               )
+                               Eigen::VectorXi& hit_counts,
+                               bool is_left)
 {
 
     /*
@@ -205,7 +205,7 @@ Eigen::MatrixXd correlate_hits(const Eigen::MatrixXd& hits_port,
         times_port.array() *= 2.; // back and forth
         cout << "Got final times: " << times_port.transpose() << endl;
 
-        visualize_rays(end_points, layer_depths, layer_widths, -25.);
+        visualize_rays(end_points, layer_depths, layer_widths, -25., false, is_left);
     }
     else {
         times_port = times_port_simple;

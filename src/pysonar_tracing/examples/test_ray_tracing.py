@@ -21,4 +21,4 @@ end_times, layer_widths = snell_ray_tracing.trace_multiple_layers(layer_depths, 
 
 print "Got final times: ", end_times.transpose()
 
-snell_ray_tracing.visualize_rays(end_points, layer_depths, layer_widths, -45., True)
+snell_ray_tracing.visualize_rays(end_points, layer_depths, layer_widths, -45., True, False)
