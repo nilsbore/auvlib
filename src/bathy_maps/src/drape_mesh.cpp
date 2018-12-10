@@ -163,6 +163,7 @@ Eigen::MatrixXd correlate_hits(const Eigen::MatrixXd& hits_port,
                                double sound_vel,
                                const Eigen::MatrixXi& F1,
                                const csv_asvp_sound_speed::EntriesT& sound_speeds,
+                               bool sound_speed_layers,
                                Eigen::MatrixXd& C,
                                Eigen::VectorXd& hit_sums,
                                Eigen::VectorXi& hit_counts
@@ -176,7 +177,7 @@ Eigen::MatrixXd correlate_hits(const Eigen::MatrixXd& hits_port,
     layer_speeds << 1506.43, 1504.47, 1498.61, 1495.05, 1492.64;
     */
     
-    bool sound_speed_layers = false; //!sound_speeds.empty();
+    //bool sound_speed_layers = false; //!sound_speeds.empty();
     if (!sound_speeds.empty()) {
         sound_vel = sound_speeds[0].vels.head(sound_speeds[0].vels.rows()-1).mean();
     }
@@ -269,10 +270,10 @@ Eigen::MatrixXd correlate_hits(const Eigen::MatrixXd& hits_port,
     return hits_intensities;
 }
 
-bool point_in_view(const xtf_sss_ping& ping, const Eigen::Vector3d& point)
+bool point_in_view(const xtf_sss_ping& ping, const Eigen::Vector3d& point, double sensor_yaw)
 {
     //Eigen::Matrix3d Ry = Eigen::AngleAxisd(ping.pitch_, Eigen::Vector3d::UnitY()).matrix();
-    Eigen::Matrix3d Rcomp = Eigen::AngleAxisd(1.*5.*M_PI/180., Eigen::Vector3d::UnitZ()).matrix();
+    Eigen::Matrix3d Rcomp = Eigen::AngleAxisd(sensor_yaw, Eigen::Vector3d::UnitZ()).matrix();
     Eigen::Matrix3d Rz = Eigen::AngleAxisd(ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
     Eigen::Matrix3d R = Rz*Rcomp; //*Ry;
 

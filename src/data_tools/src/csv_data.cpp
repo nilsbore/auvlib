@@ -318,12 +318,10 @@ xtf_sss_ping::PingsT convert_matched_entries(xtf_sss_ping::PingsT& pings, csv_na
             }
         }
         
-        Eigen::Matrix3d Rz = Eigen::AngleAxisd(new_ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
+        //Eigen::Matrix3d Rz = Eigen::AngleAxisd(new_ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
         // these are my estimated values for the
         // sidescan offset from the center of motion
-        //new_ping.pos_[0] += 2.;
-        //new_ping.pos_[1] += 1.5;
-        new_ping.pos_.array() += (2.*Rz.col(0) + -1.5*Rz.col(1)).array();
+        //new_ping.pos_.array() += (2.*Rz.col(0) + -1.5*Rz.col(1)).array();
         new_ping.pos_[2] = ping.pos_[2];
 
         new_pings.push_back(new_ping);

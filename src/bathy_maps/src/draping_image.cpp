@@ -9,9 +9,9 @@ using namespace std;
 draping_image::draping_image(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1, const Eigen::MatrixXd& C1,
     const Eigen::MatrixXd& V2, const Eigen::MatrixXi& F2, const Eigen::MatrixXd& C2,
     const xtf_sss_ping::PingsT& pings, const Eigen::Vector3d& offset,
-    const csv_asvp_sound_speed::EntriesT& sound_speeds,
+    const csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw,
     const BoundsT& bounds, double resolution, const std::function<void(sss_map_image)>& save_callback)
-    : draping_generator(V1, F1, C1, V2, F2, C2, pings, offset, sound_speeds),
+    : draping_generator(V1, F1, C1, V2, F2, C2, pings, offset, sound_speeds, sensor_yaw),
       bounds(bounds), resolution(resolution), save_callback(save_callback), map_image_builder(bounds, resolution)
 {
     viewer.callback_pre_draw = std::bind(&draping_image::callback_pre_draw, this, std::placeholders::_1);
@@ -50,7 +50,7 @@ sss_map_image::ImagesT draping_image::get_images()
 
 sss_map_image::ImagesT drape_images(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
                   const draping_image::BoundsT& bounds, const xtf_sss_ping::PingsT& pings,
-                  const csv_asvp_sound_speed::EntriesT& sound_speeds,
+                  const csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw,
                   double resolution, const std::function<void(sss_map_image)>& save_callback)
 {
     Eigen::MatrixXd C_jet;
@@ -68,7 +68,7 @@ sss_map_image::ImagesT drape_images(const Eigen::MatrixXd& V, const Eigen::Matri
     //display_mesh(Vb, Fb);
 
     Eigen::Vector3d offset(bounds(0, 0), bounds(0, 1), 0.);
-    draping_image viewer(V, F, C_jet, Vb, Fb, Cb, pings, offset, sound_speeds, bounds, resolution, save_callback);
+    draping_image viewer(V, F, C_jet, Vb, Fb, Cb, pings, offset, sound_speeds, sensor_yaw, bounds, resolution, save_callback);
     viewer.launch();
 
     return viewer.get_images();

@@ -81,6 +81,7 @@ int main(int argc, char** argv)
 	double sigma = 1.; //5.;
 	double s0 = 0.03; //.2;
     double pose_sigma = 0.2; //0.4;
+    double sensor_yaw = 5.*M_PI/180.;
     string dataset_name = "ping_mesh";
 
 	cxxopts::Options options("MyProgram", "One line description of MyProgram");
@@ -145,6 +146,7 @@ int main(int argc, char** argv)
             cout << "Time stamp: " << pings_sss[counter].time_string_ << endl;
         }
         pings_sss = convert_matched_entries(pings_sss, entries);
+        pings_sss = correct_sensor_offset(pings_sss, Eigen::Vector3d(2., -1.5, 0.));
         cout << "Number of entries in file " << entries_file << ": " << entries.size() << endl;
         /*for (xtf_sss_ping& ping : pings_sss) {
             ping.pitch_ = 0.2;
@@ -155,7 +157,7 @@ int main(int argc, char** argv)
         cv::imshow("My image", waterfall_img);
         cv::waitKey();
         csv_asvp_sound_speed::EntriesT sound_speeds;
-        overlay_sss(V, F, bounds, pings_sss, sound_speeds);
+        overlay_sss(V, F, bounds, pings_sss, sound_speeds, sensor_yaw);
     }
 
     return 0;

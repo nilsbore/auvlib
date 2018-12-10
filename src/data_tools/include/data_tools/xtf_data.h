@@ -54,4 +54,6 @@ xtf_sss_ping::PingsT parse_file(const boost::filesystem::path& file);
 
 cv::Mat make_waterfall_image(const xtf_sss_ping::PingsT& pings);
 
+xtf_sss_ping::PingsT correct_sensor_offset(const xtf_sss_ping::PingsT& pings, const Eigen::Vector3d& sensor_offset);
+
 #endif // XTF_DATA_H

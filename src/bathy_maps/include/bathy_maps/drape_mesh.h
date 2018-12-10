@@ -20,11 +20,12 @@ Eigen::MatrixXd correlate_hits(const Eigen::MatrixXd& hits_port,
                                double sound_vel,
                                const Eigen::MatrixXi& F1,
                                const csv_asvp_sound_speed::EntriesT& sound_speeds,
+                               bool sound_speed_layers,
                                Eigen::MatrixXd& C,
                                Eigen::VectorXd& hit_sums,
                                Eigen::VectorXi& hit_counts);
 
-bool point_in_view(const xtf_sss_ping& ping, const Eigen::Vector3d& point);
+bool point_in_view(const xtf_sss_ping& ping, const Eigen::Vector3d& point, double sensor_yaw);
 
 
 

@@ -62,8 +62,8 @@ void sss_patch_assembler::split()
                 }
             }
         }
-        cv::imshow(std::string("Patch")+std::to_string(patch_views.sss_views.size()), img);
-        cv::waitKey(10);
+        //cv::imshow(std::string("Patch")+std::to_string(patch_views.sss_views.size()), img);
+        //cv::waitKey(10);
     }
 
     current_pos_value.setZero(); // = Eigen::Vector3d::Zero();
