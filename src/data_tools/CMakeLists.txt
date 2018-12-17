@@ -82,7 +82,7 @@ target_include_directories(all_data PUBLIC
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
 
-target_link_libraries(test_gsf gsf_data data_structures navi_data)
+target_link_libraries(test_gsf gsf)
 
 target_link_libraries(test_xtf xtf_data data_structures navi_data ${OpenCV_LIBS})
 

@@ -44,7 +44,7 @@
 
    int OPTLK gsfDecodeHeader(gsfHeader *header, unsigned char *sptr);
    int OPTLK gsfDecodeSwathBathySummary(gsfSwathBathySummary *summ, unsigned char *sptr);
-   int OPTLK gsfDecodeSwathBathymetryPing(gsfSwathBathyPing *ping, unsigned char *sptr, GSF_FILE_TABLE *ft, int handle, int record_size);
+   int OPTLK __attribute__ ((optimize(1))) gsfDecodeSwathBathymetryPing(gsfSwathBathyPing *ping, unsigned char *sptr, GSF_FILE_TABLE *ft, int handle, int record_size);
    int OPTLK gsfDecodeSoundVelocityProfile(gsfSVP *svp, GSF_FILE_TABLE *ft, unsigned char *sptr);
    int OPTLK gsfDecodeProcessingParameters(gsfProcessingParameters *param, GSF_FILE_TABLE *ft, unsigned char *sptr);
    int OPTLK gsfDecodeSensorParameters(gsfSensorParameters *param, GSF_FILE_TABLE *ft, unsigned char *sptr);

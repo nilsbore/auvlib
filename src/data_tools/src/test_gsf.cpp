@@ -17,7 +17,6 @@
 
 #include <cereal/archives/json.hpp>
 
-#include <data_tools/gsf_data.h>
 #include <gsf.h>
 
 
@@ -147,7 +146,7 @@ int main(int argc, char** argv)
     //int result = gsfOpen("/home/nbore/Data/ACFR-tas200810pockmarks/PROCESSED_DATA/r20081015_221314_butts_pockmarks_23_overlappinggrids/bpslam20110606/DT20081015_221314_gsf", GSF_READONLY, &handle);
     //if (gsfOpen("/home/nbore/Data/ACFR-tas200810pockmarks/PROCESSED_DATA/r20081015_221314_butts_pockmarks_23_overlappinggrids/bpslam20110606/DT20081015_221314_gsf/20081015_2213-001.gsf", GSF_READONLY, &handle) != 0 || handle < 0)
     //if (gsfOpen("/home/nbore/Data/ACFR-tas200810pockmarks/PROCESSED_DATA/r20081015_221314_butts_pockmarks_23_overlappinggrids/renav20090218_DT/20081015_2213-001_nav.gsf", GSF_READONLY, &handle) != 0 || handle < 0)
-    if (gsfOpen("/home/nbore/Data/KTH_GBG_PING/Ping_Processed/5-Products/MBES_GSF/Pre_Deployment_PROCESSED/test/0021 - KTH_KTH_Runin_Runout - 0001_RESON7125_STBD [Multibeam Echosounder].gsf", GSF_READONLY, &handle) != 0 || handle < 0)
+    if (gsfOpen(argv[1], GSF_READONLY, &handle) != 0 || handle < 0)
     {
         cout << "File could not be opened!" << endl;
         exit(0);
@@ -193,7 +192,7 @@ int main(int argc, char** argv)
             cout << "Got header" << endl;
             break;
         case (GSF_RECORD_SWATH_BATHYMETRY_PING):
-            //cout << "Got swath bathymetry ping" << endl;
+            cout << "Got swath bathymetry ping" << endl;
             //cout << (gsfSwathBathyPing&)records.mb_ping << endl;
             /*if (records.mb_ping.depth_corrector != 0) {
                 cout << "Got depth corrector: " << records.mb_ping.depth_corrector << endl;
@@ -220,41 +219,6 @@ int main(int argc, char** argv)
         }
         ++counter;
     }
-
-    return 0;
-
-    boost::filesystem::path folder("/home/nbore/Data/ACFR-tas200810pockmarks/PROCESSED_DATA/r20081015_221314_butts_pockmarks_23_overlappinggrids/bpslam20110606/DT20081015_221314_gsf");
-    //boost::filesystem::path folder("/home/nbore/Data/ACFR-tas200810pockmarks/PROCESSED_DATA/r20081015_221314_butts_pockmarks_23_overlappinggrids/DT20081015_221314_p");
-    //boost::filesystem::path file("/home/nbore/Data/ACFR-tas200810pockmarks/PROCESSED_DATA/r20081015_221314_butts_pockmarks_23_overlappinggrids/bpslam20110606/DT20081015_221314_gsf/20081015_2213-001.gsf");
-    boost::filesystem::path file("/home/nbore/Data/ACFR-tas200810pockmarks/PROCESSED_DATA/r20081015_221314_butts_pockmarks_23_overlappinggrids/bpslam20110606/DT20081015_221314_gsf/20081015_2213-001.gsf");
-    //gsf_mbes_ping::PingsT pings = parse_file<gsf_mbes_ping>(file);
-    gsf_mbes_ping::PingsT pings = parse_folder<gsf_mbes_ping>(folder);
-    /*
-    for (gsf_mbes_ping& ping : pings) {
-		cereal::JSONOutputArchive ar(std::cout);
-		ar(ping);
-    }
-    */
-
-    gsf_nav_entry::EntriesT entries = parse_file<gsf_nav_entry>(boost::filesystem::path("/home/nbore/Data/ACFR-tas200810pockmarks/PROCESSED_DATA/r20081015_221314_butts_pockmarks_23_overlappinggrids/bpslam20110606/dr_pose_est.data"));
-    /*
-    for (gsf_nav_entry& entry : entries) {
-		cereal::JSONOutputArchive ar(std::cout);
-		ar(entry);
-    }
-    */
-    
-    gsf_sound_speed::SpeedsT speeds = parse_file<gsf_sound_speed>(boost::filesystem::path("/home/nbore/Data/ACFR-tas200810pockmarks/PROCESSED_DATA/r20081015_221314_butts_pockmarks_23_overlappinggrids/bpslam20110606/DT20081015_221314_gsf/sound_speed.data"));
-    /*
-    for (gsf_sound_speed& speed : speeds) {
-		cereal::JSONOutputArchive ar(std::cout);
-		ar(speed);
-    }
-    */
-    match_sound_speeds(pings, speeds);
-    mbes_ping::PingsT new_pings = convert_matched_entries(pings, entries);
-
-    view_cloud(new_pings);
 
     return 0;
 }
