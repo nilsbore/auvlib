@@ -8,8 +8,9 @@ using namespace std;
 draping_generator::draping_generator(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1, const Eigen::MatrixXd& C1,
     const Eigen::MatrixXd& V2, const Eigen::MatrixXi& F2, const Eigen::MatrixXd& C2,
     const xtf_sss_ping::PingsT& pings, const Eigen::Vector3d& offset,
-    const csv_asvp_sound_speed::EntriesT& sound_speeds)
-    : pings(pings), i(0), V1(V1), F1(F1), V2(V2), F2(F2), offset(offset), sound_speeds(sound_speeds)
+    const csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw)
+    : pings(pings), i(0), V1(V1), F1(F1), V2(V2), F2(F2), offset(offset),
+      sound_speeds(sound_speeds), sensor_yaw(sensor_yaw), ray_tracing_enabled(false)
 {
     //double first_heading = pings[0].heading_;
     hit_sums = Eigen::VectorXd(V1.rows()); hit_sums.setZero();
@@ -56,15 +57,15 @@ void draping_generator::launch()
     viewer.launch();
 }
 
-tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::Vector3d> draping_generator::project_sss()
+tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::VectorXi, Eigen::VectorXi, Eigen::Vector3d> draping_generator::project_sss()
 {
 
     cout << "Setting new position: " << pings[i].pos_.transpose() << endl;
     //viewer.data().compute_normals();
-    Eigen::Matrix3d Rcomp = Eigen::AngleAxisd(1.*5.*M_PI/180., Eigen::Vector3d::UnitZ()).matrix();
+    Eigen::Matrix3d Rcomp = Eigen::AngleAxisd(sensor_yaw, Eigen::Vector3d::UnitZ()).matrix();
     Eigen::Matrix3d Ry = Eigen::AngleAxisd(pings[i].pitch_, Eigen::Vector3d::UnitY()).matrix();
     Eigen::Matrix3d Rz = Eigen::AngleAxisd(pings[i].heading_, Eigen::Vector3d::UnitZ()).matrix();
-    Eigen::Matrix3d R = Rz*Ry*Rcomp ;
+    Eigen::Matrix3d R = Rz*Ry*Rcomp;
 
     Eigen::MatrixXd hits_left;
     Eigen::MatrixXd hits_right;
@@ -80,13 +81,17 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::Vector3d> draping_generator::proj
     cout << "embree_compute_hits time: " << duration.count() << " microseconds" << endl;
 
     start = chrono::high_resolution_clock::now();
-    Eigen::MatrixXd hits_left_intensities = correlate_hits(hits_left, hits_left_inds, mod_left, pings[i].port, pings[i].pos_ - offset, pings[i].sound_vel_, F1, sound_speeds, C, hit_sums, hit_counts);
+    Eigen::MatrixXd hits_left_intensities;
+    Eigen::VectorXi hits_left_pings_indices;
+    tie(hits_left_intensities, hits_left_pings_indices) = correlate_hits(hits_left, hits_left_inds, mod_left, pings[i].port, pings[i].pos_ - offset, pings[i].sound_vel_, F1, sound_speeds, ray_tracing_enabled, C, hit_sums, hit_counts, true);
     stop = chrono::high_resolution_clock::now();
     duration = chrono::duration_cast<chrono::microseconds>(stop - start);
     cout << "left correlate_hits time: " << duration.count() << " microseconds" << endl;
 
     start = chrono::high_resolution_clock::now();
-    Eigen::MatrixXd hits_right_intensities = correlate_hits(hits_right, hits_right_inds, mod_right, pings[i].stbd, pings[i].pos_ - offset, pings[i].sound_vel_, F1, sound_speeds, C, hit_sums, hit_counts);
+    Eigen::MatrixXd hits_right_intensities;
+    Eigen::VectorXi hits_right_pings_indices;
+    tie(hits_right_intensities, hits_right_pings_indices)= correlate_hits(hits_right, hits_right_inds, mod_right, pings[i].stbd, pings[i].pos_ - offset, pings[i].sound_vel_, F1, sound_speeds, ray_tracing_enabled, C, hit_sums, hit_counts, false);
     stop = chrono::high_resolution_clock::now();
     duration = chrono::duration_cast<chrono::microseconds>(stop - start);
     cout << "right correlate_hits time: " << duration.count() << " microseconds" << endl;
@@ -112,7 +117,7 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::Vector3d> draping_generator::proj
         cout << "vis time: " << duration.count() << " microseconds" << endl;
     }
 
-    return make_tuple(hits_left_intensities, hits_right_intensities, pings[i].pos_ - offset);
+    return make_tuple(hits_left_intensities, hits_right_intensities, hits_left_pings_indices, hits_right_pings_indices, pings[i].pos_ - offset);
 }
 
 
@@ -128,13 +133,13 @@ bool draping_generator::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
     return false;
 }
 
-void generate_draping(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
-                      const draping_generator::BoundsT& bounds, const xtf_sss_ping::PingsT& pings,
-                      const csv_asvp_sound_speed::EntriesT& sound_speeds)
+void draping_generator::set_ray_tracing_enabled(bool enabled)
 {
-    Eigen::MatrixXd C_jet;
-    igl::jet(V.col(2), true, C_jet);
+    ray_tracing_enabled = enabled;
+}
 
+tuple<Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXd> get_vehicle_mesh()
+{
     Eigen::MatrixXd Vb;
     Eigen::MatrixXi Fb;
     Eigen::MatrixXd Nb;
@@ -144,10 +149,32 @@ void generate_draping(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
     Vb.array() *= 0.01;
     Eigen::Matrix3d Rz = Eigen::AngleAxisd(-0.5*M_PI, Eigen::Vector3d::UnitZ()).matrix();
     Vb *= Rz.transpose();
-    //display_mesh(Vb, Fb);
+
+    return make_tuple(Vb, Fb, Cb);
+}
+
+Eigen::MatrixXd color_jet_from_mesh(const Eigen::MatrixXd& V)
+{
+    Eigen::MatrixXd C_jet;
+    igl::jet(V.col(2), true, C_jet);
+    return C_jet;
+}
+
+void generate_draping(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
+                      const draping_generator::BoundsT& bounds, const xtf_sss_ping::PingsT& pings,
+                      const csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw)
+{
+    Eigen::MatrixXd Vb;
+    Eigen::MatrixXi Fb;
+    Eigen::MatrixXd Cb;
+    tie(Vb, Fb, Cb) = get_vehicle_mesh();
+
+    Eigen::MatrixXd C_jet = color_jet_from_mesh(V);
 
     Eigen::Vector3d offset(bounds(0, 0), bounds(0, 1), 0.);
-    draping_generator viewer(V, F, C_jet, Vb, Fb, Cb, pings, offset, sound_speeds);
+    // maybe just make draping generator take bounds as an argument instead?
+    draping_generator viewer(V, F, C_jet, Vb, Fb, Cb, pings, offset, sound_speeds, sensor_yaw);
+    //viewer.set_ray_tracing_enabled(true);
     viewer.launch();
 
 }

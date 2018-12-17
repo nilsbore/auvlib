@@ -312,3 +312,17 @@ xtf_sss_ping::PingsT parse_file(const boost::filesystem::path& file)
 
    return pings;
 }
+
+xtf_sss_ping::PingsT correct_sensor_offset(const xtf_sss_ping::PingsT& pings, const Eigen::Vector3d& sensor_offset)
+{
+    xtf_sss_ping::PingsT new_pings = pings;
+    for (xtf_sss_ping& ping : new_pings) {
+        Eigen::Matrix3d Rz = Eigen::AngleAxisd(ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
+        // these are my estimated values for the
+        // sidescan offset from the center of motion
+        //ping.pos_.array() += (2.*Rz.col(0) + -1.5*Rz.col(1)).array();
+        ping.pos_.array() += (sensor_offset(0)*Rz.col(0) + sensor_offset(1)*Rz.col(1) + sensor_offset(2)*Rz.col(2)).array();
+    }
+
+    return new_pings;
+}

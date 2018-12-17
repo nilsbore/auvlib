@@ -5,6 +5,8 @@ from pybathy_maps import mesh_map, draping_viewer, draping_image
 import matplotlib.pyplot as plt
 import sys
 import os
+import numpy as np
+import math
 
 def parse_or_load_gsf(path):
 
@@ -72,12 +74,14 @@ m, V, F, bounds = create_mesh(sys.argv[1])
 #m.display_mesh(V, F)
 
 xtf_pings = match_or_load_xtf(sys.argv[2], sys.argv[3])
+xtf_pings = xtf_data.correct_sensor_offset(xtf_pings, np.array([2., -1.5, 0.]))
 
 sound_speeds = csv_data.csv_asvp_sound_speed.parse_file(sys.argv[4])
 
 #draping_viewer.generate_draping(V, F, bounds, xtf_pings, sound_speeds)
 resolution = 30./8.
+sensor_yaw = 5.*math.pi/180.
 
 saver = MapImageSaver()
-map_images = draping_image.drape_images(V, F, bounds, xtf_pings, sound_speeds, resolution, saver.save_callback)
+map_images = draping_image.drape_images(V, F, bounds, xtf_pings, sound_speeds, sensor_yaw, resolution, saver.save_callback)
 draping_image.write_data(map_images, "map_images.cereal")

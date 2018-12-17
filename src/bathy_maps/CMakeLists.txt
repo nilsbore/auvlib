@@ -95,7 +95,7 @@ target_link_libraries(drape_mesh snell_ray_tracing xtf_data igl::embree igl::cor
 
 target_link_libraries(patch_views eigen_cereal ${OpenCV_LIBS})
 
-target_link_libraries(sss_map_image eigen_cereal ${OpenCV_LIBS})
+target_link_libraries(sss_map_image eigen_cereal xtf_data ${OpenCV_LIBS})
 
 target_link_libraries(draping_generator drape_mesh xtf_data patch_views ${OpenCV_LIBS} igl::core igl::opengl_glfw -lpthread)
 

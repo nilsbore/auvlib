@@ -9,13 +9,14 @@ using namespace std;
 survey_viewer::survey_viewer(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1, const Eigen::MatrixXd& C1,
     const Eigen::MatrixXd& V2, const Eigen::MatrixXi& F2, const Eigen::MatrixXd& C2,
     const xtf_sss_ping::PingsT& pings, const Eigen::Vector3d& offset,
-    const csv_asvp_sound_speed::EntriesT& sound_speeds)
-    : draping_generator(V1, F1, C1, V2, F2, C2, pings, offset, sound_speeds)
+    const csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw,
+    const std::function<void(sss_patch_views)>& save_callback)
+    : draping_generator(V1, F1, C1, V2, F2, C2, pings, offset, sound_speeds, sensor_yaw), save_callback(save_callback)
 {
     is_active = Eigen::VectorXi(pings.size()); is_active.setOnes();
 
     viewer.callback_mouse_down = std::bind(&survey_viewer::callback_mouse_down, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-    viewer.callback_key_pressed = std::bind(&survey_viewer::callback_key_pressed, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    //viewer.callback_key_pressed = std::bind(&survey_viewer::callback_key_pressed, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
     viewer.callback_pre_draw = std::bind(&survey_viewer::callback_pre_draw, this, std::placeholders::_1);
 }
 
@@ -30,13 +31,15 @@ void survey_viewer::handle_patches()
     if (i >= pings.size()) {
         if (patch_assembler.is_active() && !patch_assembler.empty()) {
             patch_views.push_back(patch_assembler.finish());
+            save_callback(patch_views.back());
         }
         return;
     }
 
     Eigen::MatrixXd hits_left_intensities, hits_right_intensities;
+    Eigen::VectorXi hits_left_pings_indices, hits_right_pings_indices;
     Eigen::Vector3d pos;
-    tie(hits_left_intensities, hits_right_intensities, pos) = project_sss();
+    tie(hits_left_intensities, hits_right_intensities, hits_left_pings_indices, hits_right_pings_indices, pos) = project_sss();
 
     patch_assembler.add_hits(hits_left_intensities, pos);
     patch_assembler.add_hits(hits_right_intensities, pos);
@@ -44,6 +47,8 @@ void survey_viewer::handle_patches()
 
 bool survey_viewer::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
 {
+    handle_patches();
+    i += 1;
     return false;
 }
 
@@ -65,7 +70,7 @@ bool survey_viewer::callback_mouse_down(igl::opengl::glfw::Viewer& viewer, int, 
         Eigen::Vector3d point = offset + V1.row(vind).transpose();
         int nbr_in_view = 0;
         for (int j = 0; j < pings.size(); ++j) {
-            is_active(j) = int(point_in_view(pings[j], point));
+            is_active(j) = int(point_in_view(pings[j], point, sensor_yaw));
             nbr_in_view += is_active(j);
         }
         i = 0;
@@ -107,24 +112,18 @@ sss_patch_views::ViewsT survey_viewer::get_patch_views()
 
 sss_patch_views::ViewsT overlay_sss(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
                                     const survey_viewer::BoundsT& bounds, const xtf_sss_ping::PingsT& pings,
-                                    const csv_asvp_sound_speed::EntriesT& sound_speeds)
+                                    const csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw,
+                                    const std::function<void(sss_patch_views)>& save_callback)
 {
-    Eigen::MatrixXd C_jet;
-    igl::jet(V.col(2), true, C_jet);
-
     Eigen::MatrixXd Vb;
     Eigen::MatrixXi Fb;
-    Eigen::MatrixXd Nb;
-    igl::readSTL("5TUM.stl", Vb, Fb, Nb);
-    Eigen::MatrixXd Cb(Vb.rows(), 3);
-    Cb.rowwise() = Eigen::RowVector3d(1., 1., 0.);
-    Vb.array() *= 0.01;
-    Eigen::Matrix3d Rz = Eigen::AngleAxisd(-0.5*M_PI, Eigen::Vector3d::UnitZ()).matrix();
-    Vb *= Rz.transpose();
-    //display_mesh(Vb, Fb);
+    Eigen::MatrixXd Cb;
+    tie(Vb, Fb, Cb) = get_vehicle_mesh();
+
+    Eigen::MatrixXd C_jet = color_jet_from_mesh(V);
 
     Eigen::Vector3d offset(bounds(0, 0), bounds(0, 1), 0.);
-    survey_viewer viewer(V, F, C_jet, Vb, Fb, Cb, pings, offset, sound_speeds);
+    survey_viewer viewer(V, F, C_jet, Vb, Fb, Cb, pings, offset, sound_speeds, sensor_yaw, save_callback);
     viewer.launch();
 
     sss_patch_views::ViewsT views = viewer.get_patch_views();

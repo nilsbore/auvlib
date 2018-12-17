@@ -21,6 +21,8 @@ PYBIND11_MODULE(xtf_data, m) {
         .def(py::init<>())
         .def_readwrite("time_string_", &xtf_sss_ping::time_string_, "Member")
         .def_readwrite("time_stamp_", &xtf_sss_ping::time_stamp_, "Member")
+        .def_readwrite("port", &xtf_sss_ping::port, "Member")
+        .def_readwrite("stbd", &xtf_sss_ping::stbd, "Member")
         .def_readwrite("first_in_file_", &xtf_sss_ping::first_in_file_, "Member")
         .def_readwrite("heading_", &xtf_sss_ping::heading_, "Member")
         .def_readwrite("pitch_", &xtf_sss_ping::pitch_, "Member")
@@ -35,4 +37,5 @@ PYBIND11_MODULE(xtf_data, m) {
 
     m.def("write_data", &write_data_from_str<xtf_sss_ping::PingsT>, "Write xtf pings to .cereal file");
     m.def("make_waterfall_image", &make_waterfall_image, "Create an opencv waterfall image from xtf_sss_ping::PingsT");
+    m.def("correct_sensor_offset", &correct_sensor_offset, "Move the sensor onboard the vehicle with a given translation");
 }
