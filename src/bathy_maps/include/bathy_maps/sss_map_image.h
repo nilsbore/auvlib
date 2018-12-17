@@ -18,9 +18,9 @@ struct sss_map_image {
 
     Eigen::MatrixXd sss_map_image;
 
-    Eigen::MatrixXd sss_waterfall_image;
-    Eigen::MatrixXd sss_waterfall_cross_track;
-    Eigen::MatrixXd sss_waterfall_depth;
+    Eigen::MatrixXf sss_waterfall_image;
+    Eigen::MatrixXf sss_waterfall_cross_track;
+    Eigen::MatrixXf sss_waterfall_depth;
 
     std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > pos;
 
@@ -98,6 +98,27 @@ public:
     }
     */
 
+    Eigen::MatrixXd downsample_cols(const Eigen::MatrixXd& M, int new_cols)
+    {
+        double factor = double(new_cols)/double(M.cols());
+        Eigen::ArrayXXd sums = Eigen::MatrixXd::Zero(M.rows(), new_cols);
+        Eigen::ArrayXXd counts = Eigen::MatrixXd::Zero(M.rows(), new_cols);
+
+        int ind;
+        for (int i = 0; i < M.rows(); ++i) {
+            for (int j = 0; j < M.cols(); ++j) {
+                ind = int(factor*j);
+                sums(i, ind) += M(i, j);
+                counts(i, ind) += 1.;
+            }
+        }
+
+        counts += (counts == 0).cast<double>();
+        sums /= counts;
+
+        return sums.matrix();
+    }
+
     sss_map_image finish()
     {
         sss_map_image map_image;
@@ -107,9 +128,9 @@ public:
             map_image.sss_map_image.array() = sss_map_image_sums.array() / sss_map_image_counts.array();
         }
         map_image.pos = poss;
-        map_image.sss_waterfall_image = sss_waterfall_image.topRows(waterfall_counter);
-        map_image.sss_waterfall_cross_track = sss_waterfall_cross_track.topRows(waterfall_counter);
-        map_image.sss_waterfall_depth = sss_waterfall_depth.topRows(waterfall_counter);
+        map_image.sss_waterfall_image = downsample_cols(sss_waterfall_image.topRows(waterfall_counter), 1000).cast<float>();
+        //map_image.sss_waterfall_cross_track = sss_waterfall_cross_track.topRows(waterfall_counter);
+        map_image.sss_waterfall_depth = downsample_cols(sss_waterfall_depth.topRows(waterfall_counter), 1000).cast<float>();
 
         return map_image;
     }
