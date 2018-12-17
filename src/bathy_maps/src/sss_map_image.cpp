@@ -41,10 +41,15 @@ sss_patch_views::ViewsT convert_maps_to_patches(const sss_map_image::ImagesT& ma
                 //cout << "current y start: " << i*image_size << " out of " << map_images[n].sss_map_image.rows() << endl;
                 Eigen::MatrixXd view = map_images[n].sss_map_image.block(i*image_size, j*image_size, image_size, image_size);
                 //cout << "view mean: " << view.mean() << endl;
-                double fraction_zeros = (view.array() == 0).mean(); // / patch_area;
-                if (std::isinf(view.mean()) || fraction_zeros > 0.4) {
+                double fraction_zeros = (view.array() == 0).cast<double>().mean(); // / patch_area;
+                if (fraction_zeros < 1.) {
+                    cout << "Mean: " << fraction_zeros << endl;
+                }
+                if (std::isinf(view.mean()) || fraction_zeros > 0.2) {
                     continue;
                 }
+
+                cout << "Accepted mean: " << fraction_zeros << endl;
 
                 patch_views.sss_views.push_back(view);
                 auto iter = std::min_element(map_images[n].pos.begin(), map_images[n].pos.end(), [&origin](const Eigen::Vector3d& p1, const Eigen::Vector3d& p2) {
