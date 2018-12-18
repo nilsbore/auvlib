@@ -5,30 +5,26 @@
 
 using namespace std;
 
-draping_generator::draping_generator(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1, const Eigen::MatrixXd& C1,
-    const Eigen::MatrixXd& V2, const Eigen::MatrixXi& F2, const Eigen::MatrixXd& C2,
-    const xtf_sss_ping::PingsT& pings, const Eigen::Vector3d& offset,
-    const csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw)
-    : pings(pings), i(0), V1(V1), F1(F1), V2(V2), F2(F2), offset(offset),
-      sound_speeds(sound_speeds), sensor_yaw(sensor_yaw), ray_tracing_enabled(false)
+draping_generator::draping_generator(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
+                                     const xtf_sss_ping::PingsT& pings,
+                                     const BoundsT& bounds,
+                                     const csv_asvp_sound_speed::EntriesT& sound_speeds)
+    : pings(pings), i(0), V1(V1), F1(F1),
+      sound_speeds(sound_speeds), sensor_yaw(0.),
+      ray_tracing_enabled(false)
 {
+    offset = Eigen::Vector3d(bounds(0, 0), bounds(0, 1), 0.);
+
     //double first_heading = pings[0].heading_;
     hit_sums = Eigen::VectorXd(V1.rows()); hit_sums.setZero();
     hit_counts = Eigen::VectorXi(V1.rows()); hit_counts.setZero();
 
-    V = Eigen::MatrixXd(V1.rows() + V2.rows(), V1.cols());
-    V << V1, this->V2;
-    F = Eigen::MatrixXi(F1.rows() + F2.rows(), F1.cols());
-    F << F1, (F2.array() + V1.rows());
+    V = V1;
+    F = F1;
+    C = color_jet_from_mesh(V1);
 
-    V.bottomRows(V2.rows()) = V2;
-    Eigen::Matrix3d Rz = Eigen::AngleAxisd(pings[0].heading_, Eigen::Vector3d::UnitZ()).matrix();
-    V.bottomRows(V2.rows()) *= Rz.transpose();
-    V.bottomRows(V2.rows()).array().rowwise() += (pings[0].pos_ - offset).transpose().array();
-
-    C = Eigen::MatrixXd(C1.rows()+C2.rows(), C1.cols());
-    C << C1, C2;
-
+    V2 = Eigen::MatrixXd(0, V1.cols());
+    F2 = Eigen::MatrixXi(0, F1.cols());
 
     // Initialize viewer
 
@@ -52,7 +48,30 @@ draping_generator::draping_generator(const Eigen::MatrixXd& V1, const Eigen::Mat
     viewer.core.background_color << 1., 1., 1., 1.; // white background
 }
 
-void draping_generator::launch()
+void draping_generator::set_vehicle_mesh(const Eigen::MatrixXd& new_V2, const Eigen::MatrixXi& new_F2, const Eigen::MatrixXd& new_C2)
+{
+    V2 = new_V2;
+    F2 = new_F2;
+    Eigen::MatrixXd C2 = new_C2;
+
+    V.conservativeResize(V1.rows() + V2.rows(), V1.cols());
+    V.bottomRows(V2.rows()) = V2;
+    F.conservativeResize(F1.rows() + F2.rows(), F1.cols());
+    F.bottomRows(F2.rows()) = F2.array() + V1.rows();
+
+    Eigen::Matrix3d Rz = Eigen::AngleAxisd(pings[0].heading_, Eigen::Vector3d::UnitZ()).matrix();
+    V.bottomRows(V2.rows()) *= Rz.transpose();
+    V.bottomRows(V2.rows()).array().rowwise() += (pings[0].pos_ - offset).transpose().array();
+
+    C.conservativeResize(V1.rows()+C2.rows(), C.cols());
+    C.bottomRows(C2.rows()) = C2;
+
+    viewer.data().clear();
+    viewer.data().set_mesh(V, F);
+    viewer.data().set_colors(C);
+}
+
+void draping_generator::show()
 {
     viewer.launch();
 }
@@ -98,10 +117,12 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::VectorXi, Eigen::VectorXi, Eigen:
 
     if (i % 10 == 0) {
         start = chrono::high_resolution_clock::now();
-        V.bottomRows(V2.rows()) = V2;
-        V.bottomRows(V2.rows()) *= R.transpose();
-        V.bottomRows(V2.rows()).array().rowwise() += (pings[i].pos_ - offset).transpose().array();
-        viewer.data().set_vertices(V);
+        if (V2.rows() > 0) {
+            V.bottomRows(V2.rows()) = V2;
+            V.bottomRows(V2.rows()) *= R.transpose();
+            V.bottomRows(V2.rows()).array().rowwise() += (pings[i].pos_ - offset).transpose().array();
+            viewer.data().set_vertices(V);
+        }
 
         Eigen::MatrixXi E;
         Eigen::MatrixXd P(hits_left.rows(), 3);
@@ -169,12 +190,9 @@ void generate_draping(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
     Eigen::MatrixXd Cb;
     tie(Vb, Fb, Cb) = get_vehicle_mesh();
 
-    Eigen::MatrixXd C_jet = color_jet_from_mesh(V);
-
-    Eigen::Vector3d offset(bounds(0, 0), bounds(0, 1), 0.);
-    // maybe just make draping generator take bounds as an argument instead?
-    draping_generator viewer(V, F, C_jet, Vb, Fb, Cb, pings, offset, sound_speeds, sensor_yaw);
+    draping_generator viewer(V, F, pings, bounds, sound_speeds);
+    viewer.set_sidescan_yaw(sensor_yaw);
+    viewer.set_vehicle_mesh(Vb, Fb, Cb);
     //viewer.set_ray_tracing_enabled(true);
-    viewer.launch();
-
+    viewer.show();
 }

@@ -6,13 +6,13 @@
 
 using namespace std;
 
-draping_image::draping_image(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1, const Eigen::MatrixXd& C1,
-    const Eigen::MatrixXd& V2, const Eigen::MatrixXi& F2, const Eigen::MatrixXd& C2,
-    const xtf_sss_ping::PingsT& pings, const Eigen::Vector3d& offset,
-    const csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw,
-    const BoundsT& bounds, double resolution, const std::function<void(sss_map_image)>& save_callback)
-    : draping_generator(V1, F1, C1, V2, F2, C2, pings, offset, sound_speeds, sensor_yaw),
-      bounds(bounds), resolution(resolution), save_callback(save_callback), map_image_builder(bounds, resolution, pings[0].port.pings.size())
+draping_image::draping_image(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
+                             const xtf_sss_ping::PingsT& pings,
+                             const BoundsT& bounds,
+                             const csv_asvp_sound_speed::EntriesT& sound_speeds)
+    : draping_generator(V1, F1, pings, bounds, sound_speeds),
+      bounds(bounds), resolution(30./8.), save_callback(&default_callback),
+      map_image_builder(bounds, 30./8., pings[0].port.pings.size())
 {
     viewer.callback_pre_draw = std::bind(&draping_image::callback_pre_draw, this, std::placeholders::_1);
 }
@@ -44,6 +44,12 @@ bool draping_image::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
     return false;
 }
 
+void draping_image::set_resolution(double new_resolution)
+{ 
+    resolution = new_resolution;
+    map_image_builder = sss_map_image_builder(bounds, resolution, pings[i].port.pings.size());
+}
+
 sss_map_image::ImagesT draping_image::get_images()
 {
     return map_images;
@@ -61,13 +67,12 @@ sss_map_image::ImagesT drape_images(const Eigen::MatrixXd& V, const Eigen::Matri
 
     Eigen::MatrixXd C_jet = color_jet_from_mesh(V);
 
-    Eigen::Vector3d offset(bounds(0, 0), bounds(0, 1), 0.);
-    draping_image viewer(V, F, C_jet, Vb, Fb, Cb, pings, offset, sound_speeds, sensor_yaw, bounds, resolution, save_callback);
-    viewer.launch();
+    draping_image viewer(V, F, pings, bounds, sound_speeds);
+    viewer.set_sidescan_yaw(sensor_yaw);
+    viewer.set_resolution(resolution);
+    viewer.set_image_callback(save_callback);
+    viewer.set_vehicle_mesh(Vb, Fb, Cb);
+    viewer.show();
 
     return viewer.get_images();
-
-    //sss_patch_views::ViewsT views = viewer.get_patch_views();
-
-    //return views;
 }

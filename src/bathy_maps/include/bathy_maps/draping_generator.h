@@ -17,7 +17,7 @@ public:
 protected:
 
     igl::opengl::glfw::Viewer viewer;
-    const xtf_sss_ping::PingsT& pings;
+    xtf_sss_ping::PingsT pings;
     int i;
     Eigen::MatrixXd V1;
     Eigen::MatrixXi F1;
@@ -36,16 +36,25 @@ protected:
 
 public:
 
+    void set_sidescan_yaw(double new_sensor_yaw) { sensor_yaw = new_sensor_yaw; }
+    void set_ray_tracing_enabled(bool enabled);
+    void set_vehicle_mesh(const Eigen::MatrixXd& new_V2, const Eigen::MatrixXi& new_F2, const Eigen::MatrixXd& new_C2);
+
+    /*
     draping_generator(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1, const Eigen::MatrixXd& C1,
         const Eigen::MatrixXd& V2, const Eigen::MatrixXi& F2, const Eigen::MatrixXd& C2,
         const xtf_sss_ping::PingsT& pings, const Eigen::Vector3d& offset,
         const csv_asvp_sound_speed::EntriesT& sound_speeds = csv_asvp_sound_speed::EntriesT(),
         double sensor_yaw = 0.);
+    */
+    draping_generator(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
+                      const xtf_sss_ping::PingsT& pings,
+                      const BoundsT& bounds,
+                      const csv_asvp_sound_speed::EntriesT& sound_speeds = csv_asvp_sound_speed::EntriesT());
 
-    void launch();
+    void show();
     std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::VectorXi, Eigen::VectorXi, Eigen::Vector3d> project_sss();
     bool callback_pre_draw(igl::opengl::glfw::Viewer& viewer);
-    void set_ray_tracing_enabled(bool enabled);
 };
 
 std::tuple<Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXd> get_vehicle_mesh();

@@ -126,7 +126,18 @@ sensor_yaw = 5.*math.pi/180.
 #draping_viewer.generate_draping(V, F, bounds, xtf_pings, sound_speeds, sensor_yaw)
 
 plotter = PatchPlotter()
-patch_views = draping_viewer.overlay_sss(V, F, bounds, xtf_pings, sound_speeds, sensor_yaw, plotter.plot_callback)
-draping_viewer.write_data(patch_views, "patch_views.cereal")
+#patch_views = draping_viewer.overlay_sss(V, F, bounds, xtf_pings, sound_speeds, sensor_yaw, plotter.plot_callback)
+#draping_viewer.write_data(patch_views, "patch_views.cereal")
 
 #plt.show()
+
+Vb, Fb, Cb = draping_viewer.get_vehicle_mesh()
+#viewer = draping_viewer.draping_generator(V, F, xtf_pings, bounds, sound_speeds)
+viewer = draping_viewer.draping_patches(V, F, xtf_pings, bounds, sound_speeds)
+viewer.set_sidescan_yaw(sensor_yaw)
+viewer.set_vehicle_mesh(Vb, Fb, Cb)
+viewer.set_ray_tracing_enabled(False)
+viewer.set_patch_callback(plotter.plot_callback)
+viewer.show()
+patch_views = viewer.get_patch_views()
+draping_viewer.write_data(patch_views, "patch_views.cereal")
