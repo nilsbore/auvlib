@@ -4,6 +4,8 @@
 #include <bathy_maps/drape_mesh.h>
 
 using namespace std;
+using namespace xtf_data;
+using namespace csv_data;
 
 BaseDraper::BaseDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
                        const xtf_sss_ping::PingsT& pings,

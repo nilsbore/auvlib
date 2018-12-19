@@ -12,6 +12,8 @@ using namespace std;
 
 namespace mesh_map {
 
+using namespace data_structures;
+
 std::tuple<uint8_t, uint8_t, uint8_t> jet_mesh(double x)
 {
     const double rone = 0.8;

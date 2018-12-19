@@ -4,6 +4,8 @@
 #include <pybind11/eigen.h>
 #include <pybind11/stl.h>
 
+using namespace data_structures;
+
 namespace py = pybind11;
 
 PYBIND11_MODULE(data_structures, m) {

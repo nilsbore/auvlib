@@ -10,6 +10,8 @@
 #include <chrono>
 
 using namespace std;
+using namespace data_structures;
+using namespace all_data;
 
 int main(int argc, char** argv)
 {

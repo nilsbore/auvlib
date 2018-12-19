@@ -157,7 +157,7 @@ int main(int argc, char** argv)
     //SubmapsT submaps = read_submaps(folder);
 	//visualize_submaps(submaps);
 	
-	Eigen::MatrixXd points = read_submap(folder / "patch_00_00.xyz");
+	Eigen::MatrixXd points = submaps::read_submap(folder / "patch_00_00.xyz");
 	//points = 0.1/930.*points;
 	//visualize_submap(points);
 	

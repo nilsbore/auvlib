@@ -15,6 +15,8 @@ extern "C" {
 
 using namespace std;
 
+namespace xtf_data {
+
 cv::Mat make_waterfall_image(const xtf_sss_ping::PingsT& pings)
 {
     int rows = pings.size();
@@ -75,7 +77,7 @@ xtf_sss_ping process_side_scan_ping(XTFPINGHEADER *PingHeader, XTFFILEHEADER *XT
 
    double easting, northing;
    string utm_zone;
-   tie(northing, easting, utm_zone) = lat_long_to_UTM(ping.lat_, ping.long_);
+   tie(northing, easting, utm_zone) = lat_long_utm::lat_long_to_UTM(ping.lat_, ping.long_);
    ping.pos_ = Eigen::Vector3d(easting, northing, -PingHeader->SensorDepth);
    ping.heading_ = M_PI/180.*PingHeader->SensorHeading;
    ping.heading_ = 0.5*M_PI-ping.heading_; // TODO: need to keep this for old data
@@ -252,6 +254,26 @@ xtf_sss_ping::PingsT read_xtf_file(int infl, XTFFILEHEADER* XTFFileHeader, unsig
     return pings;
 }
 
+xtf_sss_ping::PingsT correct_sensor_offset(const xtf_sss_ping::PingsT& pings, const Eigen::Vector3d& sensor_offset)
+{
+    xtf_sss_ping::PingsT new_pings = pings;
+    for (xtf_sss_ping& ping : new_pings) {
+        Eigen::Matrix3d Rz = Eigen::AngleAxisd(ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
+        // these are my estimated values for the
+        // sidescan offset from the center of motion
+        //ping.pos_.array() += (2.*Rz.col(0) + -1.5*Rz.col(1)).array();
+        ping.pos_.array() += (sensor_offset(0)*Rz.col(0) + sensor_offset(1)*Rz.col(1) + sensor_offset(2)*Rz.col(2)).array();
+    }
+
+    return new_pings;
+}
+
+} // namespace xtf_data
+
+namespace data_structures {
+
+using namespace xtf_data;
+
 template <>
 xtf_sss_ping::PingsT parse_file(const boost::filesystem::path& file)
 {
@@ -313,16 +335,4 @@ xtf_sss_ping::PingsT parse_file(const boost::filesystem::path& file)
    return pings;
 }
 
-xtf_sss_ping::PingsT correct_sensor_offset(const xtf_sss_ping::PingsT& pings, const Eigen::Vector3d& sensor_offset)
-{
-    xtf_sss_ping::PingsT new_pings = pings;
-    for (xtf_sss_ping& ping : new_pings) {
-        Eigen::Matrix3d Rz = Eigen::AngleAxisd(ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
-        // these are my estimated values for the
-        // sidescan offset from the center of motion
-        //ping.pos_.array() += (2.*Rz.col(0) + -1.5*Rz.col(1)).array();
-        ping.pos_.array() += (sensor_offset(0)*Rz.col(0) + sensor_offset(1)*Rz.col(1) + sensor_offset(2)*Rz.col(2)).array();
-    }
-
-    return new_pings;
-}
+} // namespace data_structures

@@ -8,6 +8,8 @@
 #include <opencv2/imgproc.hpp>
 
 using namespace std;
+using namespace submaps;
+using namespace data_transforms;
 
 CloudT::Ptr construct_submap_and_gp_cloud(Eigen::MatrixXd points, ProcessT& gp,
 				                          Eigen::Vector3d& t, Eigen::Matrix3d& R,

@@ -17,6 +17,8 @@
 #include <gpgs_slam/visualization.h>
 
 using namespace std;
+using namespace data_transforms;
+using namespace data_structures;
 
 void subsample_cloud(Eigen::MatrixXd& points, int subsample)
 {
@@ -96,7 +98,7 @@ Eigen::VectorXd compute_step(Eigen::MatrixXd& points2, ProcessT& gp1,
     Eigen::Matrix3d R1 = euler_to_matrix(rot1[0], rot1[1], rot1[2]);
     Eigen::Matrix3d R2 = euler_to_matrix(rot2[0], rot2[1], rot2[2]);
 
-    Eigen::MatrixXd points2in1 = get_points_in_bound_transform(points2, t2, R2, t1, R1, 465.);
+    Eigen::MatrixXd points2in1 = submaps::get_points_in_bound_transform(points2, t2, R2, t1, R1, 465.);
 
     Eigen::VectorXd ll;
     Eigen::MatrixXd dX;
@@ -208,9 +210,9 @@ int main(int argc, char** argv)
 
     if (first == -1 || second == -1) {
         boost::filesystem::path track_benchmark_path(ss.dataset_name + "_benchmark.cereal");
-        track_error_benchmark track_benchmark = read_data<track_error_benchmark>(track_benchmark_path);
+        benchmark::track_error_benchmark track_benchmark = read_data<benchmark::track_error_benchmark>(track_benchmark_path);
 
-        registration_summary_benchmark benchmark(ss.dataset_name);
+        benchmark::registration_summary_benchmark benchmark(ss.dataset_name);
         for (const pair<int, int>& match : ss.matches) {
             first = match.first; second = match.second;
             cout << "Registering " << first << " and " << second << " ..." << endl;
@@ -230,7 +232,7 @@ int main(int argc, char** argv)
             trans_corr.push_back(tc_first); trans_corr.push_back(tc_second);
             rots_corr.push_back(Rc_first); rots_corr.push_back(Rc_second);
 
-            mbes_ping::PingsT pings_pair = registration_summary_benchmark::get_submap_pings_pair(track_benchmark.input_pings, first, second);
+            mbes_ping::PingsT pings_pair = benchmark::registration_summary_benchmark::get_submap_pings_pair(track_benchmark.input_pings, first, second);
             benchmark.add_registration_benchmark(pings_pair, trans_corr, rots_corr, first, second);
         }
         benchmark.print_summary();

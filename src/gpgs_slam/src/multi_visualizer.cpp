@@ -10,6 +10,7 @@
 #include <gpgs_slam/visualization.h>
 
 using namespace std;
+using namespace data_transforms;
 
 MultiVisCallback::MultiVisCallback(ObsT& points, SubmapsGPT& gps, TransT& trans, AngsT& rots)
     : viewer("Simple Cloud Viewer"), points(points), gps(gps), trans(trans), rots(rots)

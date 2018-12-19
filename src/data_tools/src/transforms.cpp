@@ -1,5 +1,7 @@
 #include <data_tools/transforms.h>
 
+namespace data_transforms {
+
 Eigen::Matrix3d euler_to_matrix(double x, double y, double z)
 {
     Eigen::Matrix3d Rx = Eigen::AngleAxisd(x, Eigen::Vector3d::UnitX()).matrix();
@@ -25,4 +27,6 @@ std::vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> > euler_t
     //Eigen::Matrix3d Rz; Rz << cos(x), -sin(x), 0., sin(x), cos(x), 0., 0., 0., 1.;
     Eigen::Matrix3d Rz; Rz << -sin(x), -cos(x), 0., cos(x), -sin(x), 0., 0., 0., 0.;
     return {Rx, Ry, Rz};
+}
+
 }

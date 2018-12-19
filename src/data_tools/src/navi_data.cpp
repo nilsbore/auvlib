@@ -16,6 +16,11 @@
 
 using namespace std;
 using namespace Eigen;
+
+namespace navi_data {
+
+using namespace data_structures;
+
 using PointT = pcl::PointXYZRGB;
 using CloudT = pcl::PointCloud<PointT>;
 
@@ -82,126 +87,6 @@ void view_cloud(const mbes_ping::PingsT& pings)
 	while (!viewer.wasStopped()) {
 
     }
-}
-
-// Extract space-separated numbers: Nav files
-// 0: Year
-// 1: Time (day, hour)
-// 2: Second
-// 3: Ping num
-// 4: Beam num
-// 5: X
-// 6: Y
-// 7: Z
-// 8: Tide
-// 9: Heading
-// 10: Heave
-// 11: Pitch
-// 12: Roll
-template <>
-mbes_ping::PingsT parse_file(const boost::filesystem::path& file)
-{
-    mbes_ping::PingsT pings;
-
-	string line;
-    std::ifstream infile(file.string());
-    
-	mbes_ping ping;
-    string time;
-    int beam_id;
-    double tide, x, y, z;
-    string year_string, date_string, second_string;
-    const std::locale loc = std::locale(std::locale::classic(), new boost::posix_time::time_input_facet("%Y %m%d%H%M %S%f"));
-    const boost::posix_time::ptime epoch = boost::posix_time::time_from_string("1970-01-01 00:00:00.000");
-
-	std::getline(infile, line); // throw away first line as it contains description
-    int counter = 0;
-    while (std::getline(infile, line))  // this does the checking!
-    {
-        istringstream iss(line);
-
-		iss >> year_string >> date_string >> second_string >> ping.id_ >> beam_id >> x >> y >> z >> tide >> ping.heading_ >> ping.heave_ >> ping.pitch_ >> ping.roll_;
-
-        /*
-        if (beam_id != 255 && counter % 10 != 0) {
-            ++counter;
-            continue;
-        }
-        */
-
-		ping.beams.push_back(Vector3d(x, y, -z));
-
-		if (beam_id == 255) {
-            ping.first_in_file_ = pings.empty();
-            std::istringstream is(year_string + " " + date_string + " " + second_string);
-            is.imbue(loc);
-            boost::posix_time::ptime t;
-            is >> t;
-            boost::posix_time::time_duration const diff = t - epoch;
-            ping.time_stamp_ = diff.total_milliseconds();
-            stringstream time_ss;
-            time_ss << t;
-            ping.time_string_ = time_ss.str();
-            //cout << year_string << " " << date_string << " " << second_string << endl;
-            //cout << t << endl;
-
-		    pings.push_back(ping);
-			ping.beams.resize(0);
-		}
-
-        ++counter;
-    }
-
-	return pings;
-}
-
-// Extract space-separated numbers: Nav files
-// 0: Day
-// 1: Time
-// 2: Easting
-// 3: Northing
-// 4: Depth (given in positive values!)
-// 5: Zeros
-template <>
-nav_entry::EntriesT parse_file(const boost::filesystem::path& file)
-{
-    nav_entry::EntriesT entries;
-
-    nav_entry entry;
-    double x, y, z;
-    string date_string, time_string;
-    const std::locale loc = std::locale(std::locale::classic(), new boost::posix_time::time_input_facet("%Y.%m.%d %H:%M:%S%f"));
-    const boost::posix_time::ptime epoch = boost::posix_time::time_from_string("1970-01-01 00:00:00.000");
-	
-    string line;
-    std::ifstream infile(file.string());
-    while (std::getline(infile, line))  // this does the checking!
-    {
-        istringstream iss(line);
-
-		//iss >> entry.year_ >> entry.time_stamp_ >> x >> y >> z;
-		iss >> date_string >> time_string >> x >> y >> z;
-        entry.pos_ = Vector3d(x, y, -z);
-
-        std::istringstream is(date_string + " " + time_string);
-        is.imbue(loc);
-        boost::posix_time::ptime t;
-        is >> t;
-        boost::posix_time::time_duration const diff = t - epoch;
-        entry.time_stamp_ = diff.total_milliseconds();
-        stringstream time_ss;
-        time_ss << t;
-        entry.time_string_ = time_ss.str();
-
-        //cout << date_string << " " << time_string << endl;
-        //cout << t << endl;
-        //cout << ms << endl;
-        entry.first_in_file_ = entries.empty();
-
-		entries.push_back(entry);
-    }
-
-	return entries;
 }
 
 void divide_tracks(mbes_ping::PingsT& pings)
@@ -380,7 +265,7 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT, ObsT> create_submaps(const mbes_ping:
         // get the direction of the submap as the mean direction
         Vector3d dir = track_pings.back().pos_ - track_pings.front().pos_;
         Vector3d ang; ang << 0., 0., std::atan2(dir(1), dir(0));
-        Eigen::Matrix3d RM = euler_to_matrix(ang(0), ang(1), ang(2));
+        Eigen::Matrix3d RM = data_transforms::euler_to_matrix(ang(0), ang(1), ang(2));
 
         int counter = 0;
         int ping_counter = 0;
@@ -443,7 +328,7 @@ void visualize_submaps(ObsT& submaps, TransT& trans, AngsT& angs) {
 
     for (int i = 0; i < submaps.size(); ++i) {
         Vector3f t = trans[i].cast<float>() - trans[0].cast<float>();
-        Matrix3d RM = euler_to_matrix(angs[i](0), angs[i](1), angs[i](2));
+        Matrix3d RM = data_transforms::euler_to_matrix(angs[i](0), angs[i](1), angs[i](2));
         for (int j = 0; j < submaps[i].rows(); ++j) {
             PointT p;
             p.getVector3fMap() = (RM*submaps[i].row(j).transpose()).cast<float>() + t;
@@ -464,3 +349,127 @@ void visualize_submaps(ObsT& submaps, TransT& trans, AngsT& angs) {
 	}
 }
 
+} // namespace navi_data
+
+namespace data_structures {
+
+// Extract space-separated numbers: Nav files
+// 0: Year
+// 1: Time (day, hour)
+// 2: Second
+// 3: Ping num
+// 4: Beam num
+// 5: X
+// 6: Y
+// 7: Z
+// 8: Tide
+// 9: Heading
+// 10: Heave
+// 11: Pitch
+// 12: Roll
+template <>
+mbes_ping::PingsT parse_file(const boost::filesystem::path& file)
+{
+    mbes_ping::PingsT pings;
+
+	string line;
+    std::ifstream infile(file.string());
+    
+	mbes_ping ping;
+    string time;
+    int beam_id;
+    double tide, x, y, z;
+    string year_string, date_string, second_string;
+    const std::locale loc = std::locale(std::locale::classic(), new boost::posix_time::time_input_facet("%Y %m%d%H%M %S%f"));
+    const boost::posix_time::ptime epoch = boost::posix_time::time_from_string("1970-01-01 00:00:00.000");
+
+	std::getline(infile, line); // throw away first line as it contains description
+    int counter = 0;
+    while (std::getline(infile, line))  // this does the checking!
+    {
+        istringstream iss(line);
+
+		iss >> year_string >> date_string >> second_string >> ping.id_ >> beam_id >> x >> y >> z >> tide >> ping.heading_ >> ping.heave_ >> ping.pitch_ >> ping.roll_;
+
+        /*
+        if (beam_id != 255 && counter % 10 != 0) {
+            ++counter;
+            continue;
+        }
+        */
+
+		ping.beams.push_back(Vector3d(x, y, -z));
+
+		if (beam_id == 255) {
+            ping.first_in_file_ = pings.empty();
+            std::istringstream is(year_string + " " + date_string + " " + second_string);
+            is.imbue(loc);
+            boost::posix_time::ptime t;
+            is >> t;
+            boost::posix_time::time_duration const diff = t - epoch;
+            ping.time_stamp_ = diff.total_milliseconds();
+            stringstream time_ss;
+            time_ss << t;
+            ping.time_string_ = time_ss.str();
+            //cout << year_string << " " << date_string << " " << second_string << endl;
+            //cout << t << endl;
+
+		    pings.push_back(ping);
+			ping.beams.resize(0);
+		}
+
+        ++counter;
+    }
+
+	return pings;
+}
+
+// Extract space-separated numbers: Nav files
+// 0: Day
+// 1: Time
+// 2: Easting
+// 3: Northing
+// 4: Depth (given in positive values!)
+// 5: Zeros
+template <>
+nav_entry::EntriesT parse_file(const boost::filesystem::path& file)
+{
+    nav_entry::EntriesT entries;
+
+    nav_entry entry;
+    double x, y, z;
+    string date_string, time_string;
+    const std::locale loc = std::locale(std::locale::classic(), new boost::posix_time::time_input_facet("%Y.%m.%d %H:%M:%S%f"));
+    const boost::posix_time::ptime epoch = boost::posix_time::time_from_string("1970-01-01 00:00:00.000");
+	
+    string line;
+    std::ifstream infile(file.string());
+    while (std::getline(infile, line))  // this does the checking!
+    {
+        istringstream iss(line);
+
+		//iss >> entry.year_ >> entry.time_stamp_ >> x >> y >> z;
+		iss >> date_string >> time_string >> x >> y >> z;
+        entry.pos_ = Vector3d(x, y, -z);
+
+        std::istringstream is(date_string + " " + time_string);
+        is.imbue(loc);
+        boost::posix_time::ptime t;
+        is >> t;
+        boost::posix_time::time_duration const diff = t - epoch;
+        entry.time_stamp_ = diff.total_milliseconds();
+        stringstream time_ss;
+        time_ss << t;
+        entry.time_string_ = time_ss.str();
+
+        //cout << date_string << " " << time_string << endl;
+        //cout << t << endl;
+        //cout << ms << endl;
+        entry.first_in_file_ = entries.empty();
+
+		entries.push_back(entry);
+    }
+
+	return entries;
+}
+} // namespace data_structures

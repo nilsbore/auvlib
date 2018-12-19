@@ -117,8 +117,8 @@ int main(int argc, char** argv)
     //SubmapsT submaps = read_submaps(folder);
 	//visualize_submaps(submaps);
 	
-	Eigen::MatrixXd points1 = read_submap(folder / "patch_00_00.xyz");
-	Eigen::MatrixXd points2 = read_submap(folder / "patch_00_01.xyz");
+	Eigen::MatrixXd points1 = submaps::read_submap(folder / "patch_00_00.xyz");
+	Eigen::MatrixXd points2 = submaps::read_submap(folder / "patch_00_01.xyz");
 	//points = 0.1/930.*points;
 	//visualize_submap(points);
 
@@ -133,7 +133,7 @@ int main(int argc, char** argv)
 	gp1.kernel.l_sq = lsq*lsq;
     gp1.kernel.p(0) = gp1.kernel.sigmaf_sq;
     gp1.kernel.p(1) = gp1.kernel.l_sq;
-	tie(t1, RM1) = train_gp(points1, gp1);
+	tie(t1, RM1) = submaps::train_gp(points1, gp1);
     //R1 = Eigen::AngleAxisd(0.2, Eigen::Vector3d::UnitZ()).matrix();
     //RM1 = euler_to_matrix(R1(0), R1(1), R1(2));
     Eigen::Vector3d t1_gt = t1;
@@ -145,7 +145,7 @@ int main(int argc, char** argv)
 	gp2.kernel.l_sq = lsq*lsq;
     gp2.kernel.p(0) = gp2.kernel.sigmaf_sq;
     gp2.kernel.p(1) = gp2.kernel.l_sq;
-	tie(t2, RM2) = train_gp(points2, gp2);
+	tie(t2, RM2) = submaps::train_gp(points2, gp2);
     //RM2 = euler_to_matrix(R2(0), R2(1), R2(2));
     Eigen::Vector3d t2_gt = t2;
 

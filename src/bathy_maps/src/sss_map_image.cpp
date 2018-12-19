@@ -1,6 +1,7 @@
 #include <bathy_maps/sss_map_image.h>
 
 using namespace std;
+using namespace xtf_data;
 
 sss_map_image_builder::sss_map_image_builder(const sss_map_image::BoundsT& bounds, double resolution, int nbr_pings) : 
     bounds(bounds), resolution(resolution), waterfall_width(2*nbr_pings), waterfall_counter(0)

@@ -5,6 +5,8 @@
 #include <iostream>
 #include <boost/filesystem.hpp>
 
+namespace submaps {
+
 using ObsT = std::vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> >;
 using SubmapsT = std::vector<std::vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> > >;
 using MatchesT = std::vector<std::pair<int, int> >; // tells us which maps overlap
@@ -52,5 +54,7 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> train_gp(Eigen::MatrixXd& points, P
 
     return std::make_tuple(t, R);
 }
+
+} // namespace submaps
 
 #endif // SUBMAPS_H

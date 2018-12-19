@@ -14,6 +14,7 @@
 #include <gpgs_slam/igl_visualizer.h>
 
 using namespace std;
+using namespace data_structures;
 
 int main(int argc, char** argv)
 {

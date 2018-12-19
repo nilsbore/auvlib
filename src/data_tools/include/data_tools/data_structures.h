@@ -15,6 +15,8 @@
 #include <boost/filesystem.hpp>
 #include <boost/range.hpp>
 
+namespace data_structures {
+
 struct mbes_ping
 {
     // data structure used to store a collection of mbes_pings
@@ -178,5 +180,7 @@ void write_data_from_str(T& data, const std::string& path)
 {
     write_data<T>(data, boost::filesystem::path(path));
 }
+
+} // namespace data_structures
 
 #endif // DATA_STRUCTURES_H

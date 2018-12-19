@@ -6,6 +6,8 @@
 #include <boost/filesystem.hpp>
 #include <opencv2/core/core.hpp>
 
+namespace xtf_data {
+
 struct xtf_sss_ping_side
 {
     std::vector<int> pings;
@@ -49,11 +51,17 @@ struct xtf_sss_ping
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
-template <>
-xtf_sss_ping::PingsT parse_file(const boost::filesystem::path& file);
-
 cv::Mat make_waterfall_image(const xtf_sss_ping::PingsT& pings);
 
 xtf_sss_ping::PingsT correct_sensor_offset(const xtf_sss_ping::PingsT& pings, const Eigen::Vector3d& sensor_offset);
+
+} // namespace xtf_data
+
+namespace data_structures {
+
+template <>
+xtf_data::xtf_sss_ping::PingsT parse_file(const boost::filesystem::path& file);
+
+}
 
 #endif // XTF_DATA_H

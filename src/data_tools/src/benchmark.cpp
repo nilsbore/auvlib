@@ -5,10 +5,9 @@
 
 using namespace std;
 
-template track_error_benchmark read_data<track_error_benchmark>(const boost::filesystem::path& path);
-//template registration_summary_benchmark read_data<registration_summary_benchmark>(const boost::filesystem::path& path);
-template void write_data<track_error_benchmark>(track_error_benchmark& data, const boost::filesystem::path& path);
-template void write_data<registration_summary_benchmark>(registration_summary_benchmark& data, const boost::filesystem::path& path);
+namespace benchmark {
+
+using namespace data_structures;
 
 // res, xmin, ymin, imxmin, imymin
 void track_error_benchmark::track_img_params(mbes_ping::PingsT& pings, int rows, int cols)
@@ -625,6 +624,19 @@ pair<double, cv::Mat> track_error_benchmark::compute_draw_error_consistency_map(
     }
 
     return make_pair(sqrt(value_sum/value_count), error_img);
+}
+
+} // namespace benchmark
+
+namespace data_structures {
+
+using namespace benchmark;
+
+template track_error_benchmark read_data<track_error_benchmark>(const boost::filesystem::path& path);
+//template registration_summary_benchmark read_data<registration_summary_benchmark>(const boost::filesystem::path& path);
+template void write_data<track_error_benchmark>(track_error_benchmark& data, const boost::filesystem::path& path);
+template void write_data<registration_summary_benchmark>(registration_summary_benchmark& data, const boost::filesystem::path& path);
+
 }
 
 /*

@@ -8,6 +8,8 @@ using namespace std;
 using PointT = pcl::PointXYZRGB;
 using CloudT = pcl::PointCloud<PointT>;
 
+namespace submaps {
+
 Eigen::MatrixXd read_submap(const boost::filesystem::path& filename)
 {
 	Eigen::MatrixXd points;
@@ -265,4 +267,6 @@ Eigen::MatrixXd get_points_in_bound_transform(Eigen::MatrixXd points, Eigen::Vec
     }
 	points.conservativeResize(counter, 3);
 	return points;
+}
+
 }

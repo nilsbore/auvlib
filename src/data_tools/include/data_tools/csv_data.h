@@ -6,6 +6,8 @@
 #include <data_tools/gsf_data.h>
 #include <data_tools/xtf_data.h>
 
+namespace csv_data {
+
 struct csv_nav_entry
 {
     using EntriesT = std::vector<csv_nav_entry, Eigen::aligned_allocator<csv_nav_entry> >;
@@ -64,13 +66,19 @@ struct csv_asvp_sound_speed
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
-template <>
-csv_nav_entry::EntriesT parse_file(const boost::filesystem::path& file);
+data_structures::mbes_ping::PingsT convert_matched_entries(gsf_data::gsf_mbes_ping::PingsT& pings, csv_nav_entry::EntriesT& entries);
+xtf_data::xtf_sss_ping::PingsT convert_matched_entries(xtf_data::xtf_sss_ping::PingsT& pings, csv_data::csv_nav_entry::EntriesT& entries);
+
+} // namespace csv_data
+
+namespace data_structures {
 
 template <>
-csv_asvp_sound_speed::EntriesT parse_file(const boost::filesystem::path& file);
+csv_data::csv_nav_entry::EntriesT parse_file(const boost::filesystem::path& file);
 
-mbes_ping::PingsT convert_matched_entries(gsf_mbes_ping::PingsT& pings, csv_nav_entry::EntriesT& entries);
-xtf_sss_ping::PingsT convert_matched_entries(xtf_sss_ping::PingsT& pings, csv_nav_entry::EntriesT& entries);
+template <>
+csv_data::csv_asvp_sound_speed::EntriesT parse_file(const boost::filesystem::path& file);
+
+}
 
 #endif // CSV_DATA_H

@@ -33,6 +33,8 @@
 #include <future>
 
 using namespace std;
+using namespace data_transforms;
+using namespace data_structures;
 
 void subsample_cloud(Eigen::MatrixXd& points, int subsample)
 {
@@ -240,7 +242,7 @@ int main(int argc, char** argv)
     write_data(ss, output);
 
     boost::filesystem::path benchmark_path(ss.dataset_name + "_benchmark.cereal");
-    track_error_benchmark benchmark = read_data<track_error_benchmark>(benchmark_path);
+    benchmark::track_error_benchmark benchmark = read_data<benchmark::track_error_benchmark>(benchmark_path);
     
     TransT trans_corr;
     RotsT rots_corr;

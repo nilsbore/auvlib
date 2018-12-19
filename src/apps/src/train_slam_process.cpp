@@ -23,6 +23,7 @@
 #include <future>
 
 using namespace std;
+using namespace data_structures;
 
 void subsample_cloud(Eigen::MatrixXd& points, int subsample)
 {

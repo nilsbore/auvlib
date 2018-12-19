@@ -4,6 +4,8 @@
 #include <opencv2/highgui/highgui.hpp>
 
 using namespace std;
+using namespace data_structures;
+using namespace xtf_data;
 
 int main(int argc, char** argv)
 {

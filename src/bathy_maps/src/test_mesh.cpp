@@ -15,6 +15,10 @@
 #include <chrono>
 
 using namespace std;
+using namespace data_structures;
+using namespace csv_data;
+using namespace gsf_data;
+using namespace xtf_data;
 
 // we should probably put this in data_tools eventually, it's very convenient
 template <typename T>

@@ -4,6 +4,9 @@
 #include <pybind11/eigen.h>
 #include <pybind11/stl.h>
 
+using namespace data_structures;
+using namespace csv_data;
+
 namespace py = pybind11;
 
 PYBIND11_MODULE(csv_data, m) {
@@ -42,5 +45,5 @@ PYBIND11_MODULE(csv_data, m) {
 
     m.def("write_data", &write_data_from_str<csv_nav_entry::EntriesT>, "Write csv_nav_entry::EntriesT to .cereal file");
     m.def("write_data", &write_data_from_str<csv_asvp_sound_speed::EntriesT>, "Write csv_asvp_sound_speed::EntriesT to .cereal file");
-    m.def("convert_matched_entries", (xtf_sss_ping::PingsT (*)(xtf_sss_ping::PingsT&, csv_nav_entry::EntriesT&) ) &convert_matched_entries, "Match xtf_sss_ping::PingsT and csv_nav_entry::EntriesT and assign pos info to pings");
+    m.def("convert_matched_entries", (xtf_data::xtf_sss_ping::PingsT (*)(xtf_data::xtf_sss_ping::PingsT&, csv_nav_entry::EntriesT&) ) &convert_matched_entries, "Match xtf_sss_ping::PingsT and csv_nav_entry::EntriesT and assign pos info to pings");
 }

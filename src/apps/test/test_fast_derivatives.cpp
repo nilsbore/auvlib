@@ -28,6 +28,8 @@
 #include <random>
 
 using namespace std;
+using namespace data_structures;
+
 using TransT = vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>>;
 using AngsT = vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>>;
 using SubmapsGPT = gp_submaps::SubmapsGPT; // Process does not require aligned allocation as all matrices are dynamic
@@ -67,11 +69,11 @@ void test_fast_derivatives(ObsT& points, SubmapsGPT& gps, TransT& trans, AngsT& 
         Eigen::Vector3d t1 = trans[i];
         Eigen::Vector3d t2 = trans[j];
 
-        Eigen::Matrix3d RM1 = euler_to_matrix(R1(0), R1(1), R1(2));
-        Eigen::Matrix3d RM2 = euler_to_matrix(R2(0), R2(1), R2(2));
+        Eigen::Matrix3d RM1 = data_transforms::euler_to_matrix(R1(0), R1(1), R1(2));
+        Eigen::Matrix3d RM2 = data_transforms::euler_to_matrix(R2(0), R2(1), R2(2));
 
-        Eigen::MatrixXd points2in1 = get_points_in_bound_transform(points[j], t2, RM2, t1, RM1, 465);
-        Eigen::MatrixXd points1in2 = get_points_in_bound_transform(points[i], t1, RM1, t2, RM2, 465);
+        Eigen::MatrixXd points2in1 = submaps::get_points_in_bound_transform(points[j], t2, RM2, t1, RM1, 465);
+        Eigen::MatrixXd points1in2 = submaps::get_points_in_bound_transform(points[i], t1, RM1, t2, RM2, 465);
 
         Eigen::VectorXd ll1;
         gps[i].compute_neg_log_likelihoods(ll1, points2in1.leftCols<2>(), points2in1.col(2));
@@ -114,11 +116,11 @@ void test_fast_derivatives(ObsT& points, SubmapsGPT& gps, TransT& trans, AngsT& 
         Eigen::Vector3d t1 = trans[i];
         Eigen::Vector3d t2 = trans[j];
 
-        Eigen::Matrix3d RM1 = euler_to_matrix(R1(0), R1(1), R1(2));
-        Eigen::Matrix3d RM2 = euler_to_matrix(R2(0), R2(1), R2(2));
+        Eigen::Matrix3d RM1 = data_transforms::euler_to_matrix(R1(0), R1(1), R1(2));
+        Eigen::Matrix3d RM2 = data_transforms::euler_to_matrix(R2(0), R2(1), R2(2));
 
-        Eigen::MatrixXd points2in1 = get_points_in_bound_transform(points[j], t2, RM2, t1, RM1, 465);
-        Eigen::MatrixXd points1in2 = get_points_in_bound_transform(points[i], t1, RM1, t2, RM2, 465);
+        Eigen::MatrixXd points2in1 = submaps::get_points_in_bound_transform(points[j], t2, RM2, t1, RM1, 465);
+        Eigen::MatrixXd points1in2 = submaps::get_points_in_bound_transform(points[i], t1, RM1, t2, RM2, 465);
 
         Eigen::VectorXd ll1;
         Eigen::VectorXd ll2;
@@ -182,7 +184,7 @@ int main(int argc, char** argv)
         subsample_cloud(p);
     }
 
-    ss.matches = compute_matches(ss.trans, ss.rots, ss.bounds);
+    ss.matches = submaps::compute_matches(ss.trans, ss.rots, ss.bounds);
 
     test_fast_derivatives(ss.points, ss.gps, ss.trans, ss.angles, ss.matches);
 

@@ -14,11 +14,11 @@ public:
     std::array<double, 5> params;
     int rows, cols;
 
-    BathyMapImage(mbes_ping::PingsT& pings, int rows=500, int cols=500);
-    void draw_track(mbes_ping::PingsT& pings);
-    void draw_track(mbes_ping::PingsT& pings, const cv::Scalar& color);
-    void draw_height_map(mbes_ping::PingsT& pings);
-    void draw_back_scatter_map(mbes_ping::PingsT& pings);
+    BathyMapImage(data_structures::mbes_ping::PingsT& pings, int rows=500, int cols=500);
+    void draw_track(data_structures::mbes_ping::PingsT& pings);
+    void draw_track(data_structures::mbes_ping::PingsT& pings, const cv::Scalar& color);
+    void draw_height_map(data_structures::mbes_ping::PingsT& pings);
+    void draw_back_scatter_map(data_structures::mbes_ping::PingsT& pings);
     void draw_targets(const TargetsT& targets, const cv::Scalar& color);
     void write_image(const boost::filesystem::path& path);
     void write_image_from_str(const std::string& path);

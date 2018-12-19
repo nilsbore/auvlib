@@ -4,6 +4,8 @@
 
 using namespace std;
 
+namespace lat_long_utm {
+
 /**
  * Determine the correct UTM letter designator for the
  * given latitude
@@ -133,3 +135,5 @@ tuple<double, double, string> lat_long_to_UTM(const double Lat, const double Lon
 
     return make_tuple(UTMNorthing, UTMEasting, UTMZone);
 }
+
+} // namespace lat_long_utm

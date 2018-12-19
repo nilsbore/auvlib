@@ -24,6 +24,7 @@
 #include <future>
 
 using namespace std;
+using namespace data_structures;
 
 // Example: ./visualize_process --folder ../scripts --lsq 100.0 --sigma 0.1 --s0 1.
 int main(int argc, char** argv)
@@ -61,12 +62,12 @@ int main(int argc, char** argv)
     pt_submaps::RotsT rots_0 = input_ss.rots;
 
     boost::filesystem::path benchmark_path(input_ss.dataset_name + "_benchmark.cereal");
-    track_error_benchmark benchmark = read_data<track_error_benchmark>(benchmark_path);
+    benchmark::track_error_benchmark benchmark = read_data<benchmark::track_error_benchmark>(benchmark_path);
     
     pt_submaps::TransT trans_corr;
     pt_submaps::RotsT rots_corr;
     for (int i = 0; i < result_ss.points.size(); ++i) {
-        Eigen::Matrix3d R = euler_to_matrix(result_ss.angles[i][0], result_ss.angles[i][1], result_ss.angles[i][2]);
+        Eigen::Matrix3d R = data_transforms::euler_to_matrix(result_ss.angles[i][0], result_ss.angles[i][1], result_ss.angles[i][2]);
         Eigen::Matrix3d Rc = R*rots_0[i].transpose();
         Eigen::Vector3d tc = benchmark.submap_origin + result_ss.trans[i] - Rc*(benchmark.submap_origin + trans_0[i]);
         trans_corr.push_back(tc);
@@ -87,7 +88,7 @@ int main(int argc, char** argv)
             cout << "max likelihood: " << ll.maxCoeff() << endl;
         }
         
-        Eigen::Matrix3d R = euler_to_matrix(result_ss.angles[i][0], result_ss.angles[i][1], result_ss.angles[i][2]);
+        Eigen::Matrix3d R = data_transforms::euler_to_matrix(result_ss.angles[i][0], result_ss.angles[i][1], result_ss.angles[i][2]);
         ping.pos_ = rots_corr[i]*ping.pos_ + trans_corr[i];
 
         pt_submaps::TransT new_beams;

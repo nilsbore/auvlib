@@ -3,6 +3,7 @@
 #include <data_tools/submaps.h>
 
 using namespace std;
+using namespace data_transforms;
 
 void GaussianProcessCostFunction::get_transform_jacobian(Eigen::MatrixXd& J, const Eigen::Vector3d& x) const
 {
@@ -112,7 +113,7 @@ bool GaussianProcessCostFunction::Evaluate(double const* const* parameters, doub
 
     //Eigen::MatrixXd points2in1 = get_points_in_bound_transform(points2, t2, R2, t1, R1, bounds1);
     //Eigen::MatrixXd points2in1 = get_certain_points_in_bound_transform(points2, t2, R2, t1, R1, bounds1);
-    Eigen::MatrixXd points2in1 = get_points_in_bound_transform(points2, t2, R2, t1, R1, 465.);
+    Eigen::MatrixXd points2in1 = submaps::get_points_in_bound_transform(points2, t2, R2, t1, R1, 465.);
     // NOTE: this is a workaround if there is no longer any overlap
     if (points2in1.rows() == 0) {
         points2in1 = points2*R2.transpose()*R1;

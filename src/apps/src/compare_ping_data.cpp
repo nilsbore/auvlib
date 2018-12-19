@@ -17,6 +17,9 @@
 #include <chrono>
 
 using namespace std;
+using namespace data_structures;
+using namespace gsf_data;
+using namespace csv_data;
 
 using TargetsT = BathyMapImage::TargetsT;
 

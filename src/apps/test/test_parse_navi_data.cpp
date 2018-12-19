@@ -6,6 +6,8 @@
 #include <data_tools/benchmark.h>
 
 using namespace std;
+using namespace data_structures;
+using namespace navi_data;
 
 int main(int argc, char** argv)
 {
@@ -63,7 +65,7 @@ int main(int argc, char** argv)
     pt_submaps ss;
     tie(ss.points, ss.trans, ss.angles, ss.matches, ss.bounds, ss.tracks) = create_submaps(pings);
     for (const Eigen::Vector3d& ang : ss.angles) {
-        ss.rots.push_back(euler_to_matrix(ang(0), ang(1), ang(2)));
+        ss.rots.push_back(data_transforms::euler_to_matrix(ang(0), ang(1), ang(2)));
     }
 
     // write to disk
@@ -72,7 +74,7 @@ int main(int argc, char** argv)
     ss = read_data<pt_submaps>(submaps_path);
 
     // create a new becnhmark object
-    track_error_benchmark benchmark;
+    benchmark::track_error_benchmark benchmark;
     
     // add ground truth pings
     benchmark.add_ground_truth(pings);

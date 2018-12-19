@@ -12,6 +12,7 @@
 #include <igl/opengl/gl.h>
 
 using namespace std;
+using namespace data_transforms;
 
 tuple<Eigen::MatrixXd, Eigen::MatrixXi> IglVisCallback::vertices_faces_from_gp(Eigen::MatrixXd& points, ProcessT& gp, Eigen::Matrix2d& bb)
 {

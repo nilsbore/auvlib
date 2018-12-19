@@ -17,7 +17,7 @@ using namespace std;
 gp_submaps parse_and_train_gps(double lsq, double sigma, double s0, const boost::filesystem::path& folder)
 {
 
-    SubmapsT submaps = read_submaps(folder);
+    submaps::SubmapsT submaps = submaps::read_submaps(folder);
     for (int i = 0; i < submaps.size(); ++i) {
         submaps[i].resize(4);
     }
@@ -59,7 +59,7 @@ gp_submaps parse_and_train_gps(double lsq, double sigma, double s0, const boost:
         gp.kernel.p(0) = gp.kernel.sigmaf_sq;
         gp.kernel.p(1) = gp.kernel.l_sq;
         // this will also centralize the points
-        tie(ss.trans[i], ss.rots[i]) = train_gp(ss.points[i], gp);
+        tie(ss.trans[i], ss.rots[i]) = submaps::train_gp(ss.points[i], gp);
         ss.gps.push_back(gp);
         cout << "Pushed back..." << endl;
     }

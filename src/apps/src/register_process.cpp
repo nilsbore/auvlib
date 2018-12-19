@@ -110,10 +110,10 @@ void register_processes(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d
 				        Eigen::MatrixXd& points2, ProcessT& gp2, Eigen::Vector3d& t2, Eigen::Vector3d& R2)
 {
     VisCallback vis(points1, points2, gp1, gp2, t1, R1, t2, R2);
-    Eigen::Matrix3d RM1 = euler_to_matrix(R1(0), R1(1), R1(2));
-    Eigen::Matrix3d RM2 = euler_to_matrix(R2(0), R2(1), R2(2));
+    Eigen::Matrix3d RM1 = data_transforms::euler_to_matrix(R1(0), R1(1), R1(2));
+    Eigen::Matrix3d RM2 = data_transforms::euler_to_matrix(R2(0), R2(1), R2(2));
 
-    Eigen::MatrixXd points2in1 = get_points_in_bound_transform(points2, t2, RM2, t1, RM1, 465);
+    Eigen::MatrixXd points2in1 = submaps::get_points_in_bound_transform(points2, t2, RM2, t1, RM1, 465);
     Eigen::VectorXd delta(6);
 	delta.setZero();
     bool delta_diff_small = false;
@@ -129,7 +129,7 @@ void register_processes(Eigen::MatrixXd& points1, ProcessT& gp1, Eigen::Vector3d
 		cout << "Registration update: " << delta << endl;
         RM1 = dR*RM1; // add to total rotation
         t1 += dt; // add to total translation
-        points2in1 = get_points_in_bound_transform(points2, t2, RM2, t1, RM1, 465);
+        points2in1 = submaps::get_points_in_bound_transform(points2, t2, RM2, t1, RM1, 465);
         vis.visualizer_step(RM1);
     }
 }
@@ -164,8 +164,8 @@ int main(int argc, char** argv)
 	boost::filesystem::path folder(folder_str);
 	cout << "Folder : " << folder << endl;
 
-	Eigen::MatrixXd points1 = read_submap(folder / "patch_00_00.xyz");
-	Eigen::MatrixXd points2 = read_submap(folder / "patch_00_01.xyz");
+	Eigen::MatrixXd points1 = submaps::read_submap(folder / "patch_00_00.xyz");
+	Eigen::MatrixXd points2 = submaps::read_submap(folder / "patch_00_01.xyz");
 
 	Eigen::Vector3d t1, t2;
 	Eigen::Matrix3d RM1, RM2;
@@ -175,7 +175,7 @@ int main(int argc, char** argv)
 	gp1.kernel.l_sq = lsq*lsq;
     gp1.kernel.p(0) = gp1.kernel.sigmaf_sq;
     gp1.kernel.p(1) = gp1.kernel.l_sq;
-	tie(t1, RM1) = train_gp(points1, gp1);
+	tie(t1, RM1) = submaps::train_gp(points1, gp1);
 	t1.array() += -70.0;
     t1(2) -= -70.0; 
 	
@@ -184,7 +184,7 @@ int main(int argc, char** argv)
 	gp2.kernel.l_sq = lsq*lsq;
     gp2.kernel.p(0) = gp2.kernel.sigmaf_sq;
     gp2.kernel.p(1) = gp2.kernel.l_sq;
-	tie(t2, RM2) = train_gp(points2, gp2);
+	tie(t2, RM2) = submaps::train_gp(points2, gp2);
 
 	Eigen::Vector3d R1; R1 << 0., 0., 0.; //2;
     Eigen::Vector3d R2; R2 << 0., 0., 0.;

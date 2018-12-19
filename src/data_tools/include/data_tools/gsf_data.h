@@ -4,6 +4,8 @@
 #include <data_tools/data_structures.h>
 #include <data_tools/navi_data.h>
 
+namespace gsf_data {
+
 struct gsf_mbes_ping {
 
     using PingsT = std::vector<gsf_mbes_ping, Eigen::aligned_allocator<gsf_mbes_ping> >;
@@ -81,19 +83,25 @@ struct gsf_nav_entry
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
-template <>
-gsf_nav_entry::EntriesT parse_file(const boost::filesystem::path& file);
-
-template <>
-gsf_sound_speed::SpeedsT parse_file(const boost::filesystem::path& file);
-
-template <>
-gsf_mbes_ping::PingsT parse_file(const boost::filesystem::path& file);
-
 void match_sound_speeds(gsf_mbes_ping::PingsT& pings, gsf_sound_speed::SpeedsT& speeds);
 
-mbes_ping::PingsT convert_matched_entries(gsf_mbes_ping::PingsT& pings, gsf_nav_entry::EntriesT& entries);
+data_structures::mbes_ping::PingsT convert_matched_entries(gsf_mbes_ping::PingsT& pings, gsf_nav_entry::EntriesT& entries);
 
-mbes_ping::PingsT convert_pings(gsf_mbes_ping::PingsT& pings);
+data_structures::mbes_ping::PingsT convert_pings(gsf_mbes_ping::PingsT& pings);
+
+} // namespace gsf_data
+
+namespace data_structures {
+
+template <>
+gsf_data::gsf_nav_entry::EntriesT parse_file(const boost::filesystem::path& file);
+
+template <>
+gsf_data::gsf_sound_speed::SpeedsT parse_file(const boost::filesystem::path& file);
+
+template <>
+gsf_data::gsf_mbes_ping::PingsT parse_file(const boost::filesystem::path& file);
+
+}
 
 #endif // GSF_DATA_H

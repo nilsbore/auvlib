@@ -6,6 +6,8 @@
 #include <opencv2/highgui/highgui.hpp>
 
 using namespace std;
+using namespace data_structures;
+using namespace gsf_data;
 
 void divide_gsf_map(mbes_ping::PingsT& pings)
 {

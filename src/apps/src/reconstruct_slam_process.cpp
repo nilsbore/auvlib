@@ -24,6 +24,7 @@
 #include <future>
 
 using namespace std;
+using namespace data_structures;
 
 mbes_ping::PingsT construct_gp_pings(gp_submaps::ProcessT& gp, Eigen::Matrix2d& bb,
                                      int nbr_pings, int swath_width)
@@ -108,14 +109,14 @@ int main(int argc, char** argv)
     uintmax_t gps_bytes = boost::filesystem::file_size(gps_path);
 
     boost::filesystem::path track_benchmark_path(ss.dataset_name + "_benchmark.cereal");
-    track_error_benchmark track_benchmark = read_data<track_error_benchmark>(track_benchmark_path);
+    benchmark::track_error_benchmark track_benchmark = read_data<benchmark::track_error_benchmark>(track_benchmark_path);
 
-    registration_summary_benchmark benchmark(ss.dataset_name);
+    benchmark::registration_summary_benchmark benchmark(ss.dataset_name);
     for (int i = 0; i < ss.points.size(); ++i) {
-        Eigen::Matrix3d R = euler_to_matrix(ss.angles[i][0], ss.angles[i][1], ss.angles[i][2]);
+        Eigen::Matrix3d R = data_transforms::euler_to_matrix(ss.angles[i][0], ss.angles[i][1], ss.angles[i][2]);
         Eigen::Vector3d t = track_benchmark.submap_origin + ss.trans[i];
 
-        mbes_ping::PingsT pings_points = registration_summary_benchmark::get_submap_pings_index(track_benchmark.input_pings, i);
+        mbes_ping::PingsT pings_points = benchmark::registration_summary_benchmark::get_submap_pings_index(track_benchmark.input_pings, i);
         mbes_ping::PingsT pings_gps = construct_gp_pings(ss.gps[i], ss.bounds[i], pings_points.size(), 400);
         for (mbes_ping& ping : pings_gps) {
             ping.pos_ = R*ping.pos_ + t;

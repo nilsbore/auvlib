@@ -26,7 +26,7 @@ using SubmapsGPT = vector<vector<ProcessT> >; // Process does not require aligne
 using PointT = pcl::PointXYZRGB;
 using CloudT = pcl::PointCloud<PointT>;
 
-tuple<SubmapsGPT, TransT, RotsT> train_gps(SubmapsT& submaps, double lsq, double sigma, double s0)
+tuple<SubmapsGPT, TransT, RotsT> train_gps(submaps::SubmapsT& submaps, double lsq, double sigma, double s0)
 {
     //if (boost::filesystem::exists("gp_submaps.json")) {
     if (boost::filesystem::exists("gp_submaps.cereal")) {
@@ -62,7 +62,7 @@ tuple<SubmapsGPT, TransT, RotsT> train_gps(SubmapsT& submaps, double lsq, double
 			Eigen::Matrix3d R;
 			Eigen::Vector3d t;
             // this will also centralize the points
-			tie(t, R) = train_gp(submaps[i][j], gp);
+			tie(t, R) = submaps::train_gp(submaps[i][j], gp);
 			cout << "Main vector size: " << gps.size() << " and i is: " << i << endl;
 			cout << "Done training gp, pushing back to vector of size: " << gps[i].size() << endl;
 			trans[i][j] = t;
@@ -194,9 +194,9 @@ CloudT::Ptr construct_submap_and_gp_cloud(Eigen::MatrixXd points, ProcessT& gp,
 	return cloud;
 }
 
-SubmapsT load_submaps(const boost::filesystem::path& folder)
+submaps::SubmapsT load_submaps(const boost::filesystem::path& folder)
 {
-    SubmapsT submaps;
+    submaps::SubmapsT submaps;
     if (boost::filesystem::exists("submaps.cereal")) {
         std::ifstream is("submaps.cereal", std::ifstream::binary);
         {
@@ -208,7 +208,7 @@ SubmapsT load_submaps(const boost::filesystem::path& folder)
         is.close();
     }
     else {
-        submaps = read_submaps(folder);
+        submaps = submaps::read_submaps(folder);
     }
     return submaps;
 }
@@ -258,7 +258,7 @@ int main(int argc, char** argv)
 	TransT trans;
 	RotsT rots;
 
-    SubmapsT submaps = load_submaps(folder);
+    submaps::SubmapsT submaps = load_submaps(folder);
 
 	// NOTE: this function checks if the file submap_gps.json is available
 	// If it is, it will use the already trained gps. If you're using new
@@ -267,7 +267,7 @@ int main(int argc, char** argv)
 
 	tie(trans, rots) = distort_transforms(trans, rots);
     
-	Eigen::MatrixXd points3 = get_points_in_bound_transform(submaps[0][1], trans[0][1], rots[0][1], trans[0][0], rots[0][0], 465);
+	Eigen::MatrixXd points3 = submaps::get_points_in_bound_transform(submaps[0][1], trans[0][1], rots[0][1], trans[0][0], rots[0][0], 465);
     CloudT::Ptr cloud(new CloudT);
     for (int i = 0; i < submaps.size(); ++i) {
         for (int j = 0; j < submaps[i].size(); ++j) {

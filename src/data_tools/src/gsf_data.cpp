@@ -6,247 +6,9 @@
 
 using namespace std;
 
-/*
-% VEHICLE_POSE_FILE VERSION 3
-% 
-% File:          dr_pose_est.data
-% Date Created:  Thu Jun  9 22:06:01 2011
-% Created from:  bpslam
-% 
-% Timing Statistics: 
-%     Program took 0.533 minutes to process mission.
-%     Total Mission Time: 157.063 minutes.
-%     Start Nav Time: 1224108800.202
-%     Stop Time:  1224118223.970
-%     Start Map Time: 1224109095.920
-%     Loop closure detection took 0.058 minutes to process.
-%     Particle Weighting took -0.000 minutes to process.
-%     GP Raytracing took 0.000 minutes to process.
-%     GP Learning took 0.000 minutes to process.
-% SLAM Statistics: 
-%     Number of particles:    320
-%     Average number of particles:    320.000
-%     Number of resampling events passed:    0
-%     Number of resampling events prevented: 0
-%     Number of resampling events other: 0
-%     Number of multibeam poses available: 51416
-%     Number of multibeam poses stored: 11849
-%     Number of multibeam poses sampled: 2954
-%     Percentage of multibeam stored: 23.045%
-% 
-%     Percentage of multibeam sampled: 5.745%
-% 
-% 
-% Pose Statistics:
-% 	Number of Poses Written: 11849
-% 
-% 
-% Each line of this file describes the pose of the vehicle relative to the local
-% navigation frame. The vehicle poses may have been estimated since they are the
-% locations at which stereo images or multibeam sonar data were acquired.
-% 
-% If a pose was estimated because it was the location images were acquired,
-% additional information for that pose can be found in the file
-% stereo_pose_est.data. The pose identifier can be used to locate matching
-% poses.
-% 
-% The X and Y coordinates are produced using a local transverse Mercator 
-% projection using the WGS84 ellipsoid and a central meridian at the origin
-% latitude. You will probably want to use the provided latitude and longitude to
-% produce coordinates in what map projection you require.
-% 
-% The first two lines of the data contain the latitude and longitude of the
-% origin.
-% 
-% Each line contains the following items describing the pose of the vehicle:
-% 
-% 1) Pose identifier                   - integer value
-% 2) Timestamp                         - in seconds
-% 3) Latitude                          - in degrees
-% 4) Longitude                         - in degrees
-% 5) X position (Northing)             - in meters, relative to local nav frame
-% 6) Y position (Easting)              - in meters, relative to local nav frame
-% 7) Z position (Depth)                - in meters, relative to local nav frame
-% 8) X-axis Euler angle (Roll)         - in radians, relative to local nav frame
-% 9) Y-axis Euler angle (Pitch)        - in radians, relative to local nav frame
-% 10) Z-axis Euler angle (Yaw/Heading) - in radians, relative to local nav frame
-% 11) Altitude                         - in meters. (0 when unknown)
-*/
-template <>
-gsf_nav_entry::EntriesT parse_file(const boost::filesystem::path& file)
-{
-    gsf_nav_entry::EntriesT entries;
+namespace gsf_data {
 
-    gsf_nav_entry entry;
-    double x, y, z;
-    double time_seconds;
-    const boost::posix_time::ptime epoch = boost::posix_time::time_from_string("1970-01-01 00:00:00.000");
-	
-    string line;
-    std::ifstream infile(file.string());
-    while (std::getline(infile, line))  // this does the checking!
-    {
-        if (line.empty() || line[0] == '%' || line[0] == '\n') {
-            continue;
-        }
-        istringstream iss(line);
-
-        double roll, pitch, yaw;
-		iss >> entry.id_ >> time_seconds >> entry.lat_ >> entry.long_ >> x >> y >> z >> roll >> pitch >> yaw >> entry.altitude;
-        entry.pos_ = Eigen::Vector3d(y, x, -z);
-        entry.yaw_ = 0.5*M_PI-yaw-2.*M_PI;
-        entry.pitch_ = roll;
-        entry.roll_ = pitch;
-
-        entry.time_stamp_ = (long long)(1000. * time_seconds); // double seconds to milliseconds
-
-        boost::posix_time::ptime t = epoch + boost::posix_time::milliseconds(entry.time_stamp_);
-
-        stringstream time_ss;
-        time_ss << t;
-        entry.time_string_ = time_ss.str();
-
-		entries.push_back(entry);
-    }
-
-	return entries;
-}
-
-/*
-% SOUND_SPEED_FILE VERSION 1
-% 
-% Produced by mk_sound_speed
-% 
-% 
-% Each line of this file describes the sound speed measured 
-% at the time indicated.
-% 
-% On each line of the file are 4 items:
-% 
-% 1) Record identifier                  - integer value
-% 2) Timestamp                        - in seconds
-% 3) Sound speed at vehicle           - in meters/second
-% 4) Mean sound speed beneath vehicle - in meters/second (best guess)
-*/
-template <>
-gsf_sound_speed::SpeedsT parse_file(const boost::filesystem::path& file)
-{
-    gsf_sound_speed::SpeedsT speeds;
-
-    gsf_sound_speed speed;
-    double time_seconds;
-    int id_;
-    const boost::posix_time::ptime epoch = boost::posix_time::time_from_string("1970-01-01 00:00:00.000");
-	
-    string line;
-    std::ifstream infile(file.string());
-    while (std::getline(infile, line))  // this does the checking!
-    {
-        if (line.empty() || line[0] == '%' || line[0] == '\n') {
-            continue;
-        }
-        istringstream iss(line);
-
-		iss >> id_ >> time_seconds >> speed.near_speed >> speed.below_speed;
-
-        speed.time_stamp_ = (long long)(1000. * time_seconds); // double seconds to milliseconds
-
-        boost::posix_time::ptime t = epoch + boost::posix_time::milliseconds(speed.time_stamp_);
-
-        stringstream time_ss;
-        time_ss << t;
-        speed.time_string_ = time_ss.str();
-
-		speeds.push_back(speed);
-    }
-
-	return speeds;
-}
-
-// reads multibeam swaths from a .gsf file
-template <>
-gsf_mbes_ping::PingsT parse_file(const boost::filesystem::path& file)
-{
-    gsf_mbes_ping::PingsT pings;
-    if (boost::filesystem::extension(file) != ".gsf") {
-        return pings;
-    }
-
-    if (!boost::filesystem::exists(file)) {
-        cout << "File " << file << " does not exist, exiting..." << endl;
-        exit(0);
-    }
-    int handle;
-    //gsfOpen(file.string().c_str(), GSF_READONLY, &handle);
-    if (gsfOpen(file.string().c_str(), GSF_READONLY, &handle) != 0 || handle < 0)
-    {
-        cout << "File " << file << " could not be opened!" << endl;
-        return pings;
-        //exit(0);
-    }
-    //cout << "Result: " << result << ", handle: " << handle << endl;
-
-    gsfDataID data_id;
-    gsfRecords records;
-    const boost::posix_time::ptime epoch = boost::posix_time::time_from_string("1970-01-01 00:00:00.000");
-
-    while (gsfRead(handle, GSF_NEXT_RECORD, &data_id, &records, nullptr, 0) != -1) {
-        if (data_id.recordID == GSF_RECORD_SWATH_BATHYMETRY_PING) {
-            gsf_mbes_ping ping;
-            for (int i = 0; i < records.mb_ping.number_beams; ++i) {
-                ping.travel_times.push_back(records.mb_ping.travel_time[i]);
-                ping.beam_angles.push_back(records.mb_ping.beam_angle[i]);
-                ping.amplitudes.push_back(records.mb_ping.mr_amplitude[i]);
-            }
-            if (records.mb_ping.depth != nullptr) {
-                double x, y, z;
-                for (int i = 0; i < records.mb_ping.number_beams; ++i) {
-                    x = records.mb_ping.along_track[i];
-                    y = -records.mb_ping.across_track[i];
-                    z = -records.mb_ping.depth[i];
-                    ping.beams.push_back(Eigen::Vector3d(x, y, z));
-                }
-            }
-            if (records.mb_ping.heading != 0) {
-                ping.heading_ = M_PI/180.*records.mb_ping.heading;
-                ping.heading_ = 0.5*M_PI-ping.heading_; // TODO: need to keep this for old data
-                ping.roll_ = M_PI/180.*records.mb_ping.roll;
-                ping.pitch_ = M_PI/180.*records.mb_ping.pitch;
-            }
-            else {
-                ping.heading_ = ping.roll_ = ping.pitch_ = 0.;
-            }
-            if (records.mb_ping.latitude != 0) {
-                ping.lat_ = records.mb_ping.latitude;
-                ping.long_ = records.mb_ping.longitude;
-                ping.depth_ = records.mb_ping.depth_corrector;
-            }
-            else {
-                ping.lat_ = ping.long_ = ping.depth_ = 0.;
-            }
-
-            long long sec = records.mb_ping.ping_time.tv_sec;
-            long long nsec = records.mb_ping.ping_time.tv_nsec;
-            ping.time_stamp_ = 1000*sec + nsec/1000000;
-            boost::posix_time::ptime t = epoch + boost::posix_time::milliseconds(ping.time_stamp_);
-
-            stringstream time_ss;
-            time_ss << t;
-            ping.time_string_ = time_ss.str();
-
-            ping.first_in_file_ = false;
-            pings.push_back(ping);
-        }
-    }
-
-    gsfClose(handle);
-
-    if (!pings.empty()) {
-        pings[0].first_in_file_ = true;
-    }
-
-    return pings;
-}
+using namespace data_structures;
 
 void match_sound_speeds(gsf_mbes_ping::PingsT& pings, gsf_sound_speed::SpeedsT& speeds)
 {
@@ -395,7 +157,7 @@ mbes_ping::PingsT convert_pings(gsf_mbes_ping::PingsT& pings)
         new_ping.roll_ = ping.roll_;
         double easting, northing;
         string utm_zone;
-        tie(northing, easting, utm_zone) = lat_long_to_UTM(ping.lat_, ping.long_);
+        tie(northing, easting, utm_zone) = lat_long_utm::lat_long_to_UTM(ping.lat_, ping.long_);
         new_ping.pos_ = Eigen::Vector3d(easting, northing, -ping.depth_);
 
         //ping.pos_ = new_ping.pos_;
@@ -422,3 +184,252 @@ mbes_ping::PingsT convert_pings(gsf_mbes_ping::PingsT& pings)
     return new_pings;
 }
 
+} // namespace gsf_data
+
+namespace data_structures {
+
+using namespace gsf_data;
+
+/*
+% VEHICLE_POSE_FILE VERSION 3
+% 
+% File:          dr_pose_est.data
+% Date Created:  Thu Jun  9 22:06:01 2011
+% Created from:  bpslam
+% 
+% Timing Statistics: 
+%     Program took 0.533 minutes to process mission.
+%     Total Mission Time: 157.063 minutes.
+%     Start Nav Time: 1224108800.202
+%     Stop Time:  1224118223.970
+%     Start Map Time: 1224109095.920
+%     Loop closure detection took 0.058 minutes to process.
+%     Particle Weighting took -0.000 minutes to process.
+%     GP Raytracing took 0.000 minutes to process.
+%     GP Learning took 0.000 minutes to process.
+% SLAM Statistics: 
+%     Number of particles:    320
+%     Average number of particles:    320.000
+%     Number of resampling events passed:    0
+%     Number of resampling events prevented: 0
+%     Number of resampling events other: 0
+%     Number of multibeam poses available: 51416
+%     Number of multibeam poses stored: 11849
+%     Number of multibeam poses sampled: 2954
+%     Percentage of multibeam stored: 23.045%
+% 
+%     Percentage of multibeam sampled: 5.745%
+% 
+% 
+% Pose Statistics:
+% 	Number of Poses Written: 11849
+% 
+% 
+% Each line of this file describes the pose of the vehicle relative to the local
+% navigation frame. The vehicle poses may have been estimated since they are the
+% locations at which stereo images or multibeam sonar data were acquired.
+% 
+% If a pose was estimated because it was the location images were acquired,
+% additional information for that pose can be found in the file
+% stereo_pose_est.data. The pose identifier can be used to locate matching
+% poses.
+% 
+% The X and Y coordinates are produced using a local transverse Mercator 
+% projection using the WGS84 ellipsoid and a central meridian at the origin
+% latitude. You will probably want to use the provided latitude and longitude to
+% produce coordinates in what map projection you require.
+% 
+% The first two lines of the data contain the latitude and longitude of the
+% origin.
+% 
+% Each line contains the following items describing the pose of the vehicle:
+% 
+% 1) Pose identifier                   - integer value
+% 2) Timestamp                         - in seconds
+% 3) Latitude                          - in degrees
+% 4) Longitude                         - in degrees
+% 5) X position (Northing)             - in meters, relative to local nav frame
+% 6) Y position (Easting)              - in meters, relative to local nav frame
+% 7) Z position (Depth)                - in meters, relative to local nav frame
+% 8) X-axis Euler angle (Roll)         - in radians, relative to local nav frame
+% 9) Y-axis Euler angle (Pitch)        - in radians, relative to local nav frame
+% 10) Z-axis Euler angle (Yaw/Heading) - in radians, relative to local nav frame
+% 11) Altitude                         - in meters. (0 when unknown)
+*/
+template <>
+gsf_nav_entry::EntriesT parse_file(const boost::filesystem::path& file)
+{
+    gsf_nav_entry::EntriesT entries;
+
+    gsf_nav_entry entry;
+    double x, y, z;
+    double time_seconds;
+    const boost::posix_time::ptime epoch = boost::posix_time::time_from_string("1970-01-01 00:00:00.000");
+	
+    string line;
+    std::ifstream infile(file.string());
+    while (std::getline(infile, line))  // this does the checking!
+    {
+        if (line.empty() || line[0] == '%' || line[0] == '\n') {
+            continue;
+        }
+        istringstream iss(line);
+
+        double roll, pitch, yaw;
+		iss >> entry.id_ >> time_seconds >> entry.lat_ >> entry.long_ >> x >> y >> z >> roll >> pitch >> yaw >> entry.altitude;
+        entry.pos_ = Eigen::Vector3d(y, x, -z);
+        entry.yaw_ = 0.5*M_PI-yaw-2.*M_PI;
+        entry.pitch_ = roll;
+        entry.roll_ = pitch;
+
+        entry.time_stamp_ = (long long)(1000. * time_seconds); // double seconds to milliseconds
+
+        boost::posix_time::ptime t = epoch + boost::posix_time::milliseconds(entry.time_stamp_);
+
+        stringstream time_ss;
+        time_ss << t;
+        entry.time_string_ = time_ss.str();
+
+		entries.push_back(entry);
+    }
+
+	return entries;
+}
+
+// reads multibeam swaths from a .gsf file
+template <>
+gsf_mbes_ping::PingsT parse_file(const boost::filesystem::path& file)
+{
+    gsf_mbes_ping::PingsT pings;
+    if (boost::filesystem::extension(file) != ".gsf") {
+        return pings;
+    }
+
+    if (!boost::filesystem::exists(file)) {
+        cout << "File " << file << " does not exist, exiting..." << endl;
+        exit(0);
+    }
+    int handle;
+    //gsfOpen(file.string().c_str(), GSF_READONLY, &handle);
+    if (gsfOpen(file.string().c_str(), GSF_READONLY, &handle) != 0 || handle < 0)
+    {
+        cout << "File " << file << " could not be opened!" << endl;
+        return pings;
+        //exit(0);
+    }
+    //cout << "Result: " << result << ", handle: " << handle << endl;
+
+    gsfDataID data_id;
+    gsfRecords records;
+    const boost::posix_time::ptime epoch = boost::posix_time::time_from_string("1970-01-01 00:00:00.000");
+
+    while (gsfRead(handle, GSF_NEXT_RECORD, &data_id, &records, nullptr, 0) != -1) {
+        if (data_id.recordID == GSF_RECORD_SWATH_BATHYMETRY_PING) {
+            gsf_mbes_ping ping;
+            for (int i = 0; i < records.mb_ping.number_beams; ++i) {
+                ping.travel_times.push_back(records.mb_ping.travel_time[i]);
+                ping.beam_angles.push_back(records.mb_ping.beam_angle[i]);
+                ping.amplitudes.push_back(records.mb_ping.mr_amplitude[i]);
+            }
+            if (records.mb_ping.depth != nullptr) {
+                double x, y, z;
+                for (int i = 0; i < records.mb_ping.number_beams; ++i) {
+                    x = records.mb_ping.along_track[i];
+                    y = -records.mb_ping.across_track[i];
+                    z = -records.mb_ping.depth[i];
+                    ping.beams.push_back(Eigen::Vector3d(x, y, z));
+                }
+            }
+            if (records.mb_ping.heading != 0) {
+                ping.heading_ = M_PI/180.*records.mb_ping.heading;
+                ping.heading_ = 0.5*M_PI-ping.heading_; // TODO: need to keep this for old data
+                ping.roll_ = M_PI/180.*records.mb_ping.roll;
+                ping.pitch_ = M_PI/180.*records.mb_ping.pitch;
+            }
+            else {
+                ping.heading_ = ping.roll_ = ping.pitch_ = 0.;
+            }
+            if (records.mb_ping.latitude != 0) {
+                ping.lat_ = records.mb_ping.latitude;
+                ping.long_ = records.mb_ping.longitude;
+                ping.depth_ = records.mb_ping.depth_corrector;
+            }
+            else {
+                ping.lat_ = ping.long_ = ping.depth_ = 0.;
+            }
+
+            long long sec = records.mb_ping.ping_time.tv_sec;
+            long long nsec = records.mb_ping.ping_time.tv_nsec;
+            ping.time_stamp_ = 1000*sec + nsec/1000000;
+            boost::posix_time::ptime t = epoch + boost::posix_time::milliseconds(ping.time_stamp_);
+
+            stringstream time_ss;
+            time_ss << t;
+            ping.time_string_ = time_ss.str();
+
+            ping.first_in_file_ = false;
+            pings.push_back(ping);
+        }
+    }
+
+    gsfClose(handle);
+
+    if (!pings.empty()) {
+        pings[0].first_in_file_ = true;
+    }
+
+    return pings;
+}
+
+/*
+% SOUND_SPEED_FILE VERSION 1
+% 
+% Produced by mk_sound_speed
+% 
+% 
+% Each line of this file describes the sound speed measured 
+% at the time indicated.
+% 
+% On each line of the file are 4 items:
+% 
+% 1) Record identifier                  - integer value
+% 2) Timestamp                        - in seconds
+% 3) Sound speed at vehicle           - in meters/second
+% 4) Mean sound speed beneath vehicle - in meters/second (best guess)
+*/
+template <>
+gsf_sound_speed::SpeedsT parse_file(const boost::filesystem::path& file)
+{
+    gsf_sound_speed::SpeedsT speeds;
+
+    gsf_sound_speed speed;
+    double time_seconds;
+    int id_;
+    const boost::posix_time::ptime epoch = boost::posix_time::time_from_string("1970-01-01 00:00:00.000");
+	
+    string line;
+    std::ifstream infile(file.string());
+    while (std::getline(infile, line))  // this does the checking!
+    {
+        if (line.empty() || line[0] == '%' || line[0] == '\n') {
+            continue;
+        }
+        istringstream iss(line);
+
+		iss >> id_ >> time_seconds >> speed.near_speed >> speed.below_speed;
+
+        speed.time_stamp_ = (long long)(1000. * time_seconds); // double seconds to milliseconds
+
+        boost::posix_time::ptime t = epoch + boost::posix_time::milliseconds(speed.time_stamp_);
+
+        stringstream time_ss;
+        time_ss << t;
+        speed.time_string_ = time_ss.str();
+
+		speeds.push_back(speed);
+    }
+
+	return speeds;
+}
+
+} // namespace data_structures

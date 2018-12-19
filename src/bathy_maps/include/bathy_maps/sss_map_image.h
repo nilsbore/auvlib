@@ -69,10 +69,10 @@ public:
     sss_map_image finish();
 
     void add_waterfall_images(const Eigen::MatrixXd& hits, const Eigen::VectorXi& hits_inds,
-                              const xtf_sss_ping_side& ping, const Eigen::Vector3d& pos, bool is_left);
+                              const xtf_data::xtf_sss_ping_side& ping, const Eigen::Vector3d& pos, bool is_left);
 
     void add_hits(const Eigen::MatrixXd& hits, const Eigen::VectorXi& hits_inds,
-                  const xtf_sss_ping_side& ping, const Eigen::Vector3d& pos, bool is_left);
+                  const xtf_data::xtf_sss_ping_side& ping, const Eigen::Vector3d& pos, bool is_left);
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 

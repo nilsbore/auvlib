@@ -21,6 +21,7 @@
 #include <chrono>
 
 using namespace std;
+using namespace data_structures;
 
 void clip_submap(Eigen::MatrixXd& points, Eigen::Matrix2d& bounds, double minx, double maxx)
 {
@@ -66,8 +67,8 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT, ObsT> load_or_create_submaps(const bo
     mbes_ping::PingsT pings = parse_folder<mbes_ping>(pings_dir);
     nav_entry::EntriesT entries = parse_folder<nav_entry>(nav_dir);
 
-    match_timestamps(pings, entries);
-    divide_tracks(pings);
+    navi_data::match_timestamps(pings, entries);
+    navi_data::divide_tracks(pings);
     //divide_tracks_equal(pings);
 	//view_cloud(pings);
     ObsT submaps;
@@ -76,7 +77,7 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT, ObsT> load_or_create_submaps(const bo
     MatchesT matches;
     BBsT bounds;
     ObsT tracks;
-    tie(submaps, trans, angs, matches, bounds, tracks) = create_submaps(pings);
+    tie(submaps, trans, angs, matches, bounds, tracks) = navi_data::create_submaps(pings);
 
     std::ofstream os("navi_submaps.cereal", std::ofstream::binary);
     {
@@ -165,7 +166,7 @@ int main(int argc, char** argv)
         ss.gps.push_back(gp);
         cout << "Pushed back..." << endl;
 
-        ss.rots.push_back(euler_to_matrix(ss.angles[i](0), ss.angles[i](1), ss.angles[i](2)));
+        ss.rots.push_back(data_transforms::euler_to_matrix(ss.angles[i](0), ss.angles[i](1), ss.angles[i](2)));
 
         double len = (ss.tracks[i].bottomRows<1>() - ss.tracks[i].topRows<1>()).norm();
         cout << "Length of submap " << i << ": " << len << endl;
@@ -175,8 +176,8 @@ int main(int argc, char** argv)
     auto duration = chrono::duration_cast<chrono::milliseconds>(stop - start);
 
     // compute the matches of the submaps to be included in the optimization
-    ss.matches = compute_matches(ss.trans, ss.rots, ss.bounds);
-    ss.binary_constraints = compute_binary_constraints(ss.trans, ss.rots, ss.points, ss.tracks);
+    ss.matches = submaps::compute_matches(ss.trans, ss.rots, ss.bounds);
+    ss.binary_constraints = submaps::compute_binary_constraints(ss.trans, ss.rots, ss.points, ss.tracks);
 	
     IglVisCallback vis(ss.points, ss.gps, ss.trans, ss.angles, ss.bounds);
     vis.display();

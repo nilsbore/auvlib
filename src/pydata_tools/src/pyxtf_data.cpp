@@ -4,6 +4,9 @@
 #include <pybind11/eigen.h>
 #include <pybind11/stl.h>
 
+using namespace data_structures;
+using namespace xtf_data;
+
 namespace py = pybind11;
 
 PYBIND11_MODULE(xtf_data, m) {

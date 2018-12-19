@@ -6,6 +6,10 @@
 #include <pybind11/stl.h>
 #include <pybind11/functional.h>
 
+using namespace data_structures;
+using namespace xtf_data;
+using namespace csv_data;
+
 namespace py = pybind11;
 
 PYBIND11_MODULE(map_draper, m) {

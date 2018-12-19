@@ -12,6 +12,10 @@
 
 using namespace std;
 
+namespace all_data {
+
+using namespace data_structures;
+
 std::tuple<uint8_t, uint8_t, uint8_t> jet(double x)
 {
     const double rone = 0.8;
@@ -289,30 +293,6 @@ all_echosounder_depth read_datagram<all_echosounder_depth, all_echosounder_depth
     return entry;
 }
 
-template <>
-all_mbes_ping::PingsT parse_file<all_mbes_ping>(const boost::filesystem::path& path)
-{
-    return parse_file_impl<all_mbes_ping, all_xyz88_datagram, 88>(path);
-}
-
-template <>
-all_nav_entry::EntriesT parse_file<all_nav_entry>(const boost::filesystem::path& path)
-{
-    return parse_file_impl<all_nav_entry, all_position_datagram, 80>(path);
-}
-
-template <>
-all_nav_depth::EntriesT parse_file<all_nav_depth>(const boost::filesystem::path& path)
-{
-    return parse_file_impl<all_nav_depth, all_depth_datagram, 104>(path);
-}
-
-template <>
-all_echosounder_depth::EntriesT parse_file<all_echosounder_depth>(const boost::filesystem::path& path)
-{
-    return parse_file_impl<all_echosounder_depth, all_echosounder_depth_datagram, 69>(path);
-}
-
 mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_entry::EntriesT& entries)
 {
     mbes_ping::PingsT new_pings;
@@ -340,7 +320,7 @@ mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_
         if (pos == entries.end()) {
             double easting, northing;
             string utm_zone;
-            tie(northing, easting, utm_zone) = lat_long_to_UTM(entries.back().lat_, entries.back().long_);
+            tie(northing, easting, utm_zone) = lat_long_utm::lat_long_to_UTM(entries.back().lat_, entries.back().long_);
             new_ping.pos_ = Eigen::Vector3d(easting, northing, -ping.transducer_depth_);
             //new_ping.pos_ = Eigen::Vector3d(easting, northing, -entries.back().depth_);
         }
@@ -348,7 +328,7 @@ mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_
             if (pos == entries.begin()) {
                 double easting, northing;
                 string utm_zone;
-                tie(northing, easting, utm_zone) = lat_long_to_UTM(pos->lat_, pos->long_);
+                tie(northing, easting, utm_zone) = lat_long_utm::lat_long_to_UTM(pos->lat_, pos->long_);
                 new_ping.pos_ = Eigen::Vector3d(easting, northing, -ping.transducer_depth_);
                 //new_ping.pos_ = Eigen::Vector3d(easting, northing, -pos->depth_);
             }
@@ -360,7 +340,7 @@ mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_
                 double depth = previous.depth_ + ratio*(pos->depth_ - previous.depth_);
                 double easting, northing;
                 string utm_zone;
-                tie(northing, easting, utm_zone) = lat_long_to_UTM(lat, lon);
+                tie(northing, easting, utm_zone) = lat_long_utm::lat_long_to_UTM(lat, lon);
                 new_ping.pos_ = Eigen::Vector3d(easting, northing, -ping.transducer_depth_);
                 //new_ping.pos_ = Eigen::Vector3d(easting, northing, -depth);
             }
@@ -387,3 +367,35 @@ mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_
 
     return new_pings;
 }
+
+} // namespace all_data
+
+namespace data_structures {
+
+using namespace all_data;
+
+template <>
+all_mbes_ping::PingsT parse_file<all_mbes_ping>(const boost::filesystem::path& path)
+{
+    return parse_file_impl<all_mbes_ping, all_xyz88_datagram, 88>(path);
+}
+
+template <>
+all_nav_entry::EntriesT parse_file<all_nav_entry>(const boost::filesystem::path& path)
+{
+    return parse_file_impl<all_nav_entry, all_position_datagram, 80>(path);
+}
+
+template <>
+all_nav_depth::EntriesT parse_file<all_nav_depth>(const boost::filesystem::path& path)
+{
+    return parse_file_impl<all_nav_depth, all_depth_datagram, 104>(path);
+}
+
+template <>
+all_echosounder_depth::EntriesT parse_file<all_echosounder_depth>(const boost::filesystem::path& path)
+{
+    return parse_file_impl<all_echosounder_depth, all_echosounder_depth_datagram, 69>(path);
+}
+
+} // namespace data_structures

@@ -6,6 +6,8 @@
 #include <boost/filesystem.hpp>
 //#include <cereal/types/vector.hpp>
 
+namespace all_data {
+
 struct all_mbes_ping {
 
     using PingsT = std::vector<all_mbes_ping, Eigen::aligned_allocator<all_mbes_ping> >;
@@ -93,17 +95,23 @@ struct all_echosounder_depth {
 
 };
 
+data_structures::mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_entry::EntriesT& entries);
+
+} // namespace all_data
+
+namespace data_structures {
+
 //template <typename ReturnType>
 //std::vector<ReturnType, Eigen::aligned_allocator<ReturnType> > parse_file(const boost::filesystem::path& path);
 template <>
-all_mbes_ping::PingsT parse_file<all_mbes_ping>(const boost::filesystem::path& path);
+all_data::all_mbes_ping::PingsT parse_file(const boost::filesystem::path& path);
 
 template <>
-all_nav_entry::EntriesT parse_file<all_nav_entry>(const boost::filesystem::path& path);
+all_data::all_nav_entry::EntriesT parse_file(const boost::filesystem::path& path);
 
 template <>
-all_nav_depth::EntriesT parse_file<all_nav_depth>(const boost::filesystem::path& path);
+all_data::all_nav_depth::EntriesT parse_file(const boost::filesystem::path& path);
 
-mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_entry::EntriesT& entries);
+}
 
 #endif // ALL_DATA_H

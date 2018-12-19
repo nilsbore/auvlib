@@ -7,6 +7,8 @@
 #include <sonar_tracing/snell_ray_tracing.h>
 
 using namespace std;
+using namespace xtf_data;
+using namespace csv_data;
 
 pair<Eigen::MatrixXd, Eigen::MatrixXd> compute_sss_dirs(const Eigen::Matrix3d& R, double tilt_angle, double beam_width)
 {

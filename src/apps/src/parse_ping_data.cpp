@@ -17,6 +17,9 @@
 #include <chrono>
 
 using namespace std;
+using namespace data_structures;
+using namespace csv_data;
+using namespace gsf_data;
 
 pair<gsf_mbes_ping::PingsT, csv_nav_entry::EntriesT> load_or_parse_data(const boost::filesystem::path& swaths_folder,
                                                                         const boost::filesystem::path& poses_path)
@@ -144,7 +147,7 @@ int main(int argc, char** argv)
         if (counter % 100000 == 0) {
             double easting, northing;
             string utm_zone;
-            tie(northing, easting, utm_zone) = lat_long_to_UTM(entry.lat_, entry.long_);
+            tie(northing, easting, utm_zone) = lat_long_utm::lat_long_to_UTM(entry.lat_, entry.long_);
             cout << "Original easting northing: " << std::setprecision(9) << entry.pos_(0) << ", " << std::setprecision(9) << entry.pos_(1) << endl;
             cout << "New easting northing     : " << std::setprecision(9) << easting << ", " << std::setprecision(9) << northing << endl;
             cout << "UTM Zone: " << utm_zone << endl;
@@ -157,7 +160,7 @@ int main(int argc, char** argv)
         if (counter % 1000 == 0) {
             double easting, northing;
             string utm_zone;
-            tie(northing, easting, utm_zone) = lat_long_to_UTM(ping.lat_, ping.long_);
+            tie(northing, easting, utm_zone) = lat_long_utm::lat_long_to_UTM(ping.lat_, ping.long_);
             cout << "New easting northing     : " << std::setprecision(9) << easting << ", " << std::setprecision(9) << northing << endl;
             cout << "UTM Zone: " << utm_zone << endl;
             cout << "Lat, long: " << ping.lat_ << ", " << ping.long_ << endl;
@@ -166,7 +169,7 @@ int main(int argc, char** argv)
     }
     //view_cloud(pings);
 
-    track_error_benchmark benchmark(dataset_name);
+    benchmark::track_error_benchmark benchmark(dataset_name);
     
     benchmark.add_ground_truth(pings);
 

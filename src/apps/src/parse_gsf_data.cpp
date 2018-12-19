@@ -16,6 +16,8 @@
 #include <chrono>
 
 using namespace std;
+using namespace data_structures;
+using namespace gsf_data;
 
 void divide_gsf_map(mbes_ping::PingsT& pings)
 {
@@ -126,7 +128,7 @@ int main(int argc, char** argv)
 
     gp_submaps ss;
     ss.dataset_name = dataset_name;
-    tie(ss.points, ss.trans, ss.angles, ss.matches, ss.bounds, ss.tracks) = create_submaps(new_pings);
+    tie(ss.points, ss.trans, ss.angles, ss.matches, ss.bounds, ss.tracks) = navi_data::create_submaps(new_pings);
 
     auto start = chrono::high_resolution_clock::now();
     for (int i = 0; i < ss.points.size(); ++i) {
@@ -148,7 +150,7 @@ int main(int argc, char** argv)
         ss.gps.push_back(gp);
         cout << "Pushed back..." << endl;
 
-        ss.rots.push_back(euler_to_matrix(ss.angles[i](0), ss.angles[i](1), ss.angles[i](2)));
+        ss.rots.push_back(data_transforms::euler_to_matrix(ss.angles[i](0), ss.angles[i](1), ss.angles[i](2)));
     }
     auto stop = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::milliseconds>(stop - start);
@@ -165,7 +167,7 @@ int main(int argc, char** argv)
     }
     
     ss.matches = get_gsf_matches();
-    ss.binary_constraints = compute_binary_constraints(ss.trans, ss.rots, ss.points, ss.tracks);
+    ss.binary_constraints = submaps::compute_binary_constraints(ss.trans, ss.rots, ss.points, ss.tracks);
 	
     IglVisCallback vis(ss.points, ss.gps, ss.trans, ss.angles, ss.bounds);
     vis.display();
@@ -175,7 +177,7 @@ int main(int argc, char** argv)
     cout << "Time to train processes: " << duration.count() << " milliseconds" << endl;
     cout << "Wrote output submaps file " << path << endl;
     
-    track_error_benchmark benchmark(ss.dataset_name);
+    benchmark::track_error_benchmark benchmark(ss.dataset_name);
     
     benchmark.add_ground_truth(new_pings);
 
