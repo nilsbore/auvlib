@@ -1,5 +1,5 @@
-#ifndef DRAPING_GENERATOR_H
-#define DRAPING_GENERATOR_H
+#ifndef BASE_DRAPER_H
+#define BASE_DRAPER_H
 
 #include <igl/opengl/glfw/Viewer.h>
 #include <igl/opengl/gl.h>
@@ -9,7 +9,7 @@
 #include <data_tools/xtf_data.h>
 #include <data_tools/csv_data.h>
 
-struct draping_generator {
+struct BaseDraper {
 public:
 
     using BoundsT = Eigen::Matrix2d;
@@ -40,17 +40,10 @@ public:
     void set_ray_tracing_enabled(bool enabled);
     void set_vehicle_mesh(const Eigen::MatrixXd& new_V2, const Eigen::MatrixXi& new_F2, const Eigen::MatrixXd& new_C2);
 
-    /*
-    draping_generator(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1, const Eigen::MatrixXd& C1,
-        const Eigen::MatrixXd& V2, const Eigen::MatrixXi& F2, const Eigen::MatrixXd& C2,
-        const xtf_sss_ping::PingsT& pings, const Eigen::Vector3d& offset,
-        const csv_asvp_sound_speed::EntriesT& sound_speeds = csv_asvp_sound_speed::EntriesT(),
-        double sensor_yaw = 0.);
-    */
-    draping_generator(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
-                      const xtf_sss_ping::PingsT& pings,
-                      const BoundsT& bounds,
-                      const csv_asvp_sound_speed::EntriesT& sound_speeds = csv_asvp_sound_speed::EntriesT());
+    BaseDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
+               const xtf_sss_ping::PingsT& pings,
+               const BoundsT& bounds,
+               const csv_asvp_sound_speed::EntriesT& sound_speeds = csv_asvp_sound_speed::EntriesT());
 
     void show();
     std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::VectorXi, Eigen::VectorXi, Eigen::Vector3d> project_sss();
@@ -60,7 +53,7 @@ public:
 std::tuple<Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXd> get_vehicle_mesh();
 Eigen::MatrixXd color_jet_from_mesh(const Eigen::MatrixXd& V);
 void generate_draping(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
-                      const draping_generator::BoundsT& bounds, const xtf_sss_ping::PingsT& pings,
+                      const BaseDraper::BoundsT& bounds, const xtf_sss_ping::PingsT& pings,
                       const csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw);
 
-#endif // DRAPING_VIEWER_H
+#endif // BASE_DRAPER_H

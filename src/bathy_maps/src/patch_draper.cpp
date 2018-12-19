@@ -1,4 +1,4 @@
-#include <bathy_maps/draping_viewer.h>
+#include <bathy_maps/patch_draper.h>
 
 #include <igl/readSTL.h>
 #include <igl/unproject_onto_mesh.h>
@@ -6,19 +6,19 @@
 
 using namespace std;
 
-draping_patches::draping_patches(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
-                                 const xtf_sss_ping::PingsT& pings,
-                                 const BoundsT& bounds,
-                                 const csv_asvp_sound_speed::EntriesT& sound_speeds)
-    : draping_generator(V1, F1, pings, bounds, sound_speeds), save_callback(&default_callback)
+PatchDraper::PatchDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
+                         const xtf_sss_ping::PingsT& pings,
+                         const BoundsT& bounds,
+                         const csv_asvp_sound_speed::EntriesT& sound_speeds)
+    : BaseDraper(V1, F1, pings, bounds, sound_speeds), save_callback(&default_callback)
 {
     is_active = Eigen::VectorXi(pings.size()); is_active.setOnes();
 
-    viewer.callback_mouse_down = std::bind(&draping_patches::callback_mouse_down, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-    viewer.callback_pre_draw = std::bind(&draping_patches::callback_pre_draw, this, std::placeholders::_1);
+    viewer.callback_mouse_down = std::bind(&PatchDraper::callback_mouse_down, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    viewer.callback_pre_draw = std::bind(&PatchDraper::callback_pre_draw, this, std::placeholders::_1);
 }
 
-void draping_patches::handle_patches()
+void PatchDraper::handle_patches()
 {
     int skipped = 0;
     for (; i < pings.size() && is_active[i] == 0; ++i, ++skipped) {}
@@ -43,14 +43,14 @@ void draping_patches::handle_patches()
     patch_assembler.add_hits(hits_right_intensities, pos);
 }
 
-bool draping_patches::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
+bool PatchDraper::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
 {
     handle_patches();
     i += 1;
     return false;
 }
 
-bool draping_patches::callback_mouse_down(igl::opengl::glfw::Viewer& viewer, int, int)
+bool PatchDraper::callback_mouse_down(igl::opengl::glfw::Viewer& viewer, int, int)
 {
     cout << "Got mouse callback!" << endl;
     int fid;
@@ -87,7 +87,7 @@ bool draping_patches::callback_mouse_down(igl::opengl::glfw::Viewer& viewer, int
     return false;
 }
 
-bool draping_patches::callback_key_pressed(igl::opengl::glfw::Viewer& viewer, unsigned int key, int mods)
+bool PatchDraper::callback_key_pressed(igl::opengl::glfw::Viewer& viewer, unsigned int key, int mods)
 {
     switch (key) {
     case 'n':
@@ -103,13 +103,13 @@ bool draping_patches::callback_key_pressed(igl::opengl::glfw::Viewer& viewer, un
     }
 }
 
-sss_patch_views::ViewsT draping_patches::get_patch_views()
+sss_patch_views::ViewsT PatchDraper::get_patch_views()
 {
     return patch_views;
 }
 
 sss_patch_views::ViewsT overlay_sss(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
-                                    const draping_patches::BoundsT& bounds, const xtf_sss_ping::PingsT& pings,
+                                    const PatchDraper::BoundsT& bounds, const xtf_sss_ping::PingsT& pings,
                                     const csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw,
                                     const std::function<void(sss_patch_views)>& save_callback)
 {
@@ -118,7 +118,7 @@ sss_patch_views::ViewsT overlay_sss(const Eigen::MatrixXd& V, const Eigen::Matri
     Eigen::MatrixXd Cb;
     tie(Vb, Fb, Cb) = get_vehicle_mesh();
 
-    draping_patches viewer(V, F, pings, bounds, sound_speeds);
+    PatchDraper viewer(V, F, pings, bounds, sound_speeds);
     viewer.set_sidescan_yaw(sensor_yaw);
     viewer.set_patch_callback(save_callback);
     viewer.set_vehicle_mesh(Vb, Fb, Cb);

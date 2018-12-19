@@ -9,7 +9,7 @@
 
 #include <bathy_maps/draw_map.h>
 #include <bathy_maps/mesh_map.h>
-#include <bathy_maps/draping_viewer.h>
+#include <bathy_maps/patch_draper.h>
 
 #include <opencv2/highgui/highgui.hpp>
 #include <chrono>

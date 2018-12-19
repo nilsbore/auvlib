@@ -26,11 +26,11 @@ add_library(mesh_map src/mesh_map.cpp)
 
 add_library(drape_mesh src/drape_mesh.cpp)
 
-add_library(draping_generator src/draping_generator.cpp)
+add_library(base_draper src/base_draper.cpp)
 
-add_library(draping_viewer src/draping_viewer.cpp)
+add_library(patch_draper src/patch_draper.cpp)
 
-add_library(draping_image src/draping_image.cpp)
+add_library(map_draper src/map_draper.cpp)
 
 add_library(patch_views src/patch_views.cpp)
 
@@ -56,17 +56,17 @@ target_include_directories(drape_mesh PUBLIC
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
 
-target_include_directories(draping_generator PUBLIC
+target_include_directories(base_draper PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
 
-target_include_directories(draping_viewer PUBLIC
+target_include_directories(patch_draper PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
 
-target_include_directories(draping_image PUBLIC
+target_include_directories(map_draper PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
@@ -89,7 +89,7 @@ target_link_libraries(draw_map data_structures ${OpenCV_LIBS})
 #target_link_libraries(mesh_map data_structures igl::embree ${OpenCV_LIBS} glad ${GLFW3_LIBRARY} ${OPENGL_LIBRARY} ${OPENGL_glu_LIBRARY} -lpthread)
 target_link_libraries(mesh_map data_structures ${OpenCV_LIBS} igl::core igl::opengl_glfw -lpthread)
 
-target_link_libraries(test_mesh data_structures gsf_data xtf_data csv_data navi_data mesh_map draw_map draping_viewer ${OpenCV_LIBS})
+target_link_libraries(test_mesh data_structures gsf_data xtf_data csv_data navi_data mesh_map draw_map patch_draper ${OpenCV_LIBS})
 
 target_link_libraries(drape_mesh snell_ray_tracing xtf_data igl::embree igl::core igl::opengl_glfw)
 
@@ -97,15 +97,15 @@ target_link_libraries(patch_views eigen_cereal ${OpenCV_LIBS})
 
 target_link_libraries(sss_map_image eigen_cereal xtf_data ${OpenCV_LIBS})
 
-target_link_libraries(draping_generator drape_mesh xtf_data patch_views ${OpenCV_LIBS} igl::core igl::opengl_glfw -lpthread)
+target_link_libraries(base_draper drape_mesh xtf_data patch_views ${OpenCV_LIBS} igl::core igl::opengl_glfw -lpthread)
 
-target_link_libraries(draping_viewer drape_mesh draping_generator xtf_data patch_views ${OpenCV_LIBS} igl::core igl::opengl_glfw -lpthread)
+target_link_libraries(patch_draper drape_mesh base_draper xtf_data patch_views ${OpenCV_LIBS} igl::core igl::opengl_glfw -lpthread)
 
-target_link_libraries(draping_image drape_mesh draping_generator xtf_data sss_map_image ${OpenCV_LIBS} igl::core igl::opengl_glfw -lpthread)
+target_link_libraries(map_draper drape_mesh base_draper xtf_data sss_map_image ${OpenCV_LIBS} igl::core igl::opengl_glfw -lpthread)
 
 
 # 'make install' to the correct locations (provided by GNUInstallDirs).
-install(TARGETS draw_map mesh_map drape_mesh draping_viewer draping_generator draping_image patch_views sss_map_image EXPORT BathyMapsConfig
+install(TARGETS draw_map mesh_map drape_mesh patch_draper base_draper map_draper patch_views sss_map_image EXPORT BathyMapsConfig
     ARCHIVE  DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR})  # This is for Windows
@@ -117,4 +117,4 @@ install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(EXPORT BathyMapsConfig DESTINATION share/BathyMaps/cmake)
 
 # This makes the project importable from the build directory
-export(TARGETS draw_map mesh_map drape_mesh draping_viewer draping_generator draping_image patch_views sss_map_image FILE BathyMapsConfig.cmake)
+export(TARGETS draw_map mesh_map drape_mesh patch_draper base_draper map_draper patch_views sss_map_image FILE BathyMapsConfig.cmake)

@@ -35,12 +35,12 @@ set_target_properties(pydraw_map PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
                                             OUTPUT_NAME "draw_map"
                                             SUFFIX "${PYTHON_MODULE_EXTENSION}")
 
-target_link_libraries(pydraping_viewer PRIVATE draping_viewer draping_generator igl::embree ${OpenCV_LIBS} ${BOOST_LIBRARIES} igl::core igl::opengl_glfw -lpthread pybind11::module)
+target_link_libraries(pydraping_viewer PRIVATE patch_draper base_draper igl::embree ${OpenCV_LIBS} ${BOOST_LIBRARIES} igl::core igl::opengl_glfw -lpthread pybind11::module)
 set_target_properties(pydraping_viewer PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
                                                   OUTPUT_NAME "draping_viewer"
                                                   SUFFIX "${PYTHON_MODULE_EXTENSION}")
 
-target_link_libraries(pydraping_image PRIVATE draping_image draping_generator igl::embree ${OpenCV_LIBS} ${BOOST_LIBRARIES} igl::core igl::opengl_glfw -lpthread pybind11::module)
+target_link_libraries(pydraping_image PRIVATE map_draper base_draper igl::embree ${OpenCV_LIBS} ${BOOST_LIBRARIES} igl::core igl::opengl_glfw -lpthread pybind11::module)
 set_target_properties(pydraping_image PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
                                                   OUTPUT_NAME "draping_image"
                                                   SUFFIX "${PYTHON_MODULE_EXTENSION}")

@@ -1,14 +1,14 @@
-#include <bathy_maps/draping_generator.h>
+#include <bathy_maps/base_draper.h>
 
 #include <igl/readSTL.h>
 #include <bathy_maps/drape_mesh.h>
 
 using namespace std;
 
-draping_generator::draping_generator(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
-                                     const xtf_sss_ping::PingsT& pings,
-                                     const BoundsT& bounds,
-                                     const csv_asvp_sound_speed::EntriesT& sound_speeds)
+BaseDraper::BaseDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
+                       const xtf_sss_ping::PingsT& pings,
+                       const BoundsT& bounds,
+                       const csv_asvp_sound_speed::EntriesT& sound_speeds)
     : pings(pings), i(0), V1(V1), F1(F1),
       sound_speeds(sound_speeds), sensor_yaw(0.),
       ray_tracing_enabled(false)
@@ -40,7 +40,7 @@ draping_generator::draping_generator(const Eigen::MatrixXd& V1, const Eigen::Mat
     viewer.data().point_size = 10;
     viewer.data().line_width = 1;
 
-    viewer.callback_pre_draw = std::bind(&draping_generator::callback_pre_draw, this, std::placeholders::_1);
+    viewer.callback_pre_draw = std::bind(&BaseDraper::callback_pre_draw, this, std::placeholders::_1);
 
     viewer.core.is_animating = true;
     viewer.core.animation_max_fps = 30.;
@@ -48,7 +48,7 @@ draping_generator::draping_generator(const Eigen::MatrixXd& V1, const Eigen::Mat
     viewer.core.background_color << 1., 1., 1., 1.; // white background
 }
 
-void draping_generator::set_vehicle_mesh(const Eigen::MatrixXd& new_V2, const Eigen::MatrixXi& new_F2, const Eigen::MatrixXd& new_C2)
+void BaseDraper::set_vehicle_mesh(const Eigen::MatrixXd& new_V2, const Eigen::MatrixXi& new_F2, const Eigen::MatrixXd& new_C2)
 {
     V2 = new_V2;
     F2 = new_F2;
@@ -71,12 +71,12 @@ void draping_generator::set_vehicle_mesh(const Eigen::MatrixXd& new_V2, const Ei
     viewer.data().set_colors(C);
 }
 
-void draping_generator::show()
+void BaseDraper::show()
 {
     viewer.launch();
 }
 
-tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::VectorXi, Eigen::VectorXi, Eigen::Vector3d> draping_generator::project_sss()
+tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::VectorXi, Eigen::VectorXi, Eigen::Vector3d> BaseDraper::project_sss()
 {
 
     cout << "Setting new position: " << pings[i].pos_.transpose() << endl;
@@ -142,7 +142,7 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::VectorXi, Eigen::VectorXi, Eigen:
 }
 
 
-bool draping_generator::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
+bool BaseDraper::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
 {
     glEnable(GL_CULL_FACE);
 
@@ -154,7 +154,7 @@ bool draping_generator::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
     return false;
 }
 
-void draping_generator::set_ray_tracing_enabled(bool enabled)
+void BaseDraper::set_ray_tracing_enabled(bool enabled)
 {
     ray_tracing_enabled = enabled;
 }
@@ -182,7 +182,7 @@ Eigen::MatrixXd color_jet_from_mesh(const Eigen::MatrixXd& V)
 }
 
 void generate_draping(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
-                      const draping_generator::BoundsT& bounds, const xtf_sss_ping::PingsT& pings,
+                      const BaseDraper::BoundsT& bounds, const xtf_sss_ping::PingsT& pings,
                       const csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw)
 {
     Eigen::MatrixXd Vb;
@@ -190,7 +190,7 @@ void generate_draping(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
     Eigen::MatrixXd Cb;
     tie(Vb, Fb, Cb) = get_vehicle_mesh();
 
-    draping_generator viewer(V, F, pings, bounds, sound_speeds);
+    BaseDraper viewer(V, F, pings, bounds, sound_speeds);
     viewer.set_sidescan_yaw(sensor_yaw);
     viewer.set_vehicle_mesh(Vb, Fb, Cb);
     //viewer.set_ray_tracing_enabled(true);
