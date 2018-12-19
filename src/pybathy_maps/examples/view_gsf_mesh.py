@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 from pydata_tools import data_structures, gsf_data, xtf_data, csv_data
-from pybathy_maps import mesh_map, draping_viewer
+from pybathy_maps import mesh_map, patch_draper
 import sys
 import os
 import numpy as np
@@ -111,7 +111,7 @@ class PatchPlotter(object):
         #plt.imshow(map_image.sss_map_image, cmap=plt.jet())
         #plt.show()
         self.patches.append(patch_views)
-        draping_viewer.write_data(self.patches, "patch_views_cache.cereal")
+        patch_draper.write_data(self.patches, "patch_views_cache.cereal")
         plot_patch_views(self.patches)
 
 m, V, F, bounds = create_mesh(sys.argv[1])
@@ -123,21 +123,21 @@ xtf_pings = xtf_data.correct_sensor_offset(xtf_pings, np.array([2., -1.5, 0.]))
 sound_speeds = csv_data.csv_asvp_sound_speed.parse_file(sys.argv[4])
 
 sensor_yaw = 5.*math.pi/180.
-#draping_viewer.generate_draping(V, F, bounds, xtf_pings, sound_speeds, sensor_yaw)
+#patch_draper.generate_draping(V, F, bounds, xtf_pings, sound_speeds, sensor_yaw)
 
 plotter = PatchPlotter()
-#patch_views = draping_viewer.overlay_sss(V, F, bounds, xtf_pings, sound_speeds, sensor_yaw, plotter.plot_callback)
-#draping_viewer.write_data(patch_views, "patch_views.cereal")
+#patch_views = patch_draper.overlay_sss(V, F, bounds, xtf_pings, sound_speeds, sensor_yaw, plotter.plot_callback)
+#patch_draper.write_data(patch_views, "patch_views.cereal")
 
 #plt.show()
 
-Vb, Fb, Cb = draping_viewer.get_vehicle_mesh()
-viewer = draping_viewer.BaseDraper(V, F, xtf_pings, bounds, sound_speeds)
-#viewer = draping_viewer.PatchDraper(V, F, xtf_pings, bounds, sound_speeds)
+Vb, Fb, Cb = patch_draper.get_vehicle_mesh()
+viewer = patch_draper.BaseDraper(V, F, xtf_pings, bounds, sound_speeds)
+#viewer = patch_draper.PatchDraper(V, F, xtf_pings, bounds, sound_speeds)
 viewer.set_sidescan_yaw(sensor_yaw)
 viewer.set_vehicle_mesh(Vb, Fb, Cb)
 viewer.set_ray_tracing_enabled(True)
 #viewer.set_patch_callback(plotter.plot_callback)
 viewer.show()
 #patch_views = viewer.get_patch_views()
-#draping_viewer.write_data(patch_views, "patch_views.cereal")
+#patch_draper.write_data(patch_views, "patch_views.cereal")

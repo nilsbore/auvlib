@@ -2,8 +2,8 @@ project(pybathy_maps)
 
 add_library(pymesh_map MODULE src/pymesh_map.cpp)
 add_library(pydraw_map MODULE src/pydraw_map.cpp)
-add_library(pydraping_viewer MODULE src/pydraping_viewer.cpp)
-add_library(pydraping_image MODULE src/pydraping_image.cpp)
+add_library(pypatch_draper MODULE src/pypatch_draper.cpp)
+add_library(pymap_draper MODULE src/pymap_draper.cpp)
 
 target_include_directories(pymesh_map PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -15,12 +15,12 @@ target_include_directories(pydraw_map PUBLIC
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
 
-target_include_directories(pydraping_viewer PUBLIC
+target_include_directories(pypatch_draper PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
 
-target_include_directories(pydraping_image PUBLIC
+target_include_directories(pymap_draper PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
@@ -35,17 +35,17 @@ set_target_properties(pydraw_map PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
                                             OUTPUT_NAME "draw_map"
                                             SUFFIX "${PYTHON_MODULE_EXTENSION}")
 
-target_link_libraries(pydraping_viewer PRIVATE patch_draper base_draper igl::embree ${OpenCV_LIBS} ${BOOST_LIBRARIES} igl::core igl::opengl_glfw -lpthread pybind11::module)
-set_target_properties(pydraping_viewer PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
-                                                  OUTPUT_NAME "draping_viewer"
+target_link_libraries(pypatch_draper PRIVATE patch_draper base_draper igl::embree ${OpenCV_LIBS} ${BOOST_LIBRARIES} igl::core igl::opengl_glfw -lpthread pybind11::module)
+set_target_properties(pypatch_draper PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
+                                                  OUTPUT_NAME "patch_draper"
                                                   SUFFIX "${PYTHON_MODULE_EXTENSION}")
 
-target_link_libraries(pydraping_image PRIVATE map_draper base_draper igl::embree ${OpenCV_LIBS} ${BOOST_LIBRARIES} igl::core igl::opengl_glfw -lpthread pybind11::module)
-set_target_properties(pydraping_image PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
-                                                  OUTPUT_NAME "draping_image"
+target_link_libraries(pymap_draper PRIVATE map_draper base_draper igl::embree ${OpenCV_LIBS} ${BOOST_LIBRARIES} igl::core igl::opengl_glfw -lpthread pybind11::module)
+set_target_properties(pymap_draper PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
+                                                  OUTPUT_NAME "map_draper"
                                                   SUFFIX "${PYTHON_MODULE_EXTENSION}")
 
-install(TARGETS pymesh_map pydraw_map pydraping_viewer pydraping_image
+install(TARGETS pymesh_map pydraw_map pypatch_draper pymap_draper
     LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}/pybathy_maps
 )  # This is for Windows
 

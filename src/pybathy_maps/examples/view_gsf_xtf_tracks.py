@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 from pydata_tools import data_structures, gsf_data, xtf_data, csv_data
-from pybathy_maps import draw_map, mesh_map, draping_viewer
+from pybathy_maps import draw_map, mesh_map, patch_draper
 import sys
 import os
 

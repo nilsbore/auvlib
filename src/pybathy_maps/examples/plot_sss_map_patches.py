@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import matplotlib.pyplot as plt
-from pybathy_maps import draping_viewer, draping_image, mesh_map
+from pybathy_maps import patch_draper, map_draper, mesh_map
 from pydata_tools import data_structures, gsf_data
 from numpy import sign
 import numpy as np
@@ -9,7 +9,7 @@ from copy import deepcopy
 import sys
 import os
 
-#patch_views = draping_viewer.sss_patch_views.read_data(sys.argv[1])
+#patch_views = patch_draper.sss_patch_views.read_data(sys.argv[1])
 #patch_views.append(patch_views[0])
 
 def parse_or_load_gsf(path):
@@ -77,7 +77,7 @@ def plot_patch_views(patch_views):
 
     plt.show()
 
-map_images = draping_image.sss_map_image.read_data("map_images_cache.cereal")
+map_images = map_draper.sss_map_image.read_data("map_images_cache.cereal")
 
 map_image = map_images[0]
 resolution = (map_image.bounds[1, 0]-map_image.bounds[0, 0])/float(map_image.sss_map_image.shape[1])
@@ -87,7 +87,7 @@ height_map = generate_or_load_height_map(sys.argv[1], resolution)
 print "Height map shape: ", height_map.shape
 print "SSS map shape: ", map_image.sss_map_image.shape
 
-patch_views = draping_image.convert_maps_to_patches(map_images, height_map, 8.)
+patch_views = map_draper.convert_maps_to_patches(map_images, height_map, 8.)
 
 print "Number of patches :", len(patch_views)
 

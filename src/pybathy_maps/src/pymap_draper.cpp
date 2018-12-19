@@ -8,7 +8,7 @@
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(draping_image, m) {
+PYBIND11_MODULE(map_draper, m) {
     m.doc() = "Functions for draping a mesh with sidescan data"; // optional module docstring
     py::class_<sss_map_image>(m, "sss_map_image", "Class for sidescan views of a patch from different survey lines")
         .def(py::init<>())

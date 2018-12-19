@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 from pydata_tools import data_structures, gsf_data, xtf_data, csv_data
-from pybathy_maps import mesh_map, draping_viewer, draping_image
+from pybathy_maps import mesh_map, patch_draper, map_draper
 import matplotlib.pyplot as plt
 import sys
 import os
@@ -68,7 +68,7 @@ class MapImageSaver(object):
         #plt.imshow(map_image.sss_map_image, cmap=plt.jet())
         #plt.show()
         self.map_images.append(map_image)
-        draping_image.write_data(self.map_images, "map_images_cache.cereal")
+        map_draper.write_data(self.map_images, "map_images_cache.cereal")
 
 m, V, F, bounds = create_mesh(sys.argv[1])
 #m.display_mesh(V, F)
@@ -78,10 +78,10 @@ xtf_pings = xtf_data.correct_sensor_offset(xtf_pings, np.array([2., -1.5, 0.]))
 
 sound_speeds = csv_data.csv_asvp_sound_speed.parse_file(sys.argv[4])
 
-#draping_viewer.generate_draping(V, F, bounds, xtf_pings, sound_speeds)
+#patch_draper.generate_draping(V, F, bounds, xtf_pings, sound_speeds)
 resolution = 30./8.
 sensor_yaw = 5.*math.pi/180.
 
 saver = MapImageSaver()
-map_images = draping_image.drape_images(V, F, bounds, xtf_pings, sound_speeds, sensor_yaw, resolution, saver.save_callback)
-draping_image.write_data(map_images, "map_images.cereal")
+map_images = map_draper.drape_images(V, F, bounds, xtf_pings, sound_speeds, sensor_yaw, resolution, saver.save_callback)
+map_draper.write_data(map_images, "map_images.cereal")

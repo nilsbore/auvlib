@@ -1,13 +1,13 @@
 #!/usr/bin/python
 
 import matplotlib.pyplot as plt
-from pybathy_maps import draping_viewer
+from pybathy_maps import patch_draper
 from numpy import sign
 import numpy as np
 from copy import deepcopy
 import sys
 
-patch_views = draping_viewer.sss_patch_views.read_data(sys.argv[1])
+patch_views = patch_draper.sss_patch_views.read_data(sys.argv[1])
 #patch_views.append(patch_views[0])
 
 print "Number of patches :", len(patch_views)
