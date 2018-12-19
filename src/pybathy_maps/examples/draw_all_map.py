@@ -16,6 +16,5 @@ d.draw_track(mbes_pings)
 d.write_image("all_height_map.png")
 d.show()
 
-m = mesh_map.bathy_map_mesh()
-V, F, bounds = m.mesh_from_pings(mbes_pings, 2.0)
-m.display_mesh(V, F)
+V, F, bounds = mesh_map.mesh_from_pings(mbes_pings, 2.0)
+mesh_map.show_mesh(V, F)

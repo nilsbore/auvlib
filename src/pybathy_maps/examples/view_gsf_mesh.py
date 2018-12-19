@@ -41,10 +41,9 @@ def create_mesh(path):
 
     gsf_pings = parse_or_load_gsf(path)
     mbes_pings = gsf_data.convert_pings(gsf_pings)
-    m = mesh_map.bathy_map_mesh()
-    V, F, bounds = m.mesh_from_pings(mbes_pings, 0.5)
+    V, F, bounds = mesh_map.mesh_from_pings(mbes_pings, 0.5)
 
-    return m, V, F, bounds
+    return V, F, bounds
 
 def match_or_load_xtf(xtf_path, csv_path):
 
@@ -114,8 +113,8 @@ class PatchPlotter(object):
         patch_draper.write_data(self.patches, "patch_views_cache.cereal")
         plot_patch_views(self.patches)
 
-m, V, F, bounds = create_mesh(sys.argv[1])
-#m.display_mesh(V, F)
+V, F, bounds = create_mesh(sys.argv[1])
+mesh_map.show_mesh(V, F)
 
 xtf_pings = match_or_load_xtf(sys.argv[2], sys.argv[3])
 xtf_pings = xtf_data.correct_sensor_offset(xtf_pings, np.array([2., -1.5, 0.]))

@@ -10,6 +10,8 @@
 
 using namespace std;
 
+namespace mesh_map {
+
 std::tuple<uint8_t, uint8_t, uint8_t> jet_mesh(double x)
 {
     const double rone = 0.8;
@@ -44,7 +46,7 @@ std::tuple<uint8_t, uint8_t, uint8_t> jet_mesh(double x)
     return std::make_tuple(uint8_t(255.*r), uint8_t(255.*g), uint8_t(255.*b));
 }
 
-void bathy_map_mesh::display_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F)
+void show_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F)
 {
     igl::opengl::glfw::Viewer viewer;
 	viewer.data().set_mesh(V, F);
@@ -67,7 +69,7 @@ void bathy_map_mesh::display_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixX
 	viewer.launch();
 }
 
-void bathy_map_mesh::display_height_map(const Eigen::MatrixXd& height_map)
+void show_height_map(const Eigen::MatrixXd& height_map)
 {
     double minv = height_map.minCoeff();
     Eigen::ArrayXXd height_map_array = height_map.array();
@@ -92,7 +94,7 @@ void bathy_map_mesh::display_height_map(const Eigen::MatrixXd& height_map)
     cv::waitKey();
 }
 
-pair<Eigen::MatrixXd, bathy_map_mesh::BoundsT> bathy_map_mesh::height_map_from_pings(const mbes_ping::PingsT& pings, double res)
+pair<Eigen::MatrixXd, BoundsT> height_map_from_pings(const mbes_ping::PingsT& pings, double res)
 {
     auto xcomp = [](const mbes_ping& p1, const mbes_ping& p2) {
         return p1.pos_[0] < p2.pos_[0];
@@ -137,7 +139,7 @@ pair<Eigen::MatrixXd, bathy_map_mesh::BoundsT> bathy_map_mesh::height_map_from_p
     return make_pair(means, bounds);
 }
 
-pair<Eigen::MatrixXd, Eigen::MatrixXi> bathy_map_mesh::mesh_from_height_map(const Eigen::MatrixXd& height_map, const BoundsT& bounds)
+pair<Eigen::MatrixXd, Eigen::MatrixXi> mesh_from_height_map(const Eigen::MatrixXd& height_map, const BoundsT& bounds)
 {
     // these are the bottom-left corners and top-right corners of height map respectively
 	double maxx = bounds(1, 0);
@@ -183,7 +185,7 @@ pair<Eigen::MatrixXd, Eigen::MatrixXi> bathy_map_mesh::mesh_from_height_map(cons
     return make_pair(V, F);
 }
 
-tuple<Eigen::MatrixXd, Eigen::MatrixXi, bathy_map_mesh::BoundsT> bathy_map_mesh::mesh_from_pings(const mbes_ping::PingsT& pings, double res)
+tuple<Eigen::MatrixXd, Eigen::MatrixXi, BoundsT> mesh_from_pings(const mbes_ping::PingsT& pings, double res)
 {
     Eigen::MatrixXd height_map;
     BoundsT bounds;
@@ -196,3 +198,4 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXi, bathy_map_mesh::BoundsT> bathy_map_mesh:
 }
 
 
+} // namespace mesh_map

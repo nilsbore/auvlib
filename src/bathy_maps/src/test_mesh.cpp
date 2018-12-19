@@ -125,17 +125,16 @@ int main(int argc, char** argv)
         cout << "Time stamp: " << entries[counter].time_string_ << endl;
     }
 
-    bathy_map_mesh mesh;
     Eigen::MatrixXd V;
     Eigen::MatrixXi F;
-    bathy_map_mesh::BoundsT bounds;
+    mesh_map::BoundsT bounds;
 
     // we need to separate the reading of mbes and side scan pings since they consume a lot of memory
     {
         gsf_mbes_ping::PingsT pings_mbes = load_or_parse_pings<gsf_mbes_ping>(mbes_folder, dataset_name + "_mbes");
         mbes_ping::PingsT pings = convert_pings(pings_mbes);
 
-        tie(V, F, bounds) = mesh.mesh_from_pings(pings);
+        tie(V, F, bounds) = mesh_map::mesh_from_pings(pings);
     }
     //mesh.display_mesh(V, F);
     cout << "SSS" << endl;

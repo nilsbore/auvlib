@@ -5,15 +5,16 @@
 #include <data_tools/data_structures.h>
 #include <data_tools/xtf_data.h>
 
-class bathy_map_mesh {
-public:
+namespace mesh_map {
+
     using BoundsT = Eigen::Matrix2d;
 
     std::pair<Eigen::MatrixXd, Eigen::MatrixXi> mesh_from_height_map(const Eigen::MatrixXd& height_map, const BoundsT& bounds);
     std::pair<Eigen::MatrixXd, BoundsT> height_map_from_pings(const mbes_ping::PingsT& pings, double res);
     std::tuple<Eigen::MatrixXd, Eigen::MatrixXi, BoundsT> mesh_from_pings(const mbes_ping::PingsT& pings, double res=0.5);
-    void display_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F);
-    void display_height_map(const Eigen::MatrixXd& height_map);
-};
+    void show_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F);
+    void show_height_map(const Eigen::MatrixXd& height_map);
+
+}
 
 #endif // MESH_MAP_H

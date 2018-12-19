@@ -52,10 +52,9 @@ int main(int argc, char** argv)
 	cout << "Input mbes folder : " << folder << endl;
 	cout << "Output file : " << path << endl;
 
-    bathy_map_mesh mesh;
     Eigen::MatrixXd V;
     Eigen::MatrixXi F;
-    bathy_map_mesh::BoundsT bounds;
+    mesh_map::BoundsT bounds;
 
     // we need to separate the reading of mbes and side scan pings since they consume a lot of memory
     {
@@ -63,10 +62,10 @@ int main(int argc, char** argv)
 	    all_mbes_ping::PingsT pings = parse_folder<all_mbes_ping>(folder);
 	    //all_nav_depth::EntriesT depths = parse_folder<all_nav_depth>(folder);
         mbes_ping::PingsT new_pings = convert_matched_entries(pings, entries);
-        tie(V, F, bounds) = mesh.mesh_from_pings(new_pings, 2.0);
-        mesh.display_mesh(V, F);
+        tie(V, F, bounds) = mesh_map::mesh_from_pings(new_pings, 2.0);
+        mesh_map::show_mesh(V, F);
     }
-    //mesh.display_mesh(V, F);
+    //mesh.show_mesh(V, F);
 
     /*
     {
