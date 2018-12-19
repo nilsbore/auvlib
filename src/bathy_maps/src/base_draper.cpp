@@ -181,9 +181,9 @@ Eigen::MatrixXd color_jet_from_mesh(const Eigen::MatrixXd& V)
     return C_jet;
 }
 
-void generate_draping(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
-                      const BaseDraper::BoundsT& bounds, const xtf_sss_ping::PingsT& pings,
-                      const csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw)
+void drape_viewer(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
+                  const BaseDraper::BoundsT& bounds, const xtf_sss_ping::PingsT& pings,
+                  const csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw)
 {
     Eigen::MatrixXd Vb;
     Eigen::MatrixXi Fb;

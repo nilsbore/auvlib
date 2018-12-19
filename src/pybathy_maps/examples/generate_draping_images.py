@@ -83,5 +83,5 @@ resolution = 30./8.
 sensor_yaw = 5.*math.pi/180.
 
 saver = MapImageSaver()
-map_images = map_draper.drape_images(V, F, bounds, xtf_pings, sound_speeds, sensor_yaw, resolution, saver.save_callback)
+map_images = map_draper.drape_maps(V, F, bounds, xtf_pings, sound_speeds, sensor_yaw, resolution, saver.save_callback)
 map_draper.write_data(map_images, "map_images.cereal")

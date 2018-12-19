@@ -108,10 +108,10 @@ sss_patch_views::ViewsT PatchDraper::get_patch_views()
     return patch_views;
 }
 
-sss_patch_views::ViewsT overlay_sss(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
-                                    const PatchDraper::BoundsT& bounds, const xtf_sss_ping::PingsT& pings,
-                                    const csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw,
-                                    const std::function<void(sss_patch_views)>& save_callback)
+sss_patch_views::ViewsT drape_patches(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
+                                      const PatchDraper::BoundsT& bounds, const xtf_sss_ping::PingsT& pings,
+                                      const csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw,
+                                      const std::function<void(sss_patch_views)>& save_callback)
 {
     Eigen::MatrixXd Vb;
     Eigen::MatrixXi Fb;

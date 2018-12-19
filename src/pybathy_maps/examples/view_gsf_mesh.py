@@ -123,10 +123,10 @@ xtf_pings = xtf_data.correct_sensor_offset(xtf_pings, np.array([2., -1.5, 0.]))
 sound_speeds = csv_data.csv_asvp_sound_speed.parse_file(sys.argv[4])
 
 sensor_yaw = 5.*math.pi/180.
-#patch_draper.generate_draping(V, F, bounds, xtf_pings, sound_speeds, sensor_yaw)
+#patch_draper.drape_viewer(V, F, bounds, xtf_pings, sound_speeds, sensor_yaw)
 
 plotter = PatchPlotter()
-#patch_views = patch_draper.overlay_sss(V, F, bounds, xtf_pings, sound_speeds, sensor_yaw, plotter.plot_callback)
+patch_views = patch_draper.drape_patches(V, F, bounds, xtf_pings, sound_speeds, sensor_yaw, plotter.plot_callback)
 #patch_draper.write_data(patch_views, "patch_views.cereal")
 
 #plt.show()

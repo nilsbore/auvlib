@@ -52,8 +52,8 @@ public:
 
 std::tuple<Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXd> get_vehicle_mesh();
 Eigen::MatrixXd color_jet_from_mesh(const Eigen::MatrixXd& V);
-void generate_draping(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
-                      const BaseDraper::BoundsT& bounds, const xtf_sss_ping::PingsT& pings,
-                      const csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw);
+void drape_viewer(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
+                  const BaseDraper::BoundsT& bounds, const xtf_sss_ping::PingsT& pings,
+                  const csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw);
 
 #endif // BASE_DRAPER_H

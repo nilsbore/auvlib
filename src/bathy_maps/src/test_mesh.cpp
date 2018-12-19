@@ -157,7 +157,7 @@ int main(int argc, char** argv)
         cv::imshow("My image", waterfall_img);
         cv::waitKey();
         csv_asvp_sound_speed::EntriesT sound_speeds;
-        overlay_sss(V, F, bounds, pings_sss, sound_speeds, sensor_yaw);
+        drape_patches(V, F, bounds, pings_sss, sound_speeds, sensor_yaw);
     }
 
     return 0;

@@ -34,9 +34,9 @@ public:
     sss_patch_views::ViewsT get_patch_views();
 };
 
-sss_patch_views::ViewsT overlay_sss(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
-                                    const PatchDraper::BoundsT& bounds, const xtf_sss_ping::PingsT& pings,
-                                    const csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw,
-                                    const std::function<void(sss_patch_views)>& save_callback = &PatchDraper::default_callback);
+sss_patch_views::ViewsT drape_patches(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
+                                      const PatchDraper::BoundsT& bounds, const xtf_sss_ping::PingsT& pings,
+                                      const csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw,
+                                      const std::function<void(sss_patch_views)>& save_callback = &PatchDraper::default_callback);
 
 #endif // PATCH_DRAPER_H

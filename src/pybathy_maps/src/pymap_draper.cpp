@@ -35,7 +35,7 @@ PYBIND11_MODULE(map_draper, m) {
         .def("set_image_callback", &MapDraper::set_image_callback, "Set the function to be called when an entire sidescan map is done")
         .def("get_images", &MapDraper::get_images, "Get all the sss_map_image::ImagesT that have been gathered so far");
 
-    m.def("drape_images", &drape_images, "Overlay xtf_sss_ping::PingsT sidescan data on a mesh and get sss_map_image::ViewsT");
+    m.def("drape_maps", &drape_maps, "Overlay xtf_sss_ping::PingsT sidescan data on a mesh and get sss_map_image::ViewsT");
     m.def("color_jet_from_mesh", &color_jet_from_mesh, "Get a jet color scheme from a vertex matrix");
     m.def("get_vehicle_mesh", &get_vehicle_mesh, "Get vertices, faces, and colors for vehicle");
     m.def("convert_maps_to_patches", &convert_maps_to_patches, "Convert sss_map_image::ImagesT to sss_patch_views::ViewsT");

@@ -34,9 +34,9 @@ public:
     sss_map_image::ImagesT get_images();
 };
 
-sss_map_image::ImagesT drape_images(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
-    const MapDraper::BoundsT& bounds, const xtf_sss_ping::PingsT& pings,
-    const csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw,
-    double resolution, const std::function<void(sss_map_image)>& save_callback);
+sss_map_image::ImagesT drape_maps(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
+                                  const MapDraper::BoundsT& bounds, const xtf_sss_ping::PingsT& pings,
+                                  const csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw,
+                                  double resolution, const std::function<void(sss_map_image)>& save_callback);
 
 #endif // MAP_DRAPER_H

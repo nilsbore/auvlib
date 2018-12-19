@@ -42,9 +42,9 @@ PYBIND11_MODULE(patch_draper, m) {
         .def("set_patch_callback", &PatchDraper::set_patch_callback, "Set the function to be called when all views of a patch have been assembled")
         .def("get_patch_views", &PatchDraper::get_patch_views, "Get all the sss_patch_views::PatchesT that have been gathered so far");
 
-    m.def("overlay_sss", &overlay_sss, "Overlay xtf_sss_ping::PingsT sidescan data on a mesh and get sss_patch_views::ViewsT");
+    m.def("drape_patches", &drape_patches, "Overlay xtf_sss_ping::PingsT sidescan data on a mesh and get sss_patch_views::ViewsT");
     m.def("color_jet_from_mesh", &color_jet_from_mesh, "Get a jet color scheme from a vertex matrix");
     m.def("get_vehicle_mesh", &get_vehicle_mesh, "Get vertices, faces, and colors for vehicle");
-    m.def("generate_draping", &generate_draping, "Overlay xtf_sss_ping::PingsT sidescan data on a mesh and get sss_patch_views::ViewsT");
+    m.def("drape_viewer", &drape_viewer, "Overlay xtf_sss_ping::PingsT sidescan data on a mesh and get sss_patch_views::ViewsT");
     m.def("write_data", &write_data_from_str<sss_patch_views::ViewsT>, "Write sss_patch_views::ViewsT to .cereal file");
 }
