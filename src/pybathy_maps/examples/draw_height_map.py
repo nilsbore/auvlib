@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from pydata_tools import data_structures, gsf_data
+from pydata_tools import data_structures, gsf_data, utils
 from pybathy_maps import draw_map
 import sys
 import os
@@ -14,7 +14,7 @@ def parse_or_load_gsf(path):
         gsf_data.write_data(gsf_pings, "gsf_cache.cereal")
     return gsf_pings
 
-gsf_pings = parse_or_load_gsf(sys.argv[1])
+gsf_pings = utils.parse_or_load_gsf(sys.argv[1])
 mbes_pings = gsf_data.convert_pings(gsf_pings)
 
 d = draw_map.BathyMapImage(mbes_pings, 500, 500)

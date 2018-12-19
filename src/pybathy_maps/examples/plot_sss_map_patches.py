@@ -2,24 +2,12 @@
 
 import matplotlib.pyplot as plt
 from pybathy_maps import patch_draper, map_draper, mesh_map
-from pydata_tools import data_structures, gsf_data
+from pydata_tools import data_structures, gsf_data, utils
 from numpy import sign
 import numpy as np
 from copy import deepcopy
 import sys
 import os
-
-#patch_views = patch_draper.sss_patch_views.read_data(sys.argv[1])
-#patch_views.append(patch_views[0])
-
-def parse_or_load_gsf(path):
-
-    if os.path.exists("gsf_cache.cereal"):
-        gsf_pings = gsf_data.gsf_mbes_ping.read_data("gsf_cache.cereal")
-    else:
-        gsf_pings = gsf_data.gsf_mbes_ping.parse_folder(path)
-        gsf_data.write_data(gsf_pings, "gsf_cache.cereal")
-    return gsf_pings
 
 def generate_or_load_height_map(path, resolution):
 
@@ -27,7 +15,7 @@ def generate_or_load_height_map(path, resolution):
         #height_map = gsf_data.gsf_mbes_ping.read_data("gsf_cache.cereal")
         height_map = np.load("height_map.npz")["height_map"]
     else:
-        gsf_pings = parse_or_load_gsf(path)
+        gsf_pings = utils.parse_or_load_gsf(path)
         mbes_pings = gsf_data.convert_pings(gsf_pings)
         m = mesh_map.bathy_map_mesh()
         height_map, bounds = m.height_map_from_pings(mbes_pings, resolution)
