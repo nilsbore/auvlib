@@ -5,7 +5,7 @@
 #include <boost/filesystem.hpp>
 #include <opencv2/core/core.hpp>
 
-class bathy_map_image {
+class BathyMapImage {
 public:
     using TargetsT = std::map<std::string, std::pair<double, double> >;
 
@@ -14,14 +14,15 @@ public:
     std::array<double, 5> params;
     int rows, cols;
 
-    bathy_map_image(mbes_ping::PingsT& pings, int rows=500, int cols=500);
+    BathyMapImage(mbes_ping::PingsT& pings, int rows=500, int cols=500);
     void draw_track(mbes_ping::PingsT& pings);
     void draw_track(mbes_ping::PingsT& pings, const cv::Scalar& color);
     void draw_height_map(mbes_ping::PingsT& pings);
     void draw_back_scatter_map(mbes_ping::PingsT& pings);
     void draw_targets(const TargetsT& targets, const cv::Scalar& color);
-    void save_image(const boost::filesystem::path& path);
-    void save_image_from_str(const std::string& path);
+    void write_image(const boost::filesystem::path& path);
+    void write_image_from_str(const std::string& path);
+    void show();
 };
 
 #endif // DRAW_MAP_H

@@ -32,10 +32,10 @@ xtf_pings = parse_or_load_xtf(sys.argv[2], sys.argv[3])
 print "Time stamp of first xtf ping: ", xtf_pings[0].time_string_
 print "Time stamp of last xtf ping: ", xtf_pings[-1].time_string_
 
-d = draw_map.bathy_map_image(mbes_pings, 500, 500)
+d = draw_map.BathyMapImage(mbes_pings, 500, 500)
 d.draw_height_map(mbes_pings)
 d.draw_track(mbes_pings)
-d.save_image("gsf_height_map.png")
+d.write_image("gsf_height_map.png")
 
 sim_pings = []
 for ping in xtf_pings:
@@ -45,7 +45,8 @@ for ping in xtf_pings:
     p.pos_ = ping.pos_
     sim_pings.append(p)
 
-d = draw_map.bathy_map_image(mbes_pings, 500, 500)
+d = draw_map.BathyMapImage(mbes_pings, 500, 500)
 d.draw_height_map(mbes_pings)
 d.draw_track(sim_pings)
-d.save_image("xtf_height_map.png")
+d.write_image("xtf_height_map.png")
+d.show()

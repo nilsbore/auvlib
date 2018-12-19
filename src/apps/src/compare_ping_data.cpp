@@ -18,7 +18,7 @@
 
 using namespace std;
 
-using TargetsT = bathy_map_image::TargetsT;
+using TargetsT = BathyMapImage::TargetsT;
 
 const static TargetsT targets = {
     {"2", {669688.77, 6383451.93}},
@@ -173,12 +173,12 @@ int main(int argc, char** argv)
 
     //write_data(entries, path);
     
-    bathy_map_image image(pings, 1000, 1000);
+    BathyMapImage image(pings, 1000, 1000);
     //image.draw_height_map(pings);
     image.draw_back_scatter_map(pings);
     image.draw_track(pings, cv::Scalar(0, 0, 0));
     image.draw_targets(targets, cv::Scalar(255, 0, 0));
-    image.save_image(path);
+    image.write_image(path);
 
     return 0;
 }

@@ -38,7 +38,7 @@ std::tuple<uint8_t, uint8_t, uint8_t> jet(double x)
     return std::make_tuple(uint8_t(255.*r), uint8_t(255.*g), uint8_t(255.*b));
 }
 
-bathy_map_image::bathy_map_image(mbes_ping::PingsT& pings, int rows, int cols) : rows(rows), cols(cols)
+BathyMapImage::BathyMapImage(mbes_ping::PingsT& pings, int rows, int cols) : rows(rows), cols(cols)
 {
     auto xcomp = [](const mbes_ping& p1, const mbes_ping& p2) {
         return p1.pos_[0] < p2.pos_[0];
@@ -67,12 +67,12 @@ bathy_map_image::bathy_map_image(mbes_ping::PingsT& pings, int rows, int cols) :
     bathy_map = cv::Mat(rows, cols, CV_8UC3, cv::Scalar(255, 255, 255));
 }
 
-void bathy_map_image::draw_track(mbes_ping::PingsT& pings)
+void BathyMapImage::draw_track(mbes_ping::PingsT& pings)
 {
     draw_track(pings, cv::Scalar(0, 0, 255));
 }
 
-void bathy_map_image::draw_track(mbes_ping::PingsT& pings, const cv::Scalar& color)
+void BathyMapImage::draw_track(mbes_ping::PingsT& pings, const cv::Scalar& color)
 {
     //nbr_tracks_drawn += 1; // we should based the color on this instead
 
@@ -100,7 +100,7 @@ void bathy_map_image::draw_track(mbes_ping::PingsT& pings, const cv::Scalar& col
     cv::polylines(bathy_map, curve, false, color, 1, CV_AA);
 }
 
-void bathy_map_image::draw_height_map(mbes_ping::PingsT& pings)
+void BathyMapImage::draw_height_map(mbes_ping::PingsT& pings)
 {
     Eigen::MatrixXd means(rows, cols); means.setZero();
     Eigen::MatrixXd counts(rows, cols); counts.setZero();
@@ -140,7 +140,7 @@ void bathy_map_image::draw_height_map(mbes_ping::PingsT& pings)
     }
 }
 
-void bathy_map_image::draw_back_scatter_map(mbes_ping::PingsT& pings)
+void BathyMapImage::draw_back_scatter_map(mbes_ping::PingsT& pings)
 {
     mbes_ping::PingsT back_scatter_pings = pings;
     for (mbes_ping& ping : back_scatter_pings) {
@@ -155,7 +155,7 @@ void bathy_map_image::draw_back_scatter_map(mbes_ping::PingsT& pings)
     draw_height_map(back_scatter_pings);
 }
 
-void bathy_map_image::draw_targets(const TargetsT& targets, const cv::Scalar& color)
+void BathyMapImage::draw_targets(const TargetsT& targets, const cv::Scalar& color)
 {
     double res, minx, miny, x0, y0;
     res = params[0]; minx = params[1]; miny = params[2]; x0 = params[3]; y0 = params[4];
@@ -169,12 +169,18 @@ void bathy_map_image::draw_targets(const TargetsT& targets, const cv::Scalar& co
 
 }
 
-void bathy_map_image::save_image(const boost::filesystem::path& path)
+void BathyMapImage::write_image(const boost::filesystem::path& path)
 {
     cv::imwrite(path.string(), bathy_map);
 }
 
-void bathy_map_image::save_image_from_str(const std::string& path)
+void BathyMapImage::write_image_from_str(const std::string& path)
 {
-    save_image(boost::filesystem::path(path));
+    write_image(boost::filesystem::path(path));
+}
+
+void BathyMapImage::show()
+{
+    cv::imshow("Bathy image", bathy_map);
+    cv::waitKey();
 }

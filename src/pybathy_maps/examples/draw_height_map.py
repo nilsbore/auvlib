@@ -17,7 +17,8 @@ def parse_or_load_gsf(path):
 gsf_pings = parse_or_load_gsf(sys.argv[1])
 mbes_pings = gsf_data.convert_pings(gsf_pings)
 
-d = draw_map.bathy_map_image(mbes_pings, 500, 500)
+d = draw_map.BathyMapImage(mbes_pings, 500, 500)
 d.draw_height_map(mbes_pings)
 d.draw_track(mbes_pings)
-d.save_image("height_map.png")
+d.write_image("height_map.png")
+d.show()
