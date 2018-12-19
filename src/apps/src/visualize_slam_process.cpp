@@ -9,12 +9,12 @@
 #include <cereal/types/vector.hpp>
 #include <cereal/types/utility.hpp>
 
-#include <data_tools/data_structures.h>
+#include <data_tools/std_data.h>
 #include <gpgs_slam/gp_submaps.h>
 #include <gpgs_slam/igl_visualizer.h>
 
 using namespace std;
-using namespace data_structures;
+using namespace std_data;
 
 int main(int argc, char** argv)
 {

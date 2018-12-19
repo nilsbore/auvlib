@@ -1,7 +1,7 @@
 #ifndef DRAW_MAP_H
 #define DRAW_MAP_H
 
-#include <data_tools/data_structures.h>
+#include <data_tools/std_data.h>
 #include <boost/filesystem.hpp>
 #include <opencv2/core/core.hpp>
 
@@ -14,11 +14,11 @@ public:
     std::array<double, 5> params;
     int rows, cols;
 
-    BathyMapImage(data_structures::mbes_ping::PingsT& pings, int rows=500, int cols=500);
-    void draw_track(data_structures::mbes_ping::PingsT& pings);
-    void draw_track(data_structures::mbes_ping::PingsT& pings, const cv::Scalar& color);
-    void draw_height_map(data_structures::mbes_ping::PingsT& pings);
-    void draw_back_scatter_map(data_structures::mbes_ping::PingsT& pings);
+    BathyMapImage(std_data::mbes_ping::PingsT& pings, int rows=500, int cols=500);
+    void draw_track(std_data::mbes_ping::PingsT& pings);
+    void draw_track(std_data::mbes_ping::PingsT& pings, const cv::Scalar& color);
+    void draw_height_map(std_data::mbes_ping::PingsT& pings);
+    void draw_back_scatter_map(std_data::mbes_ping::PingsT& pings);
     void draw_targets(const TargetsT& targets, const cv::Scalar& color);
     void write_image(const boost::filesystem::path& path);
     void write_image_from_str(const std::string& path);

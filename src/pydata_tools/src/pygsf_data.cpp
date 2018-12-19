@@ -4,7 +4,7 @@
 #include <pybind11/eigen.h>
 #include <pybind11/stl.h>
 
-using namespace data_structures;
+using namespace std_data;
 using namespace gsf_data;
 
 namespace py = pybind11;

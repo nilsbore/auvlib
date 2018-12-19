@@ -51,7 +51,7 @@ target_link_libraries(gpgs_visualization data_transforms ${CERES_LIBRARIES} spar
 target_link_libraries(gpgs_multi_visualizer gpgs_visualization data_transforms ${CERES_LIBRARIES} sparse_gp rbf_kernel gaussian_noise ${PCL_LIBRARIES} ${OpenCV_LIBS} submaps)
 #target_link_libraries(gpgs_igl_visualizer gpgs_visualization data_transforms ${CERES_LIBRARIES} sparse_gp rbf_kernel gaussian_noise ${OpenCV_LIBS} submaps glad ${GLFW3_LIBRARY} ${OPENGL_LIBRARY} ${OPENGL_glu_LIBRARY} -lpthread)
 target_link_libraries(gpgs_igl_visualizer gpgs_visualization data_transforms ${CERES_LIBRARIES} sparse_gp rbf_kernel gaussian_noise ${OpenCV_LIBS} submaps igl::core igl::opengl_glfw -lpthread)
-target_link_libraries(gp_submaps data_structures sparse_gp rbf_kernel gaussian_noise)
+target_link_libraries(gp_submaps std_data sparse_gp rbf_kernel gaussian_noise)
 
 # 'make install' to the correct locations (provided by GNUInstallDirs).
 install(TARGETS gpgs_cost_function gpgs_visualization gp_submaps

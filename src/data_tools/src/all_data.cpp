@@ -14,7 +14,7 @@ using namespace std;
 
 namespace all_data {
 
-using namespace data_structures;
+using namespace std_data;
 
 std::tuple<uint8_t, uint8_t, uint8_t> jet(double x)
 {
@@ -370,7 +370,7 @@ mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_
 
 } // namespace all_data
 
-namespace data_structures {
+namespace std_data {
 
 using namespace all_data;
 
@@ -398,4 +398,4 @@ all_echosounder_depth::EntriesT parse_file<all_echosounder_depth>(const boost::f
     return parse_file_impl<all_echosounder_depth, all_echosounder_depth_datagram, 69>(path);
 }
 
-} // namespace data_structures
+} // namespace std_data

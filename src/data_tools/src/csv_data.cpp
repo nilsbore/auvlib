@@ -14,7 +14,7 @@ inline std::basic_istream<Char, Traits>& skip(std::basic_istream<Char, Traits>& 
 
 namespace csv_data {
 
-using namespace data_structures;
+using namespace std_data;
 using namespace gsf_data;
 using namespace xtf_data;
 
@@ -195,7 +195,7 @@ xtf_sss_ping::PingsT convert_matched_entries(xtf_sss_ping::PingsT& pings, csv_na
 
 } // namespace csv_data
 
-namespace data_structures {
+namespace std_data {
 
 using namespace csv_data;
 
@@ -343,4 +343,4 @@ csv_asvp_sound_speed::EntriesT parse_file(const boost::filesystem::path& file)
 	return { entry };
 }
 
-} // namespace data_structures
+} // namespace std_data

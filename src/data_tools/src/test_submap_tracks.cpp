@@ -1,12 +1,12 @@
 #include <iostream>
-#include <data_tools/data_structures.h>
+#include <data_tools/std_data.h>
 #include <data_tools/gsf_data.h>
 #include <data_tools/colormap.h>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
 using namespace std;
-using namespace data_structures;
+using namespace std_data;
 using namespace gsf_data;
 
 void divide_gsf_map(mbes_ping::PingsT& pings)

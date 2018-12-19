@@ -3,7 +3,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 using namespace std;
-using namespace data_structures;
+using namespace std_data;
 
 std::tuple<uint8_t, uint8_t, uint8_t> jet(double x)
 {

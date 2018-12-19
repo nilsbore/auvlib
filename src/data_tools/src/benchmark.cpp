@@ -7,7 +7,7 @@ using namespace std;
 
 namespace benchmark {
 
-using namespace data_structures;
+using namespace std_data;
 
 // res, xmin, ymin, imxmin, imymin
 void track_error_benchmark::track_img_params(mbes_ping::PingsT& pings, int rows, int cols)
@@ -628,7 +628,7 @@ pair<double, cv::Mat> track_error_benchmark::compute_draw_error_consistency_map(
 
 } // namespace benchmark
 
-namespace data_structures {
+namespace std_data {
 
 using namespace benchmark;
 

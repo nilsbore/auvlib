@@ -7,7 +7,7 @@
 #include <sparse_gp/rbf_kernel.h>
 #include <sparse_gp/sparse_gp.h>
 
-#include <data_tools/data_structures.h>
+#include <data_tools/std_data.h>
 #include <data_tools/submaps.h>
 #include <gpgs_slam/gp_submaps.h>
 #include <data_tools/transforms.h>
@@ -28,7 +28,7 @@
 #include <random>
 
 using namespace std;
-using namespace data_structures;
+using namespace std_data;
 
 using TransT = vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>>;
 using AngsT = vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>>;

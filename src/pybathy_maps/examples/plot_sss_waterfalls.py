@@ -2,7 +2,7 @@
 
 import matplotlib.pyplot as plt
 from pybathy_maps import patch_draper, draping_image, mesh_map
-from pydata_tools import data_structures, gsf_data
+from pydata_tools import std_data, gsf_data
 from numpy import sign
 import numpy as np
 from copy import deepcopy

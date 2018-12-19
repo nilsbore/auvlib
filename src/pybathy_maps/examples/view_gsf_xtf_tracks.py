@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from pydata_tools import data_structures, gsf_data, xtf_data, csv_data
+from pydata_tools import std_data, gsf_data, xtf_data, csv_data
 from pybathy_maps import draw_map, mesh_map, patch_draper
 import sys
 import os
@@ -21,7 +21,7 @@ d.write_image("gsf_height_map.png")
 
 sim_pings = []
 for ping in xtf_pings:
-    p = data_structures.mbes_ping()
+    p = std_data.mbes_ping()
     p.time_stamp_ = ping.time_stamp_
     p.time_string_ = ping.time_string_
     p.pos_ = ping.pos_

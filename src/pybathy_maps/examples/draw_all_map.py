@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from pydata_tools import data_structures, all_data
+from pydata_tools import std_data, all_data
 from pybathy_maps import draw_map, mesh_map
 import sys
 import os

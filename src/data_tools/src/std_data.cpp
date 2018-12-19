@@ -1,8 +1,8 @@
-#include <data_tools/data_structures.h>
+#include <data_tools/std_data.h>
 
 using namespace std;
 
-namespace data_structures {
+namespace std_data {
 
 // instantiate all versions needed to read the structs
 template nav_entry::EntriesT read_data<nav_entry::EntriesT>(const boost::filesystem::path& path);
@@ -14,5 +14,5 @@ template void write_data<nav_entry::EntriesT>(nav_entry::EntriesT& data, const b
 template void write_data<mbes_ping::PingsT>(mbes_ping::PingsT& data, const boost::filesystem::path& path);
 template void write_data<pt_submaps>(pt_submaps& data, const boost::filesystem::path& path);
 
-} // namespace data_structures
+} // namespace std_data
 

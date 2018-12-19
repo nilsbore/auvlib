@@ -1,4 +1,4 @@
-from pydata_tools import data_structures, gsf_data, csv_data, xtf_data
+from pydata_tools import std_data, gsf_data, csv_data, xtf_data
 import os
 
 def parse_or_load_gsf(path):

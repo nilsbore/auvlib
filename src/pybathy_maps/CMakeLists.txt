@@ -25,12 +25,12 @@ target_include_directories(pymap_draper PUBLIC
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
 
-target_link_libraries(pymesh_map PRIVATE data_structures mesh_map snell_ray_tracing igl::embree ${OpenCV_LIBS} ${BOOST_LIBRARIES} igl::core igl::opengl_glfw -lpthread pybind11::module)
+target_link_libraries(pymesh_map PRIVATE std_data mesh_map snell_ray_tracing igl::embree ${OpenCV_LIBS} ${BOOST_LIBRARIES} igl::core igl::opengl_glfw -lpthread pybind11::module)
 set_target_properties(pymesh_map PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
                                             OUTPUT_NAME "mesh_map"
                                             SUFFIX "${PYTHON_MODULE_EXTENSION}")
 
-target_link_libraries(pydraw_map PRIVATE data_structures draw_map ${OpenCV_LIBS} ${BOOST_LIBRARIES} pybind11::module)
+target_link_libraries(pydraw_map PRIVATE std_data draw_map ${OpenCV_LIBS} ${BOOST_LIBRARIES} pybind11::module)
 set_target_properties(pydraw_map PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
                                             OUTPUT_NAME "draw_map"
                                             SUFFIX "${PYTHON_MODULE_EXTENSION}")

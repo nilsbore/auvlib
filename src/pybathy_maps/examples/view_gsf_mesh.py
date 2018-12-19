@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from pydata_tools import data_structures, gsf_data, xtf_data, csv_data, utils
+from pydata_tools import std_data, gsf_data, xtf_data, csv_data, utils
 from pybathy_maps import mesh_map, patch_draper, data_vis
 import sys
 import os

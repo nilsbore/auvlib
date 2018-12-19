@@ -95,11 +95,11 @@ struct all_echosounder_depth {
 
 };
 
-data_structures::mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_entry::EntriesT& entries);
+std_data::mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_entry::EntriesT& entries);
 
 } // namespace all_data
 
-namespace data_structures {
+namespace std_data {
 
 //template <typename ReturnType>
 //std::vector<ReturnType, Eigen::aligned_allocator<ReturnType> > parse_file(const boost::filesystem::path& path);

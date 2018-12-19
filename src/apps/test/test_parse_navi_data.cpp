@@ -1,12 +1,12 @@
 #include <boost/filesystem.hpp>
 #include <cxxopts.hpp>
-#include <data_tools/data_structures.h>
+#include <data_tools/std_data.h>
 #include <data_tools/navi_data.h>
 #include <data_tools/transforms.h>
 #include <data_tools/benchmark.h>
 
 using namespace std;
-using namespace data_structures;
+using namespace std_data;
 using namespace navi_data;
 
 int main(int argc, char** argv)

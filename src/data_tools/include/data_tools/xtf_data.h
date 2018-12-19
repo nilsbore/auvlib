@@ -57,7 +57,7 @@ xtf_sss_ping::PingsT correct_sensor_offset(const xtf_sss_ping::PingsT& pings, co
 
 } // namespace xtf_data
 
-namespace data_structures {
+namespace std_data {
 
 template <>
 xtf_data::xtf_sss_ping::PingsT parse_file(const boost::filesystem::path& file);

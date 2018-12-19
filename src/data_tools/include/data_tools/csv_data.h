@@ -1,7 +1,7 @@
 #ifndef CSV_DATA_H
 #define CSV_DATA_H
 
-#include <data_tools/data_structures.h>
+#include <data_tools/std_data.h>
 #include <data_tools/navi_data.h>
 #include <data_tools/gsf_data.h>
 #include <data_tools/xtf_data.h>
@@ -66,12 +66,12 @@ struct csv_asvp_sound_speed
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
-data_structures::mbes_ping::PingsT convert_matched_entries(gsf_data::gsf_mbes_ping::PingsT& pings, csv_nav_entry::EntriesT& entries);
+std_data::mbes_ping::PingsT convert_matched_entries(gsf_data::gsf_mbes_ping::PingsT& pings, csv_nav_entry::EntriesT& entries);
 xtf_data::xtf_sss_ping::PingsT convert_matched_entries(xtf_data::xtf_sss_ping::PingsT& pings, csv_data::csv_nav_entry::EntriesT& entries);
 
 } // namespace csv_data
 
-namespace data_structures {
+namespace std_data {
 
 template <>
 csv_data::csv_nav_entry::EntriesT parse_file(const boost::filesystem::path& file);

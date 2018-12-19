@@ -16,7 +16,7 @@
 #include <chrono>
 
 using namespace std;
-using namespace data_structures;
+using namespace std_data;
 using namespace gsf_data;
 
 void divide_gsf_map(mbes_ping::PingsT& pings)

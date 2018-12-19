@@ -19,7 +19,7 @@ using namespace Eigen;
 
 namespace navi_data {
 
-using namespace data_structures;
+using namespace std_data;
 
 using PointT = pcl::PointXYZRGB;
 using CloudT = pcl::PointCloud<PointT>;
@@ -351,7 +351,7 @@ void visualize_submaps(ObsT& submaps, TransT& trans, AngsT& angs) {
 
 } // namespace navi_data
 
-namespace data_structures {
+namespace std_data {
 
 // Extract space-separated numbers: Nav files
 // 0: Year
@@ -472,4 +472,4 @@ nav_entry::EntriesT parse_file(const boost::filesystem::path& file)
 
 	return entries;
 }
-} // namespace data_structures
+} // namespace std_data

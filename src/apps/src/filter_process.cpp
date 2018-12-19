@@ -9,7 +9,7 @@
 
 #include <data_tools/submaps.h>
 #include <gpgs_slam/gp_submaps.h>
-#include <data_tools/data_structures.h>
+#include <data_tools/std_data.h>
 #include <data_tools/benchmark.h>
 #include <data_tools/transforms.h>
 
@@ -24,7 +24,7 @@
 #include <future>
 
 using namespace std;
-using namespace data_structures;
+using namespace std_data;
 
 // Example: ./visualize_process --folder ../scripts --lsq 100.0 --sigma 0.1 --s0 1.
 int main(int argc, char** argv)

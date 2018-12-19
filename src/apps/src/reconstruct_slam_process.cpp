@@ -8,7 +8,7 @@
 #include <sparse_gp/gaussian_noise.h>
 
 #include <data_tools/submaps.h>
-#include <data_tools/data_structures.h>
+#include <data_tools/std_data.h>
 #include <data_tools/benchmark.h>
 #include <data_tools/transforms.h>
 #include <gpgs_slam/gp_submaps.h>
@@ -24,7 +24,7 @@
 #include <future>
 
 using namespace std;
-using namespace data_structures;
+using namespace std_data;
 
 mbes_ping::PingsT construct_gp_pings(gp_submaps::ProcessT& gp, Eigen::Matrix2d& bb,
                                      int nbr_pings, int swath_width)

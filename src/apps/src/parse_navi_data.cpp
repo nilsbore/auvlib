@@ -1,6 +1,6 @@
 #include <cxxopts.hpp>
 #include <data_tools/navi_data.h>
-#include <data_tools/data_structures.h>
+#include <data_tools/std_data.h>
 #include <data_tools/transforms.h>
 #include <data_tools/submaps.h>
 #include <gpgs_slam/gp_submaps.h>
@@ -21,7 +21,7 @@
 #include <chrono>
 
 using namespace std;
-using namespace data_structures;
+using namespace std_data;
 
 void clip_submap(Eigen::MatrixXd& points, Eigen::Matrix2d& bounds, double minx, double maxx)
 {

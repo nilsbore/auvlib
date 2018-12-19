@@ -1,14 +1,14 @@
-#include <data_tools/data_structures.h>
+#include <data_tools/std_data.h>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>
 #include <pybind11/stl.h>
 
-using namespace data_structures;
+using namespace std_data;
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(data_structures, m) {
+PYBIND11_MODULE(std_data, m) {
     m.doc() = "Standard interfaces for working with different kinds of data. All data types should be converted into these before processing"; // optional module docstring
 
     py::class_<mbes_ping>(m, "mbes_ping", "Standard class interface for working with multibeam data")

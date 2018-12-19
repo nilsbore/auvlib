@@ -34,7 +34,7 @@ target_include_directories(snell_ray_tracing PUBLIC
 #add_dependencies(mesh_map libembree)
 
 # Link the libraries
-target_link_libraries(snell_ray_tracing data_structures ${CERES_LIBRARIES} ${OpenCV_LIBS} -lpthread)
+target_link_libraries(snell_ray_tracing std_data ${CERES_LIBRARIES} ${OpenCV_LIBS} -lpthread)
 
 target_link_libraries(test_ray_tracing snell_ray_tracing ${CERES_LIBRARIES} ${OpenCV_LIBS} -lpthread)
 

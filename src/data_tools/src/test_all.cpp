@@ -1,7 +1,7 @@
 #include <data_tools/all_data.h>
 
 using namespace std;
-using namespace data_structures;
+using namespace std_data;
 using namespace all_data;
 
 int main(int argc, char** argv)

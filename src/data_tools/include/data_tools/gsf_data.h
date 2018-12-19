@@ -1,7 +1,7 @@
 #ifndef GSF_DATA_H
 #define GSF_DATA_H
 
-#include <data_tools/data_structures.h>
+#include <data_tools/std_data.h>
 #include <data_tools/navi_data.h>
 
 namespace gsf_data {
@@ -85,13 +85,13 @@ struct gsf_nav_entry
 
 void match_sound_speeds(gsf_mbes_ping::PingsT& pings, gsf_sound_speed::SpeedsT& speeds);
 
-data_structures::mbes_ping::PingsT convert_matched_entries(gsf_mbes_ping::PingsT& pings, gsf_nav_entry::EntriesT& entries);
+std_data::mbes_ping::PingsT convert_matched_entries(gsf_mbes_ping::PingsT& pings, gsf_nav_entry::EntriesT& entries);
 
-data_structures::mbes_ping::PingsT convert_pings(gsf_mbes_ping::PingsT& pings);
+std_data::mbes_ping::PingsT convert_pings(gsf_mbes_ping::PingsT& pings);
 
 } // namespace gsf_data
 
-namespace data_structures {
+namespace std_data {
 
 template <>
 gsf_data::gsf_nav_entry::EntriesT parse_file(const boost::filesystem::path& file);

@@ -1,6 +1,6 @@
 # pydata_tools
 
-This library contains the following modules: `data_structures`, `gsf_data`, `xtf_data`, `all_data` and `csv_data`.
+This library contains the following modules: `std_data`, `gsf_data`, `xtf_data`, `all_data` and `csv_data`.
 They contain data structures corresponding to types of those file formats, and functions for reading them from data.
 A basic usage is demonstrated in
 [this file](https://github.com/nilsbore/auvlib/blob/master/src/pydata_tools/examples/parse_or_load_gsf.py),
@@ -469,7 +469,7 @@ Write all_nav_depth::EntriesT to .cereal file
 
 Write all_echosounder_depth::EntriesT to .cereal file
 
-# pydata_tools.data_structures
+# pydata_tools.std_data
 Standard interfaces for working with different kinds of data. All data types should be converted into these before processing
 ## mbes_ping
 ```python
@@ -492,7 +492,7 @@ Member
 ```python
 mbes_ping.parse_file(self)
 ```
-parse_file(arg0: unicode) -> List[pydata_tools.data_structures.mbes_ping]
+parse_file(arg0: unicode) -> List[pydata_tools.std_data.mbes_ping]
 
 Parse mbes_ping from an ASCII file exported from NaviEdit
 
@@ -500,7 +500,7 @@ Parse mbes_ping from an ASCII file exported from NaviEdit
 ```python
 mbes_ping.parse_folder(self)
 ```
-parse_folder(arg0: unicode) -> List[pydata_tools.data_structures.mbes_ping]
+parse_folder(arg0: unicode) -> List[pydata_tools.std_data.mbes_ping]
 
 Parse mbes_ping from folder of ASCII files exported from NaviEdit
 
@@ -512,7 +512,7 @@ Member
 ```python
 mbes_ping.read_data(self)
 ```
-read_data(arg0: unicode) -> List[pydata_tools.data_structures.mbes_ping]
+read_data(arg0: unicode) -> List[pydata_tools.std_data.mbes_ping]
 
 Read mbes_ping::PingsT from .cereal file
 
@@ -533,7 +533,7 @@ Member
 ```python
 nav_entry.parse_file(self)
 ```
-parse_file(arg0: unicode) -> List[pydata_tools.data_structures.nav_entry]
+parse_file(arg0: unicode) -> List[pydata_tools.std_data.nav_entry]
 
 Parse nav_entry from an ASCII file exported from NaviEdit
 
@@ -541,7 +541,7 @@ Parse nav_entry from an ASCII file exported from NaviEdit
 ```python
 nav_entry.parse_folder(self)
 ```
-parse_folder(arg0: unicode) -> List[pydata_tools.data_structures.nav_entry]
+parse_folder(arg0: unicode) -> List[pydata_tools.std_data.nav_entry]
 
 Parse nav_entry from folder of ASCII files exported from NaviEdit
 
@@ -551,7 +551,7 @@ Member
 ```python
 nav_entry.read_data(self)
 ```
-read_data(arg0: unicode) -> List[pydata_tools.data_structures.nav_entry]
+read_data(arg0: unicode) -> List[pydata_tools.std_data.nav_entry]
 
 Read nav_entry::Entries from .cereal file
 
@@ -566,11 +566,11 @@ write_data(self)
 write_data(*args, **kwargs)
 Overloaded function.
 
-1. write_data(arg0: List[pydata_tools.data_structures.mbes_ping], arg1: unicode) -> None
+1. write_data(arg0: List[pydata_tools.std_data.mbes_ping], arg1: unicode) -> None
 
 Write mbes_ping::PingsT to .cereal file
 
-2. write_data(arg0: List[pydata_tools.data_structures.nav_entry], arg1: unicode) -> None
+2. write_data(arg0: List[pydata_tools.std_data.nav_entry], arg1: unicode) -> None
 
 Write nav_entry::EntriesT to .cereal file
 

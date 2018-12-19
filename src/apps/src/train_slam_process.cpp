@@ -8,7 +8,7 @@
 #include <sparse_gp/gaussian_noise.h>
 
 #include <data_tools/submaps.h>
-#include <data_tools/data_structures.h>
+#include <data_tools/std_data.h>
 #include <data_tools/transforms.h>
 #include <gpgs_slam/gp_submaps.h>
 
@@ -23,7 +23,7 @@
 #include <future>
 
 using namespace std;
-using namespace data_structures;
+using namespace std_data;
 
 void subsample_cloud(Eigen::MatrixXd& points, int subsample)
 {

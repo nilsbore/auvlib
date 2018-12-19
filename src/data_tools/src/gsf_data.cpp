@@ -8,7 +8,7 @@ using namespace std;
 
 namespace gsf_data {
 
-using namespace data_structures;
+using namespace std_data;
 
 void match_sound_speeds(gsf_mbes_ping::PingsT& pings, gsf_sound_speed::SpeedsT& speeds)
 {
@@ -186,7 +186,7 @@ mbes_ping::PingsT convert_pings(gsf_mbes_ping::PingsT& pings)
 
 } // namespace gsf_data
 
-namespace data_structures {
+namespace std_data {
 
 using namespace gsf_data;
 
@@ -432,4 +432,4 @@ gsf_sound_speed::SpeedsT parse_file(const boost::filesystem::path& file)
 	return speeds;
 }
 
-} // namespace data_structures
+} // namespace std_data

@@ -12,7 +12,7 @@ using namespace std;
 
 namespace mesh_map {
 
-using namespace data_structures;
+using namespace std_data;
 
 std::tuple<uint8_t, uint8_t, uint8_t> jet_mesh(double x)
 {

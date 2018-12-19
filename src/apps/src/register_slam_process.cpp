@@ -6,7 +6,7 @@
 #include <sparse_gp/probit_noise.h>
 #include <sparse_gp/gaussian_noise.h>
 
-#include <data_tools/data_structures.h>
+#include <data_tools/std_data.h>
 #include <data_tools/benchmark.h>
 #include <data_tools/colormap.h>
 #include <data_tools/submaps.h>
@@ -18,7 +18,7 @@
 
 using namespace std;
 using namespace data_transforms;
-using namespace data_structures;
+using namespace std_data;
 
 void subsample_cloud(Eigen::MatrixXd& points, int subsample)
 {
