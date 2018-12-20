@@ -56,6 +56,12 @@ d.write_image("height_map.png") # save the height map to "height_map.png"
 
 ### Advanced functionality
 
+This example show how to drape a bathymetric mesh with sidescan data, and to
+generate a visualization similar to the image above. The program allows the user
+to click on any point in the mesh, and the draping will find all sidescan observations
+of that point and plot the corresponding intensity images using the `data_vis.plot_patch_views`
+function.
+
 ```python
 from pydata_tools import std_data, gsf_data, xtf_data, csv_data, utils
 from pybathy_maps import mesh_map, patch_draper, data_vis
