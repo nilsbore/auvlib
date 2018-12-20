@@ -3,6 +3,8 @@
 Tools for reading AUV deployment data files and for
 processing and visualization of side scan and multibeam data.
 
+![Draping example](https://github.com/nilsbore/auvlib/raw/master/data/draping_example.png)
+
 ## Dependencies
 
 On Ubuntu 16.04, just use the following command to install all dependencies:
