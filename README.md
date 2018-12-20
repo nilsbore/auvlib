@@ -65,3 +65,4 @@ First, initialize the submodules, same as for the previous section. For using au
 [check out the example projects](https://github.com/nilsbore/auvlib/tree/master/example_projects).
 If you just want to use auvlib for reading data, please see the minimal [data project](https://github.com/nilsbore/auvlib/tree/master/example_projects/data_project).
 
+For more complete documentation on C++ library usage, see [the overview document](https://github.com/nilsbore/auvlib/blob/master/docs/cpp_usage.md).
