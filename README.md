@@ -33,7 +33,7 @@ the library, or add this line to your `~/.bashrc`.
 Python is the preferred interface for auvlib. In general, the python bindings have more
 complete documentation and supports most of the use cases of the c++ library.
 
-### Python example
+### Simple python example
 
 As an example, in the snippet below, we read multibeam data from a `.gsf` file,
 and create an image with the vehicle track and a multibeam height map.
@@ -43,13 +43,41 @@ from pydata_tools import std_data, gsf_data
 from pybathy_maps import draw_map
 import sys
 
-gsf_pings = gsf_data.gsf_mbes_ping.parse_folder(sys.argv[1])
-mbes_pings = gsf_data.convert_pings(gsf_pings)
+gsf_pings = gsf_data.gsf_mbes_ping.parse_folder(sys.argv[1]) # parse folder of gsf data
+mbes_pings = gsf_data.convert_pings(gsf_pings) # convert to std_data pings
 
-d = draw_map.BathyMapImage(mbes_pings, 500, 500)
-d.draw_height_map(mbes_pings)
-d.draw_track(mbes_pings)
-d.write_image("height_map.png")
+d = draw_map.BathyMapImage(mbes_pings, 500, 500) # create a bathymetry height map
+d.draw_height_map(mbes_pings) # draw the height map
+d.draw_track(mbes_pings) # draw the track of the vehicle
+d.write_image("height_map.png") # save the height map to "height_map.png"
+```
+
+### Advanced functionality
+
+```python
+from pydata_tools import std_data, gsf_data, xtf_data, csv_data, utils
+from pybathy_maps import mesh_map, patch_draper, data_vis
+import sys, os, math
+import numpy as np
+
+sensor_yaw = 5.*math.pi/180. # rotation of sidescan wrt nav frame
+sensor_offset = np.array([2., -1.5, 0.]) # translation of sidescan wrt nav frame
+
+gsf_pings = utils.parse_or_load_gsf(sys.argv[1]) # parse_or_load* functions will just parse the first time
+mbes_pings = gsf_data.convert_pings(gsf_pings) # convert to std_data pings
+V, F, bounds = mesh_map.mesh_from_pings(mbes_pings, 0.5) # generate a bathymetry mesh
+
+xtf_pings = utils.parse_or_load_xtf(sys.argv[2]) # load sidescan pings
+nav_entries = utils.parse_or_load_csv(sys.argv[3]) # load gps nav entries
+xtf_pings = csv_data.convert_matched_entries(xtf_pings, nav_entries) # match sidescan with gps
+xtf_pings = xtf_data.correct_sensor_offset(xtf_pings, sensor_offset) # correct for sidescan translation
+sound_speeds = csv_data.csv_asvp_sound_speed.parse_file(sys.argv[4]) # parse sound speed file
+
+viewer = patch_draper.PatchDraper(V, F, xtf_pings, bounds, sound_speeds) # create a draper object
+viewer.set_sidescan_yaw(sensor_yaw) # set the rotation of sensor wrt nav frame
+viewer.set_vehicle_mesh(*patch_draper.get_vehicle_mesh()) # add a vehicle model for visualization
+viewer.set_patch_callback(lambda patch: data_vis.plot_patch_views([patch])) # add a plotter callback
+viewer.show() # show the visualization and drape
 ```
 
 ### Python documentation and resources
