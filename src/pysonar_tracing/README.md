@@ -48,7 +48,7 @@ Trace single ray through a sequence of layers
 ```python
 visualize_rays(self)
 ```
-visualize_rays(arg0: numpy.ndarray[float64[m, n]], arg1: numpy.ndarray[float64[m, 1]], arg2: numpy.ndarray[float64[m, n]], arg3: float, arg4: bool) -> None
+visualize_rays(arg0: numpy.ndarray[float64[m, n]], arg1: numpy.ndarray[float64[m, 1]], arg2: numpy.ndarray[float64[m, n]], arg3: float, arg4: bool, arg5: bool) -> None
 
 Visualize traces layers using opencv
 

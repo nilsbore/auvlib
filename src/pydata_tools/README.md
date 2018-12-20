@@ -8,13 +8,118 @@ but the other libraries have all of the corresponding methods defined for those 
 
 For the complete documentation, see below.
 
+# pydata_tools.std_data
+Standard interfaces for working with different kinds of data. All data types should be converted into these before processing
+## mbes_ping
+```python
+mbes_ping(self)
+```
+Standard class interface for working with multibeam data
+### back_scatter
+Member
+### beams
+Member
+### first_in_file_
+Member
+### heading_
+Member
+### heave_
+Member
+### id_
+Member
+### parse_file
+```python
+mbes_ping.parse_file(self)
+```
+parse_file(arg0: unicode) -> List[pydata_tools.std_data.mbes_ping]
+
+Parse mbes_ping from an ASCII file exported from NaviEdit
+
+### parse_folder
+```python
+mbes_ping.parse_folder(self)
+```
+parse_folder(arg0: unicode) -> List[pydata_tools.std_data.mbes_ping]
+
+Parse mbes_ping from folder of ASCII files exported from NaviEdit
+
+### pitch_
+Member
+### pos_
+Member
+### read_data
+```python
+mbes_ping.read_data(self)
+```
+read_data(arg0: unicode) -> List[pydata_tools.std_data.mbes_ping]
+
+Read mbes_ping::PingsT from .cereal file
+
+### roll_
+Member
+### time_stamp_
+Member
+### time_string_
+Member
+## nav_entry
+```python
+nav_entry(self)
+```
+Standard class interface for working with navigation data
+### first_in_file_
+Member
+### parse_file
+```python
+nav_entry.parse_file(self)
+```
+parse_file(arg0: unicode) -> List[pydata_tools.std_data.nav_entry]
+
+Parse nav_entry from an ASCII file exported from NaviEdit
+
+### parse_folder
+```python
+nav_entry.parse_folder(self)
+```
+parse_folder(arg0: unicode) -> List[pydata_tools.std_data.nav_entry]
+
+Parse nav_entry from folder of ASCII files exported from NaviEdit
+
+### pos_
+Member
+### read_data
+```python
+nav_entry.read_data(self)
+```
+read_data(arg0: unicode) -> List[pydata_tools.std_data.nav_entry]
+
+Read nav_entry::Entries from .cereal file
+
+### time_stamp_
+Member
+### time_string_
+Member
+## write_data
+```python
+write_data(self)
+```
+write_data(*args, **kwargs)
+Overloaded function.
+
+1. write_data(arg0: List[pydata_tools.std_data.mbes_ping], arg1: unicode) -> None
+
+Write mbes_ping::PingsT to .cereal file
+
+2. write_data(arg0: List[pydata_tools.std_data.nav_entry], arg1: unicode) -> None
+
+Write nav_entry::EntriesT to .cereal file
+
 # pydata_tools.gsf_data
 Basic utilities for working with the .gsf file format
 ## convert_pings
 ```python
 convert_pings(self)
 ```
-convert_pings(arg0: List[pydata_tools.gsf_data.gsf_mbes_ping]) -> List[mbes_ping]
+convert_pings(arg0: List[pydata_tools.gsf_data.gsf_mbes_ping]) -> List[pydata_tools.std_data.mbes_ping]
 
 Convert gsf_mbes_ping::EntriesT to mbes_ping::EntriesT
 
@@ -182,6 +287,14 @@ Write gsf_sound_speed::SpeedsT to .cereal file
 
 # pydata_tools.xtf_data
 Basic utilities for working with the xtf file format
+## correct_sensor_offset
+```python
+correct_sensor_offset(self)
+```
+correct_sensor_offset(arg0: List[pydata_tools.xtf_data.xtf_sss_ping], arg1: numpy.ndarray[float64[3, 1]]) -> List[pydata_tools.xtf_data.xtf_sss_ping]
+
+Move the sensor onboard the vehicle with a given translation
+
 ## make_waterfall_image
 ```python
 make_waterfall_image(self)
@@ -229,6 +342,8 @@ Parse xtf_sss_ping from folder of .xtf files
 
 ### pitch_
 Member
+### port
+Member
 ### pos_
 Member
 ### read_data
@@ -242,6 +357,8 @@ Read xtf_sss_ping::PingsT from .cereal file
 ### roll_
 Member
 ### sound_vel_
+Member
+### stbd
 Member
 ### time_stamp_
 Member
@@ -442,7 +559,7 @@ Member
 ```python
 convert_matched_entries(self)
 ```
-convert_matched_entries(arg0: List[pydata_tools.all_data.all_mbes_ping], arg1: List[pydata_tools.all_data.all_nav_entry]) -> List[pydata_tools.all_data.all_mbes_ping]
+convert_matched_entries(arg0: List[pydata_tools.all_data.all_mbes_ping], arg1: List[pydata_tools.all_data.all_nav_entry]) -> List[pydata_tools.std_data.mbes_ping]
 
 Matches xtf_sss_ping::PingsT and csv_nav_entry::EntriesT and assign pos data to pings
 
@@ -469,111 +586,6 @@ Write all_nav_depth::EntriesT to .cereal file
 
 Write all_echosounder_depth::EntriesT to .cereal file
 
-# pydata_tools.std_data
-Standard interfaces for working with different kinds of data. All data types should be converted into these before processing
-## mbes_ping
-```python
-mbes_ping(self)
-```
-Standard class interface for working with multibeam data
-### back_scatter
-Member
-### beams
-Member
-### first_in_file_
-Member
-### heading_
-Member
-### heave_
-Member
-### id_
-Member
-### parse_file
-```python
-mbes_ping.parse_file(self)
-```
-parse_file(arg0: unicode) -> List[pydata_tools.std_data.mbes_ping]
-
-Parse mbes_ping from an ASCII file exported from NaviEdit
-
-### parse_folder
-```python
-mbes_ping.parse_folder(self)
-```
-parse_folder(arg0: unicode) -> List[pydata_tools.std_data.mbes_ping]
-
-Parse mbes_ping from folder of ASCII files exported from NaviEdit
-
-### pitch_
-Member
-### pos_
-Member
-### read_data
-```python
-mbes_ping.read_data(self)
-```
-read_data(arg0: unicode) -> List[pydata_tools.std_data.mbes_ping]
-
-Read mbes_ping::PingsT from .cereal file
-
-### roll_
-Member
-### time_stamp_
-Member
-### time_string_
-Member
-## nav_entry
-```python
-nav_entry(self)
-```
-Standard class interface for working with navigation data
-### first_in_file_
-Member
-### parse_file
-```python
-nav_entry.parse_file(self)
-```
-parse_file(arg0: unicode) -> List[pydata_tools.std_data.nav_entry]
-
-Parse nav_entry from an ASCII file exported from NaviEdit
-
-### parse_folder
-```python
-nav_entry.parse_folder(self)
-```
-parse_folder(arg0: unicode) -> List[pydata_tools.std_data.nav_entry]
-
-Parse nav_entry from folder of ASCII files exported from NaviEdit
-
-### pos_
-Member
-### read_data
-```python
-nav_entry.read_data(self)
-```
-read_data(arg0: unicode) -> List[pydata_tools.std_data.nav_entry]
-
-Read nav_entry::Entries from .cereal file
-
-### time_stamp_
-Member
-### time_string_
-Member
-## write_data
-```python
-write_data(self)
-```
-write_data(*args, **kwargs)
-Overloaded function.
-
-1. write_data(arg0: List[pydata_tools.std_data.mbes_ping], arg1: unicode) -> None
-
-Write mbes_ping::PingsT to .cereal file
-
-2. write_data(arg0: List[pydata_tools.std_data.nav_entry], arg1: unicode) -> None
-
-Write nav_entry::EntriesT to .cereal file
-
 # pydata_tools.csv_data
 Basic utilities for working with csv based data
 ## convert_matched_entries
@@ -584,6 +596,47 @@ convert_matched_entries(arg0: List[pydata_tools.xtf_data.xtf_sss_ping], arg1: Li
 
 Match xtf_sss_ping::PingsT and csv_nav_entry::EntriesT and assign pos info to pings
 
+## csv_asvp_sound_speed
+```python
+csv_asvp_sound_speed(self)
+```
+Class for a csv based nav entry
+### dbars
+Member
+### lat_
+Member
+### long_
+Member
+### parse_file
+```python
+csv_asvp_sound_speed.parse_file(self)
+```
+parse_file(arg0: unicode) -> List[pydata_tools.csv_data.csv_asvp_sound_speed]
+
+Parse csv_asvp_sound_speed from .csv file
+
+### parse_folder
+```python
+csv_asvp_sound_speed.parse_folder(self)
+```
+parse_folder(arg0: unicode) -> List[pydata_tools.csv_data.csv_asvp_sound_speed]
+
+Parse csv_asvp_sound_speed from folder of .csv files
+
+### read_data
+```python
+csv_asvp_sound_speed.read_data(self)
+```
+read_data(arg0: unicode) -> List[pydata_tools.csv_data.csv_asvp_sound_speed]
+
+Read csv_asvp_sound_speed::EntriesT from .cereal file
+
+### time_stamp_
+Member
+### time_string_
+Member
+### vels
+Member
 ## csv_nav_entry
 ```python
 csv_nav_entry(self)
@@ -643,7 +696,14 @@ Member
 ```python
 write_data(self)
 ```
-write_data(arg0: List[pydata_tools.csv_data.csv_nav_entry], arg1: unicode) -> None
+write_data(*args, **kwargs)
+Overloaded function.
+
+1. write_data(arg0: List[pydata_tools.csv_data.csv_nav_entry], arg1: unicode) -> None
 
 Write csv_nav_entry::EntriesT to .cereal file
+
+2. write_data(arg0: List[pydata_tools.csv_data.csv_asvp_sound_speed], arg1: unicode) -> None
+
+Write csv_asvp_sound_speed::EntriesT to .cereal file
 
