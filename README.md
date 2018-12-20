@@ -39,7 +39,7 @@ As an example, in the snippet below, we read multibeam data from a `.gsf` file,
 and create an image with the vehicle track and a multibeam height map.
 
 ```python
-from pydata_tools import data_structures, gsf_data
+from pydata_tools import std_data, gsf_data
 from pybathy_maps import draw_map
 import sys
 
@@ -49,7 +49,7 @@ mbes_pings = gsf_data.convert_pings(gsf_pings)
 d = draw_map.bathy_map_image(mbes_pings, 500, 500)
 d.draw_height_map(mbes_pings)
 d.draw_track(mbes_pings)
-d.save_image("height_map.png")
+d.write_image("height_map.png")
 ```
 
 ### Python documentation and resources
