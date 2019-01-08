@@ -46,7 +46,8 @@ set_target_properties(pymap_draper PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
                                                   SUFFIX "${PYTHON_MODULE_EXTENSION}")
 
 install(TARGETS pymesh_map pydraw_map pypatch_draper pymap_draper
-    LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}/pybathy_maps
+    LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}/auvlib/bathy_maps
 )  # This is for Windows
 
-install(FILES module/__init__.py module/data_vis.py DESTINATION ${CMAKE_INSTALL_LIBDIR}/pybathy_maps)
+install(FILES module/__init__.py DESTINATION ${CMAKE_INSTALL_LIBDIR}/auvlib)
+install(FILES module/__init__.py module/data_vis.py DESTINATION ${CMAKE_INSTALL_LIBDIR}/auvlib/bathy_maps)

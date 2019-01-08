@@ -62,7 +62,8 @@ set_target_properties(pyall_data PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
                                             SUFFIX "${PYTHON_MODULE_EXTENSION}")
 
 install(TARGETS pystd_data pygsf_data pyxtf_data pycsv_data pyall_data
-    LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}/pydata_tools
+    LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}/auvlib/data_tools
 )  # This is for Windows
 
-install(FILES module/__init__.py module/utils.py DESTINATION ${CMAKE_INSTALL_LIBDIR}/pydata_tools)
+install(FILES module/__init__.py DESTINATION ${CMAKE_INSTALL_LIBDIR}/auvlib)
+install(FILES module/__init__.py module/utils.py DESTINATION ${CMAKE_INSTALL_LIBDIR}/auvlib/data_tools)

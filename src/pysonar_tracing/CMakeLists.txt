@@ -13,7 +13,8 @@ set_target_properties(pysnell_ray_tracing PROPERTIES PREFIX "${PYTHON_MODULE_PRE
                                                      SUFFIX "${PYTHON_MODULE_EXTENSION}")
 
 install(TARGETS pysnell_ray_tracing
-    LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}/pysonar_tracing
+    LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}/auvlib/sonar_tracing
 )  # This is for Windows
 
-install(FILES module/__init__.py DESTINATION ${CMAKE_INSTALL_LIBDIR}/pysonar_tracing)
+install(FILES module/__init__.py DESTINATION ${CMAKE_INSTALL_LIBDIR}/auvlib)
+install(FILES module/__init__.py DESTINATION ${CMAKE_INSTALL_LIBDIR}/auvlib/sonar_tracing)
