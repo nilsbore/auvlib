@@ -14,14 +14,24 @@ sudo apt-get install libcereal-dev libglfw3-dev libceres-dev
 
 ## Building
 
-Once cloned, get the libigl submodule via `git submodule init`, `git submodule update`.
-Then go into the `libigl` folder and execute `git submodule update --init external/embree`
-and `git submodule update --init external/glfw`.
-Finally, create a `build` folder in the repo root, and run
+Once cloned, you need to get the libigl submodule and some of its dependencies:
 ```
+git submodule init
+git submodule update
+cd libigl
+git submodule update --init external/embree
+git submodule update --init external/glfw
+cd ..
+```
+
+When done, create a `build` folder in the repo root, and run
+```
+cd build
 cmake -DCMAKE_INSTALL_PREFIX=../install ..
+make -j4
+make install
 ```
-within the `build` folder. Then run `make` and `make install`.
+
 You should now have a compiled version of auvlib in the folder
 `/path/to/auvlib/install`. When done, please execute
 ```
