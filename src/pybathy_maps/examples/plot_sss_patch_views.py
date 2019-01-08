@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import matplotlib.pyplot as plt
-from pybathy_maps import patch_draper, data_vis
+from auvlib.bathy_maps import patch_draper, data_vis
 from numpy import sign
 import numpy as np
 from copy import deepcopy

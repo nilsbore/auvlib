@@ -38,8 +38,8 @@ target_include_directories(pyall_data PUBLIC
 #target_link_libraries(pystd_data std_data eigen_cereal)
 target_link_libraries(pystd_data PRIVATE std_data eigen_cereal ${BOOST_LIBRARIES} pybind11::module)
 set_target_properties(pystd_data PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
-                                                   OUTPUT_NAME "std_data"
-                                                   SUFFIX "${PYTHON_MODULE_EXTENSION}")
+                                            OUTPUT_NAME "std_data"
+                                            SUFFIX "${PYTHON_MODULE_EXTENSION}")
 
 target_link_libraries(pygsf_data PRIVATE std_data gsf_data eigen_cereal ${BOOST_LIBRARIES} pybind11::module)
 set_target_properties(pygsf_data PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"

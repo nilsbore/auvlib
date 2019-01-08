@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
-from pydata_tools import std_data, all_data
-from pybathy_maps import draw_map, mesh_map
+from auvlib.data_tools import std_data, all_data
+from auvlib.bathy_maps import draw_map, mesh_map
 import sys
 import os
 

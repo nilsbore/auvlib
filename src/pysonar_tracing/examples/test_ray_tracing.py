@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from pysonar_tracing import snell_ray_tracing
+from auvlib.sonar_tracing import snell_ray_tracing
 import numpy as np
 
 end_points = np.array([[ 3., -40.1],

@@ -1,8 +1,8 @@
 #!/usr/bin/python
 
 import matplotlib.pyplot as plt
-from pybathy_maps import patch_draper, draping_image, mesh_map
-from pydata_tools import std_data, gsf_data
+from auvlib.bathy_maps import patch_draper, draping_image, mesh_map
+from auvlib.data_tools import std_data, gsf_data
 from numpy import sign
 import numpy as np
 from copy import deepcopy

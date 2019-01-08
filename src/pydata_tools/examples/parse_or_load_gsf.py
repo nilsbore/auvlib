@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from pydata_tools import std_data, gsf_data
+from auvlib.data_tools import std_data, gsf_data
 import sys
 import os
 
