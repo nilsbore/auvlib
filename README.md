@@ -41,8 +41,8 @@ As an example, in the snippet below, we read multibeam data from a `.gsf` file,
 and create an image with the vehicle track and a multibeam height map.
 
 ```python
-from pydata_tools import std_data, gsf_data
-from pybathy_maps import draw_map
+from auvlib.data_tools import std_data, gsf_data
+from auvlib.bathy_maps import draw_map
 import sys
 
 gsf_pings = gsf_data.gsf_mbes_ping.parse_folder(sys.argv[1]) # parse folder of gsf data
@@ -63,8 +63,8 @@ of that point and plot the corresponding intensity images using the `data_vis.pl
 function.
 
 ```python
-from pydata_tools import std_data, gsf_data, xtf_data, csv_data, utils
-from pybathy_maps import mesh_map, patch_draper, data_vis
+from auvlib.data_tools import std_data, gsf_data, xtf_data, csv_data, utils
+from auvlib.bathy_maps import mesh_map, patch_draper, data_vis
 import sys, os, math
 import numpy as np
 
