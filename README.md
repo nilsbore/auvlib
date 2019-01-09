@@ -2,6 +2,7 @@
 
 Tools for reading AUV deployment data files and for
 processing and visualization of side scan and multibeam data.
+Extensive documentation is available [at this site](https://nilsbore.github.io/auvlib-docs/index.html).
 
 ![Draping example](https://github.com/nilsbore/auvlib/raw/master/data/draping_example.png)
 
@@ -44,6 +45,7 @@ the library, or add this line to your `~/.bashrc`.
 
 Python is the preferred interface for auvlib. In general, the python bindings have more
 complete documentation and supports most of the use cases of the c++ library.
+Extensive documentation is available [at this site](https://nilsbore.github.io/auvlib-docs/index.html).
 
 ### Simple python example
 
