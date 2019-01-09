@@ -14,14 +14,24 @@ sudo apt-get install libcereal-dev libglfw3-dev libceres-dev
 
 ## Building
 
-Once cloned, get the libigl submodule via `git submodule init`, `git submodule update`.
-Then go into the `libigl` folder and execute `git submodule update --init external/embree`
-and `git submodule update --init external/glfw`.
-Finally, create a `build` folder in the repo root, and run
+Once cloned, you need to get the libigl submodule and some of its dependencies:
 ```
+git submodule init
+git submodule update
+cd libigl
+git submodule update --init external/embree
+git submodule update --init external/glfw
+cd ..
+```
+
+When done, create a `build` folder in the repo root, and run
+```
+cd build
 cmake -DCMAKE_INSTALL_PREFIX=../install ..
+make -j4
+make install
 ```
-within the `build` folder. Then run `make` and `make install`.
+
 You should now have a compiled version of auvlib in the folder
 `/path/to/auvlib/install`. When done, please execute
 ```
@@ -41,8 +51,8 @@ As an example, in the snippet below, we read multibeam data from a `.gsf` file,
 and create an image with the vehicle track and a multibeam height map.
 
 ```python
-from pydata_tools import std_data, gsf_data
-from pybathy_maps import draw_map
+from auvlib.data_tools import std_data, gsf_data
+from auvlib.bathy_maps import draw_map
 import sys
 
 gsf_pings = gsf_data.gsf_mbes_ping.parse_folder(sys.argv[1]) # parse folder of gsf data
@@ -63,8 +73,8 @@ of that point and plot the corresponding intensity images using the `data_vis.pl
 function.
 
 ```python
-from pydata_tools import std_data, gsf_data, xtf_data, csv_data, utils
-from pybathy_maps import mesh_map, patch_draper, data_vis
+from auvlib.data_tools import std_data, gsf_data, xtf_data, csv_data, utils
+from auvlib.bathy_maps import mesh_map, patch_draper, data_vis
 import sys, os, math
 import numpy as np
 
