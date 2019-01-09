@@ -2,7 +2,8 @@
 
 Tools for reading AUV deployment data files and for
 processing and visualization of side scan and multibeam data.
-Extensive documentation is available [at this site](https://nilsbore.github.io/auvlib-docs/index.html).
+Extensive documentation for the python API is available
+[at this site](https://nilsbore.github.io/auvlib-docs/index.html).
 
 ![Draping example](https://github.com/nilsbore/auvlib/raw/master/data/draping_example.png)
 
