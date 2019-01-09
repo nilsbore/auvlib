@@ -6,12 +6,14 @@
 Welcome to auvlib's documentation!
 ==================================
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+.. image:: draping_example.png
+
+Code and installation instructions are available at https://github.com/nilsbore/auvlib .
 
 Modules
 =======
+
+Please see the individual modules for details on the library.
 
 .. toctree::
    :maxdepth: 3
