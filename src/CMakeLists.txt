@@ -12,7 +12,6 @@ include(GNUInstallDirs)
 
 find_package(Ceres REQUIRED)
 find_package(Eigen3 REQUIRED)
-find_package(PCL 1.7 REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(glfw3 REQUIRED)
@@ -39,8 +38,8 @@ option(LIBIGL_WITH_XML               "Use XML"            OFF)
 
 find_package(LIBIGL REQUIRED QUIET)
 
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
+# For some reason it seems like we need to do this after libigl
+find_package(Boost COMPONENTS system filesystem date_time REQUIRED)
 
 add_definitions(-DCERES_GFLAGS_NAMESPACE=${GFLAGS_NAMESPACE})
 
@@ -55,17 +54,14 @@ message("Pybind11: " ${PYBIND11_INCLUDE_DIR})
 
 add_subdirectory(cxxopts)
 
-include_directories(${PYBIND11_INCLUDE_DIR} ${CERES_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS})
+include_directories(${PYBIND11_INCLUDE_DIR} ${CERES_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS})
 #include_directories(eigen_cereal/include)
 
 add_subdirectory(libgsf)
 add_subdirectory(libxtf)
 add_subdirectory(eigen_cereal)
-add_subdirectory(sparse_gp)
 add_subdirectory(data_tools)
 add_subdirectory(bathy_maps)
-add_subdirectory(gpgs_slam)
-add_subdirectory(apps)
 add_subdirectory(sonar_tracing)
 add_subdirectory(pydata_tools)
 add_subdirectory(pybathy_maps)

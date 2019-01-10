@@ -2,8 +2,11 @@
 extern "C" {
 #include <libxtf/xtf_reader.h>
 }
+#define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/date_time.hpp>
 #include <boost/date_time/gregorian/gregorian.hpp>
+#undef BOOST_NO_CXX11_SCOPED_ENUMS
+
 //#include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>

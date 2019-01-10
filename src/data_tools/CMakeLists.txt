@@ -84,20 +84,20 @@ target_include_directories(all_data PUBLIC
 
 target_link_libraries(test_gsf gsf)
 
-target_link_libraries(test_xtf xtf_data std_data navi_data ${OpenCV_LIBS})
+target_link_libraries(test_xtf xtf_data std_data navi_data ${OpenCV_LIBS} ${Boost_LIBRARIES})
 
-target_link_libraries(test_submap_tracks gsf_data std_data navi_data ${OpenCV_LIBS})
+target_link_libraries(test_submap_tracks gsf_data std_data navi_data ${OpenCV_LIBS} ${Boost_LIBRARIES})
 
-target_link_libraries(test_all all_data ${OpenCV_LIBS})
+target_link_libraries(test_all all_data ${OpenCV_LIBS} ${Boost_LIBRARIES})
 
 # Link the libraries
-target_link_libraries(submaps eigen_cereal ${PCL_LIBRARIES})
+target_link_libraries(submaps eigen_cereal ${Boost_LIBRARIES}) # ${PCL_LIBRARIES})
 
-target_link_libraries(std_data PUBLIC eigen_cereal) # sparse_gp rbf_kernel gaussian_noise ${OpenCV_LIBS})
+target_link_libraries(std_data PUBLIC eigen_cereal ${Boost_LIBRARIES})
 
-target_link_libraries(benchmark PUBLIC eigen_cereal std_data ${OpenCV_LIBS}) #sparse_gp rbf_kernel gaussian_noise ${OpenCV_LIBS})
+target_link_libraries(benchmark PUBLIC eigen_cereal std_data ${OpenCV_LIBS})
 
-target_link_libraries(navi_data PUBLIC eigen_cereal data_transforms ${PCL_LIBRARIES}) #sparse_gp data_transforms ${PCL_LIBRARIES})
+target_link_libraries(navi_data PUBLIC eigen_cereal data_transforms) # ${PCL_LIBRARIES})
 
 target_link_libraries(gsf_data PUBLIC gsf std_data navi_data lat_long_utm)
 

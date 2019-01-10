@@ -2,15 +2,14 @@
 #include <data_tools/colormap.h>
 #include <data_tools/transforms.h>
 
-#include <pcl/point_types.h>
-#include <pcl/visualization/cloud_viewer.h>
-
 #include <fstream>
 #include <sstream>
 #include <iostream>
 #include <tuple>
 
+#define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/date_time.hpp>
+#undef BOOST_NO_CXX11_SCOPED_ENUMS
 
 #include <cereal/archives/json.hpp>
 
@@ -20,9 +19,6 @@ using namespace Eigen;
 namespace navi_data {
 
 using namespace std_data;
-
-using PointT = pcl::PointXYZRGB;
-using CloudT = pcl::PointCloud<PointT>;
 
 void match_timestamps(mbes_ping::PingsT& pings, nav_entry::EntriesT& entries)
 {
@@ -62,6 +58,7 @@ void match_timestamps(mbes_ping::PingsT& pings, nav_entry::EntriesT& entries)
 
 }
 
+/*
 void view_cloud(const mbes_ping::PingsT& pings)
 {
     CloudT::Ptr cloud(new CloudT);
@@ -95,10 +92,6 @@ void divide_tracks(mbes_ping::PingsT& pings)
         auto next = std::find_if(pos, pings.end(), [&](const mbes_ping& ping) {
             return ping.first_in_file_ && (&ping != &(*pos));
         });
-
-        /*if (pos == next) {
-            break;
-        }*/
 
         Vector3d first_pos = pos->pos_;
         Vector3d last_pos;
@@ -134,6 +127,7 @@ void divide_tracks(mbes_ping::PingsT& pings)
         pos = next;
     }
 }
+*/
 
 void divide_tracks_equal(mbes_ping::PingsT& pings)
 {
@@ -322,6 +316,7 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT, ObsT> create_submaps(const mbes_ping:
     return make_tuple(submaps, trans, angs, matches, bounds, tracks);
 }
 
+/*
 void visualize_submaps(ObsT& submaps, TransT& trans, AngsT& angs) {
 
 	CloudT::Ptr cloud(new CloudT);
@@ -348,6 +343,7 @@ void visualize_submaps(ObsT& submaps, TransT& trans, AngsT& angs) {
 	{
 	}
 }
+*/
 
 } // namespace navi_data
 

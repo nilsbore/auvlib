@@ -1,6 +1,8 @@
 #include <data_tools/gsf_data.h>
 
+#define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/date_time.hpp>
+#undef BOOST_NO_CXX11_SCOPED_ENUMS
 #include <gsf.h>
 #include <data_tools/lat_long_utm.h>
 

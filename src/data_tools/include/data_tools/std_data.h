@@ -12,8 +12,10 @@
 #include <cereal/types/map.hpp>
 #include <cereal/types/tuple.hpp>
 
+#define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>
 #include <boost/range.hpp>
+#undef BOOST_NO_CXX11_SCOPED_ENUMS
 
 namespace std_data {
 

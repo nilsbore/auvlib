@@ -1,12 +1,11 @@
 #include <data_tools/submaps.h>
 #include <data_tools/colormap.h>
 
-#include <pcl/visualization/cloud_viewer.h>
 #include <sstream>
+#include <fstream>
+#include <iomanip>
 
 using namespace std;
-using PointT = pcl::PointXYZRGB;
-using CloudT = pcl::PointCloud<PointT>;
 
 namespace submaps {
 
@@ -181,6 +180,7 @@ ConstraintsT compute_binary_constraints(const TransTT& trans, const RotsTT& rots
     return binary_constraints;
 }
 
+/*
 void visualize_submaps(SubmapsT& submaps)
 {
 	CloudT::Ptr cloud(new CloudT);
@@ -230,6 +230,7 @@ void visualize_submap(Eigen::MatrixXd& points)
 	{
 	}
 }
+*/
 
 Eigen::MatrixXd get_points_in_bound_transform(Eigen::MatrixXd points, Eigen::Vector3d& t,
 				                              Eigen::Matrix3d& R, Eigen::Vector3d& t_in,
