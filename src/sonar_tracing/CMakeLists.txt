@@ -36,7 +36,7 @@ target_include_directories(snell_ray_tracing PUBLIC
 # Link the libraries
 target_link_libraries(snell_ray_tracing std_data ${CERES_LIBRARIES} ${OpenCV_LIBS} -lpthread)
 
-target_link_libraries(test_ray_tracing snell_ray_tracing ${CERES_LIBRARIES} ${OpenCV_LIBS} -lpthread)
+target_link_libraries(test_ray_tracing snell_ray_tracing ${CERES_LIBRARIES} ${OpenCV_LIBS} -lpthread cxxopts)
 
 # 'make install' to the correct locations (provided by GNUInstallDirs).
 install(TARGETS snell_ray_tracing EXPORT SonarTracingConfig
