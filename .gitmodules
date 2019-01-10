@@ -5,3 +5,6 @@
 	path = src/pybind11
 	url = https://github.com/pybind/pybind11.git
 	branch = master
+[submodule "src/libgsf"]
+	path = src/libgsf
+	url = https://github.com/nilsbore/libgsf.git
