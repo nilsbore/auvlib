@@ -22,8 +22,6 @@ SubmapsT read_submaps(const boost::filesystem::path& folder);
 MatchesT compute_matches(const TransTT& trans, const RotsTT& rots, const BBsT& bounds);
 ConstraintsT compute_binary_constraints(const TransTT& trans, const RotsTT& rots, const ObsT& points);
 ConstraintsT compute_binary_constraints(const TransTT& trans, const RotsTT& rots, const ObsT& points, const ObsT& tracks);
-//void visualize_submaps(SubmapsT& submaps);
-//void visualize_submap(Eigen::MatrixXd& points);
 Eigen::MatrixXd get_points_in_bound_transform(Eigen::MatrixXd points, Eigen::Vector3d& t,
 				                              Eigen::Matrix3d& R, Eigen::Vector3d& t_in,
 											  Eigen::Matrix3d& R_in, double bound);

@@ -14,12 +14,10 @@ using MatchesT = std::vector<std::pair<int, int> >; // tells us which maps overl
 using BBsT = std::vector<Eigen::Matrix2d, Eigen::aligned_allocator<Eigen::Matrix2d> >;
 
 void match_timestamps(std_data::mbes_ping::PingsT& pings, std_data::nav_entry::EntriesT& entries);
-//void view_cloud(const std_data::mbes_ping::PingsT& pings);
 
 void divide_tracks(std_data::mbes_ping::PingsT& pings);
 void divide_tracks_equal(std_data::mbes_ping::PingsT& pings);
 std::tuple<ObsT, TransT, AngsT, MatchesT, BBsT, ObsT> create_submaps(const std_data::mbes_ping::PingsT& pings);
-//void visualize_submaps(ObsT& submaps, TransT& trans, AngsT& angs);
 
 }
 
