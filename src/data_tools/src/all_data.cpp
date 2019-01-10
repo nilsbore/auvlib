@@ -3,9 +3,12 @@
 #include <liball/all.h>
 #include <endian.h>
 #include <fstream>
+
+#define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/date_time.hpp>
 #include <boost/date_time/gregorian/gregorian.hpp>
 #include <boost/algorithm/string.hpp>
+#undef BOOST_NO_CXX11_SCOPED_ENUMS
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>

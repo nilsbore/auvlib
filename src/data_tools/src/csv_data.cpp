@@ -1,7 +1,9 @@
 #include <data_tools/csv_data.h>
 #include <data_tools/xtf_data.h>
 
+#define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/date_time.hpp>
+#undef BOOST_NO_CXX11_SCOPED_ENUMS
 #include <ctype.h>
 
 using namespace std;

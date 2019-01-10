@@ -1,12 +1,11 @@
 #include <data_tools/submaps.h>
 #include <data_tools/colormap.h>
 
-#include <pcl/visualization/cloud_viewer.h>
 #include <sstream>
+#include <fstream>
+#include <iomanip>
 
 using namespace std;
-using PointT = pcl::PointXYZRGB;
-using CloudT = pcl::PointCloud<PointT>;
 
 namespace submaps {
 
@@ -179,56 +178,6 @@ ConstraintsT compute_binary_constraints(const TransTT& trans, const RotsTT& rots
     }
 
     return binary_constraints;
-}
-
-void visualize_submaps(SubmapsT& submaps)
-{
-	CloudT::Ptr cloud(new CloudT);
-
-	int i = 0;
-    for (int ii = 0; ii < submaps.size(); ++ii) {
-        for (int jj = 0; jj < submaps[ii].size(); ++jj) {
-		    PointT p;
-			p.getVector3fMap() = submaps[ii][jj].row(i).cast<float>();
-		    p.r = colormap[i % 44][0];
-		    p.g = colormap[i % 44][1];
-		    p.b = colormap[i % 44][2];
-		    cloud->push_back(p);
-            ++i;
-		}
-    }
-
-	cout << "Done constructing point cloud, starting viewer..." << endl;
-
-	//... populate cloud
-	pcl::visualization::CloudViewer viewer ("Simple Cloud Viewer");
-	viewer.showCloud (cloud);
-	while (!viewer.wasStopped ())
-	{
-	}
-}
-
-void visualize_submap(Eigen::MatrixXd& points)
-{
-	CloudT::Ptr cloud(new CloudT);
-
-    for (int i = 0; i < points.rows(); ++i) {
-		PointT p;
-		p.getVector3fMap() = points.row(i).cast<float>();
-		p.r = colormap[0][0];
-		p.g = colormap[0][1];
-		p.b = colormap[0][2];
-		cloud->push_back(p);
-    }
-
-	cout << "Done constructing point cloud, starting viewer..." << endl;
-
-	//... populate cloud
-	pcl::visualization::CloudViewer viewer ("Simple Cloud Viewer");
-	viewer.showCloud (cloud);
-	while (!viewer.wasStopped ())
-	{
-	}
 }
 
 Eigen::MatrixXd get_points_in_bound_transform(Eigen::MatrixXd points, Eigen::Vector3d& t,

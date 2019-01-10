@@ -2,15 +2,14 @@
 #include <data_tools/colormap.h>
 #include <data_tools/transforms.h>
 
-#include <pcl/point_types.h>
-#include <pcl/visualization/cloud_viewer.h>
-
 #include <fstream>
 #include <sstream>
 #include <iostream>
 #include <tuple>
 
+#define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/date_time.hpp>
+#undef BOOST_NO_CXX11_SCOPED_ENUMS
 
 #include <cereal/archives/json.hpp>
 
@@ -20,9 +19,6 @@ using namespace Eigen;
 namespace navi_data {
 
 using namespace std_data;
-
-using PointT = pcl::PointXYZRGB;
-using CloudT = pcl::PointCloud<PointT>;
 
 void match_timestamps(mbes_ping::PingsT& pings, nav_entry::EntriesT& entries)
 {
@@ -62,43 +58,12 @@ void match_timestamps(mbes_ping::PingsT& pings, nav_entry::EntriesT& entries)
 
 }
 
-void view_cloud(const mbes_ping::PingsT& pings)
-{
-    CloudT::Ptr cloud(new CloudT);
-	Array3d mean(0., 0., 0.);
-	double count = 0.;
-	for (const mbes_ping& ping : pings) {
-		//cereal::JSONOutputArchive ar(std::cout);
-		//ar(ping);
-		for (const Vector3d& p : ping.beams) {
-			mean += p.array(); count += 1.;
-		}
-    }
-	mean /= count;
-	for (const mbes_ping& ping : pings) {
-		for (const Vector3d& p : ping.beams) {
-		    PointT point; point.r = 255;
-			point.getVector3fMap() = (p-mean.matrix()).cast<float>();
-		    cloud->push_back(point);
-		}
-    }
-	pcl::visualization::CloudViewer viewer("Simple Cloud Viewer");
-	viewer.showCloud(cloud);
-	while (!viewer.wasStopped()) {
-
-    }
-}
-
 void divide_tracks(mbes_ping::PingsT& pings)
 {
     for (auto pos = pings.begin(); pos != pings.end(); ) {
         auto next = std::find_if(pos, pings.end(), [&](const mbes_ping& ping) {
             return ping.first_in_file_ && (&ping != &(*pos));
         });
-
-        /*if (pos == next) {
-            break;
-        }*/
 
         Vector3d first_pos = pos->pos_;
         Vector3d last_pos;
@@ -320,33 +285,6 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT, ObsT> create_submaps(const mbes_ping:
     */
 
     return make_tuple(submaps, trans, angs, matches, bounds, tracks);
-}
-
-void visualize_submaps(ObsT& submaps, TransT& trans, AngsT& angs) {
-
-	CloudT::Ptr cloud(new CloudT);
-
-    for (int i = 0; i < submaps.size(); ++i) {
-        Vector3f t = trans[i].cast<float>() - trans[0].cast<float>();
-        Matrix3d RM = data_transforms::euler_to_matrix(angs[i](0), angs[i](1), angs[i](2));
-        for (int j = 0; j < submaps[i].rows(); ++j) {
-            PointT p;
-            p.getVector3fMap() = (RM*submaps[i].row(j).transpose()).cast<float>() + t;
-            p.r = colormap[i%43][0];
-            p.g = colormap[i%43][1];
-            p.b = colormap[i%43][2];
-            cloud->push_back(p);
-        }
-    }
-
-	cout << "Done constructing point cloud, starting viewer..." << endl;
-
-	//... populate cloud
-	pcl::visualization::CloudViewer viewer ("Simple Cloud Viewer");
-	viewer.showCloud (cloud);
-	while (!viewer.wasStopped ())
-	{
-	}
 }
 
 } // namespace navi_data

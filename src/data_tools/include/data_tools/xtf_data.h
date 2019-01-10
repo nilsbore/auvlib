@@ -3,7 +3,9 @@
 
 #include <data_tools/navi_data.h>
 #include <eigen3/Eigen/Dense>
+#define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>
+#undef BOOST_NO_CXX11_SCOPED_ENUMS
 #include <opencv2/core/core.hpp>
 
 namespace xtf_data {
