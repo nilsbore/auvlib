@@ -4,64 +4,64 @@ include_directories(include)
 #link_directories(${CMAKE_BINARY_DIR}/embree)
 
 add_executable(parse_navi_data src/parse_navi_data.cpp)
-target_link_libraries(parse_navi_data navi_data sparse_gp data_transforms submaps gp_submaps gpgs_igl_visualizer std_data ${PCL_LIBRARIES})
+target_link_libraries(parse_navi_data navi_data sparse_gp data_transforms submaps gp_submaps gpgs_igl_visualizer std_data ${PCL_LIBRARIES} cxxopts)
 
 add_executable(parse_distort_navi_data src/parse_distort_navi_data.cpp)
-target_link_libraries(parse_distort_navi_data navi_data sparse_gp data_transforms submaps gp_submaps gpgs_igl_visualizer std_data benchmark ${PCL_LIBRARIES})
+target_link_libraries(parse_distort_navi_data navi_data sparse_gp data_transforms submaps gp_submaps gpgs_igl_visualizer std_data benchmark ${PCL_LIBRARIES} cxxopts)
 
 add_executable(parse_gsf_data src/parse_gsf_data.cpp)
-target_link_libraries(parse_gsf_data gsf_data navi_data sparse_gp data_transforms submaps gp_submaps gpgs_igl_visualizer std_data benchmark ${PCL_LIBRARIES})
+target_link_libraries(parse_gsf_data gsf_data navi_data sparse_gp data_transforms submaps gp_submaps gpgs_igl_visualizer std_data benchmark ${PCL_LIBRARIES} cxxopts)
 
 add_executable(parse_ping_data src/parse_ping_data.cpp)
-target_link_libraries(parse_ping_data lat_long_utm gsf_data csv_data navi_data sparse_gp data_transforms submaps gpgs_igl_visualizer std_data benchmark ${PCL_LIBRARIES})
+target_link_libraries(parse_ping_data lat_long_utm gsf_data csv_data navi_data sparse_gp data_transforms submaps gpgs_igl_visualizer std_data benchmark ${PCL_LIBRARIES} cxxopts)
 
 add_executable(parse_sim_data src/parse_sim_data.cpp)
-target_link_libraries(parse_sim_data sparse_gp data_transforms submaps gp_submaps std_data)
+target_link_libraries(parse_sim_data sparse_gp data_transforms submaps gp_submaps std_data cxxopts)
 
 add_executable(compare_ping_data src/compare_ping_data.cpp)
-target_link_libraries(compare_ping_data gsf_data csv_data navi_data sparse_gp data_transforms submaps gpgs_igl_visualizer std_data draw_map ${PCL_LIBRARIES})
+target_link_libraries(compare_ping_data gsf_data csv_data navi_data sparse_gp data_transforms submaps gpgs_igl_visualizer std_data draw_map ${PCL_LIBRARIES} cxxopts)
 
 add_executable(visualize_pointclouds src/visualize_pointclouds.cpp)
 target_link_libraries(visualize_pointclouds ${PCL_LIBRARIES})
 
 add_executable(visualize_process src/visualize_process.cpp)
-target_link_libraries(visualize_process sparse_gp rbf_kernel gaussian_noise probit_noise octave_convenience submaps ${PCL_LIBRARIES})
+target_link_libraries(visualize_process sparse_gp rbf_kernel gaussian_noise probit_noise octave_convenience submaps ${PCL_LIBRARIES} cxxopts)
 
 add_executable(register_process src/register_process.cpp)
-target_link_libraries(register_process sparse_gp submaps gpgs_cost_function gpgs_visualization)
+target_link_libraries(register_process sparse_gp submaps gpgs_cost_function gpgs_visualization cxxopts)
 
 add_executable(register_process_ceres src/register_process_ceres.cpp)
 #target_link_libraries(register_process_ceres rbf_kernel gaussian_noise probit_noise octave_convenience submaps ${PCL_LIBRARIES} ${OpenCV_LIBS} ${CERES_LIBRARIES})
-target_link_libraries(register_process_ceres submaps gpgs_cost_function gpgs_visualization)
+target_link_libraries(register_process_ceres submaps gpgs_cost_function gpgs_visualization cxxopts)
 
 add_executable(slam_process_ceres src/slam_process_ceres.cpp)
-target_link_libraries(slam_process_ceres submaps gp_submaps gpgs_cost_function gpgs_visualization gpgs_multi_visualizer gpgs_igl_visualizer std_data benchmark data_transforms)
+target_link_libraries(slam_process_ceres submaps gp_submaps gpgs_cost_function gpgs_visualization gpgs_multi_visualizer gpgs_igl_visualizer std_data benchmark data_transforms cxxopts)
 
 add_executable(filter_process src/filter_process.cpp)
-target_link_libraries(filter_process submaps gp_submaps std_data benchmark data_transforms)
+target_link_libraries(filter_process submaps gp_submaps std_data benchmark data_transforms cxxopts)
 
 add_executable(train_slam_process src/train_slam_process.cpp)
-target_link_libraries(train_slam_process submaps gp_submaps std_data data_transforms)
+target_link_libraries(train_slam_process submaps gp_submaps std_data data_transforms cxxopts)
 
 add_executable(reconstruct_slam_process src/reconstruct_slam_process.cpp)
-target_link_libraries(reconstruct_slam_process submaps gp_submaps std_data benchmark data_transforms)
+target_link_libraries(reconstruct_slam_process submaps gp_submaps std_data benchmark data_transforms cxxopts)
 
 add_executable(visualize_slam_process src/visualize_slam_process.cpp)
 #target_link_libraries(visualize_slam_process submaps gpgs_cost_function gpgs_visualization gpgs_multi_visualizer gpgs_igl_visualizer)
-target_link_libraries(visualize_slam_process gpgs_visualization gpgs_igl_visualizer std_data gp_submaps)
+target_link_libraries(visualize_slam_process gpgs_visualization gpgs_igl_visualizer std_data gp_submaps cxxopts)
 
 # TESTS
 add_executable(test_gaussian_process test/test_gaussian_process.cpp)
-target_link_libraries(test_gaussian_process sparse_gp rbf_kernel gaussian_noise probit_noise octave_convenience submaps ${PCL_LIBRARIES} ${CERES_LIBRARIES})
+target_link_libraries(test_gaussian_process sparse_gp rbf_kernel gaussian_noise probit_noise octave_convenience submaps ${PCL_LIBRARIES} ${CERES_LIBRARIES} cxxopts)
 
 add_executable(test_fast_derivatives test/test_fast_derivatives.cpp)
-target_link_libraries(test_fast_derivatives submaps gp_submaps std_data gpgs_cost_function gpgs_visualization gpgs_multi_visualizer data_transforms)
+target_link_libraries(test_fast_derivatives submaps gp_submaps std_data gpgs_cost_function gpgs_visualization gpgs_multi_visualizer data_transforms cxxopts)
 
 add_executable(test_parse_navi_data test/test_parse_navi_data.cpp)
-target_link_libraries(test_parse_navi_data navi_data data_transforms std_data benchmark)
+target_link_libraries(test_parse_navi_data navi_data data_transforms std_data benchmark cxxopts)
 
 add_executable(register_slam_process src/register_slam_process.cpp)
-target_link_libraries(register_slam_process std_data submaps gp_submaps gpgs_cost_function gpgs_visualization gpgs_multi_visualizer gpgs_igl_visualizer std_data benchmark data_transforms)
+target_link_libraries(register_slam_process std_data submaps gp_submaps gpgs_cost_function gpgs_visualization gpgs_multi_visualizer gpgs_igl_visualizer std_data benchmark data_transforms cxxopts)
 
 add_executable(draw_all_map src/draw_all_map.cpp)
-target_link_libraries(draw_all_map xtf_data all_data mesh_map -lpthread)
+target_link_libraries(draw_all_map xtf_data all_data mesh_map -lpthread cxxopts)

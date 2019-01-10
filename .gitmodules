@@ -8,3 +8,6 @@
 [submodule "src/libgsf"]
 	path = src/libgsf
 	url = https://github.com/nilsbore/libgsf.git
+[submodule "src/cxxopts"]
+	path = src/cxxopts
+	url = https://github.com/jarro2783/cxxopts.git

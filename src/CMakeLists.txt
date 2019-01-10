@@ -53,6 +53,8 @@ add_subdirectory(pybind11)
 
 message("Pybind11: " ${PYBIND11_INCLUDE_DIR})
 
+add_subdirectory(cxxopts)
+
 include_directories(${PYBIND11_INCLUDE_DIR} ${CERES_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS})
 #include_directories(eigen_cereal/include)
 
