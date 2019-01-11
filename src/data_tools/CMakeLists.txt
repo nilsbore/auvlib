@@ -21,8 +21,6 @@ add_library(lat_long_utm src/lat_long_utm.cpp)
 
 add_library(all_data src/all_data.cpp)
 
-add_executable(test_gsf src/test_gsf.cpp)
-
 add_executable(test_xtf src/test_xtf.cpp)
 
 add_executable(test_submap_tracks src/test_submap_tracks.cpp)
@@ -81,8 +79,6 @@ target_include_directories(all_data PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
-
-target_link_libraries(test_gsf gsf)
 
 target_link_libraries(test_xtf xtf_data std_data navi_data ${OpenCV_LIBS} ${Boost_LIBRARIES})
 
