@@ -1,3 +1,14 @@
+/*  Original code from https://github.com/austin-robot/utexas-art-ros-pkg/blob/master/stacks/art_vehicle/art_common/include/art/UTM.h
+ *
+ *  Conversions between Latitude/Longitude and UTM
+ *              (Universal Transverse Mercator) coordinates.
+ *
+ *  Copyright Chuck Gantz (chuck.gantz@globalstar.com)
+ *
+ *  License: Modified BSD Software License Agreement
+ *
+ */
+
 #include <data_tools/lat_long_utm.h>
 
 #include <cmath>
