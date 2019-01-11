@@ -1,3 +1,8 @@
+License
+=======
+
+# The vast majority of the code is subject is to following license (for exceptions, see below).
+
 BSD 3-Clause License
 
 Copyright (c) 2019, Nils Bore
@@ -27,3 +32,17 @@ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+# Submodules
+
+See the respective submodules for details on their license
+
+# Other included code
+
+Apart from these there is the file https://github.com/nilsbore/auvlib/blob/master/src/data_tools/src/lat_long_utm.cpp
+for handling lat-long/UTM conversions. It also has a modified BSD license, copyright Chuck Gantz.
+
+The xtf parsing library https://github.com/nilsbore/auvlib/tree/master/src/libxtf is freely distributed
+by Triton Technology with the following disclaimer:
+
+"This program may be freely distributed. Triton Technology assumes no liability of any kind for any errors related to this program."
