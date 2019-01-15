@@ -10,6 +10,9 @@
  */
 
 #include <bathy_maps/sss_map_image.h>
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 using namespace std;
 using namespace xtf_data;
@@ -212,6 +215,198 @@ sss_patch_views::ViewsT convert_maps_to_patches(const sss_map_image::ImagesT& ma
                 patches.push_back(patch_views);
             }
         }
+    }
+
+    return patches;
+}
+
+sss_patch_views::ViewsT get_oriented_patches(const cv::Mat& image, const sss_map_image& map_image, double patch_size, double resolution, bool visualize=false, bool normalize_colors=false)
+{
+    int image_size = patch_size*resolution;
+
+    //cv::Mat vis_image = image.clone();
+    double max_value = 1.; double min_value = 0.;
+    cv::Mat vis_image = image.clone();
+    if (normalize_colors) {
+        cv::minMaxLoc(vis_image, &min_value, &max_value);
+        vis_image -= min_value;
+    }
+    vis_image.convertTo(vis_image, CV_8U, 255.0/(max_value-min_value));
+    cv::cvtColor(vis_image, vis_image, cv::COLOR_GRAY2BGR);
+
+    vector<vector<cv::Mat> > cv_patches;
+    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > origins;
+
+    Eigen::Vector3d last_pos = map_image.pos[0];
+    for (int i = 0; i < map_image.pos.size(); ++i) {
+        if ((last_pos - map_image.pos[i]).norm() < patch_size) {
+            continue;
+        }
+        Eigen::Vector3d center_pos = .5*(last_pos + map_image.pos[i]);
+        Eigen::Vector3d forward_dir = last_pos - map_image.pos[i];
+        forward_dir.normalize();
+        double forward_angle = 180./M_PI*atan2(forward_dir(0), -forward_dir(1));
+
+        Eigen::Vector3d right_dir = Eigen::Vector3d(forward_dir(1), -forward_dir(0), 0.);
+        right_dir.normalize();
+
+        cv_patches.push_back(vector<cv::Mat>());
+        origins.push_back(center_pos);
+        for (int j = 1; j <= 4; ++j) {
+            Eigen::Vector3d right_pos = resolution*(center_pos + double(j)*patch_size*right_dir);
+            Eigen::Vector3d left_pos = resolution*(center_pos - double(j)*patch_size*right_dir);
+
+            //cv::polylines(Mat& img, const Point** pts, const int* npts, 1, true, cv::Scalar(255,0,0), 1); //, int lineType=8, int shift=0)
+            cv::RotatedRect rRect = cv::RotatedRect(cv::Point2f(right_pos(0), right_pos(1)), cv::Size2f(image_size, image_size), forward_angle);
+            cv::RotatedRect lRect = cv::RotatedRect(cv::Point2f(left_pos(0), left_pos(1)), cv::Size2f(image_size, image_size), forward_angle);
+            cv::Point2f lvertices[4];
+            cv::Point2f rvertices[4];
+            lRect.points(lvertices);
+            rRect.points(rvertices);
+            for (int i = 0; i < 4; i++) {
+                cv::line(vis_image, rvertices[i], rvertices[(i+1)%4], cv::Scalar(0,0,255), 1);
+                cv::line(vis_image, lvertices[i], lvertices[(i+1)%4], cv::Scalar(0,255,0), 1);
+            }
+            cv::Rect rbrect = rRect.boundingRect();
+            cv::Rect lbrect = lRect.boundingRect();
+
+            bool ris_inside = (rbrect & cv::Rect(0, 0, image.cols, image.rows)) == rbrect;
+            bool lis_inside = (lbrect & cv::Rect(0, 0, image.cols, image.rows)) == lbrect;
+            
+            cv::Size2f cv_image_size = cv::Size2f(image_size, image_size);
+            if (!ris_inside || !lis_inside) {
+                //cv_patches.back().push_back(cv::Mat::zeros(cv_image_size, CV_8UC3));
+                //cv_patches.back().push_back(cv::Mat::zeros(cv_image_size, CV_8UC3));
+                cv_patches.back().push_back(cv::Mat::zeros(cv_image_size, CV_32FC1));
+                cv_patches.back().push_back(cv::Mat::zeros(cv_image_size, CV_32FC1));
+                continue;
+            }
+
+            cv::rectangle(vis_image, rbrect, cv::Scalar(255,0,0), 1);
+            cv::rectangle(vis_image, lbrect, cv::Scalar(255,0,0), 1);
+
+            cv::Mat rroi = image(rbrect);
+            cv::Mat lroi = image(lbrect);
+
+            cv::Point rcenter = cv::Point(rroi.rows/2, rroi.cols/2);
+            cv::Point lcenter = cv::Point(lroi.rows/2, lroi.cols/2);
+
+            cv::Mat rrot = cv::getRotationMatrix2D(rcenter, forward_angle, 1.0);
+            cv::Mat lrot = cv::getRotationMatrix2D(lcenter, forward_angle, 1.0);
+
+            cv::Mat rrotated;
+            cv::Mat lrotated;
+            cv::warpAffine(rroi, rrotated, rrot, rroi.size(), cv::INTER_CUBIC);
+            cv::warpAffine(lroi, lrotated, lrot, lroi.size(), cv::INTER_CUBIC);
+
+            cv::Point rrotcenter = cv::Point(rrotated.rows/2, rrotated.cols/2);
+            cv::Point lrotcenter = cv::Point(lrotated.rows/2, lrotated.cols/2);
+            cv::Mat rcropped, lcropped;
+            cv::getRectSubPix(rrotated, cv_image_size, rrotcenter, rcropped);
+            cv::getRectSubPix(lrotated, cv_image_size, lrotcenter, lcropped);
+
+            cv_patches.back().push_back(rcropped);
+            cv_patches.back().push_back(lcropped);
+        }
+
+        last_pos = map_image.pos[i];
+    }
+
+    if (visualize) {
+        cv::imshow("My image", vis_image);
+    }
+
+    //cv::Mat wf(cv_patches.size()*image_size, 2*4*image_size, CV_8UC3);
+    cv::Mat wf(cv_patches.size()*image_size, 2*4*image_size, CV_32FC1);
+
+    //vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> > patches;
+    //vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > poss;
+    sss_patch_views::ViewsT patches;
+
+    for (int i = 0; i < cv_patches.size(); ++i) {
+        for (int j = 0; j < cv_patches[i].size(); ++j) {
+            int ind = j / 2;
+            cv::Mat patch = cv_patches[i][j].clone();
+            Eigen::MatrixXd eigen_patch(image_size, image_size);
+            for (int row = 0; row < image_size; ++row) {
+                for (int col = 0; col < image_size; ++col) {
+                    if (j % 2 == 0) {
+                        eigen_patch(row, col) = patch.at<float>(row, image_size-1-col);
+                    }
+                    else {
+                        eigen_patch(row, col) = patch.at<float>(row, col);
+                    }
+                }
+            }
+            //poss.push_back(Eigen::Vector3d(-(0.5+double(ind)*patch_size), 0., 0.));
+            //patches.push_back(eigen_patch);
+            sss_patch_views view;
+            view.sss_views.push_back(eigen_patch);
+            view.patch_view_pos.push_back(Eigen::Vector3d(-double(ind+1)*patch_size, 0., 0.));
+            if (j % 2 == 0) {
+                view.patch_view_dirs.push_back(Eigen::Vector3d(0., 1., 0.));
+            }
+            else {
+                view.patch_view_dirs.push_back(Eigen::Vector3d(0., -1., 0.));
+            }
+            view.patch_origin = origins[i];
+            view.patch_size = patch_size;
+            patches.push_back(view);
+
+            if (normalize_colors) {
+                patch -= min_value;
+                patch *= 1./(max_value - min_value);
+            }
+            if (j % 2 == 0) {
+                patch.copyTo(wf(cv::Rect(0*image_size+(3-ind)*image_size, i*image_size, image_size, image_size)));
+            }
+            else {
+                patch.copyTo(wf(cv::Rect(4*image_size+ind*image_size, i*image_size, image_size, image_size)));
+
+            }
+        }
+    }
+
+    if (visualize) {
+        cv::imshow("waterfall", wf);
+        cv::waitKey(200);
+    }
+
+    return patches; //make_pair(patches, poss);
+}
+
+sss_patch_views::ViewsT convert_maps_to_single_angle_patches(const sss_map_image::ImagesT& map_images, const Eigen::MatrixXd& height_map, double patch_size)
+{
+    sss_patch_views::ViewsT patches;
+
+    sss_map_image::BoundsT bounds = map_images[0].bounds;
+    int image_cols = map_images[0].sss_map_image.cols();
+    double resolution = double(image_cols)/(bounds(1, 0) - bounds(0, 0));
+
+    int image_size = patch_size*resolution;
+
+    cout << "Got image size: " << image_size << endl;
+
+    for (int n = 0; n < map_images.size(); ++n) {
+
+        cv::Mat sss_image(map_images[n].sss_map_image.rows(), map_images[n].sss_map_image.rows(), CV_32FC1);
+        cv::Mat map_image(map_images[n].sss_map_image.rows(), map_images[n].sss_map_image.rows(), CV_32FC1);
+        for (int i = 0; i < sss_image.rows; ++i) {
+            for (int j = 0; j < sss_image.cols; ++j) {
+                sss_image.at<float>(i, j) = map_images[n].sss_map_image(i, j);
+                map_image.at<float>(i, j) = height_map(i, j);
+            }
+        }
+
+        bool visualize = false;
+        sss_patch_views::ViewsT sss_patches = get_oriented_patches(sss_image, map_images[n], patch_size, resolution, visualize);
+        sss_patch_views::ViewsT map_patches = get_oriented_patches(map_image, map_images[n], patch_size, resolution, visualize, true);
+
+        for (int i = 0; i < sss_patches.size(); ++i) {
+            sss_patches[i].patch_height = map_patches[i].sss_views[0];
+        }
+        patches.insert(patches.end(), sss_patches.begin(), sss_patches.end());
+
     }
 
     return patches;

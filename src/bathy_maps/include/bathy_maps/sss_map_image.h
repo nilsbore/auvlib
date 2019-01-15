@@ -90,5 +90,6 @@ public:
 };
 
 sss_patch_views::ViewsT convert_maps_to_patches(const sss_map_image::ImagesT& map_images, const Eigen::MatrixXd& height_map, double patch_size);
+sss_patch_views::ViewsT convert_maps_to_single_angle_patches(const sss_map_image::ImagesT& map_images, const Eigen::MatrixXd& height_map, double patch_size);
 
 #endif // SSS_MAP_IMAGE_H
