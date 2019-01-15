@@ -18,8 +18,7 @@ sudo apt-get install libcereal-dev libglfw3-dev libceres-dev
 
 Once cloned, you need to get the libigl submodule and some of its dependencies:
 ```
-git submodule init
-git submodule update
+git submodule update --init
 cd libigl
 git submodule update --init external/embree
 git submodule update --init external/glfw
