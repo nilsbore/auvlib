@@ -257,8 +257,8 @@ sss_patch_views::ViewsT get_oriented_patches(const cv::Mat& image, const sss_map
             Eigen::Vector3d left_pos = resolution*(center_pos - double(j)*patch_size*right_dir);
 
             //cv::polylines(Mat& img, const Point** pts, const int* npts, 1, true, cv::Scalar(255,0,0), 1); //, int lineType=8, int shift=0)
-            cv::RotatedRect rRect = cv::RotatedRect(cv::Point2f(right_pos(0), right_pos(1)), cv::Size2f(image_size, image_size), forward_angle);
-            cv::RotatedRect lRect = cv::RotatedRect(cv::Point2f(left_pos(0), left_pos(1)), cv::Size2f(image_size, image_size), forward_angle);
+            cv::RotatedRect rRect = cv::RotatedRect(cv::Point2f(right_pos(0), right_pos(1)), cv::Size2f(image_size+2, image_size+2), forward_angle);
+            cv::RotatedRect lRect = cv::RotatedRect(cv::Point2f(left_pos(0), left_pos(1)), cv::Size2f(image_size+2, image_size+2), forward_angle);
             cv::Point2f lvertices[4];
             cv::Point2f rvertices[4];
             lRect.points(lvertices);
@@ -369,7 +369,7 @@ sss_patch_views::ViewsT get_oriented_patches(const cv::Mat& image, const sss_map
 
     if (visualize) {
         cv::imshow("waterfall", wf);
-        cv::waitKey(200);
+        cv::waitKey(0); //200);
     }
 
     return patches; //make_pair(patches, poss);
@@ -398,7 +398,7 @@ sss_patch_views::ViewsT convert_maps_to_single_angle_patches(const sss_map_image
             }
         }
 
-        bool visualize = false;
+        bool visualize = true;
         sss_patch_views::ViewsT sss_patches = get_oriented_patches(sss_image, map_images[n], patch_size, resolution, visualize);
         sss_patch_views::ViewsT map_patches = get_oriented_patches(map_image, map_images[n], patch_size, resolution, visualize, true);
 
