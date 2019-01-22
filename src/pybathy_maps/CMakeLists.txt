@@ -50,4 +50,4 @@ install(TARGETS pymesh_map pydraw_map pypatch_draper pymap_draper
 )  # This is for Windows
 
 install(FILES module/__init__.py DESTINATION ${CMAKE_INSTALL_LIBDIR}/auvlib)
-install(FILES module/__init__.py module/data_vis.py DESTINATION ${CMAKE_INSTALL_LIBDIR}/auvlib/bathy_maps)
+install(FILES module/__init__.py module/data_vis.py module/gen_utils.py DESTINATION ${CMAKE_INSTALL_LIBDIR}/auvlib/bathy_maps)

@@ -24,7 +24,18 @@ namespace mesh_map {
     std::pair<Eigen::MatrixXd, BoundsT> height_map_from_pings(const std_data::mbes_ping::PingsT& pings, double res);
     std::tuple<Eigen::MatrixXd, Eigen::MatrixXi, BoundsT> mesh_from_pings(const std_data::mbes_ping::PingsT& pings, double res=0.5);
     void show_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F);
+    //void show_textured_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& height_map, const BoundsT& bounds);
     void show_height_map(const Eigen::MatrixXd& height_map);
+    void show_textured_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
+                            const Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic>& R,
+                            const Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic>& G,
+                            const Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic>& B,
+                            const BoundsT& bounds);
+
+    std::tuple<Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic>,
+               Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic>,
+               Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> >
+    height_map_to_texture(const Eigen::MatrixXd& height_map);
 
 }
 

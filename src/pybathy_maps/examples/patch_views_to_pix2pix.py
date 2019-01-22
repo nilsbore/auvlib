@@ -8,6 +8,7 @@ from copy import deepcopy
 import sys
 import os
 import cv2
+from auvlib.bathy_maps.gen_utils import clip_to_interval
 
 def filter_sss_coverage(patch_views):
     for view in patch_views:
@@ -29,22 +30,6 @@ def filter_map_extremas(patch_views, interval):
     patch_views = filter(lambda s: np.mean(s.patch_height == interval) < 0.1, patch_views)
     return patch_views
 
-def clip_map_to_interval(patch_views, interval):
-    for view in patch_views:
-        current_mean = np.mean(view.patch_height)
-        for i in range(0, 10):
-            diff = view.patch_height - current_mean
-            if np.any(np.isnan(diff)):
-                break
-            in_interval = np.logical_and(diff < 0.5*interval, diff > -0.5*interval)
-            if not np.any(interval):
-                break
-            current_mean = np.mean(view.patch_height[in_interval])
-            #print current_mean
-        view.patch_height = view.patch_height - (current_mean - 0.5*interval)
-        view.patch_height = np.minimum(np.maximum(view.patch_height, 0.), interval)
-    return patch_views
-
 patch_views = patch_draper.sss_patch_views.read_data(sys.argv[1])
 #patch_views.append(patch_views[0])
 
@@ -59,7 +44,8 @@ patch_views = filter_map_coverage(patch_views)
 print "Number of patches after map filtering: ", len(patch_views)
 
 interval = 2.
-patch_views = clip_map_to_interval(patch_views, interval)
+for view in patch_views:
+    view.patch_height = clip_to_interval(view.patch_height, interval)
 
 patch_views = filter_map_nans(patch_views)
 

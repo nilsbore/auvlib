@@ -82,11 +82,107 @@ void show_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F)
 	viewer.launch();
 }
 
+std::tuple<Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic>,
+           Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic>,
+           Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> >
+height_map_to_texture(const Eigen::MatrixXd& height_map)
+{
+    Eigen::ArrayXXd height_map_array = height_map.array();
+    double minv = height_map.minCoeff();
+    height_map_array -= minv*(height_map_array < 0).cast<double>();
+    double maxv = height_map_array.maxCoeff();
+    height_map_array /= maxv;
+
+    int rows = height_map.rows();
+    int cols = height_map.cols();
+
+    Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> R(cols, rows);
+    Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> G(cols, rows);
+    Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> B(cols, rows);
+
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            tie(R(j, i), G(j, i), B(j, i)) = jet_mesh(height_map_array(i, j));
+        }
+    }
+
+    return make_tuple(R, G, B);
+}
+
+//void show_textured_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& height_map, const BoundsT& bounds)
+void show_textured_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
+                        const Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic>& R,
+                        const Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic>& G,
+                        const Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic>& B,
+                        const BoundsT& bounds)
+{
+    /*
+    Eigen::ArrayXXd height_map_array = height_map.array();
+    double minv = height_map.minCoeff();
+    height_map_array -= minv*(height_map_array < 0).cast<double>();
+    double maxv = height_map_array.maxCoeff();
+    height_map_array /= maxv;
+
+    int rows = height_map.rows();
+    int cols = height_map.cols();
+
+    Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> R(cols, rows);
+    Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> G(cols, rows);
+    Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> B(cols, rows);
+
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            tie(R(j, i), G(j, i), B(j, i)) = jet_mesh(height_map_array(i, j));
+        }
+    }
+    */
+
+    /*
+    Eigen::MatrixXd UV(4,2);
+    UV << bounds(0, 0), bounds(0, 1),
+          bounds(1, 0), bounds(0, 1),
+          bounds(1, 0), bounds(1, 1),
+          bounds(0, 0), bounds(1, 1);
+    */
+    Eigen::MatrixXd UV = V.leftCols<2>();
+    //UV.col(0).array() -= bounds(0, 0);
+    UV.col(0).array() /= bounds(1, 0) - bounds(0, 0);
+    //UV.col(1).array() -= bounds(0, 1);
+    UV.col(1).array() /= bounds(1, 1) - bounds(0, 1);
+
+    igl::opengl::glfw::Viewer viewer;
+	viewer.data().set_mesh(V, F);
+    viewer.data().set_uv(UV);
+    // Add per-vertex colors
+    //viewer.data().set_colors(C);
+
+    //Eigen::MatrixXd C_jet;
+    //igl::jet(V.col(2), true, C_jet);
+    // Add per-vertex colors
+    //viewer.data().set_colors(C_jet);
+
+    viewer.data().show_texture = true;
+
+    // Use the image as a texture
+    viewer.data().set_texture(R,G,B);
+
+    viewer.data().point_size = 10;
+    viewer.data().line_width = 1;
+
+    //viewer.callback_pre_draw = std::bind(&IglVisCallback::callback_pre_draw, this, std::placeholders::_1);
+    //viewer.callback_key_pressed = std::bind(&IglVisCallback::callback_key_pressed, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    viewer.core.is_animating = true;
+    viewer.core.animation_max_fps = 30.;
+	//viewer.launch();
+    viewer.core.background_color << 1., 1., 1., 1.; // white background
+	viewer.launch();
+}
+
 void show_height_map(const Eigen::MatrixXd& height_map)
 {
     double minv = height_map.minCoeff();
     Eigen::ArrayXXd height_map_array = height_map.array();
-    height_map_array -= minv*(height_map_array > 0).cast<double>();
+    height_map_array -= minv*(height_map_array < 0).cast<double>();
     double maxv = height_map_array.maxCoeff();
     height_map_array /= maxv;
 
