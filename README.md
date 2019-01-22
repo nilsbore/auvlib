@@ -38,12 +38,12 @@ You should now have a compiled version of auvlib in the folder
 ```
 export PYTHONPATH=$PYTHONPATH:/path/to/auvlib/install/lib
 ```
-in any terminal where you want to use the python version of
+in any terminal where you want to use the python 2.7 version of
 the library, or add this line to your `~/.bashrc`.
 
 ## Using as a python library
 
-Python is the preferred interface for auvlib. In general, the python bindings have more
+Python 2.7 is the preferred interface for auvlib. In general, the python bindings have more
 complete documentation and supports most of the use cases of the c++ library.
 Extensive documentation is available [at this site](https://nilsbore.github.io/auvlib-docs/index.html).
 
