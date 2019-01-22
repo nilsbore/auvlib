@@ -4,6 +4,7 @@ add_library(pymesh_map MODULE src/pymesh_map.cpp)
 add_library(pydraw_map MODULE src/pydraw_map.cpp)
 add_library(pypatch_draper MODULE src/pypatch_draper.cpp)
 add_library(pymap_draper MODULE src/pymap_draper.cpp)
+add_library(pysss_gen_sim MODULE src/pysss_gen_sim.cpp)
 
 target_include_directories(pymesh_map PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -21,6 +22,11 @@ target_include_directories(pypatch_draper PUBLIC
     PRIVATE src)
 
 target_include_directories(pymap_draper PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+    PRIVATE src)
+
+target_include_directories(pysss_gen_sim PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
@@ -45,7 +51,12 @@ set_target_properties(pymap_draper PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
                                                   OUTPUT_NAME "map_draper"
                                                   SUFFIX "${PYTHON_MODULE_EXTENSION}")
 
-install(TARGETS pymesh_map pydraw_map pypatch_draper pymap_draper
+target_link_libraries(pysss_gen_sim PRIVATE sss_gen_sim base_draper igl::embree ${OpenCV_LIBS} ${BOOST_LIBRARIES} igl::core igl::opengl_glfw -lpthread pybind11::module)
+set_target_properties(pysss_gen_sim PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
+                                                  OUTPUT_NAME "sss_gen_sim"
+                                                  SUFFIX "${PYTHON_MODULE_EXTENSION}")
+
+install(TARGETS pymesh_map pydraw_map pypatch_draper pymap_draper pysss_gen_sim
     LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}/auvlib/bathy_maps
 )  # This is for Windows
 
