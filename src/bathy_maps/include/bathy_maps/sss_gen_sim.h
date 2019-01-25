@@ -31,12 +31,22 @@ protected:
     cv::Mat height_map_cv;
     Eigen::MatrixXd gen_sss_window;
     Eigen::Vector3d window_point;
+    cv::Mat waterfall_image;
+    cv::Mat gt_waterfall_image;
+    Eigen::MatrixXd texture;
+    size_t nbr_windows;
 
     void generate_sss_window();
+    Eigen::VectorXd compute_time_windows(const Eigen::MatrixXd& P, const Eigen::VectorXd& intensities, const xtf_data::xtf_sss_ping_side& ping);
+    void visualize_rays(const Eigen::MatrixXd& hits_left, const Eigen::MatrixXd& hits_right);
+    void visualize_vehicle();
+    Eigen::VectorXd get_texture_intensities(const Eigen::MatrixXd& P);
+    Eigen::MatrixXd get_UV(const Eigen::MatrixXd& P);
+    std::pair<Eigen::MatrixXd, Eigen::MatrixXd> project();
 
 public:
     
-    static Eigen::MatrixXd default_callback(const Eigen::MatrixXd&) {}
+    static Eigen::MatrixXd default_callback(const Eigen::MatrixXd& window) { return window; }
 
     void set_gen_callback(const std::function<Eigen::MatrixXd(const Eigen::MatrixXd&)>& callback) { gen_callback = callback; }
     //void set_resolution(double new_resolution);
