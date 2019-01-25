@@ -33,6 +33,7 @@ SSSGenSim::SSSGenSim(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
 {
     viewer.callback_pre_draw = std::bind(&SSSGenSim::callback_pre_draw, this, std::placeholders::_1);
     window_point = Eigen::Vector3d::Zero();
+    window_heading = 0.;
     height_map_cv = cv::Mat(height_map.rows(), height_map.cols(), CV_32FC1);
     for (int i = 0; i < height_map.rows(); ++i) {
         for (int j = 0; j < height_map.cols(); ++j) {
@@ -185,7 +186,7 @@ pair<Eigen::MatrixXd, Eigen::MatrixXd> SSSGenSim::project()
 Eigen::MatrixXd SSSGenSim::get_UV(const Eigen::MatrixXd& P)
 {
     double resolution = double(height_map_cv.cols)/(bounds(1, 0) - bounds(0, 0));
-    double heading = pings[i].heading_ + sensor_yaw;
+    double heading = window_heading; // pings[i].heading_ + sensor_yaw;
     Eigen::MatrixXd UV = P.leftCols<2>();
     UV.array().rowwise() -= window_point.head<2>().transpose().array();
     Eigen::Matrix2d R = Eigen::AngleAxisd(-heading, Eigen::Vector3d::UnitZ()).matrix().topLeftCorner<2, 2>();
@@ -215,12 +216,16 @@ Eigen::VectorXd SSSGenSim::get_texture_intensities(const Eigen::MatrixXd& P)
     return intensities;
 }
 
-Eigen::VectorXd SSSGenSim::compute_time_windows(const Eigen::MatrixXd& P, const Eigen::VectorXd& intensities, const xtf_data::xtf_sss_ping_side& ping)
+Eigen::VectorXd SSSGenSim::compute_times(const Eigen::MatrixXd& P)
 {
     Eigen::Vector3d pos = pings[i].pos_ - offset;
     double sound_vel = sound_speeds[0].vels.head(sound_speeds[0].vels.rows()-1).mean();
     Eigen::VectorXd times = 2.*(P.rowwise() - pos.transpose()).rowwise().norm()/sound_vel;
+    return times;
+}
 
+Eigen::VectorXd SSSGenSim::compute_time_windows(const Eigen::VectorXd& times, const Eigen::VectorXd& intensities, const xtf_data::xtf_sss_ping_side& ping)
+{
     double ping_step = ping.time_duration / double(nbr_windows);
     Eigen::VectorXd time_windows = Eigen::VectorXd::Zero(nbr_windows);
     Eigen::VectorXd time_counts = Eigen::VectorXd::Zero(nbr_windows);
@@ -232,9 +237,26 @@ Eigen::VectorXd SSSGenSim::compute_time_windows(const Eigen::MatrixXd& P, const 
         }
     }
     time_windows.array() /= time_counts.array();
-
     return time_windows;
 }
+
+/*
+Eigen::VectorXd SSSGenSim::match_intensities(const Eigen::VectorXd& times, const xtf_data::xtf_sss_ping_side& ping)
+{
+    double ping_step = ping.time_duration / double(nbr_windows);
+    Eigen::VectorXd time_windows = Eigen::VectorXd::Zero(nbr_windows);
+    Eigen::VectorXd time_counts = Eigen::VectorXd::Zero(nbr_windows);
+    for (int i = 0; i < times.rows(); ++i) {
+        int index = int(times(i)/ping_step);
+        if (index < nbr_windows) {
+            time_windows(index) += intensities(i);
+            time_counts(index) += 1.;
+        }
+    }
+    time_windows.array() /= time_counts.array();
+    return time_windows;
+}
+*/
 
 void SSSGenSim::visualize_rays(const Eigen::MatrixXd& hits_left, const Eigen::MatrixXd& hits_right)
 {
@@ -272,6 +294,7 @@ bool SSSGenSim::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
 
     if ((window_point - (pings[i].pos_ - offset)).norm() > 4.) {
         window_point = pings[i].pos_ - offset;
+        window_heading = pings[i].heading_ + sensor_yaw;
         generate_sss_window();
     }
 
@@ -284,8 +307,18 @@ bool SSSGenSim::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
     Eigen::VectorXd intensities_left = get_texture_intensities(hits_left);
     Eigen::VectorXd intensities_right = get_texture_intensities(hits_right);
 
-    Eigen::VectorXd time_windows_left = compute_time_windows(hits_left, intensities_left, pings[i].port);
-    Eigen::VectorXd time_windows_right = compute_time_windows(hits_right, intensities_right, pings[i].stbd);
+    /*
+    if (training) {
+        set_sidescan_intensities(hits_left, sidescan_intensities_left);
+        set_sidescan_intensities(hits_right, sidescan_intensities_right);
+    }
+    */
+
+    Eigen::VectorXd times_left = compute_times(hits_left);
+    Eigen::VectorXd times_right = compute_times(hits_right);
+
+    Eigen::VectorXd time_windows_left = compute_time_windows(times_left, intensities_left, pings[i].port);
+    Eigen::VectorXd time_windows_right = compute_time_windows(times_right, intensities_right, pings[i].stbd);
 
     Eigen::VectorXd time_windows(time_windows_left.rows() + time_windows_right.rows());
     time_windows.tail(time_windows_right.rows()) = time_windows_right;

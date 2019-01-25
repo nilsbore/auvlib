@@ -31,13 +31,15 @@ protected:
     cv::Mat height_map_cv;
     Eigen::MatrixXd gen_sss_window;
     Eigen::Vector3d window_point;
+    double window_heading;
     cv::Mat waterfall_image;
     cv::Mat gt_waterfall_image;
     Eigen::MatrixXd texture;
     size_t nbr_windows;
 
     void generate_sss_window();
-    Eigen::VectorXd compute_time_windows(const Eigen::MatrixXd& P, const Eigen::VectorXd& intensities, const xtf_data::xtf_sss_ping_side& ping);
+    Eigen::VectorXd compute_times(const Eigen::MatrixXd& P);
+    Eigen::VectorXd compute_time_windows(const Eigen::VectorXd& times, const Eigen::VectorXd& intensities, const xtf_data::xtf_sss_ping_side& ping);
     void visualize_rays(const Eigen::MatrixXd& hits_left, const Eigen::MatrixXd& hits_right);
     void visualize_vehicle();
     Eigen::VectorXd get_texture_intensities(const Eigen::MatrixXd& P);
