@@ -13,6 +13,7 @@
 #define DATA_TRANSFORMS_H
 
 #include <eigen3/Eigen/Dense>
+#include <vector>
 
 namespace data_transforms {
 

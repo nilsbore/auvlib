@@ -13,6 +13,7 @@
 #include <data_tools/colormap.h>
 
 #include <opencv2/imgproc/imgproc.hpp>
+#include <numeric>
 
 using namespace std;
 
