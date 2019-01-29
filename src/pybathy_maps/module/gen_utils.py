@@ -1,7 +1,7 @@
 import numpy as np
 
 def clip_to_interval(height_patch, interval):
-    current_mean = np.mean(height_patch)
+    current_mean = np.mean(height_patch[height_patch < 0.])
     for i in range(0, 10):
         diff = height_patch - current_mean
         if np.any(np.isnan(diff)):
