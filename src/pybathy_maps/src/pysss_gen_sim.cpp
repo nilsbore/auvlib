@@ -36,6 +36,7 @@ PYBIND11_MODULE(sss_gen_sim, m) {
         .def("set_vehicle_mesh", &SSSGenSim::set_vehicle_mesh, "Provide the viewer with a vehicle model, purely for visualization")
         .def("show", &SSSGenSim::show, "Start the draping, and show the visualizer")
         // Methods unique to SSSGenSim:
-        .def("set_gen_callback", &SSSGenSim::set_gen_callback, "Set the function that generates sidescan patches from bathymetry");
+        .def("set_gen_callback", &SSSGenSim::set_gen_callback, "Set the function that generates sidescan patches from bathymetry")
+        .def("set_sss_from_waterfall", &SSSGenSim::set_sss_from_waterfall, "If true, predicts sidescan from waterfall elevation image, otherwise from local bathymetry window");
 
 }

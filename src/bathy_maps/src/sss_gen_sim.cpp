@@ -29,7 +29,8 @@ SSSGenSim::SSSGenSim(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
                      const Eigen::MatrixXd& height_map)
     : BaseDraper(V1, F1, pings, bounds, sound_speeds),
       bounds(bounds), gen_callback(&default_callback),
-      height_map(height_map)
+      height_map(height_map),
+      sss_from_waterfall(false)
 {
     viewer.callback_pre_draw = std::bind(&SSSGenSim::callback_pre_draw, this, std::placeholders::_1);
     window_point = Eigen::Vector3d::Zero();
@@ -40,10 +41,14 @@ SSSGenSim::SSSGenSim(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
             height_map_cv.at<float>(i, j) = height_map(i, j);
         }
     }
-    nbr_windows = (pings[0].port.pings.size() + pings[0].stbd.pings.size())/(2*20);
+    nbr_windows = 256; //(pings[0].port.pings.size() + pings[0].stbd.pings.size())/(2*20);
+    cout << "Nbr windows: " << nbr_windows << endl;
     waterfall_image = cv::Mat::zeros(1000, 2*nbr_windows, CV_8UC1);
     gt_waterfall_image = cv::Mat::zeros(1000, 2*nbr_windows, CV_8UC1);
     texture = Eigen::MatrixXd::Zero(20, 9*20);
+
+    waterfall_depth = Eigen::MatrixXd::Zero(32, 2*nbr_windows);
+    waterfall_row = 0;
 }
 
 Eigen::MatrixXd scale_height_map(const Eigen::MatrixXd& height_map)
@@ -240,6 +245,22 @@ Eigen::VectorXd SSSGenSim::compute_time_windows(const Eigen::VectorXd& times, co
     return time_windows;
 }
 
+Eigen::VectorXd SSSGenSim::compute_depth_windows(const Eigen::VectorXd& times, const Eigen::MatrixXd& hits, const xtf_data::xtf_sss_ping_side& ping)
+{
+    double ping_step = ping.time_duration / double(nbr_windows);
+    Eigen::VectorXd depth_windows = Eigen::VectorXd::Zero(nbr_windows);
+    Eigen::VectorXd depth_counts = Eigen::VectorXd::Zero(nbr_windows);
+    for (int i = 0; i < times.rows(); ++i) {
+        int index = int(times(i)/ping_step);
+        if (index < nbr_windows) {
+            depth_windows(index) += hits(i, 2);
+            depth_counts(index) += 1.;
+        }
+    }
+    depth_windows.array() /= depth_counts.array();
+    return depth_windows;
+}
+
 /*
 Eigen::VectorXd SSSGenSim::match_intensities(const Eigen::VectorXd& times, const xtf_data::xtf_sss_ping_side& ping)
 {
@@ -286,53 +307,9 @@ void SSSGenSim::visualize_vehicle()
     viewer.data().set_vertices(V);
 }
 
-bool SSSGenSim::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
+void SSSGenSim::construct_gt_waterfall()
 {
-    if (i >= pings.size()) {
-        return false;
-    }
-
-    if ((window_point - (pings[i].pos_ - offset)).norm() > 4.) {
-        window_point = pings[i].pos_ - offset;
-        window_heading = pings[i].heading_ + sensor_yaw;
-        generate_sss_window();
-    }
-
-    Eigen::MatrixXd hits_left;
-    Eigen::MatrixXd hits_right;
-    tie(hits_left, hits_right) = project();
-
-    //project_sss();
-
-    Eigen::VectorXd intensities_left = get_texture_intensities(hits_left);
-    Eigen::VectorXd intensities_right = get_texture_intensities(hits_right);
-
-    /*
-    if (training) {
-        set_sidescan_intensities(hits_left, sidescan_intensities_left);
-        set_sidescan_intensities(hits_right, sidescan_intensities_right);
-    }
-    */
-
-    Eigen::VectorXd times_left = compute_times(hits_left);
-    Eigen::VectorXd times_right = compute_times(hits_right);
-
-    Eigen::VectorXd time_windows_left = compute_time_windows(times_left, intensities_left, pings[i].port);
-    Eigen::VectorXd time_windows_right = compute_time_windows(times_right, intensities_right, pings[i].stbd);
-
-    Eigen::VectorXd time_windows(time_windows_left.rows() + time_windows_right.rows());
-    time_windows.tail(time_windows_right.rows()) = time_windows_right;
-    time_windows.head(time_windows_left.rows()) = time_windows_left.reverse();
-
     cv::Mat shifted = cv::Mat::zeros(waterfall_image.rows, waterfall_image.cols, waterfall_image.type());
-    waterfall_image(cv::Rect(0, 0, waterfall_image.cols, waterfall_image.rows-1)).copyTo(shifted(cv::Rect(0, 1, shifted.cols, shifted.rows-1)));
-    shifted.copyTo(waterfall_image);
-
-    for (int i = 0; i < std::min(time_windows.rows(), long(waterfall_image.cols)); ++i) {
-        waterfall_image.at<uint8_t>(0, i) = uint8_t(255.*time_windows(i));
-    }
-    cv::imshow("Waterfall image", waterfall_image);
-
     gt_waterfall_image(cv::Rect(0, 0, waterfall_image.cols, waterfall_image.rows-1)).copyTo(shifted(cv::Rect(0, 1, shifted.cols, shifted.rows-1)));
     shifted.copyTo(gt_waterfall_image);
 
@@ -352,6 +329,79 @@ bool SSSGenSim::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
         }
 
     }
+}
+
+bool SSSGenSim::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
+{
+    if (i >= pings.size()) {
+        return false;
+    }
+
+    if (sss_from_waterfall) {
+        if (waterfall_row == 32) {
+            Eigen::MatrixXd generated = gen_callback(waterfall_depth);
+            for (int row = 0; row < 32; ++row) {
+                for (int col = 0; col < generated.cols(); ++col) {
+                    waterfall_image.at<uint8_t>(row, col) = uint8_t(255.*generated(row, col));
+                }
+            }
+            waterfall_row = 0;
+        }
+    }
+    else {
+        if ((window_point - (pings[i].pos_ - offset)).norm() > 4.) {
+            window_point = pings[i].pos_ - offset;
+            window_heading = pings[i].heading_ + sensor_yaw;
+            generate_sss_window();
+        }
+    }
+
+    Eigen::MatrixXd hits_left;
+    Eigen::MatrixXd hits_right;
+    tie(hits_left, hits_right) = project();
+
+    Eigen::VectorXd times_left = compute_times(hits_left);
+    Eigen::VectorXd times_right = compute_times(hits_right);
+
+    cv::Mat shifted = cv::Mat::zeros(waterfall_image.rows, waterfall_image.cols, waterfall_image.type());
+    waterfall_image(cv::Rect(0, 0, waterfall_image.cols, waterfall_image.rows-1)).copyTo(shifted(cv::Rect(0, 1, shifted.cols, shifted.rows-1)));
+    shifted.copyTo(waterfall_image);
+
+    if (sss_from_waterfall) {
+
+        Eigen::VectorXd depth_windows_left = compute_depth_windows(times_left, hits_left, pings[i].port);
+        Eigen::VectorXd depth_windows_right = compute_depth_windows(times_right, hits_right, pings[i].stbd);
+
+        Eigen::VectorXd depth_windows(depth_windows_left.rows() + depth_windows_right.rows());
+        depth_windows.tail(depth_windows_right.rows()) = depth_windows_right;
+        depth_windows.head(depth_windows_left.rows()) = depth_windows_left.reverse();
+
+        waterfall_depth.row(32-waterfall_row-1) = depth_windows.transpose();
+        ++waterfall_row;
+
+    }
+    else {
+
+        Eigen::VectorXd intensities_left = get_texture_intensities(hits_left);
+        Eigen::VectorXd intensities_right = get_texture_intensities(hits_right);
+
+        Eigen::VectorXd time_windows_left = compute_time_windows(times_left, intensities_left, pings[i].port);
+        Eigen::VectorXd time_windows_right = compute_time_windows(times_right, intensities_right, pings[i].stbd);
+
+        Eigen::VectorXd time_windows(time_windows_left.rows() + time_windows_right.rows());
+        time_windows.tail(time_windows_right.rows()) = time_windows_right;
+        time_windows.head(time_windows_left.rows()) = time_windows_left.reverse();
+
+        for (int i = 0; i < std::min(time_windows.rows(), long(waterfall_image.cols)); ++i) {
+            waterfall_image.at<uint8_t>(0, i) = uint8_t(255.*time_windows(i));
+        }
+
+    }
+
+    construct_gt_waterfall();
+
+    cv::imshow("Waterfall image", waterfall_image);
+
     cv::imshow("Ground truth waterfall image", gt_waterfall_image);
 
     cv::waitKey(10);
