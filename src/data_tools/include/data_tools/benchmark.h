@@ -20,6 +20,8 @@ namespace benchmark {
 
 struct track_error_benchmark {
 
+    using PointsT = std::vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> >;
+
     // the name of the dataset that we benchmark
     std::string dataset_name;
 
@@ -70,14 +72,28 @@ struct track_error_benchmark {
     void add_benchmark(std_data::pt_submaps::TransT& trans_corr, std_data::pt_submaps::RotsT& rots_corr, const std::string& name);
     void print_summary();
 
+    // overloaded functions to work with input submaps in PointsT format
+    void add_ground_truth(PointsT map_points);
+    void add_benchmark(PointsT &maps_points, const std::string &name);
+
     void track_img_params(std_data::mbes_ping::PingsT& pings, int rows=1000, int cols=1000);
     void draw_track_img(std_data::mbes_ping::PingsT& pings, cv::Mat& img, const cv::Scalar& color, const std::string& name);
     //void draw_track_img(pt_submaps::TransT& positions);
     void draw_track_legend();
     double compute_rms_error(std_data::mbes_ping::PingsT& pings);
     std::pair<double, cv::Mat> compute_draw_consistency_map(std_data::mbes_ping::PingsT& pings);
-    std::pair<double, cv::Mat> compute_draw_error_consistency_map(std_data::mbes_ping::PingsT& pings);
+//    std::pair<double, cv::Mat> compute_draw_error_consistency_map(std_data::mbes_ping::PingsT& pings);
+
+    // Overloaded to work with submaps in PointT format
+    std::pair<double, cv::Mat> compute_draw_error_consistency_map(
+            std::vector<std::vector<std::vector<Eigen::MatrixXd>>> grid_maps);
+
+    std::vector<std::vector<std::vector<Eigen::MatrixXd>>> create_grids_from_pings(std_data::mbes_ping::PingsT& pings);
+    std::vector<std::vector<std::vector<Eigen::MatrixXd>>> create_grids_from_matrices(PointsT& points_maps);
+
+
     cv::Mat draw_height_map(std_data::mbes_ping::PingsT& pings);
+    cv::Mat draw_height_map(PointsT &points_maps);
 
     template <class Archive>
     void save(Archive& ar) const
