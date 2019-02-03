@@ -258,8 +258,8 @@ pair<double, cv::Mat> track_error_benchmark::compute_draw_consistency_map(mbes_p
 
 cv::Mat track_error_benchmark::draw_height_map(PointsT& points_maps)
 {
-    int rows = 50;
-    int cols = 50;
+    int rows = 500;
+    int cols = 500;
 
     Eigen::MatrixXd means(rows, cols); means.setZero();
     Eigen::MatrixXd counts(rows, cols); counts.setZero();
@@ -306,8 +306,8 @@ cv::Mat track_error_benchmark::draw_height_map(PointsT& points_maps)
 
 cv::Mat track_error_benchmark::draw_height_map(mbes_ping::PingsT& pings)
 {
-    int rows = 50;
-    int cols = 50;
+    int rows = 500;
+    int cols = 500;
 
     Eigen::MatrixXd means(rows, cols); means.setZero();
     Eigen::MatrixXd counts(rows, cols); counts.setZero();
@@ -352,8 +352,8 @@ cv::Mat track_error_benchmark::draw_height_map(mbes_ping::PingsT& pings)
 
 void track_error_benchmark::add_ground_truth(mbes_ping::PingsT& pings)
 {
-    int rows = 50;
-    int cols = 50;
+    int rows = 500;
+    int cols = 500;
     for (mbes_ping& ping : pings) {
         gt_track.push_back(ping.pos_);
     }
@@ -364,11 +364,9 @@ void track_error_benchmark::add_ground_truth(mbes_ping::PingsT& pings)
 
 void track_error_benchmark::add_ground_truth(PointsT& map_points){
 
-    int rows = 50;
-    int cols = 50;
-//    for (mbes_ping& ping : pings) {
-//        gt_track.push_back(ping.pos_);
-//    }
+    int rows = 500;
+    int cols = 500;
+
     track_img_params(map_points, rows, cols);
     add_benchmark(map_points, "ground_truth");
     track_img_path = dataset_name + "_benchmark_track_img.png";
@@ -383,9 +381,11 @@ void track_error_benchmark::add_initial(mbes_ping::PingsT& pings)
 void track_error_benchmark::add_benchmark(PointsT& maps_points, const std::string& name)
 {
     cv::Mat error_img;
+    Eigen::MatrixXd error_vals;
     double consistency_rms_error;
     std::vector<std::vector<std::vector<Eigen::MatrixXd>>> grid_maps = create_grids_from_matrices(maps_points);
-    tie(consistency_rms_error, error_img) = compute_draw_error_consistency_map(grid_maps);
+    tie(consistency_rms_error, error_vals) = compute_consistency_error(grid_maps);
+    error_img = draw_error_consistency_map(error_vals);
     string error_img_path = dataset_name + "_" + name + "_rms_consistency_error.png";
     cv::imwrite(error_img_path, error_img);
     error_img_paths[name] = error_img_path;
@@ -409,10 +409,12 @@ void track_error_benchmark::add_benchmark(mbes_ping::PingsT& pings, const std::s
     cv::Scalar color(colormap[nbr_tracks_drawn][2], colormap[nbr_tracks_drawn][1], colormap[nbr_tracks_drawn][0]);
     draw_track_img(pings, track_img, color, name);
     cv::Mat error_img;
+    Eigen::MatrixXd error_vals;
     double consistency_rms_error;
     //tie(consistency_rms_error, error_img) = compute_draw_consistency_map(pings);
     std::vector<std::vector<std::vector<Eigen::MatrixXd>>> grid_maps = create_grids_from_pings(pings);
-    tie(consistency_rms_error, error_img) = compute_draw_error_consistency_map(grid_maps);
+    tie(consistency_rms_error, error_vals) = compute_consistency_error(grid_maps);
+    error_img = draw_error_consistency_map(error_vals);
     draw_track_img(pings, error_img, cv::Scalar(0, 0, 0), name);
     string error_img_path = dataset_name + "_" + name + "_rms_consistency_error.png";
     cv::imwrite(error_img_path, error_img);
@@ -578,8 +580,8 @@ mbes_ping::PingsT registration_summary_benchmark::get_submap_pings_index(const m
 
 vector<vector<vector<Eigen::MatrixXd>>> track_error_benchmark::create_grids_from_pings(mbes_ping::PingsT& pings){
 
-    int rows = 50;
-    int cols = 50;
+    int rows = 500;
+    int cols = 500;
 
     double res, minx, miny, x0, y0;
     res = params[0]; minx = params[1]; miny = params[2]; x0 = params[3]; y0 = params[4];
@@ -623,8 +625,8 @@ vector<vector<vector<Eigen::MatrixXd>>> track_error_benchmark::create_grids_from
 
 vector<vector<vector<Eigen::MatrixXd>>> track_error_benchmark::create_grids_from_matrices(PointsT& points_maps){
 
-    int rows = 50;
-    int cols = 50;
+    int rows = 500;
+    int cols = 500;
 
     double res, minx, miny, x0, y0;
     res = params[0]; minx = params[1]; miny = params[2]; x0 = params[3]; y0 = params[4];
@@ -666,7 +668,7 @@ vector<vector<vector<Eigen::MatrixXd>>> track_error_benchmark::create_grids_from
     return grid_maps;
 }
 
-pair<double, cv::Mat> track_error_benchmark::compute_draw_error_consistency_map(
+std::pair<double, Eigen::MatrixXd> track_error_benchmark::compute_consistency_error(
         vector<vector<vector<Eigen::MatrixXd>>>& grid_maps)
 {
     int rows = grid_maps.size();
@@ -680,7 +682,7 @@ pair<double, cv::Mat> track_error_benchmark::compute_draw_error_consistency_map(
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
             for (int m = 0; m < nbr_maps; ++m) {
-                if (grid_maps[i][j][m].rows() > 20) {
+                if (grid_maps[i][j][m].rows() > 500) {
                     //cout << "map " << m << " size: " << grid_maps[i][j][m].rows() << endl;
                     int subsample = int(double(grid_maps[i][j][m].rows())/20.);
                     int counter = 0;
@@ -703,7 +705,7 @@ pair<double, cv::Mat> track_error_benchmark::compute_draw_error_consistency_map(
         for (int j = 0; j < cols; ++j) {
             //cout << "i: " << i << ", j: " << j << endl;
 
-            // Compute nearest neighbors
+            // Gather neighbors
             vector<Eigen::MatrixXd> neighborhood_points(nbr_maps);
             vector<bool> neighborhood_present(nbr_maps, true);
             for (int m = 0; m < nbr_maps; ++m) {
@@ -720,6 +722,7 @@ pair<double, cv::Mat> track_error_benchmark::compute_draw_error_consistency_map(
                 }
             }
 
+            // Registration error
             double value = 0.;
             int nbr_averages = 10;
             for (int c = 0; c < nbr_averages; ++c) {
@@ -747,7 +750,15 @@ pair<double, cv::Mat> track_error_benchmark::compute_draw_error_consistency_map(
             }
         }
     }
-    std::cout << "value_count " << value_count << std::endl;
+
+    return make_pair(sqrt(value_sum/value_count), values);
+}
+
+
+cv::Mat track_error_benchmark::draw_error_consistency_map(Eigen::MatrixXd values){
+
+    int rows = values.rows();
+    int cols = values.cols();
 
     Eigen::ArrayXXd bad = (values.array() == 0.).cast<double>();
 
@@ -773,7 +784,7 @@ pair<double, cv::Mat> track_error_benchmark::compute_draw_error_consistency_map(
         }
     }
 
-    return make_pair(sqrt(value_sum/value_count), error_img);
+    return error_img;
 }
 
 } // namespace benchmark
