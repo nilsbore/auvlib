@@ -49,7 +49,7 @@ def visualize_slices(sss_slices, depth_slices):
 def rescale_slices(slices):
 
     #slices = [(255.*cv2.resize(np.rot90(s), (256, 256), interpolation=cv2.INTER_CUBIC)).astype(np.uint8) for s in slices]
-    slices = [cv2.resize(np.rot90(s), (256, 256), interpolation=cv2.INTER_LINEAR) for s in slices]
+    slices = [cv2.resize(np.rot90(s), (256, 256), interpolation=cv2.INTER_NEAREST) for s in slices]
     slices = [(255.*np.minimum(np.maximum(s, 0.), 1.)).astype(np.uint8) for s in slices]
 
     return slices
@@ -85,8 +85,9 @@ def scale_slices(slices, image_height, image_width):
 
 
 map_images = map_draper.sss_map_image.read_data("map_images_cache.cereal")
-image_height = 32
+image_height = 256 #32
 image_width = map_images[0].sss_waterfall_image.shape[1]/2
+dataset_name = "pix2pix_waterfall_full"
 
 sss_slices = []
 depth_slices = []
@@ -106,10 +107,10 @@ sss_slices = rescale_slices(sss_slices)
 #visualize_slices(sss_slices, depth_slices)
 
 
-if not os.path.exists("pix2pix_waterfall"):
-    os.makedirs("pix2pix_waterfall")
+if not os.path.exists(dataset_name):
+    os.makedirs(dataset_name)
 
 for i, (s, d) in enumerate(zip(sss_slices, depth_slices)):
     concatenated = np.concatenate((s, d), axis=1)
-    filename = os.path.join("pix2pix_waterfall", "%d.jpg" % i)
+    filename = os.path.join(dataset_name, "%d.jpg" % i)
     cv2.imwrite(filename, concatenated)

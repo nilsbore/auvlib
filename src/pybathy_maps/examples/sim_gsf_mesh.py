@@ -84,7 +84,12 @@ def prepare_depth_window(depth_window):
 
 def prepare_generated(generated, height):
 
-    generated = cv2.resize(np.rot90(generated, -1), (256, height), interpolation=cv2.INTER_LINEAR)
+    generated = np.rot90(generated, -1)
+
+    if generated.shape[1] == 256 and generated.shape[0] == height:
+        return generated
+
+    generated = cv2.resize(generated, (256, height), interpolation=cv2.INTER_LINEAR)
 
     return generated
 
@@ -100,16 +105,19 @@ class SSSGenerator(object):
         print "Got gen callback!"
 
         np.savez("temp_test.npz", depth_window=depth_window)
-
         interval = 2.
         height, width = 256, 256
         depth_left = np.fliplr(depth_window[:, :256])
         depth_right = depth_window[:, 256:]
         depth_left = prepare_depth_window(depth_left)
+        cv2.imshow("Gen callback", depth_left)
+        cv2.waitKey(10)
         depth_right = prepare_depth_window(depth_right)
 
         generated_left = predict_sidescan(self.network, depth_left)
         generated_right = predict_sidescan(self.network, depth_right)
+        cv2.imshow("Gen callback gen", generated_left[:, :, 0])
+        cv2.waitKey(10)
 
         generated_left = prepare_generated(generated_left[:, :, 0], depth_window.shape[0])
         generated_right = prepare_generated(generated_right[:, :, 0], depth_window.shape[0])
@@ -164,7 +172,7 @@ class SSSGenerator(object):
 
         generated = np.concatenate((np.fliplr(generated_left), generated_right), axis=1)
         cv2.imshow("Generated", generated)
-        cv2.waitKey()
+        cv2.waitKey(10)
 
         generated = 1./255.*generated.astype(np.float64)
 
@@ -172,7 +180,10 @@ class SSSGenerator(object):
 sensor_yaw = 5.*math.pi/180.
 sensor_offset = np.array([2., -1.5, 0.])
 #network_path = "/home/nbore/Installs/pytorch-CycleGAN-and-pix2pix/datasets/checkpoints/pix2pix_sonar24/latest_net_G.pth"
-network_path = "/home/nbore/Installs/pytorch-CycleGAN-and-pix2pix/datasets/checkpoints/pix2pix_waterfall/latest_net_G.pth"
+#network_path = "/home/nbore/Installs/pytorch-CycleGAN-and-pix2pix/datasets/checkpoints/pix2pix_waterfall/latest_net_G.pth"
+network_path = "/home/nbore/Installs/pytorch-CycleGAN-and-pix2pix/datasets/checkpoints/pix2pix_waterfall2/latest_net_G.pth"
+#network_path = "/home/nbore/Installs/pytorch-CycleGAN-and-pix2pix/datasets/checkpoints/pix2pix_waterfall_full/latest_net_G.pth"
+#network_path = "/home/nbore/Installs/pytorch-CycleGAN-and-pix2pix/datasets/checkpoints/pix2pix_waterfall_full/60_net_G.pth"
 sss_from_waterfall = True
 
 #generator = sssgenerator(network_path)
@@ -193,6 +204,8 @@ viewer.set_sidescan_yaw(sensor_yaw)
 viewer.set_vehicle_mesh(Vb, Fb, Cb)
 viewer.set_ray_tracing_enabled(False)
 viewer.set_sss_from_waterfall(sss_from_waterfall)
+viewer.set_gen_window_height(32)
+#viewer.set_gen_window_height(256)
 
 generator = SSSGenerator(network_path)
 if sss_from_waterfall:

@@ -32,6 +32,9 @@ SSSGenSim::SSSGenSim(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
       height_map(height_map),
       sss_from_waterfall(false)
 {
+    resample_window_height = 32;
+    full_window_height = 32;
+
     viewer.callback_pre_draw = std::bind(&SSSGenSim::callback_pre_draw, this, std::placeholders::_1);
     window_point = Eigen::Vector3d::Zero();
     window_heading = 0.;
@@ -47,7 +50,7 @@ SSSGenSim::SSSGenSim(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
     gt_waterfall_image = cv::Mat::zeros(1000, 2*nbr_windows, CV_8UC1);
     texture = Eigen::MatrixXd::Zero(20, 9*20);
 
-    waterfall_depth = Eigen::MatrixXd::Zero(32, 2*nbr_windows);
+    waterfall_depth = Eigen::MatrixXd::Zero(full_window_height, 2*nbr_windows);
     waterfall_row = 0;
 }
 
@@ -338,12 +341,17 @@ bool SSSGenSim::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
     }
 
     if (sss_from_waterfall) {
-        if (waterfall_row == 32) {
+        if (waterfall_row == resample_window_height) {
             Eigen::MatrixXd generated = gen_callback(waterfall_depth);
-            for (int row = 0; row < 32; ++row) {
+            for (int row = 0; row < resample_window_height; ++row) {
                 for (int col = 0; col < generated.cols(); ++col) {
                     waterfall_image.at<uint8_t>(row, col) = uint8_t(255.*generated(row, col));
                 }
+            }
+            if (full_window_height > resample_window_height) {
+                Eigen::MatrixXd temp = waterfall_depth.topRows(full_window_height-resample_window_height);
+                waterfall_depth.bottomRows(full_window_height-resample_window_height) = temp;
+                waterfall_depth.topRows(resample_window_height).setZero();
             }
             waterfall_row = 0;
         }
@@ -376,7 +384,7 @@ bool SSSGenSim::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
         depth_windows.tail(depth_windows_right.rows()) = depth_windows_right;
         depth_windows.head(depth_windows_left.rows()) = depth_windows_left.reverse();
 
-        waterfall_depth.row(32-waterfall_row-1) = depth_windows.transpose();
+        waterfall_depth.row(resample_window_height-waterfall_row-1) = depth_windows.transpose();
         ++waterfall_row;
 
     }

@@ -37,6 +37,7 @@ PYBIND11_MODULE(sss_gen_sim, m) {
         .def("show", &SSSGenSim::show, "Start the draping, and show the visualizer")
         // Methods unique to SSSGenSim:
         .def("set_gen_callback", &SSSGenSim::set_gen_callback, "Set the function that generates sidescan patches from bathymetry")
+        .def("set_gen_window_height", &SSSGenSim::set_gen_window_height, "Set the height of the window that we are sending to the network")
         .def("set_sss_from_waterfall", &SSSGenSim::set_sss_from_waterfall, "If true, predicts sidescan from waterfall elevation image, otherwise from local bathymetry window");
 
 }

@@ -101,6 +101,8 @@ protected:
     cv::Mat gt_waterfall_image;
     Eigen::MatrixXd waterfall_depth;
     size_t waterfall_row;
+    size_t resample_window_height;
+    size_t full_window_height;
 
     void generate_sss_window();
     Eigen::VectorXd compute_times(const Eigen::MatrixXd& P);
@@ -114,6 +116,12 @@ protected:
     void construct_gt_waterfall();
 
 public:
+
+    void set_gen_window_height(int gen_window_height)
+    {
+        full_window_height = size_t(gen_window_height);
+        waterfall_depth = Eigen::MatrixXd::Zero(full_window_height, 2*nbr_windows);
+    }
 
     void set_sss_from_waterfall(bool wf) { sss_from_waterfall = wf; };
     
