@@ -30,6 +30,9 @@ void divide_tracks(std_data::mbes_ping::PingsT& pings);
 void divide_tracks_equal(std_data::mbes_ping::PingsT& pings);
 std::tuple<ObsT, TransT, AngsT, MatchesT, BBsT, ObsT> create_submaps(const std_data::mbes_ping::PingsT& pings);
 
+void divide_tracks_adaptively(std_data::mbes_ping::PingsT& pings);
+double computeInfoInSubmap(std_data::mbes_ping::PingsT &submap_pings);
+
 }
 
 namespace std_data {
