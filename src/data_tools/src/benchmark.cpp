@@ -179,8 +179,8 @@ std::tuple<uint8_t, uint8_t, uint8_t> jet(double x)
 
 pair<double, cv::Mat> track_error_benchmark::compute_draw_consistency_map(mbes_ping::PingsT& pings)
 {
-    int rows = 50;
-    int cols = 50;
+    int rows = 500;
+    int cols = 500;
 
     Eigen::MatrixXd means(rows, cols); means.setZero();
     Eigen::MatrixXd counts(rows, cols); counts.setZero();
@@ -674,7 +674,7 @@ std::pair<double, Eigen::MatrixXd> track_error_benchmark::compute_consistency_er
     int rows = grid_maps.size();
     int cols = grid_maps[0].size();
     int nbr_maps = grid_maps[0][0].size();
-    cout << "Number maps for error benchmark: " << nbr_maps << endl;
+//    cout << "Number maps for error benchmark: " << nbr_maps << endl;
 
     // Subsample grids
     Eigen::MatrixXd values(rows, cols); values.setZero();
@@ -682,7 +682,7 @@ std::pair<double, Eigen::MatrixXd> track_error_benchmark::compute_consistency_er
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
             for (int m = 0; m < nbr_maps; ++m) {
-                if (grid_maps[i][j][m].rows() > 500) {
+                if (grid_maps[i][j][m].rows() > 20) {
                     //cout << "map " << m << " size: " << grid_maps[i][j][m].rows() << endl;
                     int subsample = int(double(grid_maps[i][j][m].rows())/20.);
                     int counter = 0;
@@ -731,7 +731,8 @@ std::pair<double, Eigen::MatrixXd> track_error_benchmark::compute_consistency_er
                     if (grid_maps[i][j][m].rows() == 0) {
                         continue;
                     }
-                    Eigen::Vector3d point = grid_maps[i][j][m].row(rand()%grid_maps[i][j][m].rows()).transpose();
+//                    Eigen::Vector3d point = grid_maps[i][j][m].row(rand()%grid_maps[i][j][m].rows()).transpose();
+                    Eigen::Vector3d point = grid_maps[i][j][m].row(((int)grid_maps[i][j][m].rows()/10)*c).transpose();
                     for (int n = 0; n < nbr_maps; ++n) {
                         if (n == m || !neighborhood_present[n]) {
                             continue;
