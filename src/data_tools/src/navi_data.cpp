@@ -72,22 +72,22 @@ void match_timestamps(mbes_ping::PingsT& pings, nav_entry::EntriesT& entries)
 
 double computeInfoInSubmap(std_data::mbes_ping::PingsT& submap_pings){
 
-    // Beams centroid
-    Eigen::Vector3d mean_beam(0.,0.,0.);
+    // Beams z centroid
+    double mean_beam = 0;
     int beam_cnt = 0;
     for (const std_data::mbes_ping& ping: submap_pings){
         for(const Eigen::Vector3d& beam_i: ping.beams){
-            mean_beam += beam_i;
+            mean_beam += beam_i[2];
             ++beam_cnt;
         }
     }
     mean_beam = mean_beam / beam_cnt;
 
-    // Condition number of PC matrix
+    // Condition number of z
     double cond_num = 0;
     for (const std_data::mbes_ping& ping: submap_pings){
         for(const Eigen::Vector3d& beam_i: ping.beams){
-            cond_num += (beam_i - mean_beam).norm();
+            cond_num += std::abs(beam_i[2] - mean_beam);
         }
     }
     return cond_num = cond_num / beam_cnt;
@@ -95,7 +95,7 @@ double computeInfoInSubmap(std_data::mbes_ping::PingsT& submap_pings){
 
 void divide_tracks_adaptively(mbes_ping::PingsT& pings)
 {
-    double info_thres = 8;
+    double info_thres = 0.1;
     // For every line (one line per file)
     for (auto pos = pings.begin(); pos != pings.end(); ) {
         auto next = std::find_if(pos, pings.end(), [&](const mbes_ping& ping) {
@@ -113,7 +113,7 @@ void divide_tracks_adaptively(mbes_ping::PingsT& pings)
         mean_width /= count;
         double length = (last_pos - first_pos_it->pos_).norm();
 
-        int nbr_submaps = int(length/mean_width+3.5);
+        int nbr_submaps = int(length/mean_width+4.5);
         double min_submap_length = length / double(nbr_submaps);
         double ext_step = min_submap_length/4;
         double max_submap_length = 2*min_submap_length;
@@ -410,6 +410,7 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT, ObsT> create_submaps(const mbes_ping:
 
     return make_tuple(submaps, trans, angs, matches, bounds, tracks);
 }
+
 
 } // namespace navi_data
 
