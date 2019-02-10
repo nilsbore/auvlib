@@ -73,8 +73,8 @@ struct track_error_benchmark {
     void print_summary();
 
     // Overloaded functions to work with input submaps in PointsT format
-    void add_ground_truth(PointsT &map_points);
-    void add_benchmark(PointsT &maps_points, const std::string &name);
+    void add_ground_truth(PointsT &map_points, PointsT &track_points);
+    void add_benchmark(PointsT &maps_points, PointsT &tracks_points, const std::string &name);
 
     void track_img_params(PointsT& points_maps, int rows=1000, int cols=1000);
     cv::Mat draw_height_map(PointsT &points_maps);
