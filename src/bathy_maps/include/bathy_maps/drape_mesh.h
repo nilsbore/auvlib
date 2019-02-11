@@ -16,8 +16,7 @@
 #include <data_tools/xtf_data.h>
 #include <data_tools/csv_data.h>
 
-std::pair<Eigen::MatrixXd, Eigen::MatrixXd> compute_sss_dirs(const Eigen::Matrix3d& R, double tilt_angle, double beam_width);
-
+std::pair<Eigen::MatrixXd, Eigen::MatrixXd> compute_sss_dirs(const Eigen::Matrix3d& R, double tilt_angle, double beam_width, int nbr_lines);
 
 std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi> compute_hits(const Eigen::Vector3d& origin, const Eigen::Matrix3d& R, double tilt_angle, double beam_width, const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1);
 

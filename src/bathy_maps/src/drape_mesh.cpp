@@ -21,11 +21,10 @@ using namespace std;
 using namespace xtf_data;
 using namespace csv_data;
 
-pair<Eigen::MatrixXd, Eigen::MatrixXd> compute_sss_dirs(const Eigen::Matrix3d& R, double tilt_angle, double beam_width)
+pair<Eigen::MatrixXd, Eigen::MatrixXd> compute_sss_dirs(const Eigen::Matrix3d& R, double tilt_angle, double beam_width, int nbr_lines)
 {
     const double min_theta = tilt_angle - 0.5*beam_width; // M_PI/180.*10.;
     const double max_theta = tilt_angle + 0.5*beam_width; //M_PI/180.*60.;
-    const int nbr_lines = 200;
 
     double min_c = 1./cos(min_theta);
     double max_c = 1./cos(max_theta);
@@ -50,7 +49,7 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi> comput
     igl::Hit hit;
     Eigen::MatrixXd dirs_left;
     Eigen::MatrixXd dirs_right;
-    tie(dirs_left, dirs_right) = compute_sss_dirs(R, tilt_angle, beam_width);
+    tie(dirs_left, dirs_right) = compute_sss_dirs(R, tilt_angle, beam_width, 220);
     Eigen::MatrixXd hits_left(dirs_left.rows(), 3);
     Eigen::MatrixXd hits_right(dirs_right.rows(), 3);
     Eigen::VectorXi hits_left_inds(dirs_left.rows());
@@ -90,7 +89,7 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi, Eigen:
     igl::Hit hit;
     Eigen::MatrixXd dirs_left;
     Eigen::MatrixXd dirs_right;
-    tie(dirs_left, dirs_right) = compute_sss_dirs(R, tilt_angle, beam_width);
+    tie(dirs_left, dirs_right) = compute_sss_dirs(R, tilt_angle, beam_width, 220);
     auto stop = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
     cout << "compute_sss_dirs time: " << duration.count() << " microseconds" << endl;
