@@ -106,6 +106,9 @@ protected:
     size_t resample_window_height;
     size_t full_window_height;
 
+    double left_row_mean;
+    double right_row_mean;
+
     void generate_sss_window();
     //Eigen::VectorXd compute_times(const Eigen::MatrixXd& P);
     //Eigen::VectorXd compute_time_windows(const Eigen::VectorXd& times, const Eigen::VectorXd& intensities, const xtf_data::xtf_sss_ping_side& ping);

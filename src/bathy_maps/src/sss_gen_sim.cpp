@@ -35,6 +35,9 @@ SSSGenSim::SSSGenSim(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
     resample_window_height = 32;
     full_window_height = 64;
 
+    left_row_mean = 0.;
+    right_row_mean = 0.;
+
     viewer.callback_pre_draw = std::bind(&SSSGenSim::callback_pre_draw, this, std::placeholders::_1);
     window_point = Eigen::Vector3d::Zero();
     window_heading = 0.;
@@ -278,11 +281,21 @@ bool SSSGenSim::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
         if (waterfall_row == resample_window_height) {
             //Eigen::MatrixXd generated = gen_callback(waterfall_depth);
             Eigen::MatrixXd generated = gen_callback(waterfall_model);
+
+            double left_bottom_row_mean = generated.row(resample_window_height-1).head(generated.cols()/2).mean();
+            double right_bottom_row_mean = generated.row(resample_window_height-1).tail(generated.cols()/2).mean();
             for (int row = 0; row < resample_window_height; ++row) {
-                for (int col = 0; col < generated.cols(); ++col) {
-                    waterfall_image.at<uint8_t>(row, col) = uint8_t(255.*generated(row, col));
+                for (int col = 0; col < generated.cols()/2; ++col) {
+                    double correction = 1./double(resample_window_height)*(double(resample_window_height - row) + double(row)*left_row_mean/left_bottom_row_mean);
+                    waterfall_image.at<uint8_t>(row, col) = uint8_t(255.*correction*generated(row, col));
+                }
+                for (int col = generated.cols()/2; col < generated.cols(); ++col) {
+                    double correction = 1./double(resample_window_height)*(double(resample_window_height - row) + double(row)*right_row_mean/right_bottom_row_mean);
+                    waterfall_image.at<uint8_t>(row, col) = uint8_t(255.*correction*generated(row, col));
                 }
             }
+            left_row_mean = generated.row(0).head(generated.cols()/2).mean();
+            right_row_mean = generated.row(0).tail(generated.cols()/2).mean();
             if (full_window_height > resample_window_height) {
                 Eigen::MatrixXd temp = waterfall_depth.topRows(full_window_height-resample_window_height);
                 waterfall_depth.bottomRows(full_window_height-resample_window_height) = temp;
