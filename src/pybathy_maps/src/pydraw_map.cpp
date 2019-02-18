@@ -25,6 +25,7 @@ PYBIND11_MODULE(draw_map, m) {
         .def(py::init<mbes_ping::PingsT&, int, int>(), "Constructor, takes mbes_ping::PingsT and height and width of height map")
         .def("draw_track", (void (BathyMapImage::*)(mbes_ping::PingsT&) ) &BathyMapImage::draw_track, "Draw vehicle track from mbes_ping::PingsT")
         .def("draw_height_map", &BathyMapImage::draw_height_map, "Draw height map from mbes_ping::PingsT")
+        .def("draw_indices", &BathyMapImage::draw_indices, "Draw indices of the pings within the map, from mbes_ping::PingsT")
         .def("draw_back_scatter_map", &BathyMapImage::draw_back_scatter_map, "Draw back scatter map from mbes_ping::PingsT")
         .def("draw_targets", &BathyMapImage::draw_targets, "Draw point targets from dict of points")
         .def("show", &BathyMapImage::show, "Show the drawn bathy map")

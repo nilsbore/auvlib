@@ -33,6 +33,7 @@ public:
     void draw_height_map(std_data::mbes_ping::PingsT& pings);
     void draw_back_scatter_map(std_data::mbes_ping::PingsT& pings);
     void draw_targets(const TargetsT& targets, const cv::Scalar& color);
+    void draw_indices(std_data::mbes_ping::PingsT& pings, int skip_indices=500);
     void write_image(const boost::filesystem::path& path);
     void write_image_from_str(const std::string& path);
     void show();
