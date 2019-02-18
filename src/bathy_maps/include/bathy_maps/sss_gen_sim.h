@@ -146,6 +146,7 @@ public:
               const csv_data::csv_asvp_sound_speed::EntriesT& sound_speeds,
               const Eigen::MatrixXd& height_map);
 
+    bool callback_key_pressed(igl::opengl::glfw::Viewer& viewer, unsigned int key, int mods);
     bool callback_pre_draw(igl::opengl::glfw::Viewer& viewer);
 };
 

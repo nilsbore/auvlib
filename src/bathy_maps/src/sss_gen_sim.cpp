@@ -39,6 +39,7 @@ SSSGenSim::SSSGenSim(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
     right_row_mean = 0.;
 
     viewer.callback_pre_draw = std::bind(&SSSGenSim::callback_pre_draw, this, std::placeholders::_1);
+    viewer.callback_key_pressed = std::bind(&SSSGenSim::callback_key_pressed, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
     window_point = Eigen::Vector3d::Zero();
     window_heading = 0.;
     height_map_cv = cv::Mat(height_map.rows(), height_map.cols(), CV_32FC1);
@@ -57,6 +58,19 @@ SSSGenSim::SSSGenSim(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
     waterfall_depth = Eigen::MatrixXd::Zero(full_window_height, 2*nbr_windows);
     waterfall_model = Eigen::MatrixXd::Zero(full_window_height, 2*nbr_windows);
     waterfall_row = 0;
+}
+
+bool SSSGenSim::callback_key_pressed(igl::opengl::glfw::Viewer& viewer, unsigned int key, int mods)
+{
+    switch (key) {
+    case 'n':
+        while (i < pings.size() && !pings[i].first_in_file_) {
+            ++i;
+        }
+        return true;
+    default:
+        return false;
+    }
 }
 
 Eigen::MatrixXd scale_height_map(const Eigen::MatrixXd& height_map)
