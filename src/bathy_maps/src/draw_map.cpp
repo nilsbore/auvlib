@@ -112,6 +112,24 @@ void BathyMapImage::draw_track(mbes_ping::PingsT& pings, const cv::Scalar& color
     cv::polylines(bathy_map, curve, false, color, 1, CV_AA);
 }
 
+void BathyMapImage::draw_indices(mbes_ping::PingsT& pings, int skip_indices)
+{
+    double res, minx, miny, x0, y0;
+    res = params[0]; minx = params[1]; miny = params[2]; x0 = params[3]; y0 = params[4];
+
+    int counter = 0;
+    for (const mbes_ping& ping : pings) {
+        if (counter % skip_indices == 0) {
+            double len = 30.;
+            cv::Point pt1(x0+res*(ping.pos_[0]-minx), bathy_map.rows-y0-res*(ping.pos_[1]-miny)-1);
+            cv::Point pt2(pt1.x + int(len*cos(ping.heading_)), pt1.y - int(len*sin(ping.heading_)));
+            //cv::arrowedLine(bathy_map, pt1, pt2, cv::Scalar(0, 0 , 255), 2, 8, 0, 0.1);
+            cv::putText(bathy_map, std::to_string(counter), pt1, cv::FONT_HERSHEY_PLAIN, 0.5, cv::Scalar(0, 0, 0), 1, 8, false);
+        }
+        ++counter;
+    }
+}
+
 void BathyMapImage::draw_height_map(mbes_ping::PingsT& pings)
 {
     Eigen::MatrixXd means(rows, cols); means.setZero();
