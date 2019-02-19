@@ -34,6 +34,11 @@ sss_map_image_builder::sss_map_image_builder(const sss_map_image::BoundsT& bound
     sss_waterfall_model = Eigen::MatrixXd::Zero(2000, waterfall_width);
 }
 
+pair<int, int> sss_map_image_builder::get_map_image_shape()
+{
+    return make_pair(image_rows, image_cols);
+}
+
 size_t sss_map_image_builder::get_waterfall_bins()
 {
     return waterfall_width / 2;

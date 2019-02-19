@@ -77,6 +77,8 @@ public:
 
     sss_map_image_builder(const sss_map_image::BoundsT& bounds, double resolution, int nbr_pings);
 
+    std::pair<int, int> get_map_image_shape();
+
     size_t get_waterfall_bins();
 
     bool empty();
