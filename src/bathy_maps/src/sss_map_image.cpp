@@ -79,6 +79,7 @@ sss_map_image sss_map_image_builder::finish()
         sss_map_image_counts.array() += (sss_map_image_counts.array() == 0).cast<double>();
         map_image.sss_map_image.array() = sss_map_image_sums.array() / sss_map_image_counts.array();
     }
+    map_image.sss_ping_duration = sss_ping_duration;
     map_image.pos = poss;
     map_image.sss_waterfall_image = downsample_cols(sss_waterfall_image.topRows(waterfall_counter), 512).cast<float>();
     //map_image.sss_waterfall_cross_track = sss_waterfall_cross_track.topRows(waterfall_counter);
@@ -133,6 +134,7 @@ void sss_map_image_builder::add_hits(const Eigen::MatrixXd& hits, const Eigen::V
         return;
     }
 
+    sss_ping_duration = ping.time_duration;
     poss.push_back(pos);
 
     Eigen::VectorXd intensities = hits.col(3);
@@ -167,6 +169,7 @@ void sss_map_image_builder::add_hits(const Eigen::MatrixXd& hits, const Eigen::V
         return;
     }
 
+    sss_ping_duration = ping.time_duration;
     poss.push_back(pos);
 
     Eigen::MatrixXd points = hits;
