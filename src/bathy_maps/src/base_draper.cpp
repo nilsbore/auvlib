@@ -61,6 +61,24 @@ BaseDraper::BaseDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
     viewer.core.background_color << 1., 1., 1., 1.; // white background
 }
 
+void BaseDraper::set_texture(const Eigen::MatrixXd& texture, const BoundsT& bounds)
+{
+    Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> R = (255.*texture.transpose()).cast<uint8_t>();
+    Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> G = (255.*texture.transpose()).cast<uint8_t>();
+    Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> B = (255.*texture.transpose()).cast<uint8_t>();
+
+    Eigen::MatrixXd UV = V.leftCols<2>();
+    //UV.col(0).array() -= bounds(0, 0);
+    UV.col(0).array() /= bounds(1, 0) - bounds(0, 0);
+    //UV.col(1).array() -= bounds(0, 1);
+    UV.col(1).array() /= bounds(1, 1) - bounds(0, 1);
+
+    viewer.data().set_uv(UV);
+    viewer.data().show_texture = true;
+    // Use the image as a texture
+    viewer.data().set_texture(R, G, B);
+}
+
 void BaseDraper::set_vehicle_mesh(const Eigen::MatrixXd& new_V2, const Eigen::MatrixXi& new_F2, const Eigen::MatrixXd& new_C2)
 {
     V2 = new_V2;
@@ -327,7 +345,8 @@ Eigen::VectorXd BaseDraper::compute_model_intensities(const Eigen::MatrixXd& hit
         dir.normalize();
         Eigen::Vector3d n = normals.row(j).transpose();
         n.normalize();
-        intensities(j) = std::min(fabs(dir.dot(n))*(20./dist), 1.);
+        //intensities(j) = std::min(fabs(dir.dot(n))*(300./(dist*dist)), 1.);
+        intensities(j) = std::min(fabs(dir.dot(n)), 1.);
     }
 
     return intensities;

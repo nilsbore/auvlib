@@ -69,6 +69,7 @@ protected:
 
 public:
 
+    void set_texture(const Eigen::MatrixXd& texture, const BoundsT& bounds);
     void set_sidescan_yaw(double new_sensor_yaw) { sensor_yaw = new_sensor_yaw; }
     void set_ray_tracing_enabled(bool enabled);
     void set_vehicle_mesh(const Eigen::MatrixXd& new_V2, const Eigen::MatrixXi& new_F2, const Eigen::MatrixXd& new_C2);
