@@ -89,7 +89,8 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi, Eigen:
     igl::Hit hit;
     Eigen::MatrixXd dirs_left;
     Eigen::MatrixXd dirs_right;
-    tie(dirs_left, dirs_right) = compute_sss_dirs(R, tilt_angle, beam_width, 220);
+    //tie(dirs_left, dirs_right) = compute_sss_dirs(R, tilt_angle, beam_width, 220);
+    tie(dirs_left, dirs_right) = compute_sss_dirs(R, tilt_angle, beam_width, 300);
     auto stop = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
     cout << "compute_sss_dirs time: " << duration.count() << " microseconds" << endl;
