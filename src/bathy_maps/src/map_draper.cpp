@@ -28,6 +28,9 @@ MapDraper::MapDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
       map_image_builder(bounds, 30./8., pings[0].port.pings.size())
 {
     viewer.callback_pre_draw = std::bind(&MapDraper::callback_pre_draw, this, std::placeholders::_1);
+    int rows, cols;
+    tie(rows, cols) = map_image_builder.get_map_image_shape();
+    draping_vis_texture = Eigen::MatrixXd::Zero(rows, cols);
 }
 
 bool MapDraper::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
@@ -35,6 +38,11 @@ bool MapDraper::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
     // check if ping is first_in_file_, in that case, split off new image
     if ((i == pings.size() - 1 || (i+1 < pings.size() && pings[i+1].first_in_file_)) && !map_image_builder.empty()) {
         sss_map_image map_image = map_image_builder.finish();
+        draping_vis_texture.array() *= (map_image.sss_map_image.array() == 0).cast<double>();
+        draping_vis_texture.array() += map_image.sss_map_image.array();
+        Eigen::MatrixXd texture = draping_vis_texture;
+        texture.array() += (texture.array() == 0).cast<double>();
+        set_texture(texture, bounds);
         save_callback(map_image);
         map_images.push_back(map_image);
         map_image_builder = sss_map_image_builder(bounds, resolution, pings[i].port.pings.size());
@@ -117,6 +125,9 @@ void MapDraper::set_resolution(double new_resolution)
 { 
     resolution = new_resolution;
     map_image_builder = sss_map_image_builder(bounds, resolution, pings[i].port.pings.size());
+    int rows, cols;
+    tie(rows, cols) = map_image_builder.get_map_image_shape();
+    draping_vis_texture = Eigen::MatrixXd::Zero(rows, cols);
 }
 
 sss_map_image::ImagesT MapDraper::get_images()
