@@ -310,6 +310,7 @@ all_echosounder_depth read_datagram<all_echosounder_depth, all_echosounder_depth
 mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_entry::EntriesT& entries)
 {
     mbes_ping::PingsT new_pings;
+    new_pings.reserve(pings.size());
 
     std::stable_sort(entries.begin(), entries.end(), [](const all_nav_entry& entry1, const all_nav_entry& entry2) {
         return entry1.time_stamp_ < entry2.time_stamp_;
@@ -360,6 +361,8 @@ mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_
             }
         }
 
+        new_ping.beams.reserve(ping.beams.size());
+        new_ping.back_scatter.reserve(ping.beams.size());
         int i = 0;
         //cout << "Ping heading: " << new_ping.heading_ << endl;
         for (const Eigen::Vector3d& beam : ping.beams) {
