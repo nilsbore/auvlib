@@ -57,6 +57,13 @@ cv::Mat make_waterfall_image(const xtf_sss_ping::PingsT& pings)
     return resized_swath_img;
 }
 
+void show_waterfall_image(const xtf_sss_ping::PingsT& pings)
+{
+    cv::Mat waterfall_image = make_waterfall_image(pings);
+    cv::imshow("Waterfall image", waterfall_image);
+    cv::waitKey();
+}
+
 xtf_sss_ping process_side_scan_ping(XTFPINGHEADER *PingHeader, XTFFILEHEADER *XTFFileHeader) {
 /****************************************************************************/
 // Put whatever processing here to be performed on SIDESCAN data.
