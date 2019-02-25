@@ -24,7 +24,9 @@ PYBIND11_MODULE(mesh_map, m) {
     //.def(py::init<>(), "Constructor")
     m.def("mesh_from_height_map", &mesh_map::mesh_from_height_map, "Construct mesh from height map");
     m.def("height_map_from_pings", &mesh_map::height_map_from_pings, "Construct height map from mbes_ping::PingsT");
+    m.def("height_map_from_cloud", &mesh_map::height_map_from_cloud, "Construct height map from vector<Eigen::Vector3d>");
     m.def("mesh_from_pings", &mesh_map::mesh_from_pings, "Construct mesh from mbes_ping::PingsT");
+    m.def("mesh_from_cloud", &mesh_map::mesh_from_cloud, "Construct mesh from vector<Eigen::Vector3d>");
     m.def("show_mesh", &mesh_map::show_mesh, "Display mesh using igl viewer");
     m.def("show_textured_mesh", &mesh_map::show_textured_mesh, "Display textured mesh using igl viewer");
     m.def("show_height_map", &mesh_map::show_height_map, "Display height map using opencv");
