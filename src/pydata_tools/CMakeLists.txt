@@ -8,6 +8,7 @@ add_library(pygsf_data MODULE src/pygsf_data.cpp)
 add_library(pyxtf_data MODULE src/pyxtf_data.cpp)
 add_library(pycsv_data MODULE src/pycsv_data.cpp)
 add_library(pyall_data MODULE src/pyall_data.cpp)
+add_library(pyxyz_data MODULE src/pyxyz_data.cpp)
 
 target_include_directories(pystd_data PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -30,6 +31,11 @@ target_include_directories(pycsv_data PUBLIC
     PRIVATE src)
 
 target_include_directories(pyall_data PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+    PRIVATE src)
+
+target_include_directories(pyxyz_data PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
@@ -61,7 +67,12 @@ set_target_properties(pyall_data PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
                                             OUTPUT_NAME "all_data"
                                             SUFFIX "${PYTHON_MODULE_EXTENSION}")
 
-install(TARGETS pystd_data pygsf_data pyxtf_data pycsv_data pyall_data
+target_link_libraries(pyxyz_data PRIVATE std_data xyz_data eigen_cereal ${BOOST_LIBRARIES} pybind11::module)
+set_target_properties(pyxyz_data PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
+                                            OUTPUT_NAME "xyz_data"
+                                            SUFFIX "${PYTHON_MODULE_EXTENSION}")
+
+install(TARGETS pystd_data pygsf_data pyxtf_data pycsv_data pyall_data pyxyz_data
     LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}/auvlib/data_tools
 )  # This is for Windows
 

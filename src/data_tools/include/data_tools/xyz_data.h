@@ -9,27 +9,28 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <bathy_maps/draw_map.h>
-#include <bathy_maps/mesh_map.h>
+#ifndef XYZ_DATA_H
+#define XYZ_DATA_H
 
-#include <pybind11/pybind11.h>
-#include <pybind11/eigen.h>
-#include <pybind11/stl.h>
+#include <data_tools/std_data.h>
+#include <eigen3/Eigen/Dense>
+#define BOOST_NO_CXX11_SCOPED_ENUMS
+#include <boost/filesystem.hpp>
+#undef BOOST_NO_CXX11_SCOPED_ENUMS
 
-namespace py = pybind11;
+namespace xyz_data {
 
-PYBIND11_MODULE(mesh_map, m) {
-    m.doc() = "Data structure for constructing and viewing a bathymetry mesh and for draping the mesh with sidescan data"; // optional module docstring
-    //py::class_<bathy_map_mesh>(m, "bathy_map_mesh", "Class for constructing mesh from multibeam data")
-    //.def(py::init<>(), "Constructor")
-    m.def("mesh_from_height_map", &mesh_map::mesh_from_height_map, "Construct mesh from height map");
-    m.def("height_map_from_pings", &mesh_map::height_map_from_pings, "Construct height map from mbes_ping::PingsT");
-    m.def("height_map_from_cloud", &mesh_map::height_map_from_cloud, "Construct height map from vector<Eigen::Vector3d>");
-    m.def("mesh_from_pings", &mesh_map::mesh_from_pings, "Construct mesh from mbes_ping::PingsT");
-    m.def("mesh_from_cloud", &mesh_map::mesh_from_cloud, "Construct mesh from vector<Eigen::Vector3d>");
-    m.def("show_mesh", &mesh_map::show_mesh, "Display mesh using igl viewer");
-    m.def("show_textured_mesh", &mesh_map::show_textured_mesh, "Display textured mesh using igl viewer");
-    m.def("show_height_map", &mesh_map::show_height_map, "Display height map using opencv");
-    m.def("height_map_to_texture", &mesh_map::height_map_to_texture, "Get R, G, B color textures from height map");
+using Points = std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> >;
+
+xyz_data::Points subsample_cloud(const xyz_data::Points& cloud);
+
+} // namespace xyz_data
+
+namespace std_data {
+
+template <>
+xyz_data::Points parse_file(const boost::filesystem::path& file);
 
 }
+
+#endif // XYZ_DATA_H
