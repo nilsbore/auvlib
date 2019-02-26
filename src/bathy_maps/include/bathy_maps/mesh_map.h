@@ -39,6 +39,9 @@ namespace mesh_map {
                Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> >
     height_map_to_texture(const Eigen::MatrixXd& height_map);
 
+    void write_dae_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const boost::filesystem::path& filename);
+    void write_dae_mesh_from_str(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const std::string& filename);
+
 }
 
 #endif // MESH_MAP_H
