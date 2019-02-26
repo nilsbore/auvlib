@@ -11,7 +11,7 @@ Extensive documentation for the python API is available
 
 On Ubuntu 16.04, just use the following command to install all dependencies:
 ```
-sudo apt-get install libcereal-dev libglfw3-dev libceres-dev
+sudo apt-get install libcereal-dev libglfw3-dev libceres-dev libtinyxml2-dev
 ```
 
 ## Building
