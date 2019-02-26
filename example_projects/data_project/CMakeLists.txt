@@ -17,4 +17,4 @@ find_package(DataTools REQUIRED)
 include_directories(include ${EIGEN_INCLUDE_DIRS})
 
 add_executable(example_reader src/example_reader.cpp)
-target_link_libraries(example_reader data_structures gsf_data xtf_data csv_data navi_data all_data)
+target_link_libraries(example_reader gsf_data xtf_data csv_data navi_data all_data)
