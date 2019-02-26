@@ -13,6 +13,7 @@
 
 #include <igl/opengl/glfw/Viewer.h>
 #include <igl/opengl/gl.h>
+#include <igl/xml/writeDAE.h>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -57,6 +58,16 @@ std::tuple<uint8_t, uint8_t, uint8_t> jet_mesh(double x)
     }
 
     return std::make_tuple(uint8_t(255.*r), uint8_t(255.*g), uint8_t(255.*b));
+}
+
+void write_dae_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const boost::filesystem::path& filename)
+{
+    igl::xml::writeDAE(filename.string(), V, F);
+}
+
+void write_dae_mesh_from_str(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const string& filename)
+{
+    write_dae_mesh(V, F, boost::filesystem::path(filename));
 }
 
 void show_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F)
