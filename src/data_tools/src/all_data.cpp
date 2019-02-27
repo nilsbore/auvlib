@@ -416,6 +416,62 @@ mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_
     return new_pings;
 }
 
+mbes_ping::PingsT match_attitude(mbes_ping::PingsT& pings, all_nav_attitude::EntriesT& entries)
+{
+    struct unfolded_attitude {
+        long long time_stamp_; // posix time stamp
+        double roll;
+        double pitch;
+        double heading;
+        double heave;
+    };
+
+    vector<unfolded_attitude> attitudes;
+    unfolded_attitude attitude;
+    for (const all_nav_attitude& entry : entries) {
+        for (const all_nav_attitude_sample& sample : entry.samples) {
+            attitude.roll = sample.roll;
+            attitude.pitch = sample.pitch;
+            attitude.heading = sample.heading;
+            attitude.heave = sample.heave;
+            attitude.time_stamp_ = entry.time_stamp_ + sample.ms_since_start;
+            attitudes.push_back(attitude);
+        }
+    }
+
+    mbes_ping::PingsT new_pings = pings;
+
+    std::stable_sort(entries.begin(), entries.end(), [](const all_nav_attitude& entry1, const all_nav_attitude& entry2) {
+        return entry1.time_stamp_ < entry2.time_stamp_;
+    });
+
+    auto pos = attitudes.begin();
+    for (mbes_ping& ping : new_pings) {
+        pos = std::find_if(pos, attitudes.end(), [&](const unfolded_attitude& entry) {
+            return entry.time_stamp_ > ping.time_stamp_;
+        });
+
+        ping.pitch_ = 0.;
+        ping.roll_ = 0.;
+        if (pos == attitudes.end()) {
+            ping.pitch_ = attitudes.back().pitch;
+            ping.roll_ = attitudes.back().roll;
+        }
+        else if (pos == attitudes.begin()) {
+                ping.pitch_ = pos->pitch;
+                ping.roll_ = pos->roll;
+        }
+        else {
+            unfolded_attitude& previous = *(pos - 1);
+            double ratio = double(ping.time_stamp_ - previous.time_stamp_)/double(pos->time_stamp_ - previous.time_stamp_);
+            ping.pitch_ = previous.pitch + ratio*(pos->pitch - previous.pitch);
+            ping.roll_ = previous.roll + ratio*(pos->roll - previous.roll);
+        }
+    }
+
+    return new_pings;
+}
+
 } // namespace all_data
 
 namespace std_data {

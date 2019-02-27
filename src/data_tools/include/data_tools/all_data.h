@@ -147,6 +147,7 @@ struct all_echosounder_depth {
 };
 
 std_data::mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_entry::EntriesT& entries);
+std_data::mbes_ping::PingsT match_attitude(std_data::mbes_ping::PingsT& pings, all_nav_attitude::EntriesT& entries);
 
 } // namespace all_data
 
