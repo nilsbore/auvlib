@@ -101,21 +101,25 @@ protected:
     cv::Mat gt_waterfall_image;
     cv::Mat model_waterfall_image;
     Eigen::MatrixXd waterfall_depth;
+    Eigen::MatrixXd waterfall_model;
     size_t waterfall_row;
     size_t resample_window_height;
     size_t full_window_height;
 
+    double left_row_mean;
+    double right_row_mean;
+
     void generate_sss_window();
-    Eigen::VectorXd compute_times(const Eigen::MatrixXd& P);
-    Eigen::VectorXd compute_time_windows(const Eigen::VectorXd& times, const Eigen::VectorXd& intensities, const xtf_data::xtf_sss_ping_side& ping);
-    Eigen::VectorXd compute_depth_windows(const Eigen::VectorXd& times, const Eigen::MatrixXd& hits, const xtf_data::xtf_sss_ping_side& ping);
-    Eigen::VectorXd compute_model_intensities(const Eigen::MatrixXd& hits, const Eigen::MatrixXd& normals,
-                                              const Eigen::Vector3d& origin);
-    void visualize_rays(const Eigen::MatrixXd& hits_left, const Eigen::MatrixXd& hits_right);
-    void visualize_vehicle();
+    //Eigen::VectorXd compute_times(const Eigen::MatrixXd& P);
+    //Eigen::VectorXd compute_time_windows(const Eigen::VectorXd& times, const Eigen::VectorXd& intensities, const xtf_data::xtf_sss_ping_side& ping);
+    //Eigen::VectorXd compute_depth_windows(const Eigen::VectorXd& times, const Eigen::MatrixXd& hits, const xtf_data::xtf_sss_ping_side& ping);
+    //Eigen::VectorXd compute_model_intensities(const Eigen::MatrixXd& hits, const Eigen::MatrixXd& normals,
+    //                                          const Eigen::Vector3d& origin);
+    //void visualize_rays(const Eigen::MatrixXd& hits_left, const Eigen::MatrixXd& hits_right);
+    //void visualize_vehicle();
     Eigen::VectorXd get_texture_intensities(const Eigen::MatrixXd& P);
     Eigen::MatrixXd get_UV(const Eigen::MatrixXd& P);
-    std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> project();
+    //std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> project();
     void construct_gt_waterfall();
     void construct_model_waterfall(const Eigen::MatrixXd& hits_left, const Eigen::MatrixXd& hits_right,
                                    const Eigen::MatrixXd& normals_left, const Eigen::MatrixXd& normals_right,
@@ -142,6 +146,7 @@ public:
               const csv_data::csv_asvp_sound_speed::EntriesT& sound_speeds,
               const Eigen::MatrixXd& height_map);
 
+    bool callback_key_pressed(igl::opengl::glfw::Viewer& viewer, unsigned int key, int mods);
     bool callback_pre_draw(igl::opengl::glfw::Viewer& viewer);
 };
 

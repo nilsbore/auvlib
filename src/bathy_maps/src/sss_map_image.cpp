@@ -31,6 +31,17 @@ sss_map_image_builder::sss_map_image_builder(const sss_map_image::BoundsT& bound
     sss_waterfall_image = Eigen::MatrixXd::Zero(2000, waterfall_width);
     sss_waterfall_cross_track = Eigen::MatrixXd::Zero(2000, waterfall_width);
     sss_waterfall_depth = Eigen::MatrixXd::Zero(2000, waterfall_width);
+    sss_waterfall_model = Eigen::MatrixXd::Zero(2000, waterfall_width);
+}
+
+pair<int, int> sss_map_image_builder::get_map_image_shape()
+{
+    return make_pair(image_rows, image_cols);
+}
+
+size_t sss_map_image_builder::get_waterfall_bins()
+{
+    return waterfall_width / 2;
 }
 
 bool sss_map_image_builder::empty()
@@ -40,6 +51,10 @@ bool sss_map_image_builder::empty()
 
 Eigen::MatrixXd sss_map_image_builder::downsample_cols(const Eigen::MatrixXd& M, int new_cols)
 {
+    if (new_cols == M.cols()) {
+        return M;
+    }
+
     double factor = double(new_cols)/double(M.cols());
     Eigen::ArrayXXd sums = Eigen::MatrixXd::Zero(M.rows(), new_cols);
     Eigen::ArrayXXd counts = Eigen::MatrixXd::Zero(M.rows(), new_cols);
@@ -48,8 +63,10 @@ Eigen::MatrixXd sss_map_image_builder::downsample_cols(const Eigen::MatrixXd& M,
     for (int i = 0; i < M.rows(); ++i) {
         for (int j = 0; j < M.cols(); ++j) {
             ind = int(factor*j);
-            sums(i, ind) += M(i, j);
-            counts(i, ind) += 1.;
+            if (M(i, j) != 0) {
+                sums(i, ind) += M(i, j);
+                counts(i, ind) += 1.;
+            }
         }
     }
 
@@ -67,10 +84,12 @@ sss_map_image sss_map_image_builder::finish()
         sss_map_image_counts.array() += (sss_map_image_counts.array() == 0).cast<double>();
         map_image.sss_map_image.array() = sss_map_image_sums.array() / sss_map_image_counts.array();
     }
+    map_image.sss_ping_duration = sss_ping_duration;
     map_image.pos = poss;
-    map_image.sss_waterfall_image = downsample_cols(sss_waterfall_image.topRows(waterfall_counter), 1000).cast<float>();
+    map_image.sss_waterfall_image = downsample_cols(sss_waterfall_image.topRows(waterfall_counter), 512).cast<float>();
     //map_image.sss_waterfall_cross_track = sss_waterfall_cross_track.topRows(waterfall_counter);
-    map_image.sss_waterfall_depth = downsample_cols(sss_waterfall_depth.topRows(waterfall_counter), 1000).cast<float>();
+    map_image.sss_waterfall_depth = downsample_cols(sss_waterfall_depth.topRows(waterfall_counter), 512).cast<float>();
+    map_image.sss_waterfall_model = downsample_cols(sss_waterfall_model.topRows(waterfall_counter), 512).cast<float>();
 
     return map_image;
 }
@@ -120,6 +139,7 @@ void sss_map_image_builder::add_hits(const Eigen::MatrixXd& hits, const Eigen::V
         return;
     }
 
+    sss_ping_duration = ping.time_duration;
     poss.push_back(pos);
 
     Eigen::VectorXd intensities = hits.col(3);
@@ -144,6 +164,69 @@ void sss_map_image_builder::add_hits(const Eigen::MatrixXd& hits, const Eigen::V
     std::cout << "Number inside image: " << inside_image << std::endl;
 
     add_waterfall_images(hits, hits_inds, ping, pos, is_left);
+}
+
+void sss_map_image_builder::add_hits(const Eigen::MatrixXd& hits, const Eigen::VectorXd& intensities,
+                                     const Eigen::VectorXd& sss_depths, const Eigen::VectorXd& sss_model,
+                                     const xtf_sss_ping_side& ping, const Eigen::Vector3d& pos, bool is_left)
+{
+    if (hits.rows() == 0) {
+        return;
+    }
+
+    sss_ping_duration = ping.time_duration;
+    poss.push_back(pos);
+
+    Eigen::MatrixXd points = hits;
+    // The hits are already compensated to start at bounds.row(0)
+    //points.array().rowwise() -= global_origin.array().transpose();
+    points.leftCols<2>().array() *= resolution; //*points.leftCols<2>().array();
+
+    std::cout << "Hits rows: " << hits.rows() << std::endl;
+    std::cout << "Origin: " << global_origin.transpose() << ", pose: " << pos.transpose() << std::endl;
+
+    int inside_image = 0;
+    for (int i = 0; i < points.rows(); ++i) {
+        int x = int(points(i, 0));
+        int y = int(points(i, 1));
+        if (x >= 0 && x < image_cols && y >= 0 && y < image_rows) {
+            sss_map_image_sums(y, x) += intensities(i);
+            sss_map_image_counts(y, x) += 1.;
+            ++inside_image;
+        }
+    }
+    std::cout << "Number inside image: " << inside_image << std::endl;
+
+    if (waterfall_counter > sss_waterfall_image.rows()) {
+        sss_waterfall_image.conservativeResize(sss_waterfall_image.rows()+1000, sss_waterfall_image.cols());
+        sss_waterfall_cross_track.conservativeResize(sss_waterfall_image.rows()+1000, sss_waterfall_image.cols());
+        sss_waterfall_depth.conservativeResize(sss_waterfall_image.rows()+1000, sss_waterfall_image.cols());
+        sss_waterfall_model.conservativeResize(sss_waterfall_image.rows()+1000, sss_waterfall_image.cols());
+    }
+
+    for (int i = 0; i < ping.pings.size(); ++i) {
+        int col;
+        if (is_left) {
+            col = waterfall_width/2 + i;
+        }
+        else {
+            col = waterfall_width/2 - 1 - i;
+        }
+        sss_waterfall_image(waterfall_counter, col) = double(ping.pings[i])/10000.;
+    }
+
+    if (is_left) {
+        sss_waterfall_depth.block(waterfall_counter, waterfall_width/2, 1, waterfall_width/2) = sss_depths.transpose();
+        sss_waterfall_model.block(waterfall_counter, waterfall_width/2, 1, waterfall_width/2) = sss_model.transpose();
+    }
+    else {
+        sss_waterfall_depth.block(waterfall_counter, 0, 1, waterfall_width/2) = sss_depths.reverse().transpose();
+        sss_waterfall_model.block(waterfall_counter, 0, 1, waterfall_width/2) = sss_model.reverse().transpose();
+    }
+
+    if (!is_left) {
+        ++waterfall_counter;
+    }
 }
 
 sss_patch_views::ViewsT convert_maps_to_patches(const sss_map_image::ImagesT& map_images, const Eigen::MatrixXd& height_map, double patch_size)

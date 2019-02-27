@@ -45,8 +45,31 @@ protected:
     double sensor_yaw;
     bool ray_tracing_enabled; // is snell ray tracing enabled?
 
+    // NOTE: these are new style functions
+
+    std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> project();
+
+    Eigen::VectorXd compute_times(const Eigen::MatrixXd& P);
+
+    Eigen::VectorXd convert_to_time_bins(const Eigen::VectorXd& times, const Eigen::VectorXd& values,
+                                         const xtf_data::xtf_sss_ping_side& ping, size_t nbr_windows);
+
+    Eigen::VectorXd compute_intensities(const Eigen::VectorXd& times, 
+                                        const xtf_data::xtf_sss_ping_side& ping);
+
+    void visualize_rays(const Eigen::MatrixXd& hits_left, const Eigen::MatrixXd& hits_right);
+
+    void visualize_vehicle();
+
+    Eigen::VectorXd compute_model_intensities(const Eigen::MatrixXd& hits, const Eigen::MatrixXd& normals,
+                                              const Eigen::Vector3d& origin);
+
+    // NOTE: these are old style functions, to be deprecated
+    std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::VectorXi, Eigen::VectorXi, Eigen::Vector3d> project_sss();
+
 public:
 
+    void set_texture(const Eigen::MatrixXd& texture, const BoundsT& bounds);
     void set_sidescan_yaw(double new_sensor_yaw) { sensor_yaw = new_sensor_yaw; }
     void set_ray_tracing_enabled(bool enabled);
     void set_vehicle_mesh(const Eigen::MatrixXd& new_V2, const Eigen::MatrixXi& new_F2, const Eigen::MatrixXd& new_C2);
@@ -57,7 +80,6 @@ public:
                const csv_data::csv_asvp_sound_speed::EntriesT& sound_speeds = csv_data::csv_asvp_sound_speed::EntriesT());
 
     void show();
-    std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::VectorXi, Eigen::VectorXi, Eigen::Vector3d> project_sss();
     bool callback_pre_draw(igl::opengl::glfw::Viewer& viewer);
 };
 
