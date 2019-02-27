@@ -407,7 +407,7 @@ void track_error_benchmark::add_benchmark(mbes_ping::PingsT& pings, const std::s
     cv::Mat error_img;
     Eigen::MatrixXd error_vals;
     double consistency_rms_error;
-    //tie(consistency_rms_error, error_img) = compute_draw_consistency_map(pings);
+    tie(consistency_rms_error, error_img) = compute_draw_consistency_map(pings);
     std::vector<std::vector<std::vector<Eigen::MatrixXd>>> grid_maps = create_grids_from_pings(pings);
     tie(consistency_rms_error, error_vals) = compute_consistency_error(grid_maps);
     error_img = draw_error_consistency_map(error_vals);

@@ -32,7 +32,7 @@ std::tuple<ObsT, TransT, AngsT, MatchesT, BBsT, ObsT> create_submaps(const std_d
 
 void divide_tracks_adaptively(std_data::mbes_ping::PingsT& pings);
 double computeInfoInSubmap(std_data::mbes_ping::PingsT &submap_pings);
-
+void saveSubmapsFiles(const std_data::mbes_ping::PingsT& pings, const boost::filesystem::path &folder);
 }
 
 namespace std_data {

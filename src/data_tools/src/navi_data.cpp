@@ -66,7 +66,29 @@ void match_timestamps(mbes_ping::PingsT& pings, nav_entry::EntriesT& entries)
             //cout << "Ping " << ping.time_string_ << " closest to Entry " << pos->time_string_ << endl;
         }
     }
+}
 
+
+void saveSubmapsFiles(const std_data::mbes_ping::PingsT& pings, const boost::filesystem::path& folder){
+
+    // Save submaps in external files
+    string file_name;
+    int sm_cnt = 0;
+    std::ofstream myfile;
+    for (const std_data::mbes_ping& ping_i: pings){
+        // If new submap, open new file
+        if(ping_i.first_in_file_){
+            myfile.close();
+            file_name = "/submap_" + std::to_string(sm_cnt) + ".xyz";
+            myfile.open(folder.string() + file_name, std::ofstream::out);
+            sm_cnt += 1;
+        }
+        if(myfile.is_open()){
+            for(unsigned int i=0; i<ping_i.beams.size(); i++){
+                myfile << ping_i.beams.at(i)(0) - 669000.0 << " " << ping_i.beams.at(i)(1) - 6383000.0 << " " << ping_i.beams.at(i)(2) << "\n";
+            }
+        }
+    }
 }
 
 
@@ -95,7 +117,7 @@ double computeInfoInSubmap(std_data::mbes_ping::PingsT& submap_pings){
 
 void divide_tracks_adaptively(mbes_ping::PingsT& pings)
 {
-    double info_thres = 0.1;
+    double info_thres = 0.3;
     // For every line (one line per file)
     for (auto pos = pings.begin(); pos != pings.end(); ) {
         auto next = std::find_if(pos, pings.end(), [&](const mbes_ping& ping) {
@@ -113,10 +135,10 @@ void divide_tracks_adaptively(mbes_ping::PingsT& pings)
         mean_width /= count;
         double length = (last_pos - first_pos_it->pos_).norm();
 
-        int nbr_submaps = int(length/mean_width+4.5);
+        int nbr_submaps = int(length/mean_width+2.5);
         double min_submap_length = length / double(nbr_submaps);
         double ext_step = min_submap_length/4;
-        double max_submap_length = 2*min_submap_length;
+        double max_submap_length = 3*min_submap_length;
 
         cout << "Min submap length: " << min_submap_length << ", Growing step: "
              << ext_step << ", Max submap length: " << max_submap_length << endl;
@@ -207,9 +229,9 @@ void divide_tracks(mbes_ping::PingsT& pings)
                 cout << "Breaking up submap at " << counter << " out of " << std::distance(pos, next) << endl;
                 it->first_in_file_ = true;
                 recent_pos = it->pos_;
-                mbes_ping::PingsT pings_submap(pos+last_submap_cnt, it);
-                double info_in_submap = computeInfoInSubmap(pings_submap);
-                cout << "Info in submap " << info_in_submap << endl;
+//                mbes_ping::PingsT pings_submap(pos+last_submap_cnt, it);
+//                double info_in_submap = computeInfoInSubmap(pings_submap);
+//                cout << "Info in submap " << info_in_submap << endl;
                 last_submap_cnt = counter;
             }
             ++counter;
@@ -253,8 +275,8 @@ void divide_tracks_equal(mbes_ping::PingsT& pings)
 
         double line_pos1 = dir.dot(first_pos - point1);
         double line_pos2 = dir.dot(last_pos - point1);
-        cout << "Number pings: " << std::distance(pos, next);
-        cout << "First == last?" << (pos == next) << endl;
+        cout << "Number pings: " << std::distance(pos, next) << endl;
+        cout << "First == last? " << (pos == next) << endl;
         cout << "First beams: " << pos->beams.size() << " Next beams: " << next->beams.size() << endl;
         cout << "First firs in file?: " << pos->first_in_file_ << ", Next first in file?: " << next->first_in_file_ << endl;
         cout << "First time: " << pos->time_stamp_ << ", Next time: " << next->time_stamp_ << endl;
@@ -279,7 +301,7 @@ void divide_tracks_equal(mbes_ping::PingsT& pings)
 
     cout << "First line pos: " << first_line_pos << ", last line pos: " << last_line_pos << endl;
     cout << "Mean width: " << mean_width << ", Length: " << line_pos_length << ",  Nbr submaps: " << nbr_submaps << ", Submap length: " << submap_length << endl;
-
+    cout << "------------" << endl;
     int track_counter = 0;
     int min_since_last = 5;
     for (auto pos = pings.begin(); pos != pings.end(); ) {
@@ -344,9 +366,9 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT, ObsT> create_submaps(const mbes_ping:
         track_pings.insert(track_pings.end(), pos, next);
         cout << "found 1 pos!" << endl;
 
-        /*if (pos == next) {
+        if (pos == next) {
             break;
-        }*/
+        }
 
         MatrixXd points(track_pings.size()*track_pings[0].beams.size(), 3);
         MatrixXd track(track_pings.size(), 3);
