@@ -121,4 +121,24 @@ struct all_xyz88_datagram_repeat {
 	short reflectivity; // Reflectivity (BS) in 0.1 dB resolution (Example: –20.1 dB = FF37h= 65335)
 } __attribute__((packed));
 
+struct all_attitude_datagram {
+    unsigned short model_nbr; // EM model number (Example: EM 710 = 710)
+    unsigned int date; // Date = year*10000 + month*100 + day (Example: Sep 26, 2005 = 20050926)
+    unsigned int time; // Time since midnight in milliseconds (Example: 08:12:51.234 = 29570234)
+    unsigned short attitude_count; // Echo sounder counter (sequential counter)
+    unsigned short serial_nbr; // System serial number
+
+    unsigned short nbr_entries; // = N 2U 1 – —
+    //Repeat cycle – N entries of: 12*N —
+} __attribute__((packed));
+
+struct all_attitude_datagram_repeat {
+    unsigned short ms_since_start; // Time in milliseconds since record start 2U 0 to 65534 —
+    unsigned short sensor_status; // Sensor status 2U — 1
+    short roll; // Roll in 0.01° 2S -18000 to 18000 —
+    short pitch; // Pitch in 0.01° 2S -18000 to 18000 —
+    short heave; // Heave in cm 2S -1000 to 10000 —
+    unsigned short heading; //– Heading in 0.01° 2U 0 to 35999 —
+} __attribute__((packed));
+
 #endif // ALL_H

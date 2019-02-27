@@ -188,7 +188,7 @@ vector<ReturnType, Eigen::aligned_allocator<ReturnType> > parse_file_impl(const 
 
     /*
     for (int i = 0; i < 255; ++i) {
-        cout << std::dec << "Got " << counters[i] << " of type " << i << std::hex <<"with hex 0x"<< i << endl;
+        cout << std::dec << "Got " << counters[i] << " of type " << i << std::hex <<" with hex 0x"<< i << std::dec << endl;
     }
 	cout << "Got " << pos_counter << " position entries" << endl;
     */
@@ -205,7 +205,11 @@ pair<long long, string> parse_all_time(unsigned int date, unsigned int time)
     //std::istringstream is(to_string(date));
     //cout << "Date: " << to_string(date) << endl;
     //is.imbue(loc);
-    boost::gregorian::date date_t = boost::gregorian::date_from_iso_string(to_string(date));
+    string date_string = to_string(date);
+    if (date_string.size() != 8) {
+        return make_pair(0, "1970-01-01 00:00:00.000");
+    }
+    boost::gregorian::date date_t = boost::gregorian::date_from_iso_string(date_string);
     boost::posix_time::ptime t(date_t, time_d);
     //is >> date_t;
     long long time_stamp_ = (t - epoch).total_milliseconds();
@@ -291,6 +295,30 @@ all_nav_depth read_datagram<all_nav_depth, all_depth_datagram>(std::ifstream& in
     
     entry.height = 100.*double(header.height); // Height in cm
     entry.height_type = header.height_type; // Height type
+	
+    return entry;
+}
+
+template <>
+all_nav_attitude read_datagram<all_nav_attitude, all_attitude_datagram>(std::ifstream& input, const all_attitude_datagram& header)
+{
+	all_nav_attitude entry;
+	entry.id_ = header.attitude_count;
+    tie(entry.time_stamp_, entry.time_string_) = parse_all_time(header.date, header.time);
+
+    all_nav_attitude_sample sample;
+	all_attitude_datagram_repeat meas;
+
+    entry.samples.reserve(header.nbr_entries);
+	for (int i = 0; i < header.nbr_entries; ++i) {
+		input.read(reinterpret_cast<char*>(&meas), sizeof(meas));
+        sample.ms_since_start = meas.ms_since_start;
+        sample.pitch = M_PI/180.*0.01*double(meas.pitch);
+        sample.roll = M_PI/180.*0.01*double(meas.roll);
+        sample.heading = M_PI/180.*0.01*double(meas.heading);
+        sample.heave = 0.01*double(meas.heave);
+        entry.samples.push_back(sample);
+	}
 	
     return entry;
 }
@@ -407,6 +435,12 @@ template <>
 all_nav_depth::EntriesT parse_file<all_nav_depth>(const boost::filesystem::path& path)
 {
     return parse_file_impl<all_nav_depth, all_depth_datagram, 104>(path);
+}
+
+template <>
+all_nav_attitude::EntriesT parse_file<all_nav_attitude>(const boost::filesystem::path& path)
+{
+    return parse_file_impl<all_nav_attitude, all_attitude_datagram, 65>(path);
 }
 
 template <>
