@@ -67,6 +67,7 @@ PYBIND11_MODULE(all_data, m) {
 
     py::class_<all_nav_attitude_sample>(m, "all_nav_attitude_sample", "Class for the all nav attitude sample entry")
         .def(py::init<>())
+        .def_readwrite("ms_since_start", &all_nav_attitude_sample::ms_since_start, "Member")
         .def_readwrite("roll", &all_nav_attitude_sample::roll, "Member")
         .def_readwrite("pitch", &all_nav_attitude_sample::pitch, "Member")
         .def_readwrite("heading", &all_nav_attitude_sample::heading, "Member")

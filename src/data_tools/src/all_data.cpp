@@ -206,9 +206,9 @@ pair<long long, string> parse_all_time(unsigned int date, unsigned int time)
     //cout << "Date: " << to_string(date) << endl;
     //is.imbue(loc);
     string date_string = to_string(date);
-    if (date_string.size() != 8) {
+    /*if (date_string.size() != 8) {
         return make_pair(0, "1970-01-01 00:00:00.000");
-    }
+    }*/
     boost::gregorian::date date_t = boost::gregorian::date_from_iso_string(date_string);
     boost::posix_time::ptime t(date_t, time_d);
     //is >> date_t;
