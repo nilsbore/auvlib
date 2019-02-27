@@ -319,6 +319,9 @@ all_nav_attitude read_datagram<all_nav_attitude, all_attitude_datagram>(std::ifs
         sample.heave = 0.01*double(meas.heave);
         entry.samples.push_back(sample);
 	}
+    
+	unsigned char system_desc; // Sensor system descriptor 1U
+	input.read(reinterpret_cast<char*>(&system_desc), sizeof(system_desc));
 	
     return entry;
 }
