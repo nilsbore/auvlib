@@ -45,3 +45,10 @@
 # Folders
 build
 install
+
+# Qt stuff
+*.config
+*.creator
+*.creator.user
+*.includes
+*.files
