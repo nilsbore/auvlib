@@ -178,6 +178,7 @@ vector<ReturnType, Eigen::aligned_allocator<ReturnType> > parse_file_impl(const 
 		    input.read(reinterpret_cast<char*>(&end_ident), sizeof(end_ident));
 		    input.read(reinterpret_cast<char*>(&checksum), sizeof(checksum));
 			//cout << "End identifier: " << end_ident << endl;
+            returns.back().first_in_file_ = false;
 		}
 		else {
 		    //cout << "No MB reading, code: " << int(data_type) << endl;
@@ -192,6 +193,10 @@ vector<ReturnType, Eigen::aligned_allocator<ReturnType> > parse_file_impl(const 
     }
 	cout << "Got " << pos_counter << " position entries" << endl;
     */
+
+    if (!returns.empty()) {
+        returns[0].first_in_file_ = true;
+    }
 
 	return returns;
 }
@@ -453,19 +458,36 @@ mbes_ping::PingsT match_attitude(mbes_ping::PingsT& pings, all_nav_attitude::Ent
 
         ping.pitch_ = 0.;
         ping.roll_ = 0.;
+        double heave;
         if (pos == attitudes.end()) {
             ping.pitch_ = attitudes.back().pitch;
             ping.roll_ = attitudes.back().roll;
+            heave = attitudes.back().heave;
         }
         else if (pos == attitudes.begin()) {
                 ping.pitch_ = pos->pitch;
                 ping.roll_ = pos->roll;
+                heave = pos->heave;
         }
         else {
             unfolded_attitude& previous = *(pos - 1);
             double ratio = double(ping.time_stamp_ - previous.time_stamp_)/double(pos->time_stamp_ - previous.time_stamp_);
             ping.pitch_ = previous.pitch + ratio*(pos->pitch - previous.pitch);
             ping.roll_ = previous.roll + ratio*(pos->roll - previous.roll);
+            heave = previous.heave + ratio*(pos->heave - previous.heave);
+        }
+        //ping.pitch_ *= -1.;
+        //ping.roll_ *= -1.;
+        
+        for (Eigen::Vector3d& beam : ping.beams) {
+            beam = beam - ping.pos_;
+            Eigen::Matrix3d Rz = Eigen::AngleAxisd(-ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
+            beam = Rz*beam;
+            Rz = Eigen::AngleAxisd(ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
+            Eigen::Matrix3d Ry = Eigen::AngleAxisd(0.*1.*ping.pitch_, Eigen::Vector3d::UnitY()).matrix();
+            Eigen::Matrix3d Rx = Eigen::AngleAxisd(0.*1.*ping.roll_, Eigen::Vector3d::UnitX()).matrix();
+            Eigen::Matrix3d R = Rx*Ry*Rz;
+            beam = ping.pos_ + R*beam; // + Eigen::Vector3d(0., 0., -heave);
         }
     }
 
