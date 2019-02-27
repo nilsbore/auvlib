@@ -188,7 +188,7 @@ vector<ReturnType, Eigen::aligned_allocator<ReturnType> > parse_file_impl(const 
 
     /*
     for (int i = 0; i < 255; ++i) {
-        cout << std::dec << "Got " << counters[i] << " of type " << i << std::hex <<"with hex 0x"<< i << endl;
+        cout << std::dec << "Got " << counters[i] << " of type " << i << std::hex <<" with hex 0x"<< i << std::dec << endl;
     }
 	cout << "Got " << pos_counter << " position entries" << endl;
     */
@@ -205,7 +205,11 @@ pair<long long, string> parse_all_time(unsigned int date, unsigned int time)
     //std::istringstream is(to_string(date));
     //cout << "Date: " << to_string(date) << endl;
     //is.imbue(loc);
-    boost::gregorian::date date_t = boost::gregorian::date_from_iso_string(to_string(date));
+    string date_string = to_string(date);
+    /*if (date_string.size() != 8) {
+        return make_pair(0, "1970-01-01 00:00:00.000");
+    }*/
+    boost::gregorian::date date_t = boost::gregorian::date_from_iso_string(date_string);
     boost::posix_time::ptime t(date_t, time_d);
     //is >> date_t;
     long long time_stamp_ = (t - epoch).total_milliseconds();
@@ -291,6 +295,33 @@ all_nav_depth read_datagram<all_nav_depth, all_depth_datagram>(std::ifstream& in
     
     entry.height = 100.*double(header.height); // Height in cm
     entry.height_type = header.height_type; // Height type
+	
+    return entry;
+}
+
+template <>
+all_nav_attitude read_datagram<all_nav_attitude, all_attitude_datagram>(std::ifstream& input, const all_attitude_datagram& header)
+{
+	all_nav_attitude entry;
+	entry.id_ = header.attitude_count;
+    tie(entry.time_stamp_, entry.time_string_) = parse_all_time(header.date, header.time);
+
+    all_nav_attitude_sample sample;
+	all_attitude_datagram_repeat meas;
+
+    entry.samples.reserve(header.nbr_entries);
+	for (int i = 0; i < header.nbr_entries; ++i) {
+		input.read(reinterpret_cast<char*>(&meas), sizeof(meas));
+        sample.ms_since_start = meas.ms_since_start;
+        sample.pitch = M_PI/180.*0.01*double(meas.pitch);
+        sample.roll = M_PI/180.*0.01*double(meas.roll);
+        sample.heading = M_PI/180.*0.01*double(meas.heading);
+        sample.heave = 0.01*double(meas.heave);
+        entry.samples.push_back(sample);
+	}
+    
+	unsigned char system_desc; // Sensor system descriptor 1U
+	input.read(reinterpret_cast<char*>(&system_desc), sizeof(system_desc));
 	
     return entry;
 }
@@ -385,6 +416,62 @@ mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_
     return new_pings;
 }
 
+mbes_ping::PingsT match_attitude(mbes_ping::PingsT& pings, all_nav_attitude::EntriesT& entries)
+{
+    struct unfolded_attitude {
+        long long time_stamp_; // posix time stamp
+        double roll;
+        double pitch;
+        double heading;
+        double heave;
+    };
+
+    vector<unfolded_attitude> attitudes;
+    unfolded_attitude attitude;
+    for (const all_nav_attitude& entry : entries) {
+        for (const all_nav_attitude_sample& sample : entry.samples) {
+            attitude.roll = sample.roll;
+            attitude.pitch = sample.pitch;
+            attitude.heading = sample.heading;
+            attitude.heave = sample.heave;
+            attitude.time_stamp_ = entry.time_stamp_ + sample.ms_since_start;
+            attitudes.push_back(attitude);
+        }
+    }
+
+    mbes_ping::PingsT new_pings = pings;
+
+    std::stable_sort(entries.begin(), entries.end(), [](const all_nav_attitude& entry1, const all_nav_attitude& entry2) {
+        return entry1.time_stamp_ < entry2.time_stamp_;
+    });
+
+    auto pos = attitudes.begin();
+    for (mbes_ping& ping : new_pings) {
+        pos = std::find_if(pos, attitudes.end(), [&](const unfolded_attitude& entry) {
+            return entry.time_stamp_ > ping.time_stamp_;
+        });
+
+        ping.pitch_ = 0.;
+        ping.roll_ = 0.;
+        if (pos == attitudes.end()) {
+            ping.pitch_ = attitudes.back().pitch;
+            ping.roll_ = attitudes.back().roll;
+        }
+        else if (pos == attitudes.begin()) {
+                ping.pitch_ = pos->pitch;
+                ping.roll_ = pos->roll;
+        }
+        else {
+            unfolded_attitude& previous = *(pos - 1);
+            double ratio = double(ping.time_stamp_ - previous.time_stamp_)/double(pos->time_stamp_ - previous.time_stamp_);
+            ping.pitch_ = previous.pitch + ratio*(pos->pitch - previous.pitch);
+            ping.roll_ = previous.roll + ratio*(pos->roll - previous.roll);
+        }
+    }
+
+    return new_pings;
+}
+
 } // namespace all_data
 
 namespace std_data {
@@ -407,6 +494,12 @@ template <>
 all_nav_depth::EntriesT parse_file<all_nav_depth>(const boost::filesystem::path& path)
 {
     return parse_file_impl<all_nav_depth, all_depth_datagram, 104>(path);
+}
+
+template <>
+all_nav_attitude::EntriesT parse_file<all_nav_attitude>(const boost::filesystem::path& path)
+{
+    return parse_file_impl<all_nav_attitude, all_attitude_datagram, 65>(path);
 }
 
 template <>

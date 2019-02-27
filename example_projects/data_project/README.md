@@ -20,7 +20,7 @@ cd build
 ```
 Now, run cmake using
 ```
-PATH=$PATH:../gpgs_install/share/ cmake ..
+PATH=$PATH:../../../install/share/ cmake ..
 ```
 followed by make: `make`.
 Now everything should have compiled.

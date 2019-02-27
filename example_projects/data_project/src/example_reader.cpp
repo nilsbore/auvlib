@@ -6,6 +6,12 @@
 #include <data_tools/all_data.h>
 
 using namespace std;
+using namespace xtf_data;
+using namespace std_data;
+using namespace gsf_data;
+using namespace all_data;
+using namespace navi_data;
+
 
 int main(int argc, char** argv)
 {

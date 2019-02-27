@@ -89,6 +89,44 @@ struct all_nav_depth {
 
 };
 
+struct all_nav_attitude_sample {
+
+    unsigned int ms_since_start;
+
+    double roll;
+    double pitch;
+    double heading;
+    double heave;
+
+	template <class Archive>
+    void serialize( Archive & ar )
+    {
+        ar(CEREAL_NVP(ms_since_start), CEREAL_NVP(roll), CEREAL_NVP(pitch),
+           CEREAL_NVP(heading), CEREAL_NVP(heave));
+    }
+
+};
+
+struct all_nav_attitude {
+
+    using EntriesT = std::vector<all_nav_attitude, Eigen::aligned_allocator<all_nav_attitude> >;
+
+    unsigned int id_;
+    std::string time_string_; // readable time stamp string
+    long long time_stamp_; // posix time stamp
+    bool first_in_file_;
+
+    std::vector<all_nav_attitude_sample> samples;
+
+	template <class Archive>
+    void serialize( Archive & ar )
+    {
+        ar(CEREAL_NVP(id_), CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_),
+		   CEREAL_NVP(first_in_file_), CEREAL_NVP(samples));
+    }
+
+};
+
 struct all_echosounder_depth {
 
     using EntriesT = std::vector<all_echosounder_depth, Eigen::aligned_allocator<all_echosounder_depth> >;
@@ -109,6 +147,7 @@ struct all_echosounder_depth {
 };
 
 std_data::mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_entry::EntriesT& entries);
+std_data::mbes_ping::PingsT match_attitude(std_data::mbes_ping::PingsT& pings, all_nav_attitude::EntriesT& entries);
 
 } // namespace all_data
 
@@ -124,6 +163,9 @@ all_data::all_nav_entry::EntriesT parse_file(const boost::filesystem::path& path
 
 template <>
 all_data::all_nav_depth::EntriesT parse_file(const boost::filesystem::path& path);
+
+template <>
+all_data::all_nav_attitude::EntriesT parse_file(const boost::filesystem::path& path);
 
 }
 

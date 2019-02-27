@@ -65,6 +65,25 @@ PYBIND11_MODULE(all_data, m) {
         .def_static("parse_folder", &parse_folder_from_str<all_nav_depth>, "Parse all_nav_depth from folder of .all files")
         .def_static("read_data", &read_data_from_str<all_nav_depth::EntriesT>, "Read all_nav_depth::EntriesT from .cereal file");
 
+    py::class_<all_nav_attitude_sample>(m, "all_nav_attitude_sample", "Class for the all nav attitude sample entry")
+        .def(py::init<>())
+        .def_readwrite("ms_since_start", &all_nav_attitude_sample::ms_since_start, "Member")
+        .def_readwrite("roll", &all_nav_attitude_sample::roll, "Member")
+        .def_readwrite("pitch", &all_nav_attitude_sample::pitch, "Member")
+        .def_readwrite("heading", &all_nav_attitude_sample::heading, "Member")
+        .def_readwrite("heave", &all_nav_attitude_sample::heave, "Member");
+
+    py::class_<all_nav_attitude>(m, "all_nav_attitude", "Class for the all nav attitude entry")
+        .def(py::init<>())
+        .def_readwrite("id_", &all_nav_attitude::id_, "Member")
+        .def_readwrite("time_string_", &all_nav_attitude::time_string_, "Member")
+        .def_readwrite("time_stamp_", &all_nav_attitude::time_stamp_, "Member")
+        .def_readwrite("first_in_file_", &all_nav_attitude::first_in_file_, "Member")
+        .def_readwrite("samples", &all_nav_attitude::samples, "Member")
+        .def_static("parse_file", &parse_file_from_str<all_nav_attitude>, "Parse all_nav_attitude from .all file")
+        .def_static("parse_folder", &parse_folder_from_str<all_nav_attitude>, "Parse all_nav_attitude from folder of .all files")
+        .def_static("read_data", &read_data_from_str<all_nav_attitude::EntriesT>, "Read all_nav_attitude::EntriesT from .cereal file");
+
     py::class_<all_echosounder_depth>(m, "all_echosounder_depth", "Class for the all single-beam echosounder depth")
         .def(py::init<>())
         .def_readwrite("id_", &all_echosounder_depth::id_, "Member")
@@ -79,7 +98,9 @@ PYBIND11_MODULE(all_data, m) {
     m.def("write_data", &write_data_from_str<all_mbes_ping::PingsT>, "Write all_mbes_ping::PingsT to .cereal file");
     m.def("write_data", &write_data_from_str<all_nav_entry::EntriesT>, "Write all_nav_entry::EntriesT to .cereal file");
     m.def("write_data", &write_data_from_str<all_nav_depth::EntriesT>, "Write all_nav_depth::EntriesT to .cereal file");
+    m.def("write_data", &write_data_from_str<all_nav_attitude::EntriesT>, "Write all_nav_attitude::EntriesT to .cereal file");
     m.def("write_data", &write_data_from_str<all_echosounder_depth::EntriesT>, "Write all_echosounder_depth::EntriesT to .cereal file");
     //m.def("convert_matched_entries", (all_mbes_ping::PingsT (*)(all_mbes_ping::PingsT&, all_nav_entry::EntriesT&) ) &convert_matched_entries, "Matches xtf_sss_ping::PingsT and csv_nav_entry::EntriesT and assign pos data to pings");
     m.def("convert_matched_entries", &convert_matched_entries, "Matches xtf_sss_ping::PingsT and csv_nav_entry::EntriesT and assign pos data to pings");
+    m.def("match_attitude", &match_attitude, "Match mbes_ping::PingsT and all_nav_attitude::EntriesT and assign attitude data to pings");
 }
