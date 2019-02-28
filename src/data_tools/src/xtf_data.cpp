@@ -52,7 +52,7 @@ cv::Mat make_waterfall_image(const xtf_sss_ping::PingsT& pings)
         }
     }
     cv::Mat resized_swath_img;//dst image
-    cv::resize(swath_img, resized_swath_img, cv::Size(rows/8, cols/8));//resize image
+    cv::resize(swath_img, resized_swath_img, cv::Size(cols/8, rows/8));//resize image
     
     return resized_swath_img;
 }
