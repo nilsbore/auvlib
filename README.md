@@ -9,7 +9,7 @@ Extensive documentation for the python API is available
 
 ## Dependencies
 
-The library has been tested on Ubuntu 16.04 and 18.04.
+auvlib has been tested on Ubuntu 16.04 and 18.04.
 On Ubuntu 16.04, use the following command to install all dependencies:
 ```
 sudo apt-get install libcereal-dev libglfw3-dev libceres-dev libtinyxml2-dev
