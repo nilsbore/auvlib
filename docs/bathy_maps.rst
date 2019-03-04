@@ -43,3 +43,5 @@ of the bathymetric map.
    patch_draper
 
    map_draper
+
+   sss_gen_sim
