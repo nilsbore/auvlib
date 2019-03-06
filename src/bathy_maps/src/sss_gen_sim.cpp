@@ -32,7 +32,7 @@ SSSGenSim::SSSGenSim(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
       height_map(height_map),
       sss_from_waterfall(false)
 {
-    resample_window_height = 32;
+    resample_window_height = 50; //32;
     full_window_height = 64;
 
     left_row_mean = 0.;
@@ -291,21 +291,37 @@ bool SSSGenSim::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
         return false;
     }
 
+    bool prev_sss = false;
+
     if (sss_from_waterfall) {
         if (waterfall_row == resample_window_height) {
             //Eigen::MatrixXd generated = gen_callback(waterfall_depth);
+            
             Eigen::MatrixXd generated = gen_callback(waterfall_model);
 
             double left_bottom_row_mean = generated.row(resample_window_height-1).head(generated.cols()/2).mean();
             double right_bottom_row_mean = generated.row(resample_window_height-1).tail(generated.cols()/2).mean();
             for (int row = 0; row < resample_window_height; ++row) {
+                int offset_row = row + (full_window_height - resample_window_height) / 2;
                 for (int col = 0; col < generated.cols()/2; ++col) {
-                    double correction = 1./double(resample_window_height)*(double(resample_window_height - row) + double(row)*left_row_mean/left_bottom_row_mean);
-                    waterfall_image.at<uint8_t>(row, col) = uint8_t(255.*correction*generated(row, col));
+                    //double correction = 1./double(resample_window_height)*(double(resample_window_height - row) + double(row)*left_row_mean/left_bottom_row_mean);
+                    double correction = 1.;
+                    //waterfall_image.at<uint8_t>(row, col) = uint8_t(255.*correction*generated(row, col));
+                    waterfall_image.at<uint8_t>(offset_row, col) = uint8_t(255.*correction*generated(offset_row, col));
                 }
                 for (int col = generated.cols()/2; col < generated.cols(); ++col) {
-                    double correction = 1./double(resample_window_height)*(double(resample_window_height - row) + double(row)*right_row_mean/right_bottom_row_mean);
-                    waterfall_image.at<uint8_t>(row, col) = uint8_t(255.*correction*generated(row, col));
+                    //double correction = 1./double(resample_window_height)*(double(resample_window_height - row) + double(row)*right_row_mean/right_bottom_row_mean);
+                    double correction = 1.;
+                    //waterfall_image.at<uint8_t>(row, col) = uint8_t(255.*correction*generated(row, col));
+                    waterfall_image.at<uint8_t>(offset_row, col) = uint8_t(255.*correction*generated(offset_row, col));
+                }
+            }
+            // this interpolates an area between the previous and current windows
+            for (int row = 0; row < (full_window_height - resample_window_height)/2; ++row) {
+                int offset_row = row + resample_window_height + (full_window_height-resample_window_height)/2;
+                double full = (full_window_height-resample_window_height)/2;
+                for (int col = 0; col < generated.cols(); ++col) {
+                    waterfall_image.at<uint8_t>(offset_row, col) = uint8_t(255.*generated(offset_row, col)*(1.-double(row)/full) + double(waterfall_image.at<uint8_t>(offset_row, col))*double(row)/full);
                 }
             }
             left_row_mean = generated.row(0).head(generated.cols()/2).mean();
@@ -317,6 +333,9 @@ bool SSSGenSim::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
                 temp = waterfall_model.topRows(full_window_height-resample_window_height);
                 waterfall_model.bottomRows(full_window_height-resample_window_height) = temp;
                 waterfall_model.topRows(resample_window_height).setZero();
+                if (prev_sss) {
+                    waterfall_model.bottomRows(full_window_height-resample_window_height) = generated.topRows(full_window_height-resample_window_height);
+                }
             }
             waterfall_row = 0;
         }
