@@ -257,6 +257,10 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT, ObsT> create_submaps(const mbes_ping:
             track.row(ping_counter) = ping.pos_;
             ++ping_counter;
         }
+        if (counter == 0) {
+            pos = next;
+            continue;
+        }
         points.conservativeResize(counter, 3);
         trans.push_back(points.colwise().mean().transpose());
         angs.push_back(ang);
