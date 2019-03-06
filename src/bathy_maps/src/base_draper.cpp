@@ -347,6 +347,7 @@ Eigen::VectorXd BaseDraper::compute_model_intensities(const Eigen::MatrixXd& hit
         n.normalize();
         //intensities(j) = std::min(fabs(dir.dot(n))*(300./(dist*dist)), 1.);
         intensities(j) = std::min(fabs(dir.dot(n)), 1.);
+        intensities(j) = intensities(j)*intensities(j);
     }
 
     return intensities;
