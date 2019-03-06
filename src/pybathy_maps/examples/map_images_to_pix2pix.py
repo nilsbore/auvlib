@@ -49,6 +49,7 @@ def visualize_slices(sss_slices, depth_slices):
 def rescale_slices(slices):
 
     #slices = [(255.*cv2.resize(np.rot90(s), (256, 256), interpolation=cv2.INTER_CUBIC)).astype(np.uint8) for s in slices]
+
     slices = [cv2.resize(np.rot90(s), (256, 256), interpolation=cv2.INTER_NEAREST) for s in slices]
     slices = [(255.*np.minimum(np.maximum(s, 0.), 1.)).astype(np.uint8) for s in slices]
 
@@ -71,7 +72,7 @@ def normalize_intensities(sss_slices):
         m = np.mean(s[s>.1])
         ss = s.copy()
         if m != 0 and not np.isnan(m):
-            ss *= .4/m
+            ss *= .3/m
         new_slices.append(ss)
 
     return new_slices
@@ -85,20 +86,21 @@ def scale_slices(slices, image_height, image_width):
 
 
 map_images = map_draper.sss_map_image.read_data("map_images_cache.cereal")
-image_height = 256 #32
+image_height = 64
 image_width = map_images[0].sss_waterfall_image.shape[1]/2
-dataset_name = "pix2pix_waterfall_full"
+dataset_name = "pix2pix_cos2"
 
 sss_slices = []
 depth_slices = []
 for map_image in map_images:
-    s, d = convert_wf_to_slices(map_image.sss_waterfall_image, map_image.sss_waterfall_depth, image_height)
+    #s, d = convert_wf_to_slices(map_image.sss_waterfall_image, map_image.sss_waterfall_depth, image_height)
+    s, d = convert_wf_to_slices(map_image.sss_waterfall_image, map_image.sss_waterfall_model, image_height)
     sss_slices.extend(s)
     depth_slices.extend(d)
 
-depth_slices = normalize_depth_slices(depth_slices)
+#depth_slices = normalize_depth_slices(depth_slices)
 sss_slices = normalize_intensities(sss_slices)
-depth_slices = erode_depth_slices(depth_slices)
+#depth_slices = erode_depth_slices(depth_slices)
 depth_slices = rescale_slices(depth_slices)
 sss_slices = rescale_slices(sss_slices)
 
