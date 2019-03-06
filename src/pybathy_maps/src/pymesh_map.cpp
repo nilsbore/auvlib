@@ -32,5 +32,6 @@ PYBIND11_MODULE(mesh_map, m) {
     m.def("show_height_map", &mesh_map::show_height_map, "Display height map using opencv");
     m.def("height_map_to_texture", &mesh_map::height_map_to_texture, "Get R, G, B color textures from height map");
     m.def("write_dae_mesh", &mesh_map::write_dae_mesh_from_str, "Write vertices and faces to a .dae file");
+    m.def("read_ply_mesh", &mesh_map::read_ply_mesh_from_str, "Read vertices and faces from a .ply file");
 
 }
