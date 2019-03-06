@@ -9,7 +9,8 @@ Extensive documentation for the python API is available
 
 ## Dependencies
 
-On Ubuntu 16.04, just use the following command to install all dependencies:
+auvlib has been tested on Ubuntu 16.04 and 18.04.
+On Ubuntu 16.04, use the following command to install all dependencies:
 ```
 sudo apt-get install libcereal-dev libglfw3-dev libceres-dev libtinyxml2-dev
 ```
@@ -114,3 +115,8 @@ First, initialize the submodules, same as for the previous section. For using au
 If you just want to use auvlib for reading data, please see the minimal [data project](https://github.com/nilsbore/auvlib/tree/master/example_projects/data_project).
 
 For more complete documentation on C++ library usage, see [the overview document](https://github.com/nilsbore/auvlib/blob/master/docs/cpp_usage.md).
+
+## Contributors
+
+* [@nilsbore](https://github.com/nilsbore)
+* [@dawierha](https://github.com/dawierha)
