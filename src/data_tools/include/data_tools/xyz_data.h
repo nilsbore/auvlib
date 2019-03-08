@@ -27,6 +27,7 @@ xyz_data::Points subsample_cloud(const xyz_data::Points& cloud);
 std::vector<xyz_data::Points> from_pings(const std_data::mbes_ping::PingsT& pings);
 
 Eigen::MatrixXd to_matrix(const xyz_data::Points& points);
+xyz_data::Points from_matrix(const Eigen::MatrixXd& P);
 
 xyz_data::Points transform_points(const Eigen::Matrix4d& T, xyz_data::Points& points);
 

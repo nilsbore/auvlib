@@ -55,6 +55,16 @@ vector<xyz_data::Points> from_pings(const std_data::mbes_ping::PingsT& pings)
     return maps;
 }
 
+xyz_data::Points from_matrix(const Eigen::MatrixXd& P)
+{
+    xyz_data::Points points;
+    points.reserve(P.rows());
+    for (int i = 0; i < P.rows(); ++i) {
+        points.push_back(P.block<1, 3>(i, 0).transpose());
+    }
+    return points;
+}
+
 Eigen::MatrixXd to_matrix(const Points& points)
 {
     Eigen::MatrixXd P(points.size(), 3);
