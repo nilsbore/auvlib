@@ -55,6 +55,30 @@ double points_to_mesh_rmse(const Eigen::MatrixXd& P, const Eigen::MatrixXd& V, c
     return rmse;
 }
 
+Eigen::MatrixXd filter_points_mesh_offset(const Eigen::MatrixXd& P, const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
+                                          double offset, const igl::AABB<Eigen::MatrixXd, 3>& tree)
+{
+
+    Eigen::VectorXd sqrD;
+    Eigen::VectorXi I;
+    Eigen::MatrixXd Q;
+
+    cout << "Finding closes mesh points..." << endl;
+
+    tree.squared_distance(V, F, P, sqrD, I, Q);
+    Eigen::Array<bool, Eigen::Dynamic, 1> near = sqrD.array() < offset*offset;
+
+    int nbr_near = near.cast<int>().sum();
+
+    cout << "Number points near surface: " << nbr_near << " out of: " << P.rows() << endl;
+
+    Eigen::MatrixXd goodP = igl::slice_mask(P, near, 1);
+
+    cout << "GoodP rows: " << goodP.rows() << ", cols: " << goodP.cols() << endl;
+
+    return goodP;
+}
+
 // the reason to use xyz data here is that it is organized
 // in the same way as all of our other files, though it would
 // be possible to just use one big pointcloud as xyz data instead

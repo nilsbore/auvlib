@@ -30,6 +30,9 @@ std::pair<Eigen::Matrix4d, bool> align_points_to_mesh_icp(const Eigen::MatrixXd&
                                                           const igl::AABB<Eigen::MatrixXd, 3>& tree,
                                                           std::function<void(const Eigen::Affine3d&)> vis_callback);
 
+Eigen::MatrixXd filter_points_mesh_offset(const Eigen::MatrixXd& P, const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
+                                          double offset, const igl::AABB<Eigen::MatrixXd, 3>& tree);
+
 } // namespace align_map
 
 #endif // ALIGN_MAP_H

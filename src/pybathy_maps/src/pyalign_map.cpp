@@ -44,5 +44,6 @@ PYBIND11_MODULE(align_map, m) {
     m.def("align_maps_icp", &align_map::align_maps_icp, "Align several maps into one mesh");
     m.def("align_points_to_mesh_icp", (std::pair<Eigen::Matrix4d, bool>(*)(const Eigen::MatrixXd&, const Eigen::MatrixXd&, const Eigen::MatrixXi&, const igl::AABB<Eigen::MatrixXd, 3>&)) &align_map::align_points_to_mesh_icp, "Register points to a mesh with ICP");
     m.def("align_points_to_mesh_icp_vis", &align_map::align_points_to_mesh_icp_vis, "Register points to a mesh with ICP");
+    m.def("filter_points_mesh_offset", &align_map::filter_points_mesh_offset, "Filter points too far away from the mesh");
 
 }
