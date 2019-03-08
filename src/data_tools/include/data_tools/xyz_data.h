@@ -22,7 +22,7 @@ namespace xyz_data {
 
 using Points = std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> >;
 
-xyz_data::Points subsample_cloud(const xyz_data::Points& cloud);
+xyz_data::Points subsample_points(const xyz_data::Points& points, int skip);
 
 std::vector<xyz_data::Points> from_pings(const std_data::mbes_ping::PingsT& pings);
 

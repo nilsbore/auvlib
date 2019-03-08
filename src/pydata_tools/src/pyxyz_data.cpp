@@ -32,6 +32,7 @@ PYBIND11_MODULE(xyz_data, m) {
         .def_static("read_data", &read_data_from_str<xyz_data::Points>, "Read xyz_data::Points from .cereal file");
 
 
+    m.def("subsample_points", &xyz_data::subsample_points, "Subsample by skipping N points at a time");
     m.def("transform_points", &xyz_data::transform_points, "Transform using 4x4 transformation matrix T");
     m.def("write_data", &write_data_from_str<xyz_data::Points>, "Write array of Vector3d to .cereal file");
 }
