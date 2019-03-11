@@ -222,7 +222,7 @@ pair<Eigen::Matrix4d, bool> align_points_to_mesh_icp(const Eigen::MatrixXd& P, c
 tuple<Eigen::Matrix4d, double, bool> icp_iteration(const Eigen::MatrixXd& P, const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
                                                    const igl::AABB<Eigen::MatrixXd, 3>& tree)
 {
-    double assoc_threshold = .5;
+    double assoc_threshold = .2;
 
     Eigen::VectorXd sqrD;
     Eigen::VectorXi I;
@@ -248,7 +248,7 @@ tuple<Eigen::Matrix4d, double, bool> icp_iteration(const Eigen::MatrixXd& P, con
 
     double mean_dist = (goodP - goodQ).rowwise().squaredNorm().mean();
 
-    Eigen::Matrix3d covariance = (goodQ.transpose().colwise() - meanQ)*(goodP.rowwise() - meanP.transpose());
+    Eigen::Matrix3d covariance = 1./double(goodP.rows())*(goodQ.transpose().colwise() - meanQ)*(goodP.rowwise() - meanP.transpose());
 
     // NOTE: this code is from PCL
     Eigen::JacobiSVD<Eigen::Matrix<double, 3, 3> > svd(covariance, Eigen::ComputeFullU | Eigen::ComputeFullV);
