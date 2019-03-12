@@ -287,6 +287,10 @@ void SSSGenSim::construct_model_waterfall(const Eigen::MatrixXd& hits_left, cons
 
 bool SSSGenSim::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
 {
+    while (!is_mesh_underneath_vehicle(pings[i].pos_ - offset, V1, F1) && i < pings.size()) {
+        i += 10;
+    }
+
     if (i >= pings.size()) {
         return false;
     }
