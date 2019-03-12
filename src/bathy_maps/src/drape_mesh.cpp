@@ -21,6 +21,13 @@ using namespace std;
 using namespace xtf_data;
 using namespace csv_data;
 
+bool is_mesh_underneath_vehicle(const Eigen::Vector3d& origin, const Eigen::MatrixXd& V, const Eigen::MatrixXi& F)
+{
+    igl::Hit hit;
+    bool did_hit = ray_mesh_intersect(origin, Eigen::Vector3d(0., 0., -1.), V, F, hit);
+    return did_hit;
+}
+
 pair<Eigen::MatrixXd, Eigen::MatrixXd> compute_sss_dirs(const Eigen::Matrix3d& R, double tilt_angle, double beam_width, int nbr_lines)
 {
     const double min_theta = tilt_angle - 0.5*beam_width; // M_PI/180.*10.;
@@ -90,7 +97,7 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi, Eigen:
     Eigen::MatrixXd dirs_left;
     Eigen::MatrixXd dirs_right;
     //tie(dirs_left, dirs_right) = compute_sss_dirs(R, tilt_angle, beam_width, 220);
-    tie(dirs_left, dirs_right) = compute_sss_dirs(R, tilt_angle, beam_width, 300);
+    tie(dirs_left, dirs_right) = compute_sss_dirs(R, tilt_angle, beam_width, 500);
     auto stop = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
     cout << "compute_sss_dirs time: " << duration.count() << " microseconds" << endl;
