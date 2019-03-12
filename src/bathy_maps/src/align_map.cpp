@@ -187,9 +187,8 @@ pair<Eigen::Matrix4d, bool> align_points_to_mesh_icp(const Eigen::MatrixXd& P, c
     Eigen::MatrixXd TP = P;
     Eigen::Affine3d T = Eigen::Affine3d::Identity();
 
-    double change_threshold = 0.001;
-    double assoc_threshold = 3.;
-    int max_iterations = 100;
+    double change_threshold = 0.0001;
+    int max_iterations = 50;
 
     double mean_dist = 0.;
     double last_dist;
@@ -222,14 +221,16 @@ pair<Eigen::Matrix4d, bool> align_points_to_mesh_icp(const Eigen::MatrixXd& P, c
 tuple<Eigen::Matrix4d, double, bool> icp_iteration(const Eigen::MatrixXd& P, const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
                                                    const igl::AABB<Eigen::MatrixXd, 3>& tree)
 {
-    double assoc_threshold = .2;
+    double assoc_threshold = 2.;
 
     Eigen::VectorXd sqrD;
     Eigen::VectorXi I;
     Eigen::MatrixXd Q;
 
     tree.squared_distance(V, F, P, sqrD, I, Q);
-    Eigen::Array<bool, Eigen::Dynamic, 1> near = (P - Q).rowwise().squaredNorm().array() < assoc_threshold*assoc_threshold;
+    //Eigen::Array<bool, Eigen::Dynamic, 1> near = (P - Q).rowwise().squaredNorm().array() < assoc_threshold*assoc_threshold;
+    Eigen::Array<bool, Eigen::Dynamic, 1> close = (P - Q).leftCols<2>().rowwise().squaredNorm().array() < 0.1*0.1;
+    Eigen::Array<bool, Eigen::Dynamic, 1> near = sqrD.array() < assoc_threshold*assoc_threshold && close;
 
     int nbr_near = near.cast<int>().sum();
     cout << "Number points near surface: " << nbr_near << endl;
@@ -246,7 +247,7 @@ tuple<Eigen::Matrix4d, double, bool> icp_iteration(const Eigen::MatrixXd& P, con
     Eigen::Vector3d meanP = goodP.rowwise().mean().transpose();
     Eigen::Vector3d meanQ = goodQ.rowwise().mean().transpose();
 
-    double mean_dist = (goodP - goodQ).rowwise().squaredNorm().mean();
+    double mean_dist = igl::slice_mask(sqrD, near, 1).mean(); //(goodP - goodQ).rowwise().squaredNorm().mean();
 
     Eigen::Matrix3d covariance = 1./double(goodP.rows())*(goodQ.transpose().colwise() - meanQ)*(goodP.rowwise() - meanP.transpose());
 
@@ -266,9 +267,11 @@ tuple<Eigen::Matrix4d, double, bool> icp_iteration(const Eigen::MatrixXd& P, con
     cout << "Mean Q: " << meanQ.transpose() << endl;
 
     Eigen::Matrix3d r = u * s * v.transpose();
+    //r.setIdentity(); // TEMP
     cout << "r value\n: " << r << endl;
     cout << "r*meanP: " << (r*meanP).transpose() << endl;
     Eigen::Vector3d t = meanQ - r*meanP;
+    //t(0) = t(1) = 0.; //TEMP
     cout << "t value: " << t.transpose() << endl;
 
     Eigen::Affine3d ret;
