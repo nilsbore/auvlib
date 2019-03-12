@@ -726,8 +726,11 @@ typedef struct {
                                 //  needs to be filled in to prevent Isis from calculating
                                 //  along-track ground coverage based on beam spread and 
                                 //  speed over ground.
+   
+   short Weight; // Weighting factor given by some sonars
 
-   BYTE  ReservedSpace[6];      // reserved for future expansion
+   BYTE  ReservedSpace[4];      // reserved for future expansion
+   //BYTE  ReservedSpace[6];      // reserved for future expansion
 
 } __attribute__((packed)) XTFPINGCHANHEADER;
 //} XTFPINGCHANHEADER;
