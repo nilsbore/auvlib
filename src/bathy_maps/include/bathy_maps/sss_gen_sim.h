@@ -84,6 +84,7 @@ public:
 protected:
 
     bool sss_from_waterfall;
+    bool sss_from_bathy;
 
     BoundsT bounds;
     //double resolution;
@@ -134,6 +135,7 @@ public:
     }
 
     void set_sss_from_waterfall(bool wf) { sss_from_waterfall = wf; };
+    void set_sss_from_bathy(bool bathy) { sss_from_bathy = bathy; };
     
     static Eigen::MatrixXd default_callback(const Eigen::MatrixXd& window) { return window; }
 

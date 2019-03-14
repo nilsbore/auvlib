@@ -16,6 +16,7 @@
 #include <igl/opengl/gl.h>
 
 #include <eigen3/Eigen/Dense>
+#include <random>
 
 #include <data_tools/xtf_data.h>
 #include <data_tools/csv_data.h>
@@ -44,6 +45,7 @@ protected:
     csv_data::csv_asvp_sound_speed::EntriesT sound_speeds;
     double sensor_yaw;
     bool ray_tracing_enabled; // is snell ray tracing enabled?
+    std::default_random_engine generator; // hopefully not same seed every time
 
     // NOTE: these are new style functions
 
@@ -60,6 +62,9 @@ protected:
     void visualize_rays(const Eigen::MatrixXd& hits_left, const Eigen::MatrixXd& hits_right);
 
     void visualize_vehicle();
+
+    Eigen::VectorXd compute_lambert_intensities(const Eigen::MatrixXd& hits, const Eigen::MatrixXd& normals,
+                                                const Eigen::Vector3d& origin);
 
     Eigen::VectorXd compute_model_intensities(const Eigen::MatrixXd& hits, const Eigen::MatrixXd& normals,
                                               const Eigen::Vector3d& origin);

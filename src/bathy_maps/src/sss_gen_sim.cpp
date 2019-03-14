@@ -30,7 +30,8 @@ SSSGenSim::SSSGenSim(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
     : BaseDraper(V1, F1, pings, bounds, sound_speeds),
       bounds(bounds), gen_callback(&default_callback),
       height_map(height_map),
-      sss_from_waterfall(false)
+      sss_from_waterfall(false),
+      sss_from_bathy(false)
 {
     resample_window_height = 50; //32;
     full_window_height = 64;
@@ -344,7 +345,7 @@ bool SSSGenSim::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
             waterfall_row = 0;
         }
     }
-    else {
+    else if (sss_from_bathy) {
         if ((window_point - (pings[i].pos_ - offset)).norm() > 4.) {
             window_point = pings[i].pos_ - offset;
             window_heading = pings[i].heading_ + sensor_yaw;
@@ -373,8 +374,8 @@ bool SSSGenSim::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
         Eigen::Vector3d pos = pings[i].pos_ - offset;
 
         // maybe do this outside the statement and reuse them for the cv image generation
-        Eigen::VectorXd model_windows_left = convert_to_time_bins(times_left, compute_model_intensities(hits_left, normals_left, pos), pings[i].port, nbr_windows);
-        Eigen::VectorXd model_windows_right = convert_to_time_bins(times_right, compute_model_intensities(hits_right, normals_right, pos), pings[i].stbd, nbr_windows);
+        Eigen::VectorXd model_windows_left = convert_to_time_bins(times_left, compute_lambert_intensities(hits_left, normals_left, pos), pings[i].port, nbr_windows);
+        Eigen::VectorXd model_windows_right = convert_to_time_bins(times_right, compute_lambert_intensities(hits_right, normals_right, pos), pings[i].stbd, nbr_windows);
 
         Eigen::VectorXd model_windows(model_windows_left.rows() + model_windows_right.rows());
         model_windows.tail(model_windows_right.rows()) = model_windows_right;
@@ -393,7 +394,7 @@ bool SSSGenSim::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
         ++waterfall_row;
 
     }
-    else {
+    else if (sss_from_bathy) {
 
         Eigen::VectorXd intensities_left = get_texture_intensities(hits_left);
         Eigen::VectorXd intensities_right = get_texture_intensities(hits_right);
@@ -417,7 +418,9 @@ bool SSSGenSim::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
     // construct the model waterfall image for timestep
     construct_model_waterfall(hits_left, hits_right, normals_left, normals_right, times_left, times_right);
 
-    cv::imshow("GAN waterfall image", waterfall_image);
+    if (sss_from_bathy || sss_from_waterfall) {
+        cv::imshow("GAN waterfall image", waterfall_image);
+    }
 
     cv::imshow("Ground truth waterfall image", gt_waterfall_image);
 
