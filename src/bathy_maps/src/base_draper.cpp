@@ -358,8 +358,8 @@ Eigen::VectorXd BaseDraper::compute_model_intensities(const Eigen::MatrixXd& hit
 {
     Eigen::VectorXd intensities(hits.rows());
 
-    double alpha = 0.3;
-    double sigma_theta = 0.4;
+    double alpha = 0.5;
+    double sigma_theta = 0.3;
 
     std::normal_distribution<double> noise_dist(1., sigma_theta);
 
@@ -370,12 +370,15 @@ Eigen::VectorXd BaseDraper::compute_model_intensities(const Eigen::MatrixXd& hit
         Eigen::Vector3d n = normals.row(j).transpose();
         n.normalize();
         double theta = acos(dir.dot(n));
-        double TL = 1./(dist*dist);
+        double TL = 20.*log10(dist); //1./(dist*dist);
         double DL = cos(theta);
         double G = std::min(1., 2.*DL*DL);
         double SL = G/DL*exp(-theta*theta/(2.*sigma_theta*sigma_theta));
-        double NL = noise_dist(generator);
-        intensities(j) = log(1.+1.73*200.*TL*((1. - alpha)*DL + alpha*SL)*NL);
+        double SS = 10.*log10((1. - alpha)*DL + alpha*SL);
+        double NL = 10.*log10(noise_dist(generator));
+        intensities(j) = 1./(-18.+40.)*(40. + SS - TL + NL); // log(1.+1.73*200.*TL*SS*NL);
+        intensities(j) = std::min(std::max(intensities(j), 0.), 1.);
+        //10*log(1.73*200.)-log(TL)+log(SS)+NL
     }
 
     return intensities;
