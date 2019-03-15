@@ -253,7 +253,7 @@ void SSSGenSim::construct_gt_waterfall()
     values /= value_counts;
 
     for (int j = 0; j < 2*nbr_windows; ++j) {
-        gt_waterfall_image.at<uint8_t>(0, j) = uint8_t(255.*values(j));
+        gt_waterfall_image.at<uint8_t>(0, j) = uint8_t(255.*std::min(std::max(fabs(values(j)), 0.), 1.));
     }
 }
 
