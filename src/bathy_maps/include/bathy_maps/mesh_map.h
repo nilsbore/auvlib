@@ -41,6 +41,7 @@ namespace mesh_map {
 
     void write_dae_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const boost::filesystem::path& filename);
     void write_dae_mesh_from_str(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const std::string& filename);
+    std::pair<Eigen::MatrixXd, Eigen::MatrixXi> read_ply_mesh_from_str(const std::string& filename);
 
 }
 

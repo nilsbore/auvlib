@@ -28,8 +28,71 @@ MapDraper::MapDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
       map_image_builder(bounds, 30./8., pings[0].port.pings.size())
 {
     viewer.callback_pre_draw = std::bind(&MapDraper::callback_pre_draw, this, std::placeholders::_1);
+    int rows, cols;
+    tie(rows, cols) = map_image_builder.get_map_image_shape();
+    draping_vis_texture = Eigen::MatrixXd::Zero(rows, cols);
 }
 
+bool MapDraper::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
+{
+    // check if ping is first_in_file_, in that case, split off new image
+    if ((i == pings.size() - 1 || (i+1 < pings.size() && pings[i+1].first_in_file_)) && !map_image_builder.empty()) {
+        sss_map_image map_image = map_image_builder.finish();
+        draping_vis_texture.array() *= (map_image.sss_map_image.array() == 0).cast<double>();
+        draping_vis_texture.array() += map_image.sss_map_image.array();
+        Eigen::MatrixXd texture = draping_vis_texture;
+        texture.array() += (texture.array() == 0).cast<double>();
+        set_texture(texture, bounds);
+        save_callback(map_image);
+        map_images.push_back(map_image);
+        map_image_builder = sss_map_image_builder(bounds, resolution, pings[i].port.pings.size());
+    }
+
+    if (i >= pings.size()) {
+        return false;
+    }
+
+    Eigen::Vector3d pos = pings[i].pos_ - offset;
+
+    Eigen::MatrixXd hits_left;
+    Eigen::MatrixXd hits_right;
+    Eigen::MatrixXd normals_left;
+    Eigen::MatrixXd normals_right;
+    tie(hits_left, hits_right, normals_left, normals_right) = project();
+
+    // these should take care of computing bending if set
+    Eigen::VectorXd times_left = compute_times(hits_left);
+    Eigen::VectorXd times_right = compute_times(hits_right);
+
+    // compute the elevation waterfall row
+    Eigen::VectorXd sss_depths_left = convert_to_time_bins(times_left, hits_left.col(2), pings[i].port, map_image_builder.get_waterfall_bins());
+    Eigen::VectorXd sss_depths_right = convert_to_time_bins(times_right, hits_right.col(2), pings[i].stbd, map_image_builder.get_waterfall_bins());
+
+    // compute the intensities of the model
+    Eigen::VectorXd model_intensities_left = compute_model_intensities(hits_left, normals_left, pos);
+    Eigen::VectorXd model_intensities_right = compute_model_intensities(hits_right, normals_right, pos);
+    Eigen::VectorXd sss_model_left = convert_to_time_bins(times_left, model_intensities_left, pings[i].port, map_image_builder.get_waterfall_bins());
+    Eigen::VectorXd sss_model_right = convert_to_time_bins(times_right, model_intensities_right, pings[i].stbd, map_image_builder.get_waterfall_bins());
+
+    // compute the ground truth intensities
+    Eigen::VectorXd intensities_left = compute_intensities(times_left, pings[i].port);
+    Eigen::VectorXd intensities_right = compute_intensities(times_right, pings[i].stbd);
+
+    // add the 3d hits and waterfall images to the builder object
+    map_image_builder.add_hits(hits_left, intensities_left, sss_depths_left, sss_model_left, pings[i].port, pos, true);
+    map_image_builder.add_hits(hits_right, intensities_right, sss_depths_right, sss_model_right, pings[i].stbd, pos, false);
+
+    if (i % 10 == 0) {
+        visualize_rays(hits_left, hits_right);
+        visualize_vehicle();
+    }
+
+    ++i;
+
+    return false;
+}
+
+/*
 bool MapDraper::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
 {
     // check if ping is first_in_file_, in that case, split off new image
@@ -56,11 +119,15 @@ bool MapDraper::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
 
     return false;
 }
+*/
 
 void MapDraper::set_resolution(double new_resolution)
 { 
     resolution = new_resolution;
     map_image_builder = sss_map_image_builder(bounds, resolution, pings[i].port.pings.size());
+    int rows, cols;
+    tie(rows, cols) = map_image_builder.get_map_image_shape();
+    draping_vis_texture = Eigen::MatrixXd::Zero(rows, cols);
 }
 
 sss_map_image::ImagesT MapDraper::get_images()

@@ -14,6 +14,7 @@
 #include <igl/opengl/glfw/Viewer.h>
 #include <igl/opengl/gl.h>
 #include <igl/xml/writeDAE.h>
+#include <igl/readPLY.h>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -68,6 +69,14 @@ void write_dae_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const bo
 void write_dae_mesh_from_str(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const string& filename)
 {
     write_dae_mesh(V, F, boost::filesystem::path(filename));
+}
+
+pair<Eigen::MatrixXd, Eigen::MatrixXi> read_ply_mesh_from_str(const string& filename)
+{
+    Eigen::MatrixXd V;
+    Eigen::MatrixXi F;
+    igl::readPLY(filename, V, F);
+    return make_pair(V, F);
 }
 
 void show_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F)

@@ -29,18 +29,20 @@ struct sss_map_image {
 
     Eigen::MatrixXd sss_map_image;
 
+    double sss_ping_duration; // max time in waterfall image
     Eigen::MatrixXf sss_waterfall_image;
     Eigen::MatrixXf sss_waterfall_cross_track;
     Eigen::MatrixXf sss_waterfall_depth;
+    Eigen::MatrixXf sss_waterfall_model;
 
     std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > pos;
 
 	template <class Archive>
     void serialize( Archive & ar )
     {
-        ar(CEREAL_NVP(bounds), CEREAL_NVP(sss_map_image), CEREAL_NVP(sss_waterfall_image),
-           CEREAL_NVP(sss_waterfall_cross_track), CEREAL_NVP(sss_waterfall_depth),
-           CEREAL_NVP(pos));
+        ar(CEREAL_NVP(bounds), CEREAL_NVP(sss_map_image), CEREAL_NVP(sss_ping_duration),
+           CEREAL_NVP(sss_waterfall_image), CEREAL_NVP(sss_waterfall_cross_track),
+           CEREAL_NVP(sss_waterfall_depth), CEREAL_NVP(sss_waterfall_model), CEREAL_NVP(pos));
     }
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -63,15 +65,21 @@ private:
 
     int waterfall_width;
     int waterfall_counter;
+    double sss_ping_duration; // max time in waterfall image
     Eigen::MatrixXd sss_waterfall_image;
     Eigen::MatrixXd sss_waterfall_cross_track;
     Eigen::MatrixXd sss_waterfall_depth;
+    Eigen::MatrixXd sss_waterfall_model;
 
     std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > poss;
 
 public:
 
     sss_map_image_builder(const sss_map_image::BoundsT& bounds, double resolution, int nbr_pings);
+
+    std::pair<int, int> get_map_image_shape();
+
+    size_t get_waterfall_bins();
 
     bool empty();
 
@@ -83,6 +91,10 @@ public:
                               const xtf_data::xtf_sss_ping_side& ping, const Eigen::Vector3d& pos, bool is_left);
 
     void add_hits(const Eigen::MatrixXd& hits, const Eigen::VectorXi& hits_inds,
+                  const xtf_data::xtf_sss_ping_side& ping, const Eigen::Vector3d& pos, bool is_left);
+
+    void add_hits(const Eigen::MatrixXd& hits, const Eigen::VectorXd& intensities,
+                  const Eigen::VectorXd& sss_depths, const Eigen::VectorXd& sss_model,
                   const xtf_data::xtf_sss_ping_side& ping, const Eigen::Vector3d& pos, bool is_left);
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
