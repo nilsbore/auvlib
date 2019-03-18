@@ -43,6 +43,8 @@ struct track_error_benchmark {
     std::map<std::string, double> consistency_rms_errors;
     double min_consistency_error;
     double max_consistency_error;
+    double min_depth_;
+    double max_depth_;
 
     // TODO: get this from on of the dicts instead
     //int nbr_tracks_drawn;
@@ -84,8 +86,9 @@ struct track_error_benchmark {
             std::vector<std::vector<std::vector<Eigen::MatrixXd>>>& grid_maps);
     cv::Mat draw_error_consistency_map(Eigen::MatrixXd values);
 
-    // Draw heightmap of submap
+    // Draw heightmap of submaps
     cv::Mat draw_height_submap(PointsT &map_points, PointsT &track_points, const int &submap_number);
+    void map_draw_params(PointsT& map_points, PointsT& track_points, const int& submap_number);
 
     void track_img_params(std_data::mbes_ping::PingsT& pings, int rows=1000, int cols=1000);
     void draw_track_img(std_data::mbes_ping::PingsT& pings, cv::Mat& img, const cv::Scalar& color, const std::string& name);

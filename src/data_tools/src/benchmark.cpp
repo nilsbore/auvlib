@@ -248,6 +248,45 @@ pair<double, cv::Mat> track_error_benchmark::compute_draw_consistency_map(mbes_p
     return make_pair(meanv, error_img);
 }
 
+void track_error_benchmark::map_draw_params(PointsT& map_points, PointsT& track_points,
+                                            const int& submap_number){
+
+    int rows = 500;
+    int cols = 500;
+    gt_track.clear();
+    for(const Eigen::MatrixXd& track_i: track_points){
+      for(unsigned int i=0; i<track_i.rows(); i++){
+          gt_track.push_back(track_i.row(i));
+      }
+    }
+    track_img_params(map_points, rows, cols);
+
+    Eigen::MatrixXd means(rows, cols); means.setZero();
+    Eigen::MatrixXd counts(rows, cols); counts.setZero();
+
+    double res, minx, miny, x0, y0;
+    res = params[0]; minx = params[1]; miny = params[2]; x0 = params[3]; y0 = params[4];
+
+    for(const Eigen::MatrixXd& submap: map_points){
+        for(unsigned int i = 0; i<submap.rows(); i++){
+            Eigen::Vector3d pos = submap.row(i);
+            int col = int(x0+res*(pos[0]-minx));
+            int row = int(y0+res*(pos[1]-miny));
+            if (col >= 0 && col < cols && row >= 0 && row < rows) {
+                means(row, col) += pos[2];
+                counts(row, col) += 1.;
+            }
+        }
+    }
+
+    Eigen::ArrayXXd counts_pos = counts.array() + (counts.array() == 0.).cast<double>();
+    means.array() /= counts_pos;
+
+    min_depth_ = means.minCoeff();
+    means.array() -= min_depth_*(counts.array() > 0).cast<double>();
+    max_depth_ = means.maxCoeff();
+}
+
 cv::Mat track_error_benchmark::draw_height_map(PointsT& points_maps)
 {
     int rows = 500;
@@ -295,7 +334,6 @@ cv::Mat track_error_benchmark::draw_height_map(PointsT& points_maps)
     return mean_img;
 }
 
-
 cv::Mat track_error_benchmark::draw_height_map(mbes_ping::PingsT& pings)
 {
     int rows = 500;
@@ -342,6 +380,58 @@ cv::Mat track_error_benchmark::draw_height_map(mbes_ping::PingsT& pings)
     return mean_img;
 }
 
+cv::Mat track_error_benchmark::draw_height_submap(PointsT& map_points, PointsT& track_points,
+                                                  const int& submap_number){
+
+    int rows = 500;
+    int cols = 500;
+
+    gt_track.clear();
+    for(const Eigen::MatrixXd& track_i: track_points){
+        for(unsigned int i=0; i<track_i.rows(); i++){
+            gt_track.push_back(track_i.row(i));
+        }
+    }
+    track_img_params(map_points, rows, cols);
+    double res, minx, miny, x0, y0;
+    res = params[0]; minx = params[1]; miny = params[2]; x0 = params[3]; y0 = params[4];
+
+    Eigen::MatrixXd means(rows, cols); means.setZero();
+    Eigen::MatrixXd counts(rows, cols); counts.setZero();
+    for(const Eigen::MatrixXd& submap: map_points){
+        for(unsigned int i = 0; i<submap.rows(); i++){
+            Eigen::Vector3d pos = submap.row(i);
+            int col = int(x0+res*(pos[0]-minx));
+            int row = int(y0+res*(pos[1]-miny));
+            if (col >= 0 && col < cols && row >= 0 && row < rows) {
+                means(row, col) += pos[2];
+                counts(row, col) += 1.;
+            }
+        }
+    }
+
+    Eigen::ArrayXXd counts_pos = counts.array() + (counts.array() == 0.).cast<double>();
+    means.array() /= counts_pos;
+    means.array() -= min_depth_*(counts.array() > 0).cast<double>();
+    means.array() /= max_depth_;
+
+    cv::Mat mean_img = cv::Mat(rows, cols, CV_8UC3, cv::Scalar(255, 255, 255));
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            if (means(i, j) == 0) {
+                continue;
+            }
+            cv::Point3_<uchar>* p = mean_img.ptr<cv::Point3_<uchar> >(rows-i-1, j);
+            tie(p->z, p->y, p->x) = jet(means(i, j));
+        }
+    }
+
+    string mean_img_path = "submap_" + std::to_string(submap_number) + "_mean_depth.png";
+    cv::imwrite(mean_img_path, mean_img);
+
+    return mean_img;
+}
+
 void track_error_benchmark::add_ground_truth(mbes_ping::PingsT& pings)
 {
     int rows = 500;
@@ -367,26 +457,6 @@ void track_error_benchmark::add_ground_truth(PointsT& map_points, PointsT& track
     track_img_params(map_points, rows, cols);
     add_benchmark(map_points, track_points, "ground_truth");
     track_img_path = dataset_name + "_benchmark_track_img.png";
-}
-
-cv::Mat track_error_benchmark::draw_height_submap(PointsT& map_points, PointsT& track_points,
-                                               const int& submap_number){
-
-    int rows = 500;
-    int cols = 500;
-
-    gt_track.clear();
-    for(const Eigen::MatrixXd& track_i: track_points){
-        for(unsigned int i=0; i<track_i.rows(); i++){
-            gt_track.push_back(track_i.row(i));
-        }
-    }
-    track_img_params(map_points, rows, cols);
-    cv::Mat mean_img = draw_height_map(map_points);
-    string mean_img_path = "submap_" + std::to_string(submap_number) + "_mean_depth.png";
-    cv::imwrite(mean_img_path, mean_img);
-
-    return mean_img;
 }
 
 void track_error_benchmark::add_initial(mbes_ping::PingsT& pings)
