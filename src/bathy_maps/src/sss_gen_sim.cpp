@@ -286,6 +286,78 @@ void SSSGenSim::construct_model_waterfall(const Eigen::MatrixXd& hits_left, cons
     }
 }
 
+// actually we do not need this, already have it from waterfall??????
+/*
+Eigen::MatrixXd draw_gt_waterfall(const xtf_data::xtf_sss_ping& pings)
+{
+
+}
+*/
+
+// NOTE: sss_ping_duration should be the same as for the pings
+Eigen::MatrixXd SSSGenSim::draw_sim_waterfall(const Eigen::MatrixXd& incidence_image)
+{
+    Eigen::MatrixXd sim_image = Eigen::MatrixXd::Zero(incidence_image.rows(), incidence_image.cols());
+
+    int overlap = (full_window_height - resample_window_height)/2;
+
+    //for (int k = overlap; k + resample_window_height + overlap < incidence_image.rows(); k += resample_window_height) {
+    for (int k = incidence_image.rows() - full_window_height; k > 0; k -= resample_window_height) {
+        Eigen::MatrixXd model_image = incidence_image.middleRows(k-overlap, full_window_height);
+        Eigen::MatrixXd generated = gen_callback(model_image);
+        for (int row = 0; row < resample_window_height; ++row) {
+            int image_row = k + row;
+            int offset_row = row + overlap;
+            for (int col = 0; col < generated.cols(); ++col) {
+                sim_image(image_row, col) = generated(offset_row, col);
+            }
+        }
+        // this interpolates an area between the previous and current windows
+        for (int row = 0; row < overlap; ++row) {
+            int image_row = k + resample_window_height + row;
+            int offset_row = row + resample_window_height + overlap;
+            for (int col = 0; col < generated.cols(); ++col) {
+                sim_image(image_row, col) = generated(offset_row, col)*(1.-double(row)/double(overlap)) + sim_image(image_row, col)*double(row)/double(overlap);
+            }
+        }
+    }
+
+    return sim_image;
+}
+
+// here we already have the SVP so should be fine
+Eigen::MatrixXd SSSGenSim::draw_model_waterfall(const Eigen::MatrixXd& incidence_image, double sss_ping_duration)
+{
+    int ping_side_windows = incidence_image.cols()/2;
+    double sound_vel = sound_speeds[0].vels.head(sound_speeds[0].vels.rows()-1).mean();
+
+    Eigen::VectorXd dists(ping_side_windows);
+    for (int k = 0; k < ping_side_windows; ++k) {
+        dists(k) = 0.5*double(k+1)/double(ping_side_windows)*sss_ping_duration*sound_vel;
+    }
+
+    Eigen::MatrixXd model_image = Eigen::MatrixXd::Zero(incidence_image.rows(), incidence_image.cols());
+
+    for (int j = 0; j < incidence_image.rows(); ++j) {
+
+        Eigen::VectorXd thetas_left(ping_side_windows);
+        Eigen::VectorXd thetas_right(ping_side_windows);
+
+        for (int k = 0; k < ping_side_windows; ++k) {
+            thetas_left(k) = acos(sqrt(incidence_image(j, ping_side_windows-1-k)));
+            thetas_right(k) = acos(sqrt(incidence_image(j, ping_side_windows+k)));
+        }
+
+        Eigen::VectorXd intensities_left = compute_model_intensities(dists, thetas_left);
+        Eigen::VectorXd intensities_right = compute_model_intensities(dists, thetas_right);
+
+        model_image.block(j, 0, 1, ping_side_windows) = intensities_left.reverse().transpose();
+        model_image.block(j, ping_side_windows, 1, ping_side_windows) = intensities_right.transpose();
+    }
+
+    return model_image;
+}
+
 bool SSSGenSim::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
 {
     while (!is_mesh_underneath_vehicle(pings[i].pos_ - offset, V1, F1) && i < pings.size()) {
