@@ -66,6 +66,7 @@ protected:
     Eigen::VectorXd compute_lambert_intensities(const Eigen::MatrixXd& hits, const Eigen::MatrixXd& normals,
                                                 const Eigen::Vector3d& origin);
 
+    Eigen::VectorXd compute_model_intensities(const Eigen::VectorXd& dists, const Eigen::VectorXd& thetas);
     Eigen::VectorXd compute_model_intensities(const Eigen::MatrixXd& hits, const Eigen::MatrixXd& normals,
                                               const Eigen::Vector3d& origin);
 

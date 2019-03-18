@@ -353,23 +353,18 @@ Eigen::VectorXd BaseDraper::compute_lambert_intensities(const Eigen::MatrixXd& h
     return intensities;
 }
 
-Eigen::VectorXd BaseDraper::compute_model_intensities(const Eigen::MatrixXd& hits, const Eigen::MatrixXd& normals,
-                                                      const Eigen::Vector3d& origin)
+Eigen::VectorXd BaseDraper::compute_model_intensities(const Eigen::VectorXd& dists, const Eigen::VectorXd& thetas)
 {
-    Eigen::VectorXd intensities(hits.rows());
+    Eigen::VectorXd intensities(dists.rows());
 
     double alpha = 0.5;
     double sigma_theta = 0.3;
 
     std::normal_distribution<double> noise_dist(1., sigma_theta);
 
-    for (int j = 0; j < hits.rows(); ++j) { 
-        Eigen::Vector3d dir = origin - hits.row(j).transpose();
-        double dist = dir.norm();
-        dir.normalize();
-        Eigen::Vector3d n = normals.row(j).transpose();
-        n.normalize();
-        double theta = acos(dir.dot(n));
+    for (int j = 0; j < dists.rows(); ++j) { 
+        double dist = dists(j);
+        double theta = thetas(j);
         double TL = 20.*log10(dist); //1./(dist*dist);
         double DL = cos(theta);
         double G = std::min(1., 2.*DL*DL);
@@ -382,4 +377,24 @@ Eigen::VectorXd BaseDraper::compute_model_intensities(const Eigen::MatrixXd& hit
     }
 
     return intensities;
+}
+
+Eigen::VectorXd BaseDraper::compute_model_intensities(const Eigen::MatrixXd& hits, const Eigen::MatrixXd& normals,
+                                                      const Eigen::Vector3d& origin)
+{
+    Eigen::VectorXd thetas(hits.rows());
+    Eigen::VectorXd dists(hits.rows());
+
+    for (int j = 0; j < hits.rows(); ++j) { 
+        Eigen::Vector3d dir = origin - hits.row(j).transpose();
+        double dist = dir.norm();
+        dir.normalize();
+        Eigen::Vector3d n = normals.row(j).transpose();
+        n.normalize();
+        double theta = acos(dir.dot(n));
+        thetas(j) = theta;
+        dists(j) = dist;
+    }
+
+    return compute_model_intensities(dists, thetas);
 }
