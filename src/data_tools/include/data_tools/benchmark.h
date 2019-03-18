@@ -84,6 +84,9 @@ struct track_error_benchmark {
             std::vector<std::vector<std::vector<Eigen::MatrixXd>>>& grid_maps);
     cv::Mat draw_error_consistency_map(Eigen::MatrixXd values);
 
+    // Draw heightmap of submap
+    cv::Mat draw_height_submap(PointsT &map_points, PointsT &track_points, const int &submap_number);
+
     void track_img_params(std_data::mbes_ping::PingsT& pings, int rows=1000, int cols=1000);
     void draw_track_img(std_data::mbes_ping::PingsT& pings, cv::Mat& img, const cv::Scalar& color, const std::string& name);
     //void draw_track_img(pt_submaps::TransT& positions);

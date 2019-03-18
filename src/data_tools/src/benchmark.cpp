@@ -61,10 +61,10 @@ void track_error_benchmark::track_img_params(PointsT& points_maps, int rows, int
         return p1[1] < p2[1];
     };
 
-    double maxx = std::max_element(gt_track.begin(), gt_track.end(), xcomp)->data()[0];
-    double minx = std::min_element(gt_track.begin(), gt_track.end(), xcomp)->data()[0];
-    double maxy = std::max_element(gt_track.begin(), gt_track.end(), ycomp)->data()[1];
-    double miny = std::min_element(gt_track.begin(), gt_track.end(), ycomp)->data()[1];
+    double maxx = std::max_element(gt_track.begin(), gt_track.end(), xcomp)->data()[0]+20;
+    double minx = std::min_element(gt_track.begin(), gt_track.end(), xcomp)->data()[0]-20;
+    double maxy = std::max_element(gt_track.begin(), gt_track.end(), ycomp)->data()[1]+20;
+    double miny = std::min_element(gt_track.begin(), gt_track.end(), ycomp)->data()[1]-20;
 
     cout << "Min X: " << minx << ", Max X: " << maxx << ", Min Y: " << miny << ", Max Y: " << maxy << endl;
 
@@ -369,6 +369,25 @@ void track_error_benchmark::add_ground_truth(PointsT& map_points, PointsT& track
     track_img_path = dataset_name + "_benchmark_track_img.png";
 }
 
+cv::Mat track_error_benchmark::draw_height_submap(PointsT& map_points, PointsT& track_points,
+                                               const int& submap_number){
+
+    int rows = 500;
+    int cols = 500;
+
+    gt_track.clear();
+    for(const Eigen::MatrixXd& track_i: track_points){
+        for(unsigned int i=0; i<track_i.rows(); i++){
+            gt_track.push_back(track_i.row(i));
+        }
+    }
+    track_img_params(map_points, rows, cols);
+    cv::Mat mean_img = draw_height_map(map_points);
+    string mean_img_path = "submap_" + std::to_string(submap_number) + "_mean_depth.png";
+    cv::imwrite(mean_img_path, mean_img);
+
+    return mean_img;
+}
 
 void track_error_benchmark::add_initial(mbes_ping::PingsT& pings)
 {
