@@ -136,6 +136,9 @@ public:
 
     void set_sss_from_waterfall(bool wf) { sss_from_waterfall = wf; };
     void set_sss_from_bathy(bool bathy) { sss_from_bathy = bathy; };
+
+    Eigen::MatrixXd draw_sim_waterfall(const Eigen::MatrixXd& incidence_image);
+    Eigen::MatrixXd draw_model_waterfall(const Eigen::MatrixXd& incidence_image, double sss_ping_duration);
     
     static Eigen::MatrixXd default_callback(const Eigen::MatrixXd& window) { return window; }
 
