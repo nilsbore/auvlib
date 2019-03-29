@@ -311,6 +311,42 @@ pair<Eigen::MatrixXd, BoundsT> height_map_from_cloud(const vector<Eigen::Vector3
     return make_pair(means, bounds);
 }
 
+pair<Eigen::MatrixXd, BoundsT> height_map_from_dtm_cloud(const vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> >& cloud, double res)
+{
+    auto xcomp = [](const Eigen::Vector3d& p1, const Eigen::Vector3d& p2) {
+        return p1[0] < p2[0];
+    };
+    auto ycomp = [](const Eigen::Vector3d& p1, const Eigen::Vector3d& p2) {
+        return p1[1] < p2[1];
+    };
+    double maxx = std::max_element(cloud.begin(), cloud.end(), xcomp)->x();
+    double minx = std::min_element(cloud.begin(), cloud.end(), xcomp)->x();
+    double maxy = std::max_element(cloud.begin(), cloud.end(), ycomp)->y();
+    double miny = std::min_element(cloud.begin(), cloud.end(), ycomp)->y();
+
+    BoundsT bounds; bounds << minx, miny, maxx, maxy;
+
+    double float_cols = (maxx - minx) / res; // min/max should be in the center
+    double float_rows = (maxy - miny) / res;
+
+    cout << "Number of cols: " << float_cols << endl;
+    cout << "Number of rows: " << float_rows << endl;
+
+    int rows = int(float_rows);
+    int cols = int(float_cols);
+
+    Eigen::MatrixXd height_map(rows, cols); height_map.setZero();
+    for (const Eigen::Vector3d& pos : cloud) {
+        int col = int((pos[0]-minx)/res);
+        int row = int((pos[1]-miny)/res);
+        if (col >= 0 && col < cols && row >= 0 && row < rows) {
+            height_map(row, col) = pos[2];
+        }
+    }
+
+    return make_pair(height_map, bounds);
+}
+
 pair<Eigen::MatrixXd, Eigen::MatrixXi> mesh_from_height_map(const Eigen::MatrixXd& height_map, const BoundsT& bounds)
 {
     // these are the bottom-left corners and top-right corners of height map respectively
@@ -378,6 +414,20 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXi, BoundsT> mesh_from_cloud(const vector<Ei
     Eigen::MatrixXd V;
     Eigen::MatrixXi F;
     tie(V, F) = mesh_from_height_map(height_map, bounds);
+    return make_tuple(V, F, bounds);
+}
+
+// In this case, res gives us the spacing between the grid points
+tuple<Eigen::MatrixXd, Eigen::MatrixXi, BoundsT> mesh_from_dtm_cloud(const vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> >& cloud, double res)
+{
+    Eigen::MatrixXd height_map;
+    BoundsT bounds;
+    tie(height_map, bounds) = height_map_from_dtm_cloud(cloud, res);
+
+    Eigen::MatrixXd V;
+    Eigen::MatrixXi F;
+    tie(V, F) = mesh_from_height_map(height_map, bounds);
+
     return make_tuple(V, F, bounds);
 }
 
