@@ -41,6 +41,9 @@ namespace mesh_map {
                Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> >
     height_map_to_texture(const Eigen::MatrixXd& height_map);
 
+    std::pair<Eigen::MatrixXd, Eigen::MatrixXi> cut_square_around_point(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
+                                                                        const Eigen::Vector2d& p, double side);
+
     void write_dae_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const boost::filesystem::path& filename);
     void write_dae_mesh_from_str(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const std::string& filename);
     std::pair<Eigen::MatrixXd, Eigen::MatrixXi> read_ply_mesh_from_str(const std::string& filename);

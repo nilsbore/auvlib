@@ -35,5 +35,6 @@ PYBIND11_MODULE(mesh_map, m) {
     m.def("height_map_to_texture", &mesh_map::height_map_to_texture, "Get R, G, B color textures from height map");
     m.def("write_dae_mesh", &mesh_map::write_dae_mesh_from_str, "Write vertices and faces to a .dae file");
     m.def("read_ply_mesh", &mesh_map::read_ply_mesh_from_str, "Read vertices and faces from a .ply file");
+    m.def("cut_square_around_point", &mesh_map::cut_square_around_point, "Cut out a square from within the mesh, around point p with side length");
 
 }

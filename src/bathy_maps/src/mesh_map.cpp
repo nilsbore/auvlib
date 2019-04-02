@@ -15,6 +15,11 @@
 #include <igl/opengl/gl.h>
 #include <igl/xml/writeDAE.h>
 #include <igl/readPLY.h>
+#include <igl/slice.h>
+#include <igl/slice_mask.h>
+#include <igl/cumsum.h>
+
+//#include <igl/copyleft/cgal/intersect_with_half_space.h>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -26,6 +31,46 @@ using namespace std;
 namespace mesh_map {
 
 using namespace std_data;
+
+pair<Eigen::MatrixXd, Eigen::MatrixXi> cut_square_around_point(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
+                                                               const Eigen::Vector2d& p, double side)
+{
+    //Eigen::MatrixXd J;
+    //igl::copyleft::cgal::intersect_with_half_space(vertices, faces, point, direction, vertices, faces, J);
+    Eigen::Array<bool, Eigen::Dynamic, 1> good_V = (V.col(0).array() - p(0)).abs() < 0.5*side && (V.col(1).array() - p(1)).abs() < 0.5*side;
+
+    cout << "Total number vertices: " << V.rows() << endl;
+
+    int nbr_good_V = good_V.cast<int>().sum();
+    cout << "Number good vertices: " << nbr_good_V << endl;
+
+    Eigen::VectorXi cum_V;
+    Eigen::VectorXi good_V_int = good_V.cast<int>();
+    igl::cumsum(good_V_int, 1, cum_V);
+    cum_V.array() -= 1;
+
+    cout << "Cout cum_V last row: " << cum_V(cum_V.rows() - 1) << endl;
+
+    Eigen::Array<bool, Eigen::Dynamic, 1> good1, good2, good3, good_F;
+    good1 = igl::slice(good_V, F.col(0));
+    good2 = igl::slice(good_V, F.col(1));
+    good3 = igl::slice(good_V, F.col(2));
+    good_F = good1 && good2 && good3;
+
+    int nbr_good_F = good_F.cast<int>().sum();
+    cout << "Number good faces: " << nbr_good_F << endl;
+
+    Eigen::MatrixXd new_V = igl::slice_mask(V, good_V, 1);
+    cout << "Sliced good vertices: " << new_V.rows() << endl;
+    Eigen::MatrixXi small_F = igl::slice_mask(F, good_F, 1);
+
+    Eigen::MatrixXi new_F(small_F.rows(), small_F.cols());
+    new_F.col(0) = igl::slice(cum_V, small_F.col(0));
+    new_F.col(1) = igl::slice(cum_V, small_F.col(1));
+    new_F.col(2) = igl::slice(cum_V, small_F.col(2));
+
+    return make_pair(new_V, new_F);
+}
 
 std::tuple<uint8_t, uint8_t, uint8_t> jet_mesh(double x)
 {
