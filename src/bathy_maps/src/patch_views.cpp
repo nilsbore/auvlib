@@ -96,7 +96,7 @@ sss_patch_views sss_patch_assembler::finish()
     return patch_views;
 }
 
-void sss_patch_assembler::add_hits(const Eigen::MatrixXd& hits, const Eigen::Vector3d& pos)
+void sss_patch_assembler::add_hits(const Eigen::MatrixXd& hits, const Eigen::VectorXd& intensities, const Eigen::Vector3d& pos)
 {
     if (hits.rows() == 0) {
         return;
@@ -106,13 +106,15 @@ void sss_patch_assembler::add_hits(const Eigen::MatrixXd& hits, const Eigen::Vec
         first_pos = pos;
     }
 
-    Eigen::VectorXd intensities = hits.col(3);
-    Eigen::MatrixXd points = hits.leftCols<3>();
+    //Eigen::VectorXd intensities = hits.col(3);
+    //Eigen::MatrixXd points = hits.leftCols<3>();
+    
+    Eigen::MatrixXd points = hits;
     points.array().rowwise() -= origin.array().transpose();
     points.leftCols<2>().array() = double(image_size)/world_size*points.leftCols<2>().array() + double(image_size)/2.;
 
     std::cout << "Is active?: " << is_active_ << ", nbr pos: " << current_pos_count << std::endl;
-    std::cout << "Hits rows: " << hits.rows() << std::endl;
+    std::cout << "Hits rows: " << points.rows() << std::endl;
     std::cout << "Origin: " << origin.transpose() << ", pose: " << pos.transpose() << std::endl;
 
     current_pos_value.array() += pos.array();

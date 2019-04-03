@@ -30,8 +30,8 @@ BaseDraper::BaseDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
     offset = Eigen::Vector3d(bounds(0, 0), bounds(0, 1), 0.);
 
     //double first_heading = pings[0].heading_;
-    hit_sums = Eigen::VectorXd(V1.rows()); hit_sums.setZero();
-    hit_counts = Eigen::VectorXi(V1.rows()); hit_counts.setZero();
+    //hit_sums = Eigen::VectorXd(V1.rows()); hit_sums.setZero();
+    //hit_counts = Eigen::VectorXi(V1.rows()); hit_counts.setZero();
 
     V = V1;
     F = F1;
@@ -45,7 +45,7 @@ BaseDraper::BaseDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
     // Initialize viewer
 
     // Compute per-face normals
-    igl::per_face_normals(V1, F1, N_faces);
+    //igl::per_face_normals(V1, F1, N_faces);
 
     viewer.data().set_mesh(V, F);
     // Add per-vertex colors
@@ -110,6 +110,7 @@ void BaseDraper::show()
     viewer.launch();
 }
 
+/*
 tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::VectorXi, Eigen::VectorXi, Eigen::Vector3d> BaseDraper::project_sss()
 {
 
@@ -174,14 +175,24 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::VectorXi, Eigen::VectorXi, Eigen:
 
     return make_tuple(hits_left_intensities, hits_right_intensities, hits_left_pings_indices, hits_right_pings_indices, pings[i].pos_ - offset);
 }
-
+*/
 
 bool BaseDraper::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
 {
     glEnable(GL_CULL_FACE);
 
     if (viewer.core.is_animating && i < pings.size()) {
-        project_sss();
+        //project_sss();
+        Eigen::MatrixXd hits_left;
+        Eigen::MatrixXd hits_right;
+        Eigen::MatrixXd normals_left;
+        Eigen::MatrixXd normals_right;
+        tie(hits_left, hits_right, normals_left, normals_right) = project();
+
+        if (i % 10 == 0) {
+            visualize_vehicle();
+            visualize_rays(hits_left, hits_right);
+        }
         ++i;
     }
 
@@ -250,12 +261,11 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> BaseDr
     Eigen::Vector3d offset_pos = pings[i].pos_ - offset;
     if ((offset_pos - pos_small).norm() > 50.) {
         tie(V1_small, F1_small) = mesh_map::cut_square_around_point(V1, F1, offset_pos.head<2>(), 200.);
-        igl::per_face_normals(V1_small, F1_small, N_small); // TODO: compute N_small together with F1_small
         if (V1_small.rows() == 0) {
             V1_small = V1;
             F1_small = F1;
-            N_small = N_faces;
         }
+        igl::per_face_normals(V1_small, F1_small, N_small); // TODO: compute N_small together with F1_small
         pos_small = offset_pos;
     }
 

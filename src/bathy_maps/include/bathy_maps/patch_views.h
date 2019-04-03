@@ -77,7 +77,8 @@ public:
 
     sss_patch_views finish();
 
-    void add_hits(const Eigen::MatrixXd& hits, const Eigen::Vector3d& pos);
+    //void add_hits(const Eigen::MatrixXd& hits, const Eigen::Vector3d& pos);
+    void add_hits(const Eigen::MatrixXd& hits, const Eigen::VectorXd& intensities, const Eigen::Vector3d& pos);
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 

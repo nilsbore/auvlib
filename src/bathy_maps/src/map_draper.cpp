@@ -83,8 +83,8 @@ bool MapDraper::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
     map_image_builder.add_hits(hits_right, intensities_right, sss_depths_right, sss_model_right, pings[i].stbd, pos, false);
 
     if (i % 10 == 0) {
-        visualize_rays(hits_left, hits_right);
         visualize_vehicle();
+        visualize_rays(hits_left, hits_right);
     }
 
     ++i;

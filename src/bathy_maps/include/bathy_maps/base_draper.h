@@ -47,9 +47,9 @@ protected:
     Eigen::MatrixXd N_small; // normals of V1_small, F1_small
     Eigen::Vector3d pos_small; // the pos of the local small grid
 
-    Eigen::VectorXd hit_sums; 
-    Eigen::VectorXi hit_counts;
-    Eigen::MatrixXd N_faces; // the normals of F1, V1, i.e. the bathymetry mesh
+    //Eigen::VectorXd hit_sums; 
+    //Eigen::VectorXi hit_counts;
+    //Eigen::MatrixXd N_faces; // the normals of F1, V1, i.e. the bathymetry mesh
     csv_data::csv_asvp_sound_speed::EntriesT sound_speeds;
     double sensor_yaw;
     bool ray_tracing_enabled; // is snell ray tracing enabled?
@@ -81,7 +81,7 @@ protected:
                                               const Eigen::Vector3d& origin);
 
     // NOTE: these are old style functions, to be deprecated
-    std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::VectorXi, Eigen::VectorXi, Eigen::Vector3d> project_sss();
+    //std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::VectorXi, Eigen::VectorXi, Eigen::Vector3d> project_sss();
 
 public:
 
