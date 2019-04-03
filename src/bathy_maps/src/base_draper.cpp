@@ -373,7 +373,7 @@ void BaseDraper::visualize_vehicle()
     Eigen::Matrix3d Rz = Eigen::AngleAxisd(pings[i].heading_, Eigen::Vector3d::UnitZ()).matrix();
     Eigen::Matrix3d R = Rz*Ry*Rcomp;
 
-    if (V1_small.rows() == 0) {
+    if (true) {//V1_small.rows() == 0) {
         V.bottomRows(V2.rows()) = V2;
         V.bottomRows(V2.rows()) *= R.transpose();
         V.bottomRows(V2.rows()).array().rowwise() += (pings[i].pos_ - offset).transpose().array();

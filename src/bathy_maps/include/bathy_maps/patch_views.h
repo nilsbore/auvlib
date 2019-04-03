@@ -67,6 +67,10 @@ public:
 
     sss_patch_assembler(int image_size=30, double world_size=8.);
 
+    double get_world_size() const { return world_size; }
+    Eigen::Vector3d get_origin() const { return origin; }
+    Eigen::MatrixXd get_last_patch_view() const { return patch_views.sss_views.back(); };
+
     bool empty();
 
     void activate(const Eigen::Vector3d& new_origin);

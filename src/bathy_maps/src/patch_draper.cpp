@@ -60,10 +60,21 @@ void PatchDraper::handle_patches()
 
 void PatchDraper::handle_patches()
 {
+
     int skipped = 0;
     for (; i < pings.size() && is_active[i] == 0; ++i, ++skipped) {}
     if (patch_assembler.is_active() && skipped > 0) {
         patch_assembler.split();
+
+        // NOTE: this could probably be part of preceding if statement
+        if (!patch_assembler.empty()) {
+            Eigen::MatrixXd patch_map = patch_assembler.get_last_patch_view();
+            //patch_map.array() *= (patch_map.array() <= 0).cast<double>();
+            double world_size = patch_assembler.get_world_size();
+            Eigen::Vector3d patch_origin = patch_assembler.get_origin();
+            BoundsT bounds; bounds << patch_origin(0) - .5*world_size, patch_origin(1) - .5*world_size, patch_origin(0) + .5*world_size, patch_origin(1) + .5*world_size;
+            set_texture(patch_map, bounds);
+        }
     }
 
     if (i >= pings.size()) {
