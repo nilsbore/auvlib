@@ -67,7 +67,7 @@ void PatchDraper::handle_patches()
         patch_assembler.split();
 
         // NOTE: this could probably be part of preceding if statement
-        if (!patch_assembler.empty()) {
+        if (false) {//!patch_assembler.empty()) {
             Eigen::MatrixXd patch_map = patch_assembler.get_last_patch_view();
             //patch_map.array() *= (patch_map.array() <= 0).cast<double>();
             double world_size = patch_assembler.get_world_size();
