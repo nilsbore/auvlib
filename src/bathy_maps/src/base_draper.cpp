@@ -13,6 +13,7 @@
 
 #include <igl/readSTL.h>
 #include <bathy_maps/drape_mesh.h>
+#include <bathy_maps/mesh_map.h>
 
 using namespace std;
 using namespace xtf_data;
@@ -38,6 +39,8 @@ BaseDraper::BaseDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
 
     V2 = Eigen::MatrixXd(0, V1.cols());
     F2 = Eigen::MatrixXi(0, F1.cols());
+
+    pos_small = -1000.*Eigen::Vector3d::Ones(); // should be outside area
 
     // Initialize viewer
 
@@ -244,8 +247,34 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> BaseDr
     Eigen::VectorXd mod_left;
     Eigen::VectorXd mod_right;
 
+    Eigen::Vector3d offset_pos = pings[i].pos_ - offset;
+    if ((offset_pos - pos_small).norm() > 50.) {
+        tie(V1_small, F1_small) = mesh_map::cut_square_around_point(V1, F1, offset_pos.head<2>(), 200.);
+        igl::per_face_normals(V1_small, F1_small, N_small); // TODO: compute N_small together with F1_small
+        if (V1_small.rows() == 0) {
+            V1_small = V1;
+            F1_small = F1;
+            N_small = N_faces;
+        }
+        pos_small = offset_pos;
+    }
+
+    double beam_width;
+    double tilt_angle;
+    if (true) {
+        double depth = depth_mesh_underneath_vehicle(offset_pos, V1_small, F1_small);
+        double max_distance = .5*compute_simple_sound_vel()*pings[i].port.time_duration;
+        beam_width = acos(depth/max_distance);
+        tilt_angle = beam_width/2.;
+    }
+    else {
+        beam_width = pings[i].port.beam_width + 0.2;
+        tilt_angle = 1.4*pings[i].port.tilt_angle;
+    }
+
     auto start = chrono::high_resolution_clock::now();
-    tie(hits_left, hits_right, hits_left_inds, hits_right_inds, mod_left, mod_right) = embree_compute_hits(pings[i].pos_ - offset, R, 1.4*pings[i].port.tilt_angle, pings[i].port.beam_width + 0.2, V1, F1);
+    //tie(hits_left, hits_right, hits_left_inds, hits_right_inds, mod_left, mod_right) = embree_compute_hits(offset_pos, R, 1.4*pings[i].port.tilt_angle, pings[i].port.beam_width + 0.2, V1_small, F1_small);
+    tie(hits_left, hits_right, hits_left_inds, hits_right_inds, mod_left, mod_right) = embree_compute_hits(offset_pos, R, tilt_angle, beam_width, V1_small, F1_small);
     auto stop = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
     cout << "embree_compute_hits time: " << duration.count() << " microseconds" << endl;
@@ -254,20 +283,26 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> BaseDr
     Eigen::MatrixXd normals_right(hits_right.rows(), 3);
 
     for (int j = 0; j < hits_left.rows(); ++j) {
-        normals_left.row(j) = N_faces.row(hits_left_inds(j));
+        normals_left.row(j) = N_small.row(hits_left_inds(j));
     }
 
     for (int j = 0; j < hits_right.rows(); ++j) {
-        normals_right.row(j) = N_faces.row(hits_right_inds(j));
+        normals_right.row(j) = N_small.row(hits_right_inds(j));
     }
 
     return make_tuple(hits_left, hits_right, normals_left, normals_right);
 }
 
+double BaseDraper::compute_simple_sound_vel()
+{
+    double sound_vel = sound_speeds[0].vels.head(sound_speeds[0].vels.rows()-1).mean();
+    return sound_vel;
+}
+
 Eigen::VectorXd BaseDraper::compute_times(const Eigen::MatrixXd& P)
 {
     Eigen::Vector3d pos = pings[i].pos_ - offset;
-    double sound_vel = sound_speeds[0].vels.head(sound_speeds[0].vels.rows()-1).mean();
+    double sound_vel = compute_simple_sound_vel();
     Eigen::VectorXd times = 2.*(P.rowwise() - pos.transpose()).rowwise().norm()/sound_vel;
     return times;
 }
@@ -328,10 +363,28 @@ void BaseDraper::visualize_vehicle()
     Eigen::Matrix3d Rz = Eigen::AngleAxisd(pings[i].heading_, Eigen::Vector3d::UnitZ()).matrix();
     Eigen::Matrix3d R = Rz*Ry*Rcomp;
 
-    V.bottomRows(V2.rows()) = V2;
-    V.bottomRows(V2.rows()) *= R.transpose();
-    V.bottomRows(V2.rows()).array().rowwise() += (pings[i].pos_ - offset).transpose().array();
-    viewer.data().set_vertices(V);
+    if (V1_small.rows() == 0) {
+        V.bottomRows(V2.rows()) = V2;
+        V.bottomRows(V2.rows()) *= R.transpose();
+        V.bottomRows(V2.rows()).array().rowwise() += (pings[i].pos_ - offset).transpose().array();
+        viewer.data().set_vertices(V);
+    }
+    else {
+        Eigen::MatrixXd V_new(V1_small.rows()+V2.rows(), V1_small.cols());
+        V_new.topRows(V1_small.rows()) = V1_small;
+        V_new.bottomRows(V2.rows()) = V2;
+        V_new.bottomRows(V2.rows()) *= R.transpose();
+        V_new.bottomRows(V2.rows()).array().rowwise() += (pings[i].pos_ - offset).transpose().array();
+        Eigen::MatrixXi F_new(F1_small.rows()+F2.rows(), F1_small.cols());
+        F_new.topRows(F1_small.rows()) = F1_small;
+        F_new.bottomRows(F2.rows()) = F2.array() + V1_small.rows();
+        Eigen::MatrixXd C_new(V_new.rows(), V_new.cols());
+        C_new.topRows(V1_small.rows()) = color_jet_from_mesh(V1_small);
+        C_new.bottomRows(V2.rows()).rowwise() = Eigen::RowVector3d(1., 1., 0.);
+        viewer.data().clear();
+        viewer.data().set_mesh(V_new, F_new);
+        viewer.data().set_colors(C_new);
+    }
 }
 
 Eigen::VectorXd BaseDraper::compute_lambert_intensities(const Eigen::MatrixXd& hits, const Eigen::MatrixXd& normals,
@@ -372,7 +425,7 @@ Eigen::VectorXd BaseDraper::compute_model_intensities(const Eigen::VectorXd& dis
         double SS = 10.*log10((1. - alpha)*DL + alpha*SL);
         double NL = 10.*log10(noise_dist(generator));
         intensities(j) = 1./(-25.+42.)*(42. + SS - TL + NL); // log(1.+1.73*200.*TL*SS*NL);
-        intensities(j) = std::min(std::max(intensities(j), 0.), 1.);
+        intensities(j) = DL*DL; //std::min(std::max(intensities(j), 0.), 1.);
         //10*log(1.73*200.)-log(TL)+log(SS)+NL
     }
 

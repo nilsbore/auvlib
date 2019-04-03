@@ -501,8 +501,8 @@ bool SSSGenSim::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
     cv::waitKey(10);
 
     if (i % 10 == 0) {
-        visualize_rays(hits_left, hits_right);
         visualize_vehicle();
+        visualize_rays(hits_left, hits_right);
     }
 
     ++i;

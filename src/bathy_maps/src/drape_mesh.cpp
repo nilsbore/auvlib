@@ -28,6 +28,13 @@ bool is_mesh_underneath_vehicle(const Eigen::Vector3d& origin, const Eigen::Matr
     return did_hit;
 }
 
+double depth_mesh_underneath_vehicle(const Eigen::Vector3d& origin, const Eigen::MatrixXd& V, const Eigen::MatrixXi& F)
+{
+    igl::Hit hit;
+    bool did_hit = ray_mesh_intersect(origin, Eigen::Vector3d(0., 0., -1.), V, F, hit);
+    return did_hit? origin(2) - V(F(hit.id, 0), 2) : 0.;
+}
+
 pair<Eigen::MatrixXd, Eigen::MatrixXd> compute_sss_dirs(const Eigen::Matrix3d& R, double tilt_angle, double beam_width, int nbr_lines)
 {
     const double min_theta = tilt_angle - 0.5*beam_width; // M_PI/180.*10.;

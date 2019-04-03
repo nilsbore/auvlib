@@ -28,20 +28,28 @@ public:
 
 protected:
 
-    igl::opengl::glfw::Viewer viewer;
-    xtf_data::xtf_sss_ping::PingsT pings;
-    int i;
-    Eigen::MatrixXd V1;
-    Eigen::MatrixXi F1;
-    Eigen::MatrixXd V2;
-    Eigen::MatrixXi F2;
-    Eigen::MatrixXd V;
-    Eigen::MatrixXi F;
-    Eigen::MatrixXd C;
-    Eigen::Vector3d offset;
-    Eigen::VectorXd hit_sums;
+    igl::opengl::glfw::Viewer viewer; // ligigl viewer object
+    xtf_data::xtf_sss_ping::PingsT pings; // sidescan pings used for draping
+    int i; // timestep counter, one step per ping
+
+    Eigen::MatrixXd V1; // bathymetry mesh faces
+    Eigen::MatrixXi F1; // bathymetry mesh vertices
+    Eigen::MatrixXd V2; // vehicle mesh faces
+    Eigen::MatrixXi F2; // vehicle mesh vertices
+    Eigen::MatrixXd V; // combined, vis mesh vertices
+    Eigen::MatrixXi F; // combined, vis mesh faces
+    Eigen::MatrixXd C; // combined, vis mesh colors
+    Eigen::Vector3d offset; // offset of mesh wrt world coordinates
+
+    // smaller local versions used for ray tracing
+    Eigen::MatrixXd V1_small; // bathymetry mesh faces
+    Eigen::MatrixXi F1_small; // bathymetry mesh vertices
+    Eigen::MatrixXd N_small; // normals of V1_small, F1_small
+    Eigen::Vector3d pos_small; // the pos of the local small grid
+
+    Eigen::VectorXd hit_sums; 
     Eigen::VectorXi hit_counts;
-    Eigen::MatrixXd N_faces; // the normals of F1, V1
+    Eigen::MatrixXd N_faces; // the normals of F1, V1, i.e. the bathymetry mesh
     csv_data::csv_asvp_sound_speed::EntriesT sound_speeds;
     double sensor_yaw;
     bool ray_tracing_enabled; // is snell ray tracing enabled?
@@ -50,6 +58,8 @@ protected:
     // NOTE: these are new style functions
 
     std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> project();
+
+    double compute_simple_sound_vel();
 
     Eigen::VectorXd compute_times(const Eigen::MatrixXd& P);
 
