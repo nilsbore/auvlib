@@ -31,20 +31,31 @@ MapDraper::MapDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
     int rows, cols;
     tie(rows, cols) = map_image_builder.get_map_image_shape();
     draping_vis_texture = Eigen::MatrixXd::Zero(rows, cols);
+    store_map_images = true;
 }
 
 bool MapDraper::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
 {
+    /*
+    while ((i+1 < pings.size() && !pings[i+1].first_in_file_) && !is_mesh_underneath_vehicle(pings[i].pos_ - offset, V1, F1)) {
+        i += 1;
+    }
+    */
+
     // check if ping is first_in_file_, in that case, split off new image
     if ((i == pings.size() - 1 || (i+1 < pings.size() && pings[i+1].first_in_file_)) && !map_image_builder.empty()) {
         sss_map_image map_image = map_image_builder.finish();
         draping_vis_texture.array() *= (map_image.sss_map_image.array() == 0).cast<double>();
-        draping_vis_texture.array() += map_image.sss_map_image.array();
+        // TODO: make the intensity multiplier a parameter
+        //draping_vis_texture.array() += map_image.sss_map_image.array();
+        draping_vis_texture.array() += 2.*map_image.sss_map_image.array();
         Eigen::MatrixXd texture = draping_vis_texture;
         texture.array() += (texture.array() == 0).cast<double>();
         set_texture(texture, bounds);
         save_callback(map_image);
-        map_images.push_back(map_image);
+        if (store_map_images) {
+            map_images.push_back(map_image);
+        }
         map_image_builder = sss_map_image_builder(bounds, resolution, pings[i].port.pings.size());
     }
 

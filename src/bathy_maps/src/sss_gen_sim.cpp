@@ -253,7 +253,9 @@ void SSSGenSim::construct_gt_waterfall()
     values /= value_counts;
 
     for (int j = 0; j < 2*nbr_windows; ++j) {
-        gt_waterfall_image.at<uint8_t>(0, j) = uint8_t(255.*std::min(std::max(fabs(values(j)), 0.), 1.));
+        // TODO: maybe make the intensity multiplication factor a parameter
+        //gt_waterfall_image.at<uint8_t>(0, j) = uint8_t(255.*std::min(std::max(fabs(values(j)), 0.), 1.));
+        gt_waterfall_image.at<uint8_t>(0, j) = uint8_t(255.*std::min(std::max(fabs(2.*values(j)), 0.), 1.));
     }
 }
 
@@ -360,9 +362,11 @@ Eigen::MatrixXd SSSGenSim::draw_model_waterfall(const Eigen::MatrixXd& incidence
 
 bool SSSGenSim::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
 {
+    /*
     while (!is_mesh_underneath_vehicle(pings[i].pos_ - offset, V1, F1) && i < pings.size()) {
         i += 10;
     }
+    */
 
     if (i >= pings.size()) {
         return false;
@@ -497,6 +501,19 @@ bool SSSGenSim::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
     cv::imshow("Ground truth waterfall image", gt_waterfall_image);
 
     cv::imshow("Model waterfall image", model_waterfall_image);
+
+    if (true) {
+        cv::Mat compare_waterfall_image;
+        vector<cv::Mat> channels;
+        cv::Mat b = cv::Mat::zeros(1000, 2*nbr_windows, CV_8UC1);
+
+        channels.push_back(b);
+        channels.push_back(gt_waterfall_image);
+        channels.push_back(model_waterfall_image);
+
+        cv::merge(channels, compare_waterfall_image);
+        cv::imshow("Compare waterfall image", compare_waterfall_image);
+    }
 
     cv::waitKey(10);
 
