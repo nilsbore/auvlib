@@ -35,6 +35,7 @@ PYBIND11_MODULE(map_draper, m) {
         .def_readwrite("sss_waterfall_model", &sss_map_image::sss_waterfall_model, "Member")
         .def_readwrite("pos", &sss_map_image::pos, "Member")
         .def_readwrite("sss_ping_duration", &sss_map_image::sss_ping_duration, "Member")
+        .def_static("read_single", &read_data_from_str<sss_map_image>, "Read single sss_map_image from .cereal file")
         .def_static("read_data", &read_data_from_str<sss_map_image::ImagesT>, "Read sss_map_image::ImagesT from .cereal file");
 
 

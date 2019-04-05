@@ -86,10 +86,17 @@ sss_map_image sss_map_image_builder::finish()
     }
     map_image.sss_ping_duration = sss_ping_duration;
     map_image.pos = poss;
-    map_image.sss_waterfall_image = downsample_cols(sss_waterfall_image.topRows(waterfall_counter), 512).cast<float>();
-    //map_image.sss_waterfall_cross_track = sss_waterfall_cross_track.topRows(waterfall_counter);
-    map_image.sss_waterfall_depth = downsample_cols(sss_waterfall_depth.topRows(waterfall_counter), 512).cast<float>();
-    map_image.sss_waterfall_model = downsample_cols(sss_waterfall_model.topRows(waterfall_counter), 512).cast<float>();
+    if (waterfall_width == 512) {
+        map_image.sss_waterfall_image = sss_waterfall_image.topRows(waterfall_counter).cast<float>();
+        map_image.sss_waterfall_depth = sss_waterfall_depth.topRows(waterfall_counter).cast<float>();
+        map_image.sss_waterfall_model = sss_waterfall_model.topRows(waterfall_counter).cast<float>();
+    }
+    else {
+        map_image.sss_waterfall_image = downsample_cols(sss_waterfall_image.topRows(waterfall_counter), 512).cast<float>();
+        //map_image.sss_waterfall_cross_track = sss_waterfall_cross_track.topRows(waterfall_counter);
+        map_image.sss_waterfall_depth = downsample_cols(sss_waterfall_depth.topRows(waterfall_counter), 512).cast<float>();
+        map_image.sss_waterfall_model = downsample_cols(sss_waterfall_model.topRows(waterfall_counter), 512).cast<float>();
+    }
 
     return map_image;
 }
@@ -97,7 +104,7 @@ sss_map_image sss_map_image_builder::finish()
 void sss_map_image_builder::add_waterfall_images(const Eigen::MatrixXd& hits, const Eigen::VectorXi& hits_inds,
                                                  const xtf_sss_ping_side& ping, const Eigen::Vector3d& pos, bool is_left)
 {
-    if (waterfall_counter > sss_waterfall_image.rows()) {
+    if (waterfall_counter >= sss_waterfall_image.rows()) {
         sss_waterfall_image.conservativeResize(sss_waterfall_image.rows()+1000, sss_waterfall_image.cols());
         sss_waterfall_cross_track.conservativeResize(sss_waterfall_image.rows()+1000, sss_waterfall_image.cols());
         sss_waterfall_depth.conservativeResize(sss_waterfall_image.rows()+1000, sss_waterfall_image.cols());
@@ -197,23 +204,49 @@ void sss_map_image_builder::add_hits(const Eigen::MatrixXd& hits, const Eigen::V
     }
     std::cout << "Number inside image: " << inside_image << std::endl;
 
-    if (waterfall_counter > sss_waterfall_image.rows()) {
+    if (waterfall_counter >= sss_waterfall_image.rows()) {
+        std::cout << __FILE__ << ", " << __LINE__ << std::endl;
         sss_waterfall_image.conservativeResize(sss_waterfall_image.rows()+1000, sss_waterfall_image.cols());
+        std::cout << __FILE__ << ", " << __LINE__ << std::endl;
         sss_waterfall_cross_track.conservativeResize(sss_waterfall_image.rows()+1000, sss_waterfall_image.cols());
+        std::cout << __FILE__ << ", " << __LINE__ << std::endl;
         sss_waterfall_depth.conservativeResize(sss_waterfall_image.rows()+1000, sss_waterfall_image.cols());
+        std::cout << __FILE__ << ", " << __LINE__ << std::endl;
         sss_waterfall_model.conservativeResize(sss_waterfall_image.rows()+1000, sss_waterfall_image.cols());
     }
 
-    for (int i = 0; i < ping.pings.size(); ++i) {
-        int col;
+    std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+
+    if (waterfall_width == 512) {
+        double ping_step = double(ping.pings.size()) / double(waterfall_width/2);
+        Eigen::ArrayXd value_windows = Eigen::VectorXd::Zero(waterfall_width/2);
+        Eigen::ArrayXd value_counts = Eigen::ArrayXd::Zero(waterfall_width/2);
+        for (int i = 0; i < ping.pings.size(); ++i) {
+            int col = int(double(i)/ping_step);
+            value_windows(col) += double(ping.pings[i])/10000.;
+            value_counts(col) += 1.;
+        }
+        value_counts += (value_counts == 0).cast<double>();
         if (is_left) {
-            col = waterfall_width/2 + i;
+            sss_waterfall_image.block(waterfall_counter, waterfall_width/2, 1, waterfall_width/2) = (value_windows / value_counts).transpose();
         }
         else {
-            col = waterfall_width/2 - 1 - i;
+            sss_waterfall_image.block(waterfall_counter, 0, 1, waterfall_width/2) = (value_windows / value_counts).reverse().transpose();
         }
-        sss_waterfall_image(waterfall_counter, col) = double(ping.pings[i])/10000.;
     }
+    else {
+        for (int i = 0; i < ping.pings.size(); ++i) {
+            int col;
+            if (is_left) {
+                col = waterfall_width/2 + i;
+            }
+            else {
+                col = waterfall_width/2 - 1 - i;
+            }
+            sss_waterfall_image(waterfall_counter, col) = double(ping.pings[i])/10000.;
+        }
+    }
+    std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
     if (is_left) {
         sss_waterfall_depth.block(waterfall_counter, waterfall_width/2, 1, waterfall_width/2) = sss_depths.transpose();
@@ -223,6 +256,7 @@ void sss_map_image_builder::add_hits(const Eigen::MatrixXd& hits, const Eigen::V
         sss_waterfall_depth.block(waterfall_counter, 0, 1, waterfall_width/2) = sss_depths.reverse().transpose();
         sss_waterfall_model.block(waterfall_counter, 0, 1, waterfall_width/2) = sss_model.reverse().transpose();
     }
+    std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
     if (!is_left) {
         ++waterfall_counter;

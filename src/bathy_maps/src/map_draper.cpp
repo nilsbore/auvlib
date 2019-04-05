@@ -24,27 +24,33 @@ MapDraper::MapDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
                      const BoundsT& bounds,
                      const csv_asvp_sound_speed::EntriesT& sound_speeds)
     : BaseDraper(V1, F1, pings, bounds, sound_speeds),
-      bounds(bounds), resolution(30./8.), save_callback(&default_callback),
-      map_image_builder(bounds, 30./8., pings[0].port.pings.size())
+      resolution(30./8.), save_callback(&default_callback),
+      map_image_builder(bounds, 30./8., 256)
+      //map_image_builder(bounds, 30./8., pings[0].port.pings.size())
 {
     viewer.callback_pre_draw = std::bind(&MapDraper::callback_pre_draw, this, std::placeholders::_1);
     int rows, cols;
     tie(rows, cols) = map_image_builder.get_map_image_shape();
-    draping_vis_texture = Eigen::MatrixXd::Zero(rows, cols);
+    //draping_vis_texture = Eigen::MatrixXd::Zero(rows, cols);
     store_map_images = true;
 }
 
 bool MapDraper::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
 {
-    /*
-    while ((i+1 < pings.size() && !pings[i+1].first_in_file_) && !is_mesh_underneath_vehicle(pings[i].pos_ - offset, V1, F1)) {
+    cout << "Start callback_pre_draw" << endl;
+
+    //while ((i+1 < pings.size() && !pings[i+1].first_in_file_) && !is_mesh_underneath_vehicle(pings[i].pos_ - offset, V1, F1)) {
+    while ((i+1 < pings.size() && !pings[i+1].first_in_file_) && !fast_is_mesh_underneath_vehicle(pings[i].pos_ - offset)) {
         i += 1;
     }
-    */
+
+    cout << "Save?" << endl;
 
     // check if ping is first_in_file_, in that case, split off new image
     if ((i == pings.size() - 1 || (i+1 < pings.size() && pings[i+1].first_in_file_)) && !map_image_builder.empty()) {
+        cout << "Yes" << endl;
         sss_map_image map_image = map_image_builder.finish();
+        /*
         draping_vis_texture.array() *= (map_image.sss_map_image.array() == 0).cast<double>();
         // TODO: make the intensity multiplier a parameter
         //draping_vis_texture.array() += map_image.sss_map_image.array();
@@ -52,11 +58,14 @@ bool MapDraper::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
         Eigen::MatrixXd texture = draping_vis_texture;
         texture.array() += (texture.array() == 0).cast<double>();
         set_texture(texture, bounds);
+        */
+        visualize_intensities();
         save_callback(map_image);
         if (store_map_images) {
             map_images.push_back(map_image);
         }
-        map_image_builder = sss_map_image_builder(bounds, resolution, pings[i].port.pings.size());
+        //map_image_builder = sss_map_image_builder(bounds, resolution, pings[i].port.pings.size());
+        map_image_builder = sss_map_image_builder(bounds, resolution, 256);
     }
 
     if (i >= pings.size()) {
@@ -89,14 +98,24 @@ bool MapDraper::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
     Eigen::VectorXd intensities_left = compute_intensities(times_left, pings[i].port);
     Eigen::VectorXd intensities_right = compute_intensities(times_right, pings[i].stbd);
 
+    // add intensities for visualization
+    add_texture_intensities(hits_left, intensities_left);
+    add_texture_intensities(hits_right, intensities_right);
+
+    cout << "Adding hits" << endl;
+
     // add the 3d hits and waterfall images to the builder object
     map_image_builder.add_hits(hits_left, intensities_left, sss_depths_left, sss_model_left, pings[i].port, pos, true);
     map_image_builder.add_hits(hits_right, intensities_right, sss_depths_right, sss_model_right, pings[i].stbd, pos, false);
+
+    cout << "Done adding hits, visualizing" << endl;
 
     if (i % 10 == 0) {
         visualize_vehicle();
         visualize_rays(hits_left, hits_right);
     }
+
+    cout << "Done visualizing" << endl;
 
     ++i;
 
@@ -135,10 +154,11 @@ bool MapDraper::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
 void MapDraper::set_resolution(double new_resolution)
 { 
     resolution = new_resolution;
-    map_image_builder = sss_map_image_builder(bounds, resolution, pings[i].port.pings.size());
+    //map_image_builder = sss_map_image_builder(bounds, resolution, pings[i].port.pings.size());
+    map_image_builder = sss_map_image_builder(bounds, resolution, 256);
     int rows, cols;
     tie(rows, cols) = map_image_builder.get_map_image_shape();
-    draping_vis_texture = Eigen::MatrixXd::Zero(rows, cols);
+    //draping_vis_texture = Eigen::MatrixXd::Zero(rows, cols);
 }
 
 sss_map_image::ImagesT MapDraper::get_images()

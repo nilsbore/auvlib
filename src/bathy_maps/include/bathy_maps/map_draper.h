@@ -23,12 +23,12 @@ public:
 
 protected:
 
-    BoundsT bounds;
+    //BoundsT bounds;
     double resolution;
     std::function<void(sss_map_image)> save_callback;
     sss_map_image::ImagesT map_images;
     sss_map_image_builder map_image_builder;
-    Eigen::MatrixXd draping_vis_texture;
+    //Eigen::MatrixXd draping_vis_texture;
     bool store_map_images;
 
 public:

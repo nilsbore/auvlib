@@ -24,8 +24,8 @@ BaseDraper::BaseDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
                        const BoundsT& bounds,
                        const csv_asvp_sound_speed::EntriesT& sound_speeds)
     : pings(pings), i(0), V1(V1), F1(F1),
-      sound_speeds(sound_speeds), sensor_yaw(0.),
-      ray_tracing_enabled(false)
+      sound_speeds(sound_speeds), bounds(bounds),
+      sensor_yaw(0.), ray_tracing_enabled(false)
 {
     offset = Eigen::Vector3d(bounds(0, 0), bounds(0, 1), 0.);
 
@@ -41,6 +41,20 @@ BaseDraper::BaseDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
     F2 = Eigen::MatrixXi(0, F1.cols());
 
     pos_small = -1000.*Eigen::Vector3d::Ones(); // should be outside area
+
+    // resolution of 1m
+    int rows = int(bounds(1, 1)-bounds(0, 1));
+    int cols = int(bounds(1, 0)-bounds(0, 0));
+    texture_image = Eigen::MatrixXd::Zero(rows, cols);
+    cout << "Texture image rows: " << rows << ", cols: " << cols << endl;
+    for (int j = 0; j < V1.rows(); ++j) {
+        //int y = rows-int(V1(j, 1))-1;
+        int y = int(V1(j, 1));
+        int x = int(V1(j, 0));
+        if (x >= 0 && x < cols && y >= 0 && y < rows && V1(j, 2) != 0.) {
+            texture_image(y, x) = 1.; //V1(j, 0)/(bounds(1, 0)-bounds(0, 0));
+        }
+    }
 
     // Initialize viewer
 
@@ -62,14 +76,40 @@ BaseDraper::BaseDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
     viewer.core.animation_max_fps = 30.;
     //viewer.launch();
     viewer.core.background_color << 1., 1., 1., 1.; // white background
+
+    //Eigen::Matrix2d mesh_bounds; mesh_bounds << 0., 0., bounds(1, 0)-bounds(0, 0), bounds(1, 1)-bounds(0, 1);
+    set_texture(texture_image, bounds);
 }
 
-void BaseDraper::set_texture(const Eigen::MatrixXd& texture, const BoundsT& bounds)
+bool BaseDraper::fast_is_mesh_underneath_vehicle(const Eigen::Vector3d& origin)
+{
+    //int y = texture_image.rows()-int(origin(1))-1;
+    int y = int(origin(1));
+    int x = int(origin(0));
+    if (x >= 0 && x < texture_image.cols() && y >= 0 && y < texture_image.rows()) {
+        return texture_image(y, x) != 0.;
+    }
+    return false;
+}
+
+void BaseDraper::add_texture_intensities(const Eigen::MatrixXd& hits, const Eigen::VectorXd& intensities)
+{
+    for (int j = 0; j < hits.rows(); ++j) {
+        int y = int(hits(j, 1));
+        int x = int(hits(j, 0));
+        if (x >= 0 && x < texture_image.cols() && y >= 0 && y < texture_image.rows()) {
+            texture_image(y, x) = std::max(intensities(j), 0.01);
+        }
+    }
+}
+
+void BaseDraper::set_texture(const Eigen::MatrixXd& texture, const BoundsT& texture_bounds)
 {
     Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> R = (255.*texture.transpose()).cast<uint8_t>();
     Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> G = (255.*texture.transpose()).cast<uint8_t>();
     Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> B = (255.*texture.transpose()).cast<uint8_t>();
 
+    // TODO: fix, this assumes that we are always starting at (0, 0)
     Eigen::MatrixXd UV = V.leftCols<2>();
     //UV.col(0).array() -= bounds(0, 0);
     UV.col(0).array() /= bounds(1, 0) - bounds(0, 0);
@@ -103,6 +143,8 @@ void BaseDraper::set_vehicle_mesh(const Eigen::MatrixXd& new_V2, const Eigen::Ma
     viewer.data().clear();
     viewer.data().set_mesh(V, F);
     viewer.data().set_colors(C);
+
+    set_texture(texture_image, bounds);
 }
 
 void BaseDraper::show()
@@ -395,6 +437,11 @@ void BaseDraper::visualize_vehicle()
         viewer.data().set_mesh(V_new, F_new);
         viewer.data().set_colors(C_new);
     }
+}
+
+void BaseDraper::visualize_intensities()
+{
+    set_texture(texture_image, bounds);
 }
 
 Eigen::VectorXd BaseDraper::compute_lambert_intensities(const Eigen::MatrixXd& hits, const Eigen::MatrixXd& normals,

@@ -27,8 +27,8 @@ SSSGenSim::SSSGenSim(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
                      const BoundsT& bounds,
                      const csv_asvp_sound_speed::EntriesT& sound_speeds,
                      const Eigen::MatrixXd& height_map)
-    : BaseDraper(V1, F1, pings, bounds, sound_speeds),
-      bounds(bounds), gen_callback(&default_callback),
+    : BaseDraper(V1, F1, pings, bounds, sound_speeds), //bounds(bounds),
+      gen_callback(&default_callback),
       height_map(height_map),
       sss_from_waterfall(false),
       sss_from_bathy(false)
@@ -362,11 +362,10 @@ Eigen::MatrixXd SSSGenSim::draw_model_waterfall(const Eigen::MatrixXd& incidence
 
 bool SSSGenSim::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
 {
-    /*
-    while (!is_mesh_underneath_vehicle(pings[i].pos_ - offset, V1, F1) && i < pings.size()) {
+    //while (!is_mesh_underneath_vehicle(pings[i].pos_ - offset, V1, F1) && i < pings.size()) {
+    while (!fast_is_mesh_underneath_vehicle(pings[i].pos_ - offset) && i < pings.size()) {
         i += 10;
     }
-    */
 
     if (i >= pings.size()) {
         return false;
@@ -439,6 +438,12 @@ bool SSSGenSim::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
     // compute travel times
     Eigen::VectorXd times_left = compute_times(hits_left);
     Eigen::VectorXd times_right = compute_times(hits_right);
+
+    // compute the intensity values for vis
+    Eigen::VectorXd gt_intensities_left = compute_intensities(times_left, pings[i].port);
+    Eigen::VectorXd gt_intensities_right = compute_intensities(times_right, pings[i].stbd);
+    add_texture_intensities(hits_left, gt_intensities_left);
+    add_texture_intensities(hits_right, gt_intensities_right);
 
     // shift the waterfall image
     cv::Mat shifted = cv::Mat::zeros(waterfall_image.rows, waterfall_image.cols, waterfall_image.type());
@@ -518,8 +523,9 @@ bool SSSGenSim::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
     cv::waitKey(10);
 
     if (i % 10 == 0) {
-        visualize_vehicle();
+        //visualize_vehicle();
         visualize_rays(hits_left, hits_right);
+        visualize_intensities();
     }
 
     ++i;

@@ -47,6 +47,9 @@ protected:
     Eigen::MatrixXd N_small; // normals of V1_small, F1_small
     Eigen::Vector3d pos_small; // the pos of the local small grid
 
+    BoundsT bounds;
+    Eigen::MatrixXd texture_image; // used for displaying texture and checking coverage
+
     //Eigen::VectorXd hit_sums; 
     //Eigen::VectorXi hit_counts;
     //Eigen::MatrixXd N_faces; // the normals of F1, V1, i.e. the bathymetry mesh
@@ -73,6 +76,8 @@ protected:
 
     void visualize_vehicle();
 
+    void visualize_intensities();
+
     Eigen::VectorXd compute_lambert_intensities(const Eigen::MatrixXd& hits, const Eigen::MatrixXd& normals,
                                                 const Eigen::Vector3d& origin);
 
@@ -82,10 +87,12 @@ protected:
 
     // NOTE: these are old style functions, to be deprecated
     //std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::VectorXi, Eigen::VectorXi, Eigen::Vector3d> project_sss();
+    bool fast_is_mesh_underneath_vehicle(const Eigen::Vector3d& origin);
+    void add_texture_intensities(const Eigen::MatrixXd& hits, const Eigen::VectorXd& intensities);
 
 public:
 
-    void set_texture(const Eigen::MatrixXd& texture, const BoundsT& bounds);
+    void set_texture(const Eigen::MatrixXd& texture, const BoundsT& texture_bounds);
     void set_sidescan_yaw(double new_sensor_yaw) { sensor_yaw = new_sensor_yaw; }
     void set_ray_tracing_enabled(bool enabled);
     void set_vehicle_mesh(const Eigen::MatrixXd& new_V2, const Eigen::MatrixXi& new_F2, const Eigen::MatrixXd& new_C2);

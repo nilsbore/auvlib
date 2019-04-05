@@ -86,7 +86,7 @@ protected:
     bool sss_from_waterfall;
     bool sss_from_bathy;
 
-    BoundsT bounds;
+    //BoundsT bounds;
     //double resolution;
     std::function<Eigen::MatrixXd(const Eigen::MatrixXd&)> gen_callback;
     Eigen::MatrixXd height_map;
