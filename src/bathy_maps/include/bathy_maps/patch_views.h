@@ -67,6 +67,10 @@ public:
 
     sss_patch_assembler(int image_size=30, double world_size=8.);
 
+    double get_world_size() const { return world_size; }
+    Eigen::Vector3d get_origin() const { return origin; }
+    Eigen::MatrixXd get_last_patch_view() const { return patch_views.sss_views.back(); };
+
     bool empty();
 
     void activate(const Eigen::Vector3d& new_origin);
@@ -77,7 +81,8 @@ public:
 
     sss_patch_views finish();
 
-    void add_hits(const Eigen::MatrixXd& hits, const Eigen::Vector3d& pos);
+    //void add_hits(const Eigen::MatrixXd& hits, const Eigen::Vector3d& pos);
+    void add_hits(const Eigen::MatrixXd& hits, const Eigen::VectorXd& intensities, const Eigen::Vector3d& pos);
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 

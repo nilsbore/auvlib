@@ -35,6 +35,7 @@ PYBIND11_MODULE(map_draper, m) {
         .def_readwrite("sss_waterfall_model", &sss_map_image::sss_waterfall_model, "Member")
         .def_readwrite("pos", &sss_map_image::pos, "Member")
         .def_readwrite("sss_ping_duration", &sss_map_image::sss_ping_duration, "Member")
+        .def_static("read_single", &read_data_from_str<sss_map_image>, "Read single sss_map_image from .cereal file")
         .def_static("read_data", &read_data_from_str<sss_map_image::ImagesT>, "Read sss_map_image::ImagesT from .cereal file");
 
 
@@ -50,6 +51,7 @@ PYBIND11_MODULE(map_draper, m) {
         // Methods unique to MapDraper:
         .def("set_resolution", &MapDraper::set_resolution, "Set the resolution of the gathered maps, default is ~3.75")
         .def("set_image_callback", &MapDraper::set_image_callback, "Set the function to be called when an entire sidescan map is done")
+        .def("set_store_map_images", &MapDraper::set_store_map_images, "Set if the draper should save and return map images at the end")
         .def("get_images", &MapDraper::get_images, "Get all the sss_map_image::ImagesT that have been gathered so far");
 
     m.def("drape_maps", &drape_maps, "Overlay xtf_sss_ping::PingsT sidescan data on a mesh and get sss_map_image::ViewsT");
@@ -58,4 +60,5 @@ PYBIND11_MODULE(map_draper, m) {
     m.def("convert_maps_to_patches", &convert_maps_to_patches, "Convert sss_map_image::ImagesT to sss_patch_views::ViewsT");
     m.def("convert_maps_to_single_angle_patches", &convert_maps_to_single_angle_patches, "Convert sss_map_image::ImagesT to sss_patch_views::ViewsT, but only from one angle in each case");
     m.def("write_data", &write_data_from_str<sss_map_image::ImagesT>, "Write sss_map_image::ImagesT to .cereal file");
+    m.def("write_data", &write_data_from_str<sss_map_image>, "Write sss_map_image to .cereal file");
 }

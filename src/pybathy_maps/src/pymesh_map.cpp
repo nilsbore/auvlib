@@ -25,13 +25,16 @@ PYBIND11_MODULE(mesh_map, m) {
     m.def("mesh_from_height_map", &mesh_map::mesh_from_height_map, "Construct mesh from height map");
     m.def("height_map_from_pings", &mesh_map::height_map_from_pings, "Construct height map from mbes_ping::PingsT");
     m.def("height_map_from_cloud", &mesh_map::height_map_from_cloud, "Construct height map from vector<Eigen::Vector3d>");
+    m.def("height_map_from_dtm_cloud", &mesh_map::height_map_from_dtm_cloud, "Construct height map from vector<Eigen::Vector3d>");
     m.def("mesh_from_pings", &mesh_map::mesh_from_pings, "Construct mesh from mbes_ping::PingsT");
     m.def("mesh_from_cloud", &mesh_map::mesh_from_cloud, "Construct mesh from vector<Eigen::Vector3d>");
+    m.def("mesh_from_dtm_cloud", &mesh_map::mesh_from_dtm_cloud, "Construct mesh from vector<Eigen::Vector3d>");
     m.def("show_mesh", &mesh_map::show_mesh, "Display mesh using igl viewer");
     m.def("show_textured_mesh", &mesh_map::show_textured_mesh, "Display textured mesh using igl viewer");
     m.def("show_height_map", &mesh_map::show_height_map, "Display height map using opencv");
     m.def("height_map_to_texture", &mesh_map::height_map_to_texture, "Get R, G, B color textures from height map");
     m.def("write_dae_mesh", &mesh_map::write_dae_mesh_from_str, "Write vertices and faces to a .dae file");
     m.def("read_ply_mesh", &mesh_map::read_ply_mesh_from_str, "Read vertices and faces from a .ply file");
+    m.def("cut_square_around_point", &mesh_map::cut_square_around_point, "Cut out a square from within the mesh, around point p with side length");
 
 }

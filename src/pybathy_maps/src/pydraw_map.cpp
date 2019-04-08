@@ -22,12 +22,16 @@ namespace py = pybind11;
 PYBIND11_MODULE(draw_map, m) {
     m.doc() = "Data structure for constructing and viewing a bathymetry mesh and for draping the mesh with sidescan data"; // optional module docstring
     py::class_<BathyMapImage>(m, "BathyMapImage", "Class for constructing mesh from multibeam data")
-        .def(py::init<mbes_ping::PingsT&, int, int>(), "Constructor, takes mbes_ping::PingsT and height and width of height map")
-        .def("draw_track", (void (BathyMapImage::*)(mbes_ping::PingsT&) ) &BathyMapImage::draw_track, "Draw vehicle track from mbes_ping::PingsT")
-        .def("draw_height_map", &BathyMapImage::draw_height_map, "Draw height map from mbes_ping::PingsT")
+        .def(py::init<const mbes_ping::PingsT&, int, int>(), "Constructor, takes mbes_ping::PingsT and height and width of height map")
+        .def(py::init<const Eigen::MatrixXd&, const Eigen::Matrix2d&>(), "Constructor, takes pre-computed height map matrix and bounds")
+        .def("draw_track", (void (BathyMapImage::*)(const mbes_ping::PingsT&) ) &BathyMapImage::draw_track, "Draw vehicle track from mbes_ping::PingsT")
+        .def("draw_track", (void (BathyMapImage::*)(const std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> >&) ) &BathyMapImage::draw_track, "Draw vehicle track from list of Vector3d")
+        .def("draw_height_map", (void (BathyMapImage::*)(const mbes_ping::PingsT&) ) &BathyMapImage::draw_height_map, "Draw height map from mbes_ping::PingsT")
+        .def("draw_height_map", (void (BathyMapImage::*)(const Eigen::MatrixXd&) ) &BathyMapImage::draw_height_map, "Draw height map from pre-computed height map matrix")
         .def("draw_indices", &BathyMapImage::draw_indices, "Draw indices of the pings within the map, from mbes_ping::PingsT")
         .def("draw_back_scatter_map", &BathyMapImage::draw_back_scatter_map, "Draw back scatter map from mbes_ping::PingsT")
         .def("draw_targets", &BathyMapImage::draw_targets, "Draw point targets from dict of points")
+        .def("rotate_crop_image", &BathyMapImage::rotate_crop_image, "Rotate and crop the image from a start and an end point, and a width in between")
         .def("show", &BathyMapImage::show, "Show the drawn bathy map")
         .def("write_image", &BathyMapImage::write_image_from_str, "Save image to file");
 }

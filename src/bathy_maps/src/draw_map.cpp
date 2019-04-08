@@ -50,7 +50,7 @@ std::tuple<uint8_t, uint8_t, uint8_t> jet(double x)
     return std::make_tuple(uint8_t(255.*r), uint8_t(255.*g), uint8_t(255.*b));
 }
 
-BathyMapImage::BathyMapImage(mbes_ping::PingsT& pings, int rows, int cols) : rows(rows), cols(cols)
+BathyMapImage::BathyMapImage(const mbes_ping::PingsT& pings, int rows, int cols) : rows(rows), cols(cols)
 {
     auto xcomp = [](const mbes_ping& p1, const mbes_ping& p2) {
         return p1.pos_[0] < p2.pos_[0];
@@ -79,15 +79,36 @@ BathyMapImage::BathyMapImage(mbes_ping::PingsT& pings, int rows, int cols) : row
     bathy_map = cv::Mat(rows, cols, CV_8UC3, cv::Scalar(255, 255, 255));
 }
 
-void BathyMapImage::draw_track(mbes_ping::PingsT& pings)
+BathyMapImage::BathyMapImage(const Eigen::MatrixXd& height_map, const Eigen::Matrix2d& bounds) : rows(height_map.rows()), cols(height_map.cols())
+{
+    double maxx = bounds(1, 0);
+    double minx = bounds(0, 0);
+    double maxy = bounds(1, 1);
+    double miny = bounds(0, 1);
+
+    cout << "Min X: " << minx << ", Max X: " << maxx << ", Min Y: " << miny << ", Max Y: " << maxy << endl;
+
+    double xres = double(cols)/(maxx - minx);
+    double yres = double(rows)/(maxy - miny);
+
+    double res = std::min(xres, yres);
+
+    double x0 = .5*(double(cols) - res*(maxx-minx));
+    double y0 = .5*(double(rows) - res*(maxy-miny));
+
+    cout << xres << ", " << yres << endl;
+
+    params = array<double, 5>{res, minx, miny, x0, y0};
+    bathy_map = cv::Mat(rows, cols, CV_8UC3, cv::Scalar(255, 255, 255));
+}
+
+void BathyMapImage::draw_track(const mbes_ping::PingsT& pings)
 {
     draw_track(pings, cv::Scalar(0, 0, 255));
 }
 
-void BathyMapImage::draw_track(mbes_ping::PingsT& pings, const cv::Scalar& color)
+void BathyMapImage::draw_track(const mbes_ping::PingsT& pings, const cv::Scalar& color)
 {
-    //nbr_tracks_drawn += 1; // we should based the color on this instead
-
     double res, minx, miny, x0, y0;
     res = params[0]; minx = params[1]; miny = params[2]; x0 = params[3]; y0 = params[4];
 
@@ -96,14 +117,26 @@ void BathyMapImage::draw_track(mbes_ping::PingsT& pings, const cv::Scalar& color
     for (const mbes_ping& ping : pings) {
         cv::Point2f pt(x0+res*(ping.pos_[0]-minx), bathy_map.rows-y0-res*(ping.pos_[1]-miny)-1);
         curve_points.push_back(pt);
-        //cout << pt << endl;
-        if (false) { //counter % 500 == 0) {
-            double len = 30.;
-            cv::Point pt1(x0+res*(ping.pos_[0]-minx), bathy_map.rows-y0-res*(ping.pos_[1]-miny)-1);
-            cv::Point pt2(pt1.x + int(len*cos(ping.heading_)), pt1.y - int(len*sin(ping.heading_)));
-            cv::arrowedLine(bathy_map, pt1, pt2, cv::Scalar(0, 0 , 255), 2, 8, 0, 0.1);
-            cv::putText(bathy_map, std::to_string(int(180./M_PI*ping.heading_)), pt1, cv::FONT_HERSHEY_PLAIN, 0.5, cv::Scalar(0, 0, 0), 1, 8, false);
-        }
+        ++counter;
+    }
+
+    cv::Mat curve(curve_points, true);
+    curve.convertTo(curve, CV_32S); //adapt type for polylines
+    cv::polylines(bathy_map, curve, false, color, 1, CV_AA);
+}
+
+void BathyMapImage::draw_track(const vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> >& pos)
+{
+    cv::Scalar color(0, 0, 255);
+
+    double res, minx, miny, x0, y0;
+    res = params[0]; minx = params[1]; miny = params[2]; x0 = params[3]; y0 = params[4];
+
+    vector<cv::Point2f> curve_points;
+    int counter = 0;
+    for (const Eigen::Vector3d& p : pos) {
+        cv::Point2f pt(x0+res*p[0], bathy_map.rows-y0-res*p[1]-1);
+        curve_points.push_back(pt);
         ++counter;
     }
 
@@ -130,7 +163,26 @@ void BathyMapImage::draw_indices(mbes_ping::PingsT& pings, int skip_indices)
     }
 }
 
-void BathyMapImage::draw_height_map(mbes_ping::PingsT& pings)
+void BathyMapImage::draw_height_map(const Eigen::MatrixXd& height_map)
+{
+    double minv = height_map.minCoeff();
+    Eigen::ArrayXXd height_map_array = height_map.array();
+    height_map_array -= minv*(height_map_array < 0).cast<double>();
+    double maxv = height_map_array.maxCoeff();
+    height_map_array /= maxv;
+
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            if (height_map_array(i, j) == 0) {
+                continue;
+            }
+            cv::Point3_<uchar>* p = bathy_map.ptr<cv::Point3_<uchar> >(rows-i-1, j);
+            tie(p->z, p->y, p->x) = jet(height_map_array(i, j));
+        }
+    }
+}
+
+void BathyMapImage::draw_height_map(const mbes_ping::PingsT& pings)
 {
     Eigen::MatrixXd means(rows, cols); means.setZero();
     Eigen::MatrixXd counts(rows, cols); counts.setZero();
@@ -197,6 +249,58 @@ void BathyMapImage::draw_targets(const TargetsT& targets, const cv::Scalar& colo
         cv::putText(bathy_map, item.first, cv::Point(col+15, row), cv::FONT_HERSHEY_PLAIN, 1.0, color); //, 1, 8, false);
     }
 
+}
+
+cv::Point2f BathyMapImage::world_pos_to_image(const Eigen::Vector3d& pos, bool relative)
+{
+    double res, minx, miny, x0, y0;
+    res = params[0]; minx = params[1]; miny = params[2]; x0 = params[3]; y0 = params[4];
+    if (relative) {
+        minx = miny = 0.;
+    }
+    return cv::Point(x0+res*(pos[0]-minx), bathy_map.rows-y0-res*(pos[1]-miny)-1);
+}
+
+void BathyMapImage::rotate_crop_image(const Eigen::Vector3d& first_pos, const Eigen::Vector3d& last_pos, double result_width)
+{
+    double res = params[0];
+    double margin = 20.;
+
+    Eigen::Vector3d center_pos = .5*(last_pos + first_pos);
+    Eigen::Vector3d forward_dir = last_pos - first_pos;
+    double dist = forward_dir.norm();
+    forward_dir.normalize();
+    double forward_angle = 180./M_PI*atan2(forward_dir(0), forward_dir(1));
+
+    cv::Size2f rect_size(result_width*res, (dist + margin)*res);
+    cv::RotatedRect rect = cv::RotatedRect(world_pos_to_image(center_pos, true), rect_size, forward_angle);
+
+    cv::Mat M, rotated; //, cropped;
+    float angle = rect.angle;
+    /*
+    if (rect.angle < -45.) {
+        angle += 90.0;
+        swap(rect_size.width, rect_size.height);
+    }
+    */
+    cv::Point2f center((bathy_map.cols-1)/2.0, (bathy_map.rows-1)/2.0);
+    M = cv::getRotationMatrix2D(center, angle, 1.0);
+    //cv::Size margin_size(2*bathy_map.cols, 2*bathy_map.rows);
+    cv::Rect2f bbox = cv::RotatedRect(cv::Point2f(), bathy_map.size(), angle).boundingRect2f();
+    // adjust transformation matrix
+    M.at<double>(0, 2) += bbox.width/2.0 - bathy_map.cols/2.0;
+    M.at<double>(1, 2) += bbox.height/2.0 - bathy_map.rows/2.0;
+        //
+    cv::warpAffine(bathy_map, rotated, M, bbox.size(), cv::INTER_CUBIC);
+    cv::Mat_<double> src(3/*rows*/,1 /* cols */); 
+    src(0, 0) = rect.center.x; 
+    src(1, 0) = rect.center.y;
+    src(2, 0) = 1.;
+
+    cv::Mat_<double> dst = M*src; //USE MATRIX ALGEBRA 
+    cv::getRectSubPix(rotated, rect_size, cv::Point2f(dst(0,0),dst(1,0)), bathy_map);
+    //cv::imshow("Cropped", cropped);
+    //cv::waitKey();
 }
 
 void BathyMapImage::write_image(const boost::filesystem::path& path)

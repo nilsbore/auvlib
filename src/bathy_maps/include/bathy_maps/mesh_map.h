@@ -23,8 +23,10 @@ namespace mesh_map {
     std::pair<Eigen::MatrixXd, Eigen::MatrixXi> mesh_from_height_map(const Eigen::MatrixXd& height_map, const BoundsT& bounds);
     std::pair<Eigen::MatrixXd, BoundsT> height_map_from_pings(const std_data::mbes_ping::PingsT& pings, double res);
     std::pair<Eigen::MatrixXd, BoundsT> height_map_from_cloud(const std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> >& cloud, double res);
+    std::pair<Eigen::MatrixXd, BoundsT> height_map_from_dtm_cloud(const std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> >& cloud, double res);
     std::tuple<Eigen::MatrixXd, Eigen::MatrixXi, BoundsT> mesh_from_pings(const std_data::mbes_ping::PingsT& pings, double res=0.5);
     std::tuple<Eigen::MatrixXd, Eigen::MatrixXi, BoundsT> mesh_from_cloud(const std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> >& cloud, double res);
+    std::tuple<Eigen::MatrixXd, Eigen::MatrixXi, BoundsT> mesh_from_dtm_cloud(const std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> >& cloud, double res);
     void show_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F);
     //void show_textured_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& height_map, const BoundsT& bounds);
     void show_height_map(const Eigen::MatrixXd& height_map);
@@ -38,6 +40,9 @@ namespace mesh_map {
                Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic>,
                Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> >
     height_map_to_texture(const Eigen::MatrixXd& height_map);
+
+    std::pair<Eigen::MatrixXd, Eigen::MatrixXi> cut_square_around_point(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
+                                                                        const Eigen::Vector2d& p, double side);
 
     void write_dae_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const boost::filesystem::path& filename);
     void write_dae_mesh_from_str(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const std::string& filename);

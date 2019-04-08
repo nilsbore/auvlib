@@ -22,6 +22,7 @@ std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi> c
 
 std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi, Eigen::VectorXd, Eigen::VectorXd> embree_compute_hits(const Eigen::Vector3d& origin, const Eigen::Matrix3d& R, double tilt_angle, double beam_width, const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1);
 
+/*
 std::pair<Eigen::MatrixXd, Eigen::VectorXi> correlate_hits(const Eigen::MatrixXd& hits_port,
                                             const Eigen::VectorXi& hits_port_inds,
                                             const Eigen::VectorXd& mod_port,
@@ -35,10 +36,12 @@ std::pair<Eigen::MatrixXd, Eigen::VectorXi> correlate_hits(const Eigen::MatrixXd
                                             Eigen::VectorXd& hit_sums,
                                             Eigen::VectorXi& hit_counts,
                                             bool is_left = false);
+*/
 
 bool point_in_view(const xtf_data::xtf_sss_ping& ping, const Eigen::Vector3d& point, double sensor_yaw);
 
 bool is_mesh_underneath_vehicle(const Eigen::Vector3d& origin, const Eigen::MatrixXd& V, const Eigen::MatrixXi& F);
+double depth_mesh_underneath_vehicle(const Eigen::Vector3d& origin, const Eigen::MatrixXd& V, const Eigen::MatrixXi& F);
 
 
 #endif // DRAPE_MESH_H

@@ -40,6 +40,9 @@ xyz_data::Points parse_file(const boost::filesystem::path& file)
     if (line.find(',') != string::npos) {
         separator = ',';
     }
+
+    cout << "Using separator: " << separator << endl;
+
     //size_t i = 0;
     size_t counter = 0;
     Eigen::Vector3d p;
@@ -56,18 +59,25 @@ xyz_data::Points parse_file(const boost::filesystem::path& file)
             continue;
         }
         istringstream iss(line);
-		//iss >> p(0) >> p(1) >> p(2);
-        //std::getline(iss, p(0), separator);
-        //std::getline(iss, p(1), separator);
-        //std::getline(iss, p(2), separator);
-        for (int j = 0; j < 3; ++j) {
-            std::getline(iss, line, separator);
-            p[j] = std::stod(line.c_str());
+		if (separator == ' ') {
+            iss >> p(0) >> p(1) >> p(2);
         }
-        if (counter >= cloud.size()) {
+        else {
+            //std::getline(iss, p(0), separator);
+            //std::getline(iss, p(1), separator);
+            //std::getline(iss, p(2), separator);
+            for (int j = 0; j < 3; ++j) {
+                std::getline(iss, line, separator);
+                p[j] = std::stod(line.c_str());
+            }
+        }
+        if (counter >= cloud.capacity()) {
+            cout << "Reserving space: " << cloud.size() + 1000000 << endl;
             cloud.reserve(cloud.size() + 1000000);
         }
-        //cout << "Point: " << p.transpose() << endl;
+        if (counter % 1000 == 0) {
+            cout << "Point: " << p.transpose() << endl;
+        }
         cloud.push_back(p);
         ++counter;
     }

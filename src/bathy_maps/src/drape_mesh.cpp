@@ -28,6 +28,13 @@ bool is_mesh_underneath_vehicle(const Eigen::Vector3d& origin, const Eigen::Matr
     return did_hit;
 }
 
+double depth_mesh_underneath_vehicle(const Eigen::Vector3d& origin, const Eigen::MatrixXd& V, const Eigen::MatrixXi& F)
+{
+    igl::Hit hit;
+    bool did_hit = ray_mesh_intersect(origin, Eigen::Vector3d(0., 0., -1.), V, F, hit);
+    return did_hit? origin(2) - V(F(hit.id, 0), 2) : 0.;
+}
+
 pair<Eigen::MatrixXd, Eigen::MatrixXd> compute_sss_dirs(const Eigen::Matrix3d& R, double tilt_angle, double beam_width, int nbr_lines)
 {
     const double min_theta = tilt_angle - 0.5*beam_width; // M_PI/180.*10.;
@@ -175,6 +182,7 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi, Eigen:
     return make_tuple(hits_left, hits_right, hits_left_inds, hits_right_inds, mod_left, mod_right);
 }
 
+/*
 pair<Eigen::MatrixXd, Eigen::VectorXi> correlate_hits(const Eigen::MatrixXd& hits_port,
                                        const Eigen::VectorXi& hits_port_inds,
                                        const Eigen::VectorXd& mod_port,
@@ -190,13 +198,6 @@ pair<Eigen::MatrixXd, Eigen::VectorXi> correlate_hits(const Eigen::MatrixXd& hit
                                        bool is_left)
 {
 
-    /*
-    Eigen::VectorXd layer_depths(4);
-    layer_depths << -5., -10., -15., -20.;
-    Eigen::VectorXd layer_speeds(5);
-    layer_speeds << 1506.43, 1504.47, 1498.61, 1495.05, 1492.64;
-    */
-    
     //bool sound_speed_layers = false; //!sound_speeds.empty();
     if (!sound_speeds.empty()) {
         sound_vel = sound_speeds[0].vels.head(sound_speeds[0].vels.rows()-1).mean();
@@ -261,9 +262,6 @@ pair<Eigen::MatrixXd, Eigen::VectorXi> correlate_hits(const Eigen::MatrixXd& hit
 
         //double intensity = (double(ping.port.pings[i]) + 32767.)/(2.*32767.);
         //double intensity = double(ping.pings[ping.pings.size()-i-1])/(10000.);
-        /*if (intensity < 0.2) { // no hit?
-            continue;
-        }*/
 
         //cout << "Pos: " << pos << ", size: " << hits_port.rows() << endl;
         while (pos < hits_port.rows() && double(i)*port_step > times_port(pos)) {
@@ -292,6 +290,7 @@ pair<Eigen::MatrixXd, Eigen::VectorXi> correlate_hits(const Eigen::MatrixXd& hit
 
     return make_pair(hits_intensities, hits_pings_indices);
 }
+*/
 
 bool point_in_view(const xtf_sss_ping& ping, const Eigen::Vector3d& point, double sensor_yaw)
 {

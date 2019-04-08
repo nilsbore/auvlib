@@ -19,6 +19,8 @@
 #include <opencv2/core/core.hpp>
 
 class BathyMapImage {
+private:
+    cv::Point2f world_pos_to_image(const Eigen::Vector3d& pos, bool relative=false);
 public:
     using TargetsT = std::map<std::string, std::pair<double, double> >;
 
@@ -27,13 +29,18 @@ public:
     std::array<double, 5> params;
     int rows, cols;
 
-    BathyMapImage(std_data::mbes_ping::PingsT& pings, int rows=500, int cols=500);
-    void draw_track(std_data::mbes_ping::PingsT& pings);
-    void draw_track(std_data::mbes_ping::PingsT& pings, const cv::Scalar& color);
-    void draw_height_map(std_data::mbes_ping::PingsT& pings);
+    BathyMapImage(const std_data::mbes_ping::PingsT& pings, int rows=500, int cols=500);
+    BathyMapImage(const Eigen::MatrixXd& height_map, const Eigen::Matrix2d& bounds);
+    void draw_track(const std_data::mbes_ping::PingsT& pings);
+    void draw_track(const std_data::mbes_ping::PingsT& pings, const cv::Scalar& color);
+    void draw_track(const std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> >& pos);
+    void draw_height_map(const std_data::mbes_ping::PingsT& pings);
+    void draw_height_map(const Eigen::MatrixXd& height_map);
     void draw_back_scatter_map(std_data::mbes_ping::PingsT& pings);
     void draw_targets(const TargetsT& targets, const cv::Scalar& color);
     void draw_indices(std_data::mbes_ping::PingsT& pings, int skip_indices=500);
+
+    void rotate_crop_image(const Eigen::Vector3d& first_pos, const Eigen::Vector3d& last_pos, double result_width);
     void write_image(const boost::filesystem::path& path);
     void write_image_from_str(const std::string& path);
     void show();

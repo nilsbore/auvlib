@@ -31,6 +31,7 @@ PatchDraper::PatchDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
     viewer.callback_pre_draw = std::bind(&PatchDraper::callback_pre_draw, this, std::placeholders::_1);
 }
 
+/*
 void PatchDraper::handle_patches()
 {
     int skipped = 0;
@@ -55,11 +56,65 @@ void PatchDraper::handle_patches()
     patch_assembler.add_hits(hits_left_intensities, pos);
     patch_assembler.add_hits(hits_right_intensities, pos);
 }
+*/
+
+void PatchDraper::handle_patches()
+{
+
+    int skipped = 0;
+    for (; i < pings.size() && is_active[i] == 0; ++i, ++skipped) {}
+    if (patch_assembler.is_active() && skipped > 0) {
+        patch_assembler.split();
+
+        // NOTE: this could probably be part of preceding if statement
+        if (false) {//!patch_assembler.empty()) {
+            Eigen::MatrixXd patch_map = patch_assembler.get_last_patch_view();
+            //patch_map.array() *= (patch_map.array() <= 0).cast<double>();
+            double world_size = patch_assembler.get_world_size();
+            Eigen::Vector3d patch_origin = patch_assembler.get_origin();
+            BoundsT bounds; bounds << patch_origin(0) - .5*world_size, patch_origin(1) - .5*world_size, patch_origin(0) + .5*world_size, patch_origin(1) + .5*world_size;
+            set_texture(patch_map, bounds);
+        }
+    }
+
+    if (i >= pings.size()) {
+        if (patch_assembler.is_active() && !patch_assembler.empty()) {
+            patch_views.push_back(patch_assembler.finish());
+            save_callback(patch_views.back());
+        }
+        return;
+    }
+
+    Eigen::Vector3d pos = pings[i].pos_ - offset;
+
+    Eigen::MatrixXd hits_left;
+    Eigen::MatrixXd hits_right;
+    Eigen::MatrixXd normals_left;
+    Eigen::MatrixXd normals_right;
+    tie(hits_left, hits_right, normals_left, normals_right) = project();
+
+    // these should take care of computing bending if set
+    Eigen::VectorXd times_left = compute_times(hits_left);
+    Eigen::VectorXd times_right = compute_times(hits_right);
+
+    // compute the ground truth intensities
+    Eigen::VectorXd intensities_left = compute_intensities(times_left, pings[i].port);
+    Eigen::VectorXd intensities_right = compute_intensities(times_right, pings[i].stbd);
+
+    patch_assembler.add_hits(hits_left, intensities_left, pos);
+    patch_assembler.add_hits(hits_right, intensities_right, pos);
+
+    if (i % 10 == 0) {
+        visualize_vehicle();
+        visualize_rays(hits_left, hits_right);
+    }
+
+    i += 1;
+}
 
 bool PatchDraper::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
 {
     handle_patches();
-    i += 1;
     return false;
 }
 

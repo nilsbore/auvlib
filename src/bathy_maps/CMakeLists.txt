@@ -104,7 +104,7 @@ target_link_libraries(patch_views eigen_cereal ${OpenCV_LIBS})
 
 target_link_libraries(sss_map_image eigen_cereal xtf_data ${OpenCV_LIBS})
 
-target_link_libraries(base_draper drape_mesh xtf_data patch_views ${OpenCV_LIBS} igl::core igl::opengl_glfw -lpthread)
+target_link_libraries(base_draper drape_mesh xtf_data patch_views mesh_map ${OpenCV_LIBS} igl::core igl::opengl_glfw -lpthread)
 
 target_link_libraries(patch_draper drape_mesh base_draper xtf_data patch_views ${OpenCV_LIBS} igl::core igl::opengl_glfw -lpthread)
 

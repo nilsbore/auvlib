@@ -35,6 +35,8 @@ PYBIND11_MODULE(sss_gen_sim, m) {
         .def("set_ray_tracing_enabled", &SSSGenSim::set_ray_tracing_enabled, "Set if ray tracing through water layers should be enabled. Takes more time but is recommended if there are large speed differences")
         .def("set_vehicle_mesh", &SSSGenSim::set_vehicle_mesh, "Provide the viewer with a vehicle model, purely for visualization")
         .def("show", &SSSGenSim::show, "Start the draping, and show the visualizer")
+        .def("draw_sim_waterfall", &SSSGenSim::draw_sim_waterfall, "Get the simulated waterfall from the incidence image")
+        .def("draw_model_waterfall", &SSSGenSim::draw_model_waterfall, "Get the idealized model waterfall from the incidence image")
         // Methods unique to SSSGenSim:
         .def("set_gen_callback", &SSSGenSim::set_gen_callback, "Set the function that generates sidescan patches from bathymetry")
         .def("set_gen_window_height", &SSSGenSim::set_gen_window_height, "Set the height of the window that we are sending to the network")
