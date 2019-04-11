@@ -69,7 +69,7 @@ void match_timestamps(mbes_ping::PingsT& pings, nav_entry::EntriesT& entries)
 }
 
 
-void saveSubmapsFiles(const std_data::mbes_ping::PingsT& pings, const boost::filesystem::path& folder){
+void save_submaps_files(const std_data::mbes_ping::PingsT& pings, const boost::filesystem::path& folder){
 
     // Save submaps in external files
     string file_name;
@@ -92,7 +92,7 @@ void saveSubmapsFiles(const std_data::mbes_ping::PingsT& pings, const boost::fil
 }
 
 
-double computeInfoInSubmap(std_data::mbes_ping::PingsT& submap_pings){
+double compute_info_in_submap(std_data::mbes_ping::PingsT& submap_pings){
 
     // Beams z centroid
     double mean_beam = 0;
@@ -115,7 +115,7 @@ double computeInfoInSubmap(std_data::mbes_ping::PingsT& submap_pings){
     return cond_num = cond_num / beam_cnt;
 }
 
-void divide_tracks_adaptively(mbes_ping::PingsT& pings)
+void divide_tracks_adaptive(mbes_ping::PingsT& pings)
 {
     double info_thres = 0.3;
     // For every line (one line per file)
@@ -169,7 +169,7 @@ void divide_tracks_adaptively(mbes_ping::PingsT& pings)
 
                 // Compute information quantity on submap
                 mbes_ping::PingsT pings_submap(pos+last_submap_cnt, it);
-                double info_in_submap = computeInfoInSubmap(pings_submap);
+                double info_in_submap = compute_info_in_submap(pings_submap);
                 cout << "Info in submap " << info_in_submap << endl;
 
                 // If big, break here
