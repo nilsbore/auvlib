@@ -469,7 +469,7 @@ void track_error_benchmark::add_benchmark(PointsT& maps_points, PointsT& tracks_
     cv::Mat error_img;
     Eigen::MatrixXd error_vals;
     double consistency_rms_error;
-    std::vector<std::vector<std::vector<Eigen::MatrixXd>>> grid_maps = create_grids_from_matrices(maps_points);
+    std::vector<std::vector<std::vector<Eigen::MatrixXd> > > grid_maps = create_grids_from_matrices(maps_points);
     tie(consistency_rms_error, error_vals) = compute_consistency_error(grid_maps);
     error_img = draw_error_consistency_map(error_vals);
     string error_img_path = dataset_name + "_" + name + "_rms_consistency_error.png";
@@ -497,8 +497,8 @@ void track_error_benchmark::add_benchmark(mbes_ping::PingsT& pings, const std::s
     cv::Mat error_img;
     Eigen::MatrixXd error_vals;
     double consistency_rms_error;
-    tie(consistency_rms_error, error_img) = compute_draw_consistency_map(pings);
-    std::vector<std::vector<std::vector<Eigen::MatrixXd>>> grid_maps = create_grids_from_pings(pings);
+
+    std::vector<std::vector<std::vector<Eigen::MatrixXd> > > grid_maps = create_grids_from_pings(pings);
     tie(consistency_rms_error, error_vals) = compute_consistency_error(grid_maps);
     error_img = draw_error_consistency_map(error_vals);
     draw_track_img(pings, error_img, cv::Scalar(0, 0, 0), name);
@@ -664,7 +664,7 @@ mbes_ping::PingsT registration_summary_benchmark::get_submap_pings_index(const m
     return pings_i;
 }
 
-vector<vector<vector<Eigen::MatrixXd>>> track_error_benchmark::create_grids_from_pings(mbes_ping::PingsT& pings){
+vector<vector<vector<Eigen::MatrixXd> > > track_error_benchmark::create_grids_from_pings(mbes_ping::PingsT& pings){
 
     int rows = 500;
     int cols = 500;
@@ -709,7 +709,7 @@ vector<vector<vector<Eigen::MatrixXd>>> track_error_benchmark::create_grids_from
     return grid_maps;
 }
 
-vector<vector<vector<Eigen::MatrixXd>>> track_error_benchmark::create_grids_from_matrices(PointsT& points_maps){
+vector<vector<vector<Eigen::MatrixXd> > > track_error_benchmark::create_grids_from_matrices(PointsT& points_maps){
 
     int rows = 500;
     int cols = 500;
@@ -746,7 +746,7 @@ vector<vector<vector<Eigen::MatrixXd>>> track_error_benchmark::create_grids_from
 }
 
 std::pair<double, Eigen::MatrixXd> track_error_benchmark::compute_consistency_error(
-        vector<vector<vector<Eigen::MatrixXd>>>& grid_maps)
+        vector<vector<vector<Eigen::MatrixXd> > >& grid_maps)
 {
     int rows = grid_maps.size();
     int cols = grid_maps[0].size();

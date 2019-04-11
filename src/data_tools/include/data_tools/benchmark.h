@@ -80,10 +80,10 @@ struct track_error_benchmark {
 
     void track_img_params(PointsT& points_maps, int rows=1000, int cols=1000);
     cv::Mat draw_height_map(PointsT &points_maps);
-    std::vector<std::vector<std::vector<Eigen::MatrixXd>>> create_grids_from_pings(std_data::mbes_ping::PingsT& pings);
-    std::vector<std::vector<std::vector<Eigen::MatrixXd>>> create_grids_from_matrices(PointsT& points_maps);
+    std::vector<std::vector<std::vector<Eigen::MatrixXd> > > create_grids_from_pings(std_data::mbes_ping::PingsT& pings);
+    std::vector<std::vector<std::vector<Eigen::MatrixXd> > > create_grids_from_matrices(PointsT& points_maps);
     std::pair<double, Eigen::MatrixXd> compute_consistency_error(
-            std::vector<std::vector<std::vector<Eigen::MatrixXd>>>& grid_maps);
+            std::vector<std::vector<std::vector<Eigen::MatrixXd> > >& grid_maps);
     cv::Mat draw_error_consistency_map(Eigen::MatrixXd values);
 
     // Draw heightmap of submaps
