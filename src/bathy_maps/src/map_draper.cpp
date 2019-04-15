@@ -11,8 +11,11 @@
 
 #include <bathy_maps/map_draper.h>
 #include <bathy_maps/impl/map_draper.hpp>
+#include <bathy_maps/sss_meas_data.h>
 
 template class MapDraper<sss_map_image_builder>;
+
+template class MapDraper<sss_meas_data_builder>;
 
 sss_map_image::ImagesT drape_maps(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
                                   const BaseDraper::BoundsT& bounds, const xtf_sss_ping::PingsT& pings,

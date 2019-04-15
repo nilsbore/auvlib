@@ -36,6 +36,8 @@ add_library(patch_views src/patch_views.cpp)
 
 add_library(sss_map_image src/sss_map_image.cpp)
 
+add_library(sss_meas_data src/sss_meas_data.cpp)
+
 add_library(sss_gen_sim src/sss_gen_sim.cpp)
 
 add_executable(test_mesh src/test_mesh.cpp)
@@ -83,6 +85,11 @@ target_include_directories(sss_map_image PUBLIC
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
 
+target_include_directories(sss_meas_data PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+    PRIVATE src)
+
 target_include_directories(sss_gen_sim PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
@@ -104,17 +111,19 @@ target_link_libraries(patch_views eigen_cereal ${OpenCV_LIBS})
 
 target_link_libraries(sss_map_image eigen_cereal xtf_data ${OpenCV_LIBS})
 
+target_link_libraries(sss_meas_data eigen_cereal xtf_data ${OpenCV_LIBS})
+
 target_link_libraries(base_draper drape_mesh xtf_data patch_views mesh_map ${OpenCV_LIBS} igl::core igl::opengl_glfw -lpthread)
 
 target_link_libraries(patch_draper drape_mesh base_draper xtf_data patch_views ${OpenCV_LIBS} igl::core igl::opengl_glfw -lpthread)
 
-target_link_libraries(map_draper drape_mesh base_draper xtf_data sss_map_image ${OpenCV_LIBS} igl::core igl::opengl_glfw -lpthread)
+target_link_libraries(map_draper drape_mesh base_draper xtf_data sss_map_image sss_meas_data ${OpenCV_LIBS} igl::core igl::opengl_glfw -lpthread)
 
 target_link_libraries(sss_gen_sim drape_mesh base_draper xtf_data sss_map_image ${OpenCV_LIBS} igl::core igl::opengl_glfw -lpthread ${OpenCV_LIBS})
 
 
 # 'make install' to the correct locations (provided by GNUInstallDirs).
-install(TARGETS draw_map mesh_map drape_mesh patch_draper base_draper map_draper patch_views sss_map_image sss_gen_sim EXPORT BathyMapsConfig
+install(TARGETS draw_map mesh_map drape_mesh patch_draper base_draper map_draper patch_views sss_map_image sss_meas_data sss_gen_sim EXPORT BathyMapsConfig
     ARCHIVE  DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR})  # This is for Windows
@@ -126,4 +135,4 @@ install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(EXPORT BathyMapsConfig DESTINATION share/BathyMaps/cmake)
 
 # This makes the project importable from the build directory
-export(TARGETS draw_map mesh_map drape_mesh patch_draper base_draper map_draper patch_views sss_map_image sss_gen_sim FILE BathyMapsConfig.cmake)
+export(TARGETS draw_map mesh_map drape_mesh patch_draper base_draper map_draper patch_views sss_map_image sss_meas_data sss_gen_sim FILE BathyMapsConfig.cmake)

@@ -30,8 +30,8 @@ MapDraper<MapSaver>::MapDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi&
       //map_image_builder(bounds, 30./8., pings[0].port.pings.size())
 {
     viewer.callback_pre_draw = std::bind(&MapDraper::callback_pre_draw, this, std::placeholders::_1);
-    int rows, cols;
-    tie(rows, cols) = map_image_builder.get_map_image_shape();
+    //int rows, cols;
+    //tie(rows, cols) = map_image_builder.get_map_image_shape();
     //draping_vis_texture = Eigen::MatrixXd::Zero(rows, cols);
     store_map_images = true;
 }
@@ -51,7 +51,7 @@ bool MapDraper<MapSaver>::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
     // check if ping is first_in_file_, in that case, split off new image
     if ((i == pings.size() - 1 || (i+1 < pings.size() && pings[i+1].first_in_file_)) && !map_image_builder.empty()) {
         cout << "Yes" << endl;
-        sss_map_image map_image = map_image_builder.finish();
+        MapType map_image = map_image_builder.finish();
         /*
         draping_vis_texture.array() *= (map_image.sss_map_image.array() == 0).cast<double>();
         // TODO: make the intensity multiplier a parameter
@@ -67,7 +67,7 @@ bool MapDraper<MapSaver>::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
             map_images.push_back(map_image);
         }
         //map_image_builder = sss_map_image_builder(bounds, resolution, pings[i].port.pings.size());
-        map_image_builder = sss_map_image_builder(bounds, resolution, 256);
+        map_image_builder = MapSaver(bounds, resolution, 256);
     }
 
     if (i >= pings.size()) {
@@ -104,6 +104,10 @@ bool MapDraper<MapSaver>::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
     add_texture_intensities(hits_left, intensities_left);
     add_texture_intensities(hits_right, intensities_right);
 
+    // compute waterfall image inds of hits
+    Eigen::VectorXi hits_inds_left = compute_bin_indices(times_left, pings[i].port, map_image_builder.get_waterfall_bins());
+    Eigen::VectorXi hits_inds_right = compute_bin_indices(times_right, pings[i].stbd, map_image_builder.get_waterfall_bins());
+
     cout << "Adding hits" << endl;
 
     Eigen::Matrix3d Rcomp = Eigen::AngleAxisd(sensor_yaw, Eigen::Vector3d::UnitZ()).matrix();
@@ -111,8 +115,8 @@ bool MapDraper<MapSaver>::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
     Eigen::Matrix3d Rz = Eigen::AngleAxisd(pings[i].heading_, Eigen::Vector3d::UnitZ()).matrix();
     Eigen::Vector3d rpy(pings[i].roll_, pings[i].pitch_, pings[i].heading_);
     // add the 3d hits and waterfall images to the builder object
-    map_image_builder.add_hits(hits_left, intensities_left, sss_depths_left, sss_model_left, pings[i].port, pos, rpy, true);
-    map_image_builder.add_hits(hits_right, intensities_right, sss_depths_right, sss_model_right, pings[i].stbd, pos, rpy, false);
+    map_image_builder.add_hits(hits_left, hits_inds_left, intensities_left, sss_depths_left, sss_model_left, pings[i].port, pos, rpy, true);
+    map_image_builder.add_hits(hits_right, hits_inds_right, intensities_right, sss_depths_right, sss_model_right, pings[i].stbd, pos, rpy, false);
 
     cout << "Done adding hits, visualizing" << endl;
 
@@ -162,9 +166,9 @@ void MapDraper<MapSaver>::set_resolution(double new_resolution)
 { 
     resolution = new_resolution;
     //map_image_builder = sss_map_image_builder(bounds, resolution, pings[i].port.pings.size());
-    map_image_builder = sss_map_image_builder(bounds, resolution, 256);
-    int rows, cols;
-    tie(rows, cols) = map_image_builder.get_map_image_shape();
+    map_image_builder = MapSaver(bounds, resolution, 256);
+    //int rows, cols;
+    //tie(rows, cols) = map_image_builder.get_map_image_shape();
     //draping_vis_texture = Eigen::MatrixXd::Zero(rows, cols);
 }
 
