@@ -105,6 +105,7 @@ void sss_meas_data_builder::add_hits(const Eigen::MatrixXd& hits, const Eigen::V
                                      const Eigen::Vector3d& current_rpy, bool is_left)
 {
     if (!is_left) {
+        ping_id.push_back(waterfall_counter);
         pos.push_back(current_pos);
         rpy.push_back(current_rpy);
     }
