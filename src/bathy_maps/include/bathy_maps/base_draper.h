@@ -66,6 +66,8 @@ protected:
 
     Eigen::VectorXd compute_times(const Eigen::MatrixXd& P);
 
+    Eigen::VectorXi compute_bin_indices(const Eigen::VectorXd& times, const xtf_data::xtf_sss_ping_side& ping, size_t nbr_windows);
+
     Eigen::VectorXd convert_to_time_bins(const Eigen::VectorXd& times, const Eigen::VectorXd& values,
                                          const xtf_data::xtf_sss_ping_side& ping, size_t nbr_windows);
 
