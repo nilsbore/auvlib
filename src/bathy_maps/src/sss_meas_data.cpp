@@ -104,8 +104,10 @@ void sss_meas_data_builder::add_hits(const Eigen::MatrixXd& hits, const Eigen::V
                                      const xtf_sss_ping_side& ping, const Eigen::Vector3d& current_pos,
                                      const Eigen::Vector3d& current_rpy, bool is_left)
 {
-    /*
-    poss.push_back(pos);
+    if (!is_left) {
+        pos.push_back(current_pos);
+        rpy.push_back(current_rpy);
+    }
 
     // this might be the culprit
     if (hits.rows() == 0) {
@@ -114,8 +116,8 @@ void sss_meas_data_builder::add_hits(const Eigen::MatrixXd& hits, const Eigen::V
         }
         return;
     }
-    */
 
+    /*
     // this might be the culprit
     if (hits.rows() == 0) {
         return;
@@ -123,6 +125,7 @@ void sss_meas_data_builder::add_hits(const Eigen::MatrixXd& hits, const Eigen::V
 
     pos.push_back(current_pos);
     rpy.push_back(current_rpy);
+    */
 
     std::cout << "Hits rows: " << hits.rows() << std::endl;
     std::cout << "Origin: " << global_origin.transpose() << ", pose: " << current_pos.transpose() << std::endl;
