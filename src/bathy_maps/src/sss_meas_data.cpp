@@ -164,6 +164,23 @@ void sss_meas_data_builder::add_hits(const Eigen::MatrixXd& hits, const Eigen::V
         }
     }
 
+    for (int i = 0; i < hits.rows(); ++i) {
+        int ind = hits_inds(i);
+        int col;
+        if (ind == -1) {
+            continue;
+        }
+        else if (is_left) {
+            col = waterfall_width/2 + ind;
+        }
+        else {
+            col = waterfall_width/2 - 1 - ind;
+        }
+        sss_waterfall_hits_X(waterfall_counter, col) = hits(i, 0);
+        sss_waterfall_hits_Y(waterfall_counter, col) = hits(i, 1);
+        sss_waterfall_hits_Z(waterfall_counter, col) = hits(i, 2);
+    }
+
     /*
     if (is_left) {
         sss_waterfall_depth.block(waterfall_counter, waterfall_width/2, 1, waterfall_width/2) = sss_depths.transpose();
