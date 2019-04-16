@@ -359,6 +359,24 @@ Eigen::VectorXd BaseDraper::compute_times(const Eigen::MatrixXd& P)
     return times;
 }
 
+Eigen::VectorXi BaseDraper::compute_bin_indices(const Eigen::VectorXd& times, const xtf_data::xtf_sss_ping_side& ping, size_t nbr_windows)
+{
+    Eigen::VectorXi bin_inds = Eigen::VectorXi::Zero(times.rows());
+
+    double ping_step = ping.time_duration / double(nbr_windows);
+    for (int i = 0; i < times.rows(); ++i) {
+        int index = int(times(i)/ping_step);
+        if (index < nbr_windows) {
+            bin_inds(i) = index;
+        }
+        else {
+            bin_inds(i) = -1;
+        }
+    }
+
+    return bin_inds;
+}
+
 Eigen::VectorXd BaseDraper::convert_to_time_bins(const Eigen::VectorXd& times, const Eigen::VectorXd& values,
                                                  const xtf_data::xtf_sss_ping_side& ping, size_t nbr_windows)
 {

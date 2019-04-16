@@ -9,104 +9,82 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SSS_MAP_IMAGE_H
-#define SSS_MAP_IMAGE_H
+#ifndef SSS_MEAS_DATA_H
+#define SSS_MEAS_DATA_H
 
 #include <eigen3/Eigen/Dense>
 #include <eigen_cereal/eigen_cereal.h>
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/vector.hpp>
 
-#include <bathy_maps/patch_views.h>
 #include <data_tools/xtf_data.h>
 
-struct sss_map_image {
+struct sss_meas_data {
 
+    using ImagesT = std::vector<sss_meas_data, Eigen::aligned_allocator<sss_meas_data> >;
     using BoundsT = Eigen::Matrix2d;
-    using ImagesT = std::vector<sss_map_image, Eigen::aligned_allocator<sss_map_image> >;
 
-    BoundsT bounds;
-
-    Eigen::MatrixXd sss_map_image;
-
-    double sss_ping_duration; // max time in waterfall image
     Eigen::MatrixXf sss_waterfall_image;
-    Eigen::MatrixXf sss_waterfall_cross_track;
-    Eigen::MatrixXf sss_waterfall_depth;
-    Eigen::MatrixXf sss_waterfall_model;
+    Eigen::MatrixXf sss_waterfall_hits_X;
+    Eigen::MatrixXf sss_waterfall_hits_Y;
+    Eigen::MatrixXf sss_waterfall_hits_Z;
 
+    std::vector<int> ping_id;
     std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > pos;
+    std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > rpy;
 
 	template <class Archive>
     void serialize( Archive & ar )
     {
-        ar(CEREAL_NVP(bounds), CEREAL_NVP(sss_map_image), CEREAL_NVP(sss_ping_duration),
-           CEREAL_NVP(sss_waterfall_image), CEREAL_NVP(sss_waterfall_cross_track),
-           CEREAL_NVP(sss_waterfall_depth), CEREAL_NVP(sss_waterfall_model), CEREAL_NVP(pos));
+        ar(CEREAL_NVP(sss_waterfall_image), CEREAL_NVP(sss_waterfall_hits_X),
+           CEREAL_NVP(sss_waterfall_hits_Y), CEREAL_NVP(sss_waterfall_hits_Z),
+           CEREAL_NVP(ping_id), CEREAL_NVP(pos), CEREAL_NVP(rpy));
     }
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 };
 
-class sss_map_image_builder {
+class sss_meas_data_builder {
 public:
 
-    using MapType = sss_map_image;
+    using MapType = sss_meas_data;
 
 private:
 
-    sss_map_image::BoundsT bounds;
-    double resolution;
-
     Eigen::Vector3d global_origin;
-    int image_rows;
-    int image_cols;
-
-    Eigen::MatrixXd sss_map_image_sums;
-    Eigen::MatrixXd sss_map_image_counts;
 
     int waterfall_width;
     int waterfall_counter;
-    double sss_ping_duration; // max time in waterfall image
     Eigen::MatrixXd sss_waterfall_image;
-    Eigen::MatrixXd sss_waterfall_cross_track;
-    Eigen::MatrixXd sss_waterfall_depth;
-    Eigen::MatrixXd sss_waterfall_model;
+    Eigen::MatrixXd sss_waterfall_hits_X;
+    Eigen::MatrixXd sss_waterfall_hits_Y;
+    Eigen::MatrixXd sss_waterfall_hits_Z;
 
-    std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > poss;
+    std::vector<int> ping_id;
+    std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > pos;
+    std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > rpy;
 
 public:
 
-    sss_map_image_builder(const sss_map_image::BoundsT& bounds, double resolution, int nbr_pings);
+    sss_meas_data_builder(const sss_meas_data::BoundsT& bounds, double resolution, int nbr_pings); // used
 
-    std::pair<int, int> get_map_image_shape();
+    size_t get_waterfall_bins(); // used
 
-    size_t get_waterfall_bins();
-
-    bool empty();
+    bool empty(); // used
 
     Eigen::MatrixXd downsample_cols(const Eigen::MatrixXd& M, int new_cols);
 
-    sss_map_image finish();
-
-    void add_waterfall_images(const Eigen::MatrixXd& hits, const Eigen::VectorXi& hits_inds,
-                              const xtf_data::xtf_sss_ping_side& ping, const Eigen::Vector3d& pos, bool is_left);
-
-    void add_hits(const Eigen::MatrixXd& hits, const Eigen::VectorXi& hits_inds,
-                  const xtf_data::xtf_sss_ping_side& ping, const Eigen::Vector3d& pos, bool is_left);
+    sss_meas_data finish(); // used
 
     void add_hits(const Eigen::MatrixXd& hits, const Eigen::VectorXi& hits_inds,
                   const Eigen::VectorXd& intensities,
                   const Eigen::VectorXd& sss_depths, const Eigen::VectorXd& sss_model,
                   const xtf_data::xtf_sss_ping_side& ping, const Eigen::Vector3d& pos,
-                  const Eigen::Vector3d& rpy, bool is_left);
+                  const Eigen::Vector3d& rpy, bool is_left); // used
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 };
 
-sss_patch_views::ViewsT convert_maps_to_patches(const sss_map_image::ImagesT& map_images, const Eigen::MatrixXd& height_map, double patch_size);
-sss_patch_views::ViewsT convert_maps_to_single_angle_patches(const sss_map_image::ImagesT& map_images, const Eigen::MatrixXd& height_map, double patch_size);
-
-#endif // SSS_MAP_IMAGE_H
+#endif // SSS_MEAS_DATA_H

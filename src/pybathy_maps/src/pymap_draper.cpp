@@ -11,6 +11,7 @@
 
 #include <bathy_maps/map_draper.h>
 #include <bathy_maps/base_draper.h>
+#include <bathy_maps/sss_meas_data.h>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>
@@ -22,6 +23,9 @@ using namespace xtf_data;
 using namespace csv_data;
 
 namespace py = pybind11;
+
+using MapImageDraper = MapDraper<sss_map_image_builder>;
+using MeasDataDraper = MapDraper<sss_meas_data_builder>;
 
 PYBIND11_MODULE(map_draper, m) {
     m.doc() = "Functions for draping a mesh with sidescan data"; // optional module docstring
@@ -38,21 +42,47 @@ PYBIND11_MODULE(map_draper, m) {
         .def_static("read_single", &read_data_from_str<sss_map_image>, "Read single sss_map_image from .cereal file")
         .def_static("read_data", &read_data_from_str<sss_map_image::ImagesT>, "Read sss_map_image::ImagesT from .cereal file");
 
+    py::class_<sss_meas_data>(m, "sss_meas_data", "Class for sidescan views of a patch from different survey lines")
+        .def(py::init<>())
+        .def_readwrite("sss_waterfall_image", &sss_meas_data::sss_waterfall_image, "Member")
+        .def_readwrite("sss_waterfall_hits_X", &sss_meas_data::sss_waterfall_hits_X, "Member")
+        .def_readwrite("sss_waterfall_hits_Y", &sss_meas_data::sss_waterfall_hits_Y, "Member")
+        .def_readwrite("sss_waterfall_hits_Z", &sss_meas_data::sss_waterfall_hits_Z, "Member")
+        .def_readwrite("ping_id", &sss_meas_data::ping_id, "Member")
+        .def_readwrite("pos", &sss_meas_data::pos, "Member")
+        .def_readwrite("rpy", &sss_meas_data::rpy, "Member")
+        .def_static("read_single", &read_data_from_str<sss_meas_data>, "Read single sss_meas_data from .cereal file")
+        .def_static("read_data", &read_data_from_str<sss_meas_data::ImagesT>, "Read sss_meas_data::ImagesT from .cereal file");
 
-    py::class_<MapDraper>(m, "MapDraper", "Class for draping the whole data set of sidescan pings onto a bathymetry mesh")
-        // Methods inherited from MapDraper:
+    py::class_<MapImageDraper>(m, "MapDraper", "Class for draping the whole data set of sidescan pings onto a bathymetry mesh")
+        // Methods inherited from MapImageDraper:
         .def(py::init<const Eigen::MatrixXd&, const Eigen::MatrixXi&,
-                      const xtf_sss_ping::PingsT&, const MapDraper::BoundsT&,
+                      const xtf_sss_ping::PingsT&, const MapImageDraper::BoundsT&,
                       const csv_asvp_sound_speed::EntriesT&>())
-        .def("set_sidescan_yaw", &MapDraper::set_sidescan_yaw, "Set yaw correction of sidescan with respect to nav frame")
-        .def("set_ray_tracing_enabled", &MapDraper::set_ray_tracing_enabled, "Set if ray tracing through water layers should be enabled. Takes more time but is recommended if there are large speed differences")
-        .def("set_vehicle_mesh", &MapDraper::set_vehicle_mesh, "Provide the viewer with a vehicle model, purely for visualization")
-        .def("show", &MapDraper::show, "Start the draping, and show the visualizer")
-        // Methods unique to MapDraper:
-        .def("set_resolution", &MapDraper::set_resolution, "Set the resolution of the gathered maps, default is ~3.75")
-        .def("set_image_callback", &MapDraper::set_image_callback, "Set the function to be called when an entire sidescan map is done")
-        .def("set_store_map_images", &MapDraper::set_store_map_images, "Set if the draper should save and return map images at the end")
-        .def("get_images", &MapDraper::get_images, "Get all the sss_map_image::ImagesT that have been gathered so far");
+        .def("set_sidescan_yaw", &MapImageDraper::set_sidescan_yaw, "Set yaw correction of sidescan with respect to nav frame")
+        .def("set_ray_tracing_enabled", &MapImageDraper::set_ray_tracing_enabled, "Set if ray tracing through water layers should be enabled. Takes more time but is recommended if there are large speed differences")
+        .def("set_vehicle_mesh", &MapImageDraper::set_vehicle_mesh, "Provide the viewer with a vehicle model, purely for visualization")
+        .def("show", &MapImageDraper::show, "Start the draping, and show the visualizer")
+        // Methods unique to MapImageDraper:
+        .def("set_resolution", &MapImageDraper::set_resolution, "Set the resolution of the gathered maps, default is ~3.75")
+        .def("set_image_callback", &MapImageDraper::set_image_callback, "Set the function to be called when an entire sidescan map is done")
+        .def("set_store_map_images", &MapImageDraper::set_store_map_images, "Set if the draper should save and return map images at the end")
+        .def("get_images", &MapImageDraper::get_images, "Get all the sss_map_image::ImagesT that have been gathered so far");
+
+    py::class_<MeasDataDraper>(m, "MeasDataDraper", "Class for draping the whole data set of sidescan pings onto a bathymetry mesh")
+        // Methods inherited from MeasDataDraper:
+        .def(py::init<const Eigen::MatrixXd&, const Eigen::MatrixXi&,
+                      const xtf_sss_ping::PingsT&, const MeasDataDraper::BoundsT&,
+                      const csv_asvp_sound_speed::EntriesT&>())
+        .def("set_sidescan_yaw", &MeasDataDraper::set_sidescan_yaw, "Set yaw correction of sidescan with respect to nav frame")
+        .def("set_ray_tracing_enabled", &MeasDataDraper::set_ray_tracing_enabled, "Set if ray tracing through water layers should be enabled. Takes more time but is recommended if there are large speed differences")
+        .def("set_vehicle_mesh", &MeasDataDraper::set_vehicle_mesh, "Provide the viewer with a vehicle model, purely for visualization")
+        .def("show", &MeasDataDraper::show, "Start the draping, and show the visualizer")
+        // Methods unique to MeasDataDraper:
+        .def("set_resolution", &MeasDataDraper::set_resolution, "Set the resolution of the gathered maps, default is ~3.75")
+        .def("set_image_callback", &MeasDataDraper::set_image_callback, "Set the function to be called when an entire sidescan map is done")
+        .def("set_store_map_images", &MeasDataDraper::set_store_map_images, "Set if the draper should save and return map images at the end")
+        .def("get_images", &MeasDataDraper::get_images, "Get all the sss_map_image::ImagesT that have been gathered so far");
 
     m.def("drape_maps", &drape_maps, "Overlay xtf_sss_ping::PingsT sidescan data on a mesh and get sss_map_image::ViewsT");
     m.def("color_jet_from_mesh", &color_jet_from_mesh, "Get a jet color scheme from a vertex matrix");
@@ -61,4 +91,6 @@ PYBIND11_MODULE(map_draper, m) {
     m.def("convert_maps_to_single_angle_patches", &convert_maps_to_single_angle_patches, "Convert sss_map_image::ImagesT to sss_patch_views::ViewsT, but only from one angle in each case");
     m.def("write_data", &write_data_from_str<sss_map_image::ImagesT>, "Write sss_map_image::ImagesT to .cereal file");
     m.def("write_data", &write_data_from_str<sss_map_image>, "Write sss_map_image to .cereal file");
+    m.def("write_data", &write_data_from_str<sss_meas_data::ImagesT>, "Write sss_meas_data::ImagesT to .cereal file");
+    m.def("write_data", &write_data_from_str<sss_meas_data>, "Write sss_meas_data to .cereal file");
 }

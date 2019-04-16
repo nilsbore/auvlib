@@ -173,10 +173,25 @@ void sss_map_image_builder::add_hits(const Eigen::MatrixXd& hits, const Eigen::V
     add_waterfall_images(hits, hits_inds, ping, pos, is_left);
 }
 
-void sss_map_image_builder::add_hits(const Eigen::MatrixXd& hits, const Eigen::VectorXd& intensities,
+void sss_map_image_builder::add_hits(const Eigen::MatrixXd& hits, const Eigen::VectorXi& hits_inds,
+                                     const Eigen::VectorXd& intensities,
                                      const Eigen::VectorXd& sss_depths, const Eigen::VectorXd& sss_model,
-                                     const xtf_sss_ping_side& ping, const Eigen::Vector3d& pos, bool is_left)
+                                     const xtf_sss_ping_side& ping, const Eigen::Vector3d& pos,
+                                     const Eigen::Vector3d& rpy, bool is_left)
 {
+    /*
+    poss.push_back(pos);
+
+    // this might be the culprit
+    if (hits.rows() == 0) {
+        if (!is_left) {
+            ++waterfall_counter;
+        }
+        return;
+    }
+    */
+
+    // this might be the culprit
     if (hits.rows() == 0) {
         return;
     }
