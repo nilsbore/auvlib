@@ -16,7 +16,7 @@ def create_mesh(path):
     gsf_pings = utils.parse_or_load_gsf(path)
     mbes_pings = gsf_data.convert_pings(gsf_pings)
     V, F, bounds = mesh_map.mesh_from_pings(mbes_pings, 0.5)
-    height_map, bounds = mesh_map.height_map_from_pings(mbes_pings, 0.5)
+    height_map, bounds = mesh_map.height_map_from_pings(mbes_pings, 0.25)
 
     return V, F, height_map, bounds
 
@@ -52,7 +52,8 @@ def load_network(network_path):
     from models import networks # from the models directory of https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix
 
     #netG = networks.define_G(3, 3, 64, 'unet_256', 'batch', True, 'normal', 0.02, [0])
-    netG = networks.define_G(1, 1, 64, 'unet_256', 'batch', True, 'normal', 0.02, [0])
+    #netG = networks.define_G(1, 1, 64, 'unet_256', 'batch', True, 'normal', 0.02, [0])
+    netG = networks.define_G(1, 1, 64, 'resnet_6blocks', 'batch', True, 'normal', 0.02, [0])
 
     if isinstance(netG, torch.nn.DataParallel):
         print("Netg is parallell instance")
@@ -83,6 +84,37 @@ def prepare_generated(generated, height):
 
     return generated
 
+def crop_dark_ends(sim_image, model_image, gt_image):
+
+    mean_image = np.mean(255.*sim_image.astype(np.float), axis=1)
+    print mean_image
+    conv = np.convolve((mean_image < 5.).astype(np.int8), np.array([-1, 1], dtype=np.int8), mode='same')
+    conv[0] = 0
+    print conv
+    inds = np.nonzero(conv)[0]
+    print inds
+
+    if len(inds) == 0:
+        print "Is empty!"
+        return sim_image, model_image, gt_image
+
+    first = inds[0]
+    first_mean = np.mean(mean_image[:first])
+    last = inds[-1]
+    last_mean = np.mean(mean_image[last:])
+    
+    first_ind = 0
+    last_ind = -1
+
+    print first_mean, last_mean
+
+    if first_mean < 5.:
+        first_ind = first
+
+    if last_mean < 5.:
+        last_ind = last
+
+    return sim_image[first_ind:last_ind,:], model_image[first_ind:last_ind,:], gt_image[first_ind:last_ind,:]
 
 class SSSGenerator(object):
 
@@ -121,7 +153,8 @@ class SSSGenerator(object):
 
 sensor_yaw = 5.*math.pi/180.
 sensor_offset = np.array([2., -1.5, 0.])
-network_path = "/home/nbore/Installs/pytorch-CycleGAN-and-pix2pix/datasets/checkpoints/pix2pix_cos2/latest_net_G.pth"
+#network_path = "/home/nbore/Installs/pytorch-CycleGAN-and-pix2pix/datasets/checkpoints/pix2pix_cos2/latest_net_G.pth"
+network_path = "/home/nbore/Installs/pytorch-CycleGAN-and-pix2pix/datasets/checkpoints/ronne_resnet_6_continued/latest_net_G.pth"
 sss_from_waterfall = True
 
 V, F, height_map, bounds = create_mesh(sys.argv[1])
@@ -143,14 +176,15 @@ else:
     viewer.set_gen_callback(generator.gen_callback)
 
 #viewer.show()
-map_images = map_draper.sss_map_image.read_data("map_images_cache4.cereal")
+#map_images = map_draper.sss_map_image.read_data("map_images_cache4.cereal")
+map_images = map_draper.sss_map_image.read_data("map_images_cache_dtm.cereal")
 
 
 #cv2.imshow("Sim image", sim_image)
 #cv2.imshow("Model image", model_image)
 #cv2.waitKey()
 
-dataset_name = "prediction_results"
+dataset_name = "prediction_results2"
 
 if not os.path.exists(dataset_name):
     os.makedirs(dataset_name)
@@ -170,9 +204,13 @@ def save_images(counter, model_image, sim_image, gt_image, pos):
     #im = draw_map.BathyMapImage(std_pings, 1000, 1000)
     im = draw_map.BathyMapImage(height_map, bounds)
     im.draw_height_map(height_map)
-    im.draw_track(pos)
-    im.rotate_crop_image(pos[0], pos[-1], 40.)
+    im.draw_track(pos[3:-3])
+    im.rotate_crop_image(pos[3], pos[-3], 40.)
     im.write_image(os.path.join(trackdir, "q.png"))
+
+    image = cv2.imread(os.path.join(trackdir, "q.png"))
+    image = cv2.resize(image, (3*image.shape[1], 3*image.shape[0]), interpolation=cv2.INTER_CUBIC)
+    cv2.imwrite(os.path.join(trackdir, "q.png"), image)
 
 counter = 0
 for i, m in enumerate(map_images):
@@ -180,14 +218,29 @@ for i, m in enumerate(map_images):
     model_image = viewer.draw_model_waterfall(m.sss_waterfall_model, m.sss_ping_duration)
     sim_image = viewer.draw_sim_waterfall(m.sss_waterfall_model)
 
-    if m.sss_waterfall_image.shape[0] > 1000:
-        half = m.sss_waterfall_image.shape[0]/2
-        save_images(counter, model_image[:half, :], sim_image[:half, :], m.sss_waterfall_image[:half, :], m.pos[1:2*half])
-        counter += 1
-        save_images(counter, model_image[half:, :], sim_image[half:, :], m.sss_waterfall_image[half:, :], m.pos[2*half:])
-    else:
-        save_images(counter, model_image, sim_image, m.sss_waterfall_image, m.pos[1:])
+    sim_image, model_image, gt_image = crop_dark_ends(sim_image, model_image, m.sss_waterfall_image)
+    pos = m.pos
 
-    counter += 1
+    while True:
+
+        done = False
+        if sim_image.shape[0] < 1000:
+            last_ind = sim_image.shape[0]
+            done = True
+        elif sim_image.shape[0] < 1500:
+            last_ind = sim_image.shape[0]/2
+        else:
+            last_ind = 1000
+        
+        save_images(counter, model_image[:last_ind, :], sim_image[:last_ind, :], gt_image[:last_ind, :], pos[:last_ind])
+        counter += 1
+
+        if done:
+            break
+
+        model_image = model_image[last_ind:,:]
+        sim_image = sim_image[last_ind:,:]
+        gt_image = gt_image[last_ind:,:]
+        pos = pos[last_ind:]
 
 
