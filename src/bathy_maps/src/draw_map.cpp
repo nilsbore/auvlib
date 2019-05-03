@@ -180,6 +180,8 @@ void BathyMapImage::draw_height_map(const Eigen::MatrixXd& height_map)
             tie(p->z, p->y, p->x) = jet(height_map_array(i, j));
         }
     }
+
+    cout << "Min value: " << minv << ", max value: " << minv+maxv << endl;
 }
 
 void BathyMapImage::draw_height_map(const mbes_ping::PingsT& pings)
@@ -220,6 +222,8 @@ void BathyMapImage::draw_height_map(const mbes_ping::PingsT& pings)
             tie(p->z, p->y, p->x) = jet(means(i, j));
         }
     }
+
+    cout << "Min value: " << minv << ", max value: " << minv+maxv << endl;
 }
 
 void BathyMapImage::draw_back_scatter_map(mbes_ping::PingsT& pings)
