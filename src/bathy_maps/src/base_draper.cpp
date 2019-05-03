@@ -314,7 +314,7 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> BaseDr
     double beam_width;
     double tilt_angle;
     if (true) {
-        double depth = depth_mesh_underneath_vehicle(offset_pos, V1_small, F1_small);
+        double depth = .8*depth_mesh_underneath_vehicle(offset_pos, V1_small, F1_small); // make it slightly wider
         double max_distance = .5*compute_simple_sound_vel()*pings[i].port.time_duration;
         beam_width = acos(depth/max_distance);
         tilt_angle = beam_width/2.;
@@ -499,8 +499,10 @@ Eigen::VectorXd BaseDraper::compute_model_intensities(const Eigen::VectorXd& dis
         double SL = G/DL*exp(-theta*theta/(2.*sigma_theta*sigma_theta));
         double SS = 10.*log10((1. - alpha)*DL + alpha*SL);
         double NL = 10.*log10(noise_dist(generator));
-        intensities(j) = 1./(-25.+42.)*(42. + SS - TL + NL); // log(1.+1.73*200.*TL*SS*NL);
-        intensities(j) = DL*DL; //std::min(std::max(intensities(j), 0.), 1.);
+        //intensities(j) = 1./(-25.+42.)*(42. + SS - TL + NL); // log(1.+1.73*200.*TL*SS*NL);
+        intensities(j) = 1./(10.)*(9. + SS + NL); // log(1.+1.73*200.*TL*SS*NL);
+        intensities(j) = std::min(std::max(intensities(j), 0.), 1.);
+        //intensities(j) = DL*DL;
         //10*log(1.73*200.)-log(TL)+log(SS)+NL
     }
 
