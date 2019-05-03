@@ -66,8 +66,133 @@ void match_timestamps(mbes_ping::PingsT& pings, nav_entry::EntriesT& entries)
             //cout << "Ping " << ping.time_string_ << " closest to Entry " << pos->time_string_ << endl;
         }
     }
-
 }
+
+
+void save_submaps_files(const std_data::mbes_ping::PingsT& pings, const boost::filesystem::path& folder){
+
+    // Save submaps in external files
+    string file_name;
+    int sm_cnt = 0;
+    std::ofstream myfile;
+    for (const std_data::mbes_ping& ping_i: pings){
+        // If new submap, open new file
+        if(ping_i.first_in_file_){
+            myfile.close();
+            file_name = "/submap_" + std::to_string(sm_cnt) + ".xyz";
+            myfile.open(folder.string() + file_name, std::ofstream::out);
+            sm_cnt += 1;
+        }
+        if(myfile.is_open()){
+            for(unsigned int i=0; i<ping_i.beams.size(); i++){
+                myfile << ping_i.beams.at(i)(0) - 669000.0 << " " << ping_i.beams.at(i)(1) - 6383000.0 << " " << ping_i.beams.at(i)(2) << "\n";
+            }
+        }
+    }
+}
+
+
+double compute_info_in_submap(std_data::mbes_ping::PingsT& submap_pings){
+
+    // Beams z centroid
+    double mean_beam = 0;
+    int beam_cnt = 0;
+    for (const std_data::mbes_ping& ping: submap_pings){
+        for(const Eigen::Vector3d& beam_i: ping.beams){
+            mean_beam += beam_i[2];
+            ++beam_cnt;
+        }
+    }
+    mean_beam = mean_beam / beam_cnt;
+
+    // Condition number of z
+    double cond_num = 0;
+    for (const std_data::mbes_ping& ping: submap_pings){
+        for(const Eigen::Vector3d& beam_i: ping.beams){
+            cond_num += std::abs(beam_i[2] - mean_beam);
+        }
+    }
+    return cond_num = cond_num / beam_cnt;
+}
+
+void divide_tracks_adaptive(mbes_ping::PingsT& pings)
+{
+    double info_thres = 0.3;
+    // For every line (one line per file)
+    for (auto pos = pings.begin(); pos != pings.end(); ) {
+        auto next = std::find_if(pos, pings.end(), [&](const mbes_ping& ping) {
+            return ping.first_in_file_ && (&ping != &(*pos));
+        });
+
+        mbes_ping::PingsT::iterator first_pos_it = pos;
+        Vector3d last_pos;
+        double mean_width = 0.; double count = 0.;
+        for (auto it = pos; it != next; ++it) {
+            last_pos = it->pos_;
+            mean_width += 1.7*(it->beams.front() - it->beams.back()).norm();
+            count += 1;
+        }
+        mean_width /= count;
+        double length = (last_pos - first_pos_it->pos_).norm();
+
+        int nbr_submaps = int(length/mean_width+2.5);
+        double min_submap_length = length / double(nbr_submaps);
+        double ext_step = min_submap_length/4;
+        double max_submap_length = 3*min_submap_length;
+
+        cout << "Min submap length: " << min_submap_length << ", Growing step: "
+             << ext_step << ", Max submap length: " << max_submap_length << endl;
+
+        // For every ping in a line
+        mbes_ping::PingsT::iterator latest_pos_it = first_pos_it;
+        int steps = 0;
+        int counter = 0; // TODO: remove!
+        int last_submap_cnt = 0;
+        for (auto it = pos; it != next; ++it) {
+            // If submap too close to end of line
+            if ((last_pos - it->pos_).norm() < min_submap_length) {
+                cout << "Too close to end, breaking at " << counter << endl;
+                break;
+            }
+            // If submap reaches max length
+            if((latest_pos_it->pos_ - it->pos_).norm() > max_submap_length){
+                cout << "Breaking up submap with max length at " << counter
+                     << " out of " << std::distance(pos, next) << endl;
+                it->first_in_file_ = true;
+                latest_pos_it = it;
+                steps = 0;
+                last_submap_cnt = counter;
+            }
+            // If submap bigger than min length or min_length + extension * steps
+            else if (((latest_pos_it->pos_ - it->pos_).norm() >= min_submap_length && steps == 0) ||
+                    (latest_pos_it->pos_ - it->pos_).norm() >= min_submap_length + ext_step*steps) {
+
+                // Compute information quantity on submap
+                mbes_ping::PingsT pings_submap(pos+last_submap_cnt, it);
+                double info_in_submap = compute_info_in_submap(pings_submap);
+                cout << "Info in submap " << info_in_submap << endl;
+
+                // If big, break here
+                if(info_in_submap > info_thres){
+                    cout << "Breaking up submap with enough info at " << counter
+                         << " out of " << std::distance(pos, next) << endl;
+                    it->first_in_file_ = true;
+                    latest_pos_it = it;
+                    steps = 0;
+                    last_submap_cnt = counter;
+                }
+                // If small, keep extending submap
+                else{
+                    steps++;
+                }
+
+            }
+            ++counter;
+        }
+        pos = next;
+    }
+}
+
 
 void divide_tracks(mbes_ping::PingsT& pings)
 {
@@ -81,7 +206,7 @@ void divide_tracks(mbes_ping::PingsT& pings)
         double mean_width = 0.; double count = 0.;
         for (auto it = pos; it != next; ++it) {
             last_pos = it->pos_;
-            mean_width += 3.7*(it->beams.front() - it->beams.back()).norm();
+            mean_width += 1.7*(it->beams.front() - it->beams.back()).norm();
             count += 1;
         }
         mean_width /= count;
@@ -91,8 +216,9 @@ void divide_tracks(mbes_ping::PingsT& pings)
         double submap_length = length / double(nbr_submaps);
 
         cout << "Mean width: " << mean_width << ", Length: " << length << ",  Nbr submaps: " << nbr_submaps << ", Submap length: " << submap_length << endl;
-        
+
         Vector3d recent_pos = first_pos;
+        int last_submap_cnt = 0;
         int counter = 0; // TODO: remove!
         for (auto it = pos; it != next; ++it) {
             if ((last_pos - it->pos_).norm() < submap_length/2.) {
@@ -103,6 +229,10 @@ void divide_tracks(mbes_ping::PingsT& pings)
                 cout << "Breaking up submap at " << counter << " out of " << std::distance(pos, next) << endl;
                 it->first_in_file_ = true;
                 recent_pos = it->pos_;
+//                mbes_ping::PingsT pings_submap(pos+last_submap_cnt, it);
+//                double info_in_submap = computeInfoInSubmap(pings_submap);
+//                cout << "Info in submap " << info_in_submap << endl;
+                last_submap_cnt = counter;
             }
             ++counter;
         }
@@ -117,7 +247,7 @@ void divide_tracks_equal(mbes_ping::PingsT& pings)
     vector<bool> line_positive_directions;
     double first_line_pos = -1000000;
     double last_line_pos = 1000000;
-        
+
     cout << "Really First first in file?: " << pings[0].first_in_file_ << endl;
 
     double mean_width = 0.; double count = 0.;
@@ -145,8 +275,8 @@ void divide_tracks_equal(mbes_ping::PingsT& pings)
 
         double line_pos1 = dir.dot(first_pos - point1);
         double line_pos2 = dir.dot(last_pos - point1);
-        cout << "Number pings: " << std::distance(pos, next);
-        cout << "First == last?" << (pos == next) << endl;
+        cout << "Number pings: " << std::distance(pos, next) << endl;
+        cout << "First == last? " << (pos == next) << endl;
         cout << "First beams: " << pos->beams.size() << " Next beams: " << next->beams.size() << endl;
         cout << "First firs in file?: " << pos->first_in_file_ << ", Next first in file?: " << next->first_in_file_ << endl;
         cout << "First time: " << pos->time_stamp_ << ", Next time: " << next->time_stamp_ << endl;
@@ -162,7 +292,7 @@ void divide_tracks_equal(mbes_ping::PingsT& pings)
 
         pos = next;
     }
-    
+
     mean_width /= count;
     //double length = (point2 - point1).norm();
     double line_pos_length = last_line_pos - first_line_pos;
@@ -171,8 +301,9 @@ void divide_tracks_equal(mbes_ping::PingsT& pings)
 
     cout << "First line pos: " << first_line_pos << ", last line pos: " << last_line_pos << endl;
     cout << "Mean width: " << mean_width << ", Length: " << line_pos_length << ",  Nbr submaps: " << nbr_submaps << ", Submap length: " << submap_length << endl;
-
+    cout << "------------" << endl;
     int track_counter = 0;
+    int min_since_last = 5;
     for (auto pos = pings.begin(); pos != pings.end(); ) {
         auto next = std::find_if(pos, pings.end(), [&](const mbes_ping& ping) {
             return ping.first_in_file_ && (&ping != &(*pos));
@@ -181,27 +312,31 @@ void divide_tracks_equal(mbes_ping::PingsT& pings)
         bool positive_direction = line_positive_directions[track_counter];
         //Vector3d recent_pos = pos->pos_;
         //int counter;
-        double recent_line_pos = positive_direction? dir.dot(pos->pos_.head<2>() - point1) - first_line_pos : last_line_pos - dir.dot(pos->pos_.head<2>() - point1);
+        double recent_line_pos = positive_direction?
+                    dir.dot(pos->pos_.head<2>() - point1) - first_line_pos:
+                    last_line_pos - dir.dot(pos->pos_.head<2>() - point1);
         int time_since_last = 0;
         for (auto it = pos; it != next; ++it) {
-            if (std::distance(it, next) < 10) {
+            if (std::distance(it, next) < min_since_last) {
                 break;
             }
-            double line_pos = positive_direction? dir.dot(it->pos_.head<2>() - point1) - first_line_pos : last_line_pos - dir.dot(it->pos_.head<2>() - point1);
+            double line_pos = positive_direction?
+                        dir.dot(it->pos_.head<2>() - point1) - first_line_pos :
+                        last_line_pos - dir.dot(it->pos_.head<2>() - point1);
             if (line_pos > 0 && line_pos < line_pos_length) {
                 if ((recent_line_pos < 0 || recent_line_pos > line_pos_length) &&
-                        time_since_last > 10) {
+                        time_since_last > min_since_last) {
                     it->first_in_file_ = true;
                     time_since_last = 0;
                 }
                 else if ((int(recent_line_pos/submap_length) < int(line_pos/submap_length)) &&
-                        time_since_last > 10) {
+                        time_since_last > min_since_last) {
                     it->first_in_file_ = true;
                     time_since_last = 0;
                 }
             }
             else if ((recent_line_pos > 0 && recent_line_pos < line_pos_length) &&
-                    time_since_last > 10) {
+                    time_since_last > min_since_last) {
                 it->first_in_file_ = true;
                 time_since_last = 0;
             }
@@ -231,13 +366,13 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT, ObsT> create_submaps(const mbes_ping:
         track_pings.insert(track_pings.end(), pos, next);
         cout << "found 1 pos!" << endl;
 
-        /*if (pos == next) {
+        if (pos == next) {
             break;
-        }*/
+        }
 
         MatrixXd points(track_pings.size()*track_pings[0].beams.size(), 3);
         MatrixXd track(track_pings.size(), 3);
-        
+
         // get the direction of the submap as the mean direction
         Vector3d dir = track_pings.back().pos_ - track_pings.front().pos_;
         Vector3d ang; ang << 0., 0., std::atan2(dir(1), dir(0));
@@ -302,6 +437,7 @@ tuple<ObsT, TransT, AngsT, MatchesT, BBsT, ObsT> create_submaps(const mbes_ping:
     return make_tuple(submaps, trans, angs, matches, bounds, tracks);
 }
 
+
 } // namespace navi_data
 
 namespace std_data {
@@ -325,10 +461,10 @@ mbes_ping::PingsT parse_file(const boost::filesystem::path& file)
 {
     mbes_ping::PingsT pings;
 
-	string line;
+    string line;
     std::ifstream infile(file.string());
-    
-	mbes_ping ping;
+
+    mbes_ping ping;
     string time;
     int beam_id;
     double tide, x, y, z;
@@ -336,13 +472,13 @@ mbes_ping::PingsT parse_file(const boost::filesystem::path& file)
     const std::locale loc = std::locale(std::locale::classic(), new boost::posix_time::time_input_facet("%Y %m%d%H%M %S%f"));
     const boost::posix_time::ptime epoch = boost::posix_time::time_from_string("1970-01-01 00:00:00.000");
 
-	std::getline(infile, line); // throw away first line as it contains description
+    std::getline(infile, line); // throw away first line as it contains description
     int counter = 0;
     while (std::getline(infile, line))  // this does the checking!
     {
         istringstream iss(line);
 
-		iss >> year_string >> date_string >> second_string >> ping.id_ >> beam_id >> x >> y >> z >> tide >> ping.heading_ >> ping.heave_ >> ping.pitch_ >> ping.roll_;
+        iss >> year_string >> date_string >> second_string >> ping.id_ >> beam_id >> x >> y >> z >> tide >> ping.heading_ >> ping.heave_ >> ping.pitch_ >> ping.roll_;
 
         /*
         if (beam_id != 255 && counter % 10 != 0) {
@@ -351,9 +487,9 @@ mbes_ping::PingsT parse_file(const boost::filesystem::path& file)
         }
         */
 
-		ping.beams.push_back(Vector3d(x, y, -z));
+        ping.beams.push_back(Vector3d(x, y, -z));
 
-		if (beam_id == 255) {
+        if (beam_id == 255) {
             ping.first_in_file_ = pings.empty();
             std::istringstream is(year_string + " " + date_string + " " + second_string);
             is.imbue(loc);
@@ -367,14 +503,14 @@ mbes_ping::PingsT parse_file(const boost::filesystem::path& file)
             //cout << year_string << " " << date_string << " " << second_string << endl;
             //cout << t << endl;
 
-		    pings.push_back(ping);
-			ping.beams.resize(0);
-		}
+            pings.push_back(ping);
+            ping.beams.resize(0);
+        }
 
         ++counter;
     }
 
-	return pings;
+    return pings;
 }
 
 // Extract space-separated numbers: Nav files
@@ -394,15 +530,15 @@ nav_entry::EntriesT parse_file(const boost::filesystem::path& file)
     string date_string, time_string;
     const std::locale loc = std::locale(std::locale::classic(), new boost::posix_time::time_input_facet("%Y.%m.%d %H:%M:%S%f"));
     const boost::posix_time::ptime epoch = boost::posix_time::time_from_string("1970-01-01 00:00:00.000");
-	
+
     string line;
     std::ifstream infile(file.string());
     while (std::getline(infile, line))  // this does the checking!
     {
         istringstream iss(line);
 
-		//iss >> entry.year_ >> entry.time_stamp_ >> x >> y >> z;
-		iss >> date_string >> time_string >> x >> y >> z;
+        //iss >> entry.year_ >> entry.time_stamp_ >> x >> y >> z;
+        iss >> date_string >> time_string >> x >> y >> z;
         entry.pos_ = Vector3d(x, y, -z);
 
         std::istringstream is(date_string + " " + time_string);
@@ -420,9 +556,9 @@ nav_entry::EntriesT parse_file(const boost::filesystem::path& file)
         //cout << ms << endl;
         entry.first_in_file_ = entries.empty();
 
-		entries.push_back(entry);
+        entries.push_back(entry);
     }
 
-	return entries;
+    return entries;
 }
 } // namespace std_data
