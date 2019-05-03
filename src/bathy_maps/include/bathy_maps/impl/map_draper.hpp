@@ -71,6 +71,7 @@ bool MapDraper<MapSaver>::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
     }
 
     if (i >= pings.size()) {
+        glfwSetWindowShouldClose(viewer.window, 1);
         return false;
     }
 
