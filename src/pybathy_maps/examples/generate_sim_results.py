@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from auvlib.data_tools import std_data, gsf_data, xtf_data, csv_data, utils
+from auvlib.data_tools import std_data, gsf_data, xtf_data, csv_data, utils, xyz_data
 from auvlib.bathy_maps import mesh_map, patch_draper, data_vis, sss_gen_sim, gen_utils, map_draper, draw_map
 import sys
 import os
@@ -13,12 +13,20 @@ import cv2
 
 def create_mesh(path):
 
-    gsf_pings = utils.parse_or_load_gsf(path)
-    mbes_pings = gsf_data.convert_pings(gsf_pings)
-    V, F, bounds = mesh_map.mesh_from_pings(mbes_pings, 0.5)
-    height_map, bounds = mesh_map.height_map_from_pings(mbes_pings, 0.25)
+    cloud = xyz_data.cloud.parse_file(path)
+    height_map, bounds = mesh_map.height_map_from_dtm_cloud(cloud, 0.5)
+    V, F, bounds = mesh_map.mesh_from_dtm_cloud(cloud, 0.5)
 
     return V, F, height_map, bounds
+
+#def create_mesh(path):
+#
+#    gsf_pings = utils.parse_or_load_gsf(path)
+#    mbes_pings = gsf_data.convert_pings(gsf_pings)
+#    V, F, bounds = mesh_map.mesh_from_pings(mbes_pings, 0.5)
+#    height_map, height_map_bounds = mesh_map.height_map_from_pings(mbes_pings, 0.25)
+#
+#    return V, F, height_map, bounds, height_map_bounds
 
 def match_or_load_xtf(xtf_path, csv_path):
 
@@ -189,7 +197,7 @@ dataset_name = "prediction_results2"
 if not os.path.exists(dataset_name):
     os.makedirs(dataset_name)
 
-def save_images(counter, model_image, sim_image, gt_image, pos):
+def save_images(counter, model_image, sim_image, gt_image, gt_pos):
 
     trackdir = os.path.join(dataset_name, str(counter+1))
     if not os.path.exists(trackdir):
@@ -204,8 +212,8 @@ def save_images(counter, model_image, sim_image, gt_image, pos):
     #im = draw_map.BathyMapImage(std_pings, 1000, 1000)
     im = draw_map.BathyMapImage(height_map, bounds)
     im.draw_height_map(height_map)
-    im.draw_track(pos[3:-3])
-    im.rotate_crop_image(pos[3], pos[-3], 40.)
+    im.draw_track(gt_pos[3:-3])
+    im.rotate_crop_image(gt_pos[3], gt_pos[-3], 40.)
     im.write_image(os.path.join(trackdir, "q.png"))
 
     image = cv2.imread(os.path.join(trackdir, "q.png"))
@@ -221,6 +229,9 @@ for i, m in enumerate(map_images):
     sim_image, model_image, gt_image = crop_dark_ends(sim_image, model_image, m.sss_waterfall_image)
     pos = m.pos
 
+    print "Pos length: ", len(pos)
+    print "Gt image length: ", m.sss_waterfall_image.shape[0]
+
     while True:
 
         done = False
@@ -232,7 +243,7 @@ for i, m in enumerate(map_images):
         else:
             last_ind = 1000
         
-        save_images(counter, model_image[:last_ind, :], sim_image[:last_ind, :], gt_image[:last_ind, :], pos[:last_ind])
+        save_images(counter, model_image[:last_ind, :], sim_image[:last_ind, :], gt_image[:last_ind, :], pos[:2*last_ind])
         counter += 1
 
         if done:
@@ -241,6 +252,6 @@ for i, m in enumerate(map_images):
         model_image = model_image[last_ind:,:]
         sim_image = sim_image[last_ind:,:]
         gt_image = gt_image[last_ind:,:]
-        pos = pos[last_ind:]
+        pos = pos[2*last_ind:]
 
 
