@@ -2,23 +2,23 @@ language: cpp
 sudo: required
 dist: xenial
 compiler:
-- clang
+    - clang
 os:
-- linux
+    - linux
 before_install:
-- echo $LANG
-- echo $LC_ALL
+    - echo $LANG
+    - echo $LC_ALL
+    - sudo apt-get install libcereal-dev libglfw3-dev libceres-dev libtinyxml2-dev 
 install:
-- sudo apt-get install libcereal-dev libglfw3-dev libceres-dev libtinyxml2-dev 
-- git submodule update --init
-- cd libigl
-- git submodule update --init external/embree
-- git submodule update --init external/glfw
-- cd ..
+    - git submodule update --init
+    - cd libigl
+    - git submodule update --init external/embree
+    - git submodule update --init external/glfw
+    - cd ..
 script:
-- mkdir build && cd build
-- cmake -DCMAKE_INSTALL_PREFIX=../install ../src
-- make
+    - mkdir build && cd build
+    - cmake -DCMAKE_INSTALL_PREFIX=../install ../src
+    - make
 branches:
     only:
-    - master
+        - master
