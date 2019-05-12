@@ -106,7 +106,9 @@ void SSSGenSim::generate_sss_window()
     Rect.points(vertices);
 
     cv::Mat vis_image;
-    cv::applyColorMap(height_map_vis_cv, vis_image, cv::COLORMAP_JET);
+    // TODO: the current function is not used atm, but needs this
+    // function that does not exist on some opencv versions
+    //cv::applyColorMap(height_map_vis_cv, vis_image, cv::COLORMAP_JET);
     for (int i = 0; i < 4; i++) {
         cv::line(vis_image, vertices[i], vertices[(i+1)%4], cv::Scalar(0,0,255), 1);
     }
