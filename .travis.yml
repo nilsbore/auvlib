@@ -8,6 +8,7 @@ os:
 before_install:
     - echo $LANG
     - echo $LC_ALL
+    - apt list libceres-dev -a
     - sudo apt-get install libcereal-dev libglfw3-dev libceres-dev libtinyxml2-dev 
 install:
     - git submodule update --init
