@@ -290,7 +290,7 @@ void BathyMapImage::rotate_crop_image(const Eigen::Vector3d& first_pos, const Ei
     cv::Point2f center((bathy_map.cols-1)/2.0, (bathy_map.rows-1)/2.0);
     M = cv::getRotationMatrix2D(center, angle, 1.0);
     //cv::Size margin_size(2*bathy_map.cols, 2*bathy_map.rows);
-    cv::Rect2f bbox = cv::RotatedRect(cv::Point2f(), bathy_map.size(), angle).boundingRect2f();
+    cv::Rect bbox = cv::RotatedRect(cv::Point2f(), bathy_map.size(), angle).boundingRect();
     // adjust transformation matrix
     M.at<double>(0, 2) += bbox.width/2.0 - bathy_map.cols/2.0;
     M.at<double>(1, 2) += bbox.height/2.0 - bathy_map.rows/2.0;
