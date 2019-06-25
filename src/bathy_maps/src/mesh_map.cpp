@@ -18,6 +18,7 @@
 #include <igl/slice.h>
 #include <igl/slice_mask.h>
 #include <igl/cumsum.h>
+#include <igl/ray_mesh_intersect.h>
 
 //#include <igl/copyleft/cgal/intersect_with_half_space.h>
 
@@ -476,5 +477,11 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXi, BoundsT> mesh_from_dtm_cloud(const vecto
     return make_tuple(V, F, bounds);
 }
 
+double depth_at_point(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::Vector3d& origin)
+{
+    igl::Hit hit;
+    bool did_hit = ray_mesh_intersect(origin, Eigen::Vector3d(0., 0., -1.), V, F, hit);
+    return did_hit? origin(2) - V(F(hit.id, 0), 2) : 0.;
+}
 
 } // namespace mesh_map
