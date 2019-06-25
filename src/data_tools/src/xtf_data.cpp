@@ -331,7 +331,8 @@ xtf_sss_ping::PingsT parse_file(const boost::filesystem::path& file)
    //
    // Allocate memory for reading file data
    //
-   unsigned char* buffer = (unsigned char*)malloc((WORD)32768);
+   // NOTE: max file size is 268MB!
+   unsigned char* buffer = (unsigned char*)malloc(268435456);
    if (buffer == NULL) {
        cout << "Can't allocate memory!" << endl;
        exit(-1);
