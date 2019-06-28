@@ -484,4 +484,43 @@ double depth_at_point(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const 
     return did_hit? origin(2) - V(F(hit.id, 0), 2) : 0.;
 }
 
+Eigen::MatrixXd compute_normals(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F)
+{
+    Eigen::MatrixXd N;
+    igl::per_vertex_normals(V, F, N);
+    return N;
+}
+
+tuple<Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXd, BoundsT> mesh_and_normals_from_pings(const mbes_ping::PingsT& pings, double res)
+{
+    Eigen::MatrixXd V;
+    Eigen::MatrixXi F;
+    BoundsT bounds;
+    tie(V, F, bounds) = mesh_from_pings(pings, res);
+
+    Eigen::MatrixXd N = compute_normals(V, F);
+    
+    return make_tuple(V, F, N, bounds);
+}
+
+Eigen::MatrixXd shade_image_from_normals(const Eigen::MatrixXd& N, const BoundsT& bounds, double res, const Eigen::Vector3d& light_dir)
+{
+    int cols = (bounds(1, 0) - bounds(0, 0)) / res; // min/max should be in the center
+    int rows = (bounds(1, 1) - bounds(0, 1)) / res;
+
+    Eigen::Vector3d norm_light_dir = 1./light_dir.norm()*light_dir;
+
+    Eigen::MatrixXd shade_image(rows, cols); shade_image.setZero();
+    for (int y = 0; y < rows; ++y) { // ROOM FOR SPEEDUP
+	    for (int x = 0; x < cols; ++x) {
+            int ind = y*cols+x;
+            if (!std::isnan(N(ind, 0))) {
+                shade_image(y, x) = fabs(norm_light_dir.dot(N.row(ind)));
+            }
+        }
+    }
+
+    return shade_image;
+}
+
 } // namespace mesh_map
