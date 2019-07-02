@@ -393,6 +393,7 @@ mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_
                 string utm_zone;
                 tie(northing, easting, utm_zone) = lat_long_utm::lat_long_to_UTM(lat, lon);
                 new_ping.pos_ = Eigen::Vector3d(easting, northing, -ping.transducer_depth_);
+                //cout << "Filtered depth: " << depth << ", transducer depth: " << ping.transducer_depth_ << endl;
                 //new_ping.pos_ = Eigen::Vector3d(easting, northing, -depth);
             }
         }
@@ -478,15 +479,17 @@ mbes_ping::PingsT match_attitude(mbes_ping::PingsT& pings, all_nav_attitude::Ent
         }
         //ping.pitch_ *= -1.;
         //ping.roll_ *= -1.;
+
+        Eigen::Matrix3d Rz = Eigen::AngleAxisd(ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
+        Eigen::Matrix3d Ry = Eigen::AngleAxisd(1.*ping.pitch_, Eigen::Vector3d::UnitY()).matrix();
+        Eigen::Matrix3d Rx = Eigen::AngleAxisd(1.*ping.roll_, Eigen::Vector3d::UnitX()).matrix();
+        Eigen::Matrix3d R = Rz*Ry;
         
         for (Eigen::Vector3d& beam : ping.beams) {
-            beam = beam - ping.pos_;
-            Eigen::Matrix3d Rz = Eigen::AngleAxisd(-ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
-            beam = Rz*beam;
-            Rz = Eigen::AngleAxisd(ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
-            Eigen::Matrix3d Ry = Eigen::AngleAxisd(0.*1.*ping.pitch_, Eigen::Vector3d::UnitY()).matrix();
-            Eigen::Matrix3d Rx = Eigen::AngleAxisd(0.*1.*ping.roll_, Eigen::Vector3d::UnitX()).matrix();
-            Eigen::Matrix3d R = Rx*Ry*Rz;
+            //beam = beam - ping.pos_;
+            //Rz = Eigen::AngleAxisd(-ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
+            beam = Rz.transpose()*(beam - ping.pos_);
+            //Eigen::Matrix3d R = Rx*Ry*Rz;
             beam = ping.pos_ + R*beam; // + Eigen::Vector3d(0., 0., -heave);
         }
     }
