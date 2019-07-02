@@ -65,6 +65,7 @@ struct xtf_sss_ping
 };
 
 cv::Mat make_waterfall_image(const xtf_sss_ping::PingsT& pings);
+Eigen::MatrixXd make_eigen_waterfall_image(const xtf_sss_ping::PingsT& pings);
 void show_waterfall_image(const xtf_sss_ping::PingsT& pings);
 
 xtf_sss_ping::PingsT correct_sensor_offset(const xtf_sss_ping::PingsT& pings, const Eigen::Vector3d& sensor_offset);

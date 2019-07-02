@@ -57,6 +57,25 @@ cv::Mat make_waterfall_image(const xtf_sss_ping::PingsT& pings)
     return resized_swath_img;
 }
 
+Eigen::MatrixXd make_eigen_waterfall_image(const xtf_sss_ping::PingsT& pings)
+{
+    int rows = pings.size();
+    int cols = pings[0].port.pings.size() + pings[0].stbd.pings.size();
+    //cv::Mat swath_img = cv::Mat(rows, cols, CV_8UC3, cv::Scalar(255, 255, 255));
+    Eigen::MatrixXd swath_img = Eigen::MatrixXd::Zero(rows, cols);
+    for (int i = 0; i < pings.size(); ++i) {
+        for (int j = 0; j < pings[i].port.pings.size(); ++j) {
+            //swath_img(i, pings[0].stbd.pings.size()+j) = (float(pings[i].port.pings[j]) + 32767.)/(2.*32767.);
+            swath_img(i, pings[0].stbd.pings.size()+j) = double(pings[i].port.pings[j] + 4000.)/20000.;
+        }
+        for (int j = 0; j < pings[i].stbd.pings.size(); ++j) {
+            //swath_img(i, pings[0].stbd.pings.size()-j-1) = (float(pings[i].stbd.pings[j]) + 32767.)/(2.*32767.);
+            swath_img(i, pings[0].stbd.pings.size()-j-1) = double(pings[i].stbd.pings[j] + 4000.)/20000.;
+        }
+    }
+    return swath_img;
+}
+
 void show_waterfall_image(const xtf_sss_ping::PingsT& pings)
 {
     cv::Mat waterfall_image = make_waterfall_image(pings);

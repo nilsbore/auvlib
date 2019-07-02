@@ -50,7 +50,7 @@ PYBIND11_MODULE(xtf_data, m) {
         .def_static("read_data", &read_data_from_str<xtf_sss_ping::PingsT>, "Read xtf_sss_ping::PingsT from .cereal file");
 
     m.def("write_data", &write_data_from_str<xtf_sss_ping::PingsT>, "Write xtf pings to .cereal file");
-    m.def("make_waterfall_image", &make_waterfall_image, "Create an opencv waterfall image from xtf_sss_ping::PingsT");
+    m.def("make_waterfall_image", &make_eigen_waterfall_image, "Create a cv2 waterfall image from xtf_sss_ping::PingsT");
     m.def("show_waterfall_image", &show_waterfall_image, "Show a waterfall image created from xtf_sss_ping::PingsT");
     m.def("correct_sensor_offset", &correct_sensor_offset, "Move the sensor onboard the vehicle with a given translation");
 }
