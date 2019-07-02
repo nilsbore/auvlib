@@ -497,6 +497,7 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXd, BoundsT> mesh_and_norma
     Eigen::MatrixXi F;
     BoundsT bounds;
     tie(V, F, bounds) = mesh_from_pings(pings, res);
+    cout << bounds << endl;
 
     Eigen::MatrixXd N = compute_normals(V, F);
     
@@ -505,8 +506,10 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXd, BoundsT> mesh_and_norma
 
 Eigen::MatrixXd shade_image_from_normals(const Eigen::MatrixXd& N, const BoundsT& bounds, double res, const Eigen::Vector3d& light_dir)
 {
-    int cols = (bounds(1, 0) - bounds(0, 0)) / res; // min/max should be in the center
-    int rows = (bounds(1, 1) - bounds(0, 1)) / res;
+    int cols = std::ceil((bounds(1, 0) - bounds(0, 0)) / res); // min/max should be in the center
+    int rows = std::ceil((bounds(1, 1) - bounds(0, 1)) / res);
+
+    cout << "Rows: " << rows << ", Cols: " << cols << endl;
 
     Eigen::Vector3d norm_light_dir = 1./light_dir.norm()*light_dir;
 
