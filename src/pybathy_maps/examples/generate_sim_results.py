@@ -88,7 +88,8 @@ def prepare_generated(generated, height):
     if generated.shape[1] == 256 and generated.shape[0] == height:
         return generated
 
-    generated = cv2.resize(generated, (256, height), interpolation=cv2.INTER_LINEAR)
+    #generated = cv2.resize(generated, (256, height), interpolation=cv2.INTER_LINEAR)
+    generated = cv2.resize(generated, (256, height), interpolation=cv2.INTER_LANCZOS4)
 
     return generated
 
@@ -192,7 +193,7 @@ map_images = map_draper.sss_map_image.read_data("map_images_cache_dtm.cereal")
 #cv2.imshow("Model image", model_image)
 #cv2.waitKey()
 
-dataset_name = "prediction_results2"
+dataset_name = "prediction_results3"
 
 if not os.path.exists(dataset_name):
     os.makedirs(dataset_name)
