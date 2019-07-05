@@ -1,5 +1,6 @@
 #include <bathy_maps/align_map.h>
 #include <bathy_maps/mesh_map.h>
+#include <data_tools/colormap.h>
 
 #include <igl/signed_distance.h>
 #include <igl/slice_mask.h>
@@ -12,6 +13,80 @@
 namespace align_map {
 
 using namespace std;
+
+double compute_overlap_ratio(const Eigen::MatrixXd& P1, const Eigen::MatrixXd& P2)
+{
+    int skip = 100;
+
+    Eigen::MatrixXd P2_sub(P2.rows()/skip+1, P2.cols());
+
+    int nbr_rows = 0;
+    for (int i = 0; i < P2.rows(); i += skip) {
+        P2_sub.row(nbr_rows) = P2.row(i);
+        ++nbr_rows;
+    }
+    P2_sub.conservativeResize(nbr_rows, P2.cols());
+
+    int total_points = 0;
+    int overlapping_points = 0;
+    for (int i = 0; i < P1.rows(); i += skip) {
+        Eigen::MatrixXd::Index index;
+          // find nearest neighbour
+        //(P2_sub.rowwise() - P1.row(i)).colwise().squaredNorm().minCoeff(&index);
+        double dist = sqrt((P2_sub.rowwise() - P1.row(i)).colwise().squaredNorm().minCoeff(&index));
+        //double dist = (P2_sub.row(index) - P1.row(i)).norm();
+        if (dist < 2.) {
+            ++overlapping_points;
+        }
+        ++total_points;
+    }
+
+    return double(overlapping_points) / double(total_points);
+}
+
+void show_multiple_clouds(const vector<Eigen::MatrixXd>& clouds)
+{
+    // maybe subsample the clouds before doing this
+    int skip = 100;
+    Eigen::MatrixXd points(0, 3);
+    Eigen::MatrixXd colors(0, 3);
+    for (int n = 0; n < clouds.size(); ++n) {
+        const Eigen::MatrixXd& P = clouds[n];
+
+        int N = points.rows();
+        points.conservativeResize(N + P.rows()/skip+1, 3);
+
+        int nbr_rows = 0;
+        for (int i = 0; i < P.rows(); i += skip) {
+            points.row(N+nbr_rows) = P.row(i);
+            ++nbr_rows;
+        }
+
+        points.conservativeResize(N+nbr_rows, 3);
+        colors.conservativeResize(N+nbr_rows, 3);
+        Eigen::RowVector3d color(double(colormap[n%43][0])/255., double(colormap[n%43][1])/255., double(colormap[n%43][2])/255.);
+        colors.bottomRows(nbr_rows).rowwise() = color;
+    }
+
+    Eigen::VectorXd norms = points.rowwise().norm();
+    //cout << "Norms: " << norms.transpose() << endl;
+
+    Eigen::MatrixXd::Index index;
+    points.rowwise().squaredNorm().maxCoeff(&index);
+    cout << "Subtracting: " << points.row(index) << endl;
+    points.rowwise() -= points.row(index);
+    cout << "Number of points to visualize: " << points.rows() << endl;
+
+    igl::opengl::glfw::Viewer viewer;
+    viewer.data().set_points(points, colors);
+    viewer.data().point_size = 10;
+    viewer.data().line_width = 1;
+    viewer.core.is_animating = true;
+    viewer.core.animation_max_fps = 30.;
+    viewer.core.background_color << 1., 1., 1., 1.; // white background
+
+    viewer.launch();
+}
 
 double points_to_mesh_rmse(const Eigen::MatrixXd& P, const Eigen::MatrixXd& V, const Eigen::MatrixXi& F)
 {

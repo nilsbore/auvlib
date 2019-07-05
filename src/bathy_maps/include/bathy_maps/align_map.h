@@ -33,6 +33,9 @@ std::pair<Eigen::Matrix4d, bool> align_points_to_mesh_icp(const Eigen::MatrixXd&
 Eigen::MatrixXd filter_points_mesh_offset(const Eigen::MatrixXd& P, const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
                                           double offset, const igl::AABB<Eigen::MatrixXd, 3>& tree);
 
+double compute_overlap_ratio(const Eigen::MatrixXd& P1, const Eigen::MatrixXd& P2);
+void show_multiple_clouds(const std::vector<Eigen::MatrixXd>& clouds);
+
 } // namespace align_map
 
 #endif // ALIGN_MAP_H
