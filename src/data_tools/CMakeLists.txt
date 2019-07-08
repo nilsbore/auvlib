@@ -108,7 +108,7 @@ target_link_libraries(csv_data PUBLIC std_data navi_data gsf_data xtf_data)
 
 target_link_libraries(xtf_data PUBLIC std_data navi_data xtf_reader lat_long_utm ${OpenCV_LIBS})
 
-target_link_libraries(all_data navi_data lat_long_utm ${OpenCV_LIBS})
+target_link_libraries(all_data navi_data lat_long_utm csv_data ${OpenCV_LIBS})
 
 target_link_libraries(xyz_data std_data ${Boost_LIBRARIES})
 

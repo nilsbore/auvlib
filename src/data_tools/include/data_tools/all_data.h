@@ -13,6 +13,7 @@
 #define ALL_DATA_H
 
 #include <data_tools/navi_data.h>
+#include <data_tools/csv_data.h>
 #include <eigen3/Eigen/Dense>
 #define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>
@@ -148,6 +149,7 @@ struct all_echosounder_depth {
 
 std_data::mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_entry::EntriesT& entries);
 std_data::mbes_ping::PingsT match_attitude(std_data::mbes_ping::PingsT& pings, all_nav_attitude::EntriesT& entries);
+csv_data::csv_asvp_sound_speed::EntriesT convert_sound_speeds(const all_mbes_ping::PingsT& pings);
 
 } // namespace all_data
 

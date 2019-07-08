@@ -497,6 +497,46 @@ mbes_ping::PingsT match_attitude(mbes_ping::PingsT& pings, all_nav_attitude::Ent
     return new_pings;
 }
 
+csv_data::csv_asvp_sound_speed::EntriesT convert_sound_speeds(const all_mbes_ping::PingsT& pings)
+{
+    csv_data::csv_asvp_sound_speed sound_speed;
+
+    auto min = std::min_element(pings.begin(), pings.end(), [](const all_mbes_ping& p1, const all_mbes_ping& p2)
+    {
+        return p1.transducer_depth_ < p2.transducer_depth_;
+    });
+
+    auto max = std::max_element(pings.begin(), pings.end(), [](const all_mbes_ping& p1, const all_mbes_ping& p2)
+    {
+        return p1.transducer_depth_ < p2.transducer_depth_;
+    });
+
+    int nbr_bins = 10;
+
+    Eigen::VectorXd dbars = Eigen::VectorXd::Zero(nbr_bins);
+    Eigen::VectorXd vels = Eigen::VectorXd::Zero(nbr_bins);
+    Eigen::VectorXd counts = Eigen::VectorXd::Zero(nbr_bins);
+
+    for (int i = 0; i < nbr_bins; ++i) {
+        dbars[i] = min->transducer_depth_ + double(i)/double(nbr_bins)*(max->transducer_depth_ - min->transducer_depth_);
+    }
+
+    for (const all_mbes_ping& ping : pings) {
+        int index = int(double(nbr_bins) * (ping.transducer_depth_ - min->transducer_depth_) / (max->transducer_depth_ - min->transducer_depth_));
+        vels[index] += ping.sound_vel_;
+        counts[index] += 1.;
+    }
+
+    sound_speed.dbars = dbars;
+    sound_speed.vels = vels.array()/counts.array();
+    sound_speed.time_string_ = pings[0].time_string_;
+    sound_speed.time_stamp_ = pings[0].time_stamp_;
+    sound_speed.lat_ = 0.;
+    sound_speed.long_ = 0.;
+
+    return csv_data::csv_asvp_sound_speed::EntriesT { sound_speed };
+}
+
 } // namespace all_data
 
 namespace std_data {
