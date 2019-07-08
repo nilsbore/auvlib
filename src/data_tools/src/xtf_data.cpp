@@ -189,7 +189,12 @@ xtf_sss_ping process_side_scan_ping(XTFPINGHEADER *PingHeader, XTFFILEHEADER *XT
       ping_channel->pings.reserve(SamplesPerChan);
       for (int i = 0; i < SamplesPerChan; ++i) {
           // we should get port and starboard channel from header definition
-          ping_channel->pings.push_back(Imagery[i]);
+          if (ChanHeader->Weight == 0) {
+              ping_channel->pings.push_back(Imagery[i]);
+          }
+          else {
+              ping_channel->pings.push_back(int(Imagery[i])  << (9 - ChanHeader->Weight));
+          }
       }
       ping_channel->time_duration = ChanHeader->TimeDuration;
       ping_channel->slant_range = ChanHeader->SlantRange;
@@ -205,6 +210,9 @@ xtf_sss_ping process_side_scan_ping(XTFPINGHEADER *PingHeader, XTFFILEHEADER *XT
       cout << "Slant range: " << int(ChanHeader->SlantRange) << endl;
       cout << "Time duration: " << ChanHeader->TimeDuration << endl;
       cout << "SecondsPerPing: " << ChanHeader->SecondsPerPing << endl; // seems to always be 0
+      cout << "GAIN Code: " << ChanHeader->GainCode << endl;
+      cout << "Initial GAIN Code: " << ChanHeader->InitialGainCode << endl;
+      cout << "Weight: " << ChanHeader->Weight << endl;
 
       // skip past the imagery;
       Ptr += BytesThisChannel;
