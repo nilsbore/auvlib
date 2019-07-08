@@ -35,7 +35,7 @@ double compute_overlap_ratio(const Eigen::MatrixXd& P1, const Eigen::MatrixXd& P
         //(P2_sub.rowwise() - P1.row(i)).colwise().squaredNorm().minCoeff(&index);
         double dist = sqrt((P2_sub.rowwise() - P1.row(i)).colwise().squaredNorm().minCoeff(&index));
         //double dist = (P2_sub.row(index) - P1.row(i)).norm();
-        if (dist < 2.) {
+        if (dist < 10.) {
             ++overlapping_points;
         }
         ++total_points;
@@ -72,13 +72,14 @@ void show_multiple_clouds(const vector<Eigen::MatrixXd>& clouds)
     //cout << "Norms: " << norms.transpose() << endl;
 
     Eigen::MatrixXd::Index index;
-    points.rowwise().squaredNorm().maxCoeff(&index);
+    //points.rowwise().squaredNorm().maxCoeff(&index);
+    points.rowwise().squaredNorm().minCoeff(&index);
     cout << "Subtracting: " << points.row(index) << endl;
     points.rowwise() -= points.row(index);
     cout << "Number of points to visualize: " << points.rows() << endl;
 
     igl::opengl::glfw::Viewer viewer;
-    viewer.data().set_points(points, colors);
+    viewer.data().set_points(0.01*points, colors);
     viewer.data().point_size = 10;
     viewer.data().line_width = 1;
     viewer.core.is_animating = true;
