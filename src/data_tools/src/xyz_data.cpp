@@ -16,9 +16,68 @@ using namespace std;
 
 namespace xyz_data {
 
-xyz_data::Points subsample_cloud(const xyz_data::Points& cloud)
+xyz_data::Points transform_points(const Eigen::Matrix4d& T, xyz_data::Points& points)
 {
-    return cloud;
+    xyz_data::Points transformed_points = points;
+    Eigen::Affine3d transform(T);
+    for (Eigen::Vector3d& p : transformed_points) {
+        p = transform*p;
+    }
+    return transformed_points;
+}
+
+xyz_data::Points subsample_points(const xyz_data::Points& points, int skip)
+{
+    xyz_data::Points subsampled_points;
+    for (int i = 0; i < points.size(); i += skip) {
+        subsampled_points.push_back(points[i]);
+    }
+    return subsampled_points;
+}
+
+vector<xyz_data::Points> from_pings(const std_data::mbes_ping::PingsT& pings)
+{
+    vector<xyz_data::Points> maps;
+
+    for (auto pos = pings.begin(); pos != pings.end(); ) {
+        auto next = std::find_if(pos, pings.end(), [&](const std_data::mbes_ping& ping) {
+            return ping.first_in_file_ && (&ping != &(*pos));
+        });
+
+        xyz_data::Points map;
+        for (auto iter = pos; iter != next; ++iter) {
+            map.insert(map.end(), iter->beams.begin(), iter->beams.end());
+        }
+
+        if (!map.empty()) {
+            maps.push_back(map);
+        }
+
+        pos = next;
+    }
+
+    return maps;
+}
+
+xyz_data::Points from_matrix(const Eigen::MatrixXd& P)
+{
+    xyz_data::Points points;
+    points.reserve(P.rows());
+    for (int i = 0; i < P.rows(); ++i) {
+        points.push_back(P.block<1, 3>(i, 0).transpose());
+    }
+    return points;
+}
+
+Eigen::MatrixXd to_matrix(const Points& points)
+{
+    Eigen::MatrixXd P(points.size(), 3);
+    int counter = 0;
+    for (const Eigen::Vector3d& p : points) {
+        P.row(counter) = p.transpose();
+        ++counter;
+    }
+    return P;
 }
 
 } // namespace xyz_data
@@ -48,13 +107,15 @@ xyz_data::Points parse_file(const boost::filesystem::path& file)
     Eigen::Vector3d p;
     while (std::getline(infile, line))  // this does the checking!
     {
-        /*if (i < 50) {
+        /*
+        if (i < 10) {
             ++i;
             continue;
         }
         else {
             i = 0;
-        }*/
+        }
+        */
         if (line.empty() || line[0] == '\n') {// || !isdigit(line[0])) {
             continue;
         }

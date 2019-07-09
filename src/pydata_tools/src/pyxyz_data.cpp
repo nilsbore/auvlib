@@ -24,9 +24,15 @@ PYBIND11_MODULE(xyz_data, m) {
 
     py::class_<xyz_data::Points>(m, "cloud", "Class for xyz point cloud type")
         .def(py::init<>())
+        .def_static("from_pings", &xyz_data::from_pings, "Create vector of xyz_data::Points from std_data::mbes_ping::PingsT by splitting at first_in_file_==True")
+        .def_static("to_matrix", &xyz_data::to_matrix, "Create an Nx3 matrix from the list of points")
+        .def_static("from_matrix", &xyz_data::from_matrix, "Create Points from an Nx3 matrix")
         .def_static("parse_file", &parse_file_from_str<Eigen::Vector3d>, "Parse xyz_data::Points from .xyz file")
         .def_static("parse_folder", &parse_folder_from_str<Eigen::Vector3d>, "Parse xyz_data::Points from folder of .xyz files")
         .def_static("read_data", &read_data_from_str<xyz_data::Points>, "Read xyz_data::Points from .cereal file");
 
+
+    m.def("subsample_points", &xyz_data::subsample_points, "Subsample by skipping N points at a time");
+    m.def("transform_points", &xyz_data::transform_points, "Transform using 4x4 transformation matrix T");
     m.def("write_data", &write_data_from_str<xyz_data::Points>, "Write array of Vector3d to .cereal file");
 }
