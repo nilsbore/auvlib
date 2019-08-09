@@ -1,6 +1,6 @@
 [submodule "libigl"]
 	path = libigl
-	url = https://github.com/libigl/libigl-legacy.git
+	url = https://github.com/libigl/libigl.git
 [submodule "src/pybind11"]
 	path = src/pybind11
 	url = https://github.com/pybind/pybind11.git
