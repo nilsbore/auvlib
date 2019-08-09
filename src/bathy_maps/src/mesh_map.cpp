@@ -141,10 +141,10 @@ void show_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F)
 
     //viewer.callback_pre_draw = std::bind(&IglVisCallback::callback_pre_draw, this, std::placeholders::_1);
     //viewer.callback_key_pressed = std::bind(&IglVisCallback::callback_key_pressed, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-    viewer.core.is_animating = true;
-    viewer.core.animation_max_fps = 30.;
+    viewer.core().is_animating = true;
+    viewer.core().animation_max_fps = 30.;
 	//viewer.launch();
-    viewer.core.background_color << 1., 1., 1., 1.; // white background
+    viewer.core().background_color << 1., 1., 1., 1.; // white background
 	viewer.launch();
 }
 
@@ -237,10 +237,10 @@ void show_textured_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
 
     //viewer.callback_pre_draw = std::bind(&IglVisCallback::callback_pre_draw, this, std::placeholders::_1);
     //viewer.callback_key_pressed = std::bind(&IglVisCallback::callback_key_pressed, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-    viewer.core.is_animating = true;
-    viewer.core.animation_max_fps = 30.;
+    viewer.core().is_animating = true;
+    viewer.core().animation_max_fps = 30.;
 	//viewer.launch();
-    viewer.core.background_color << 1., 1., 1., 1.; // white background
+    viewer.core().background_color << 1., 1., 1., 1.; // white background
 	viewer.launch();
 }
 
