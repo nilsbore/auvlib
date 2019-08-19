@@ -65,6 +65,19 @@ struct xtf_sss_ping
 };
 
 cv::Mat make_waterfall_image(const xtf_sss_ping::PingsT& pings);
+/**
+	make_waterfall_image can average over rows and columns to make image fit a given width and height.  If the number of elements is not divisible by the width then the furthest returns are just dropped to make it fit.  The ping intensities are often not well normalized.  Here we give default of 2^16 as the default maxPingIntensity.  All returns higher than maxPingIntensity will be capped at that value.  Similarly sometimes it seems the intesities are signed inetgers?  Not sure that happens but if it does change the minPingIntensity from its default 0.  
+*/
+cv::Mat make_waterfall_image(const xtf_sss_ping::PingsT& pings, long width, long height=0, long maxPingIntensity=65535, long minPingIntensity=0);
+/**
+	normalize_waterfall can average over rows and columns to make image fit a given width and height.  If the number of elements is not divisible by the width then the furthest returns are just dropped to make it fit. 
+
+Here you can also just conver part of the pings by specifing a start ping and end ping.  Specifying 0 for these uses all the pings.
+
+ The ping intensities are often not well normalized. Here we normalize each column to have its intensities cover 0 to 255 better.
+The params = [width, height, startping, endping]
+*/
+cv::Mat  normalize_waterfall(const xtf_sss_ping::PingsT& pings, long* params);
 Eigen::MatrixXd make_eigen_waterfall_image(const xtf_sss_ping::PingsT& pings);
 void show_waterfall_image(const xtf_sss_ping::PingsT& pings);
 

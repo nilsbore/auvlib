@@ -25,6 +25,8 @@ add_library(xyz_data src/xyz_data.cpp)
 
 add_executable(test_xtf src/test_xtf.cpp)
 
+add_executable(create_xtf_waterfall src/create_xtf_waterfall.cpp)
+
 add_executable(test_submap_tracks src/test_submap_tracks.cpp)
 
 add_executable(test_all src/test_all.cpp)
@@ -83,11 +85,14 @@ target_include_directories(all_data PUBLIC
     PRIVATE src)
 
 target_include_directories(xyz_data PUBLIC
+
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
 
-target_link_libraries(test_xtf xtf_data std_data navi_data ${OpenCV_LIBS} ${Boost_LIBRARIES})
+target_link_libraries(test_xtf  xtf_data std_data navi_data ${OpenCV_LIBS} ${Boost_LIBRARIES})
+
+target_link_libraries(create_xtf_waterfall  xtf_data std_data navi_data ${OpenCV_LIBS} ${Boost_LIBRARIES})
 
 target_link_libraries(test_submap_tracks gsf_data std_data navi_data ${OpenCV_LIBS} ${Boost_LIBRARIES})
 

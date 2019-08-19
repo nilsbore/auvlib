@@ -57,6 +57,250 @@ cv::Mat make_waterfall_image(const xtf_sss_ping::PingsT& pings)
     return resized_swath_img;
 }
 
+cv::Mat  normalize_waterfall(const xtf_sss_ping::PingsT& pings, long* params)
+  {
+    int rows = pings.size();
+    long width=params[0];
+    long height=params[1];
+    long startping=params[2];
+    long endping=params[3];
+    if (startping<0) startping=0;
+    if ((endping>rows)||(endping<=0))endping=rows;
+    rows=endping-startping;
+    
+    int cols = pings[0].port.pings.size() + pings[0].stbd.pings.size();     
+    int downsample=1;
+    if (width>0) downsample=cols/width;
+    else width=cols;
+    if (downsample==0){
+      width=cols;
+      downsample=1;
+    }
+
+    int downrow=1;
+    if (height>0)downrow=rows/height;
+    else height=rows;
+    if (downrow==0) {
+      height=rows;
+      downrow=1;
+    }
+    long maxPingIntensity[width];
+    long minPingIntensity[width];
+    std::memset(maxPingIntensity, 0, sizeof maxPingIntensity);
+    std::memset(minPingIntensity, 256, sizeof minPingIntensity);
+    int num=0;
+    long long acc=0;
+    int mid=width/2;
+    
+    if ((height*rows)<=0){
+      return cv::Mat(0, 0, CV_8UC1, cv::Scalar(0));
+    }
+    cv::Mat swath_img = cv::Mat(height, width, CV_8UC1, cv::Scalar(0));
+    int toprow= pings.size()-downrow+1;
+    long m[height*width];
+    
+    for(int i=0; i< height; i++){
+      for (int j=mid; j<width; j++){
+
+	acc=0;
+	num=(downrow*downsample);
+	for (int  w=0; w<downrow; w++){
+	  int over=pings[startping+i*downrow+w].port.pings.size();
+	  int index=(j-mid)*downsample;
+	  for (int k=0; k<downsample; k++)
+	    {
+	      long temp=pings[startping+i*downrow+w].stbd.pings[index];
+	      if ((temp>=0)&&(index<over)) acc+=temp;
+	      else num--;
+	      index++;
+	    }
+	}
+	
+	if (num>0){
+	  m[j*height+i]=(long)(((double)acc/(double)num)+0.5);
+	  if (m[j*height+i]>maxPingIntensity[j])
+	    maxPingIntensity[j]=m[j*height+i];
+	  if (m[j*height+i]<minPingIntensity[j])
+	    minPingIntensity[j]=m[j*height+i];
+	}
+	else {
+	  m[j*height+i]=0;
+	}
+      }
+      for (int j=0; j<mid; j++){
+	acc=0;
+	num=(downrow*downsample);
+	for ( int w=0; w<downrow; w++){
+	  int over=pings[startping+i*downrow+w].stbd.pings.size();
+	  int index=(mid-j)*downsample-1;
+	  for (int k=0; k<downsample; k++)
+	    {
+	      long temp=pings[startping+i*downrow+w].stbd.pings[index];
+	      
+		//weird values in some pings of =-2147483648=-2^31=FFFFFFFF
+	      if ((temp>=0)&&(index<over)) acc+=temp;
+	      else num--;
+	      index--;
+	    }
+	  
+	}
+	if (num>0){
+	  m[j*height+i]=(long)((double)acc/(double)num+0.5);
+	  if (m[j*height+i]>maxPingIntensity[j])
+	    maxPingIntensity[j]=m[j*height+i];
+	  if (m[j*height+i]<minPingIntensity[j])
+	    minPingIntensity[j]=m[j*height+i];
+	}
+	else m[j*height+i]=0;	
+      }
+    }
+    long maxmax=0;
+    for (int j=0; j<width;j++){
+      maxPingIntensity[j]*=1.05;//to avoid saturation
+      if (maxPingIntensity[j]>maxmax) maxmax=maxPingIntensity[j];
+      if (minPingIntensity[j]>0)minPingIntensity[j]=0;
+    }
+    for (int j=0; j<width;j++)
+       if (maxPingIntensity[j]<maxmax/4)maxPingIntensity[j]=maxmax/4;
+    
+    if (width>2){//smooth the normalization values
+      long long temp=maxPingIntensity[0]+maxPingIntensity[1];
+      long long temp2=minPingIntensity[0]+minPingIntensity[1];
+      maxPingIntensity[0]=temp/2;
+      temp+=maxPingIntensity[2];
+      maxPingIntensity[1]=temp/3;
+      maxPingIntensity[0]=temp2/2;
+      temp2+=minPingIntensity[2];
+      minPingIntensity[1]=temp2/3;
+      for (int j=2; j<width;j++){
+	temp-=maxPingIntensity[j-2];
+	temp2-=minPingIntensity[j-2];
+	temp+=maxPingIntensity[j];
+	temp2+=minPingIntensity[j];
+	minPingIntensity[j]=temp2/3;
+	maxPingIntensity[j]=temp/3;
+      }
+      temp=maxPingIntensity[0]+maxPingIntensity[1];
+      temp2=minPingIntensity[0]+minPingIntensity[1];
+      maxPingIntensity[0]=temp/2;
+      temp+=maxPingIntensity[2];
+      maxPingIntensity[1]=temp/3;
+      maxPingIntensity[0]=temp2/2;
+      temp2+=minPingIntensity[2];
+      minPingIntensity[1]=temp2/3;
+      for (int j=2; j<width;j++){
+	temp-=maxPingIntensity[j-2];
+	temp2-=minPingIntensity[j-2];
+	temp+=maxPingIntensity[j];
+	temp2+=minPingIntensity[j];
+	minPingIntensity[j]=temp2/3;
+	maxPingIntensity[j]=temp/3;
+      }
+    }
+    
+    for (int j=0; j<width;j++){
+      for (int i=0; i<height; i++){
+	unsigned short temp=(unsigned short)(255*((double)(m[i+j*height]-minPingIntensity[j])/(double)(maxPingIntensity[j]-minPingIntensity[j]))+0.5);
+	cv::Scalar_<uchar>* p = swath_img.ptr<cv::Scalar_<uchar> >(i,j);
+	if (temp>255){
+	  temp=255;
+	}	
+	p[0]=(uchar)temp;	
+      }
+    }
+    return swath_img;
+  }
+
+  cv::Mat make_waterfall_image(const xtf_sss_ping::PingsT& pings, long width, long height, long maxPingIntensity, long minPingIntensity)
+  {
+    if (maxPingIntensity<1)maxPingIntensity=65535;
+    if (maxPingIntensity<minPingIntensity)minPingIntensity=0;
+    int rows = pings.size();
+    int cols = pings[0].port.pings.size() + pings[0].stbd.pings.size();     
+    int downsample=1;
+    if (width>0) downsample=cols/width;
+    else width=cols;
+    if (downsample==0){
+      width=cols;
+      downsample=1;
+    }
+    uchar val=0;
+    int downrow=1;
+    if (height>0)downrow=rows/height;
+    else height=rows;
+    if (downrow==0) {
+      height=rows;
+      downrow=1;
+    }
+    int num=0;
+    long long acc=0;
+    int mid=width/2;
+    cv::Mat swath_img = cv::Mat(height, width, CV_8UC1, cv::Scalar(0));
+    int toprow= pings.size()-downrow+1;
+    for(int i=0; i< height; i++){
+      
+      for (int j=mid; j<width; j++){
+
+	acc=0;
+	num=(downrow*downsample);
+	for (int  w=0; w<downrow; w++){
+	  int over=pings[i*downrow+w].port.pings.size();
+	  int index=(j-mid)*downsample;
+	  for (int k=0; k<downsample; k++)
+	    {
+	      long temp=pings[i*downrow+w].stbd.pings[index];
+	      if (temp>maxPingIntensity){
+		std::cout<<"Ping is "<<temp<<" which is above max Ping Intensity "<<maxPingIntensity<<"\n";    
+		temp=maxPingIntensity;
+	      }
+	      if (temp>=minPingIntensity)temp=temp-minPingIntensity;
+	      else temp=0;
+	      //weird values in some pings of =-2147483648=-2^31=FFFFFFFF
+	      if ((temp>=0)&&(index<over)) acc+=temp;
+	      else num--;
+	      index++;
+	    }
+	}
+	if (num>0)val=(255*((double)acc/(double)num)/(double(maxPingIntensity-minPingIntensity)));
+	else val=0;
+	cv::Scalar_<uchar>* p = swath_img.ptr<cv::Scalar_<uchar> >(i,j);
+	p[0]=val;
+      }
+      for (int j=0; j<mid; j++){
+	acc=0;
+	num=(downrow*downsample);
+	for ( int w=0; w<downrow; w++){
+	  int over=pings[i*downrow+w].stbd.pings.size();
+	  int index=(mid-j)*downsample-1;
+	  for (int k=0; k<downsample; k++)
+	    {
+	      long temp=pings[i*downrow+w].stbd.pings[index];
+	      
+	      if (temp>maxPingIntensity){
+		std::cout<<"Ping is "<<temp<<" which is above max Ping Intensity "<<maxPingIntensity<<"\n";
+		temp=maxPingIntensity;
+	      }
+	      if (temp>=minPingIntensity)temp=temp-minPingIntensity;
+	      else temp=0;
+		//weird values in some pings of =-2147483648=-2^31=FFFFFFFF
+	      if ((temp>=0)&&(index<over)) acc+=temp;
+	      else num--;
+	      index--;
+	    }
+	  
+	}
+	
+	if (num>0)val=(255*((double)acc/(double)num)/(double(maxPingIntensity-minPingIntensity)));
+	else val=0;
+	cv::Scalar_<uchar>* p = swath_img.ptr<cv::Scalar_<uchar> >(i,j);
+	p[0]=val;
+     
+      }
+    }
+    return swath_img;
+  }
+
+
 Eigen::MatrixXd make_eigen_waterfall_image(const xtf_sss_ping::PingsT& pings)
 {
     int rows = pings.size();
@@ -243,18 +487,18 @@ xtf_sss_ping::PingsT read_xtf_file(int infl, XTFFILEHEADER* XTFFileHeader, unsig
     //
     // Read the XTF file one packet at a time
     //
-
+    int first=1;
     unsigned int amt;
     char* ptr;
+    //HEY This is where we call the c code that produces the wrong type and size
     while ((amt = ReadXTFFormatFileData(infl, buffer)) != 0xFFFF) {
         //
         // Buffer now holds a single record which can be processed
         // here.  The return value from ReadXTFFormatFileData()
         // holds byte length of the data record (i.e., sidescan ping)
         //
-
+      
         XTFPINGHEADER* PingHeader = (XTFPINGHEADER*)buffer;
-
         if (PingHeader->HeaderType != XTF_HEADER_SONAR) {
             continue;
         }
@@ -262,33 +506,36 @@ xtf_sss_ping::PingsT read_xtf_file(int infl, XTFFILEHEADER* XTFFileHeader, unsig
         xtf_sss_ping ping = process_side_scan_ping((XTFPINGHEADER*)PingHeader, XTFFileHeader);
         ping.first_in_file_ = false;
         pings.push_back(ping);
-        cout << "SONAR "
-             << int(PingHeader->Year) << " "
-             << int(PingHeader->Month) << " "
-             << int(PingHeader->Day) << " "
-             << int(PingHeader->Hour) << " "
-             << int(PingHeader->Minute) << " "
-             << int(PingHeader->Second) << " "
-             << int(PingHeader->HSeconds) << " "
-             << "Sound vel=" << PingHeader->SoundVelocity << " "
-             << "Computed sound vel=" << PingHeader->ComputedSoundVelocity << " "
-             << "Y=" << PingHeader->SensorYcoordinate << " "
-             << "X=" << PingHeader->SensorXcoordinate << " "
-             << "altitude=" << PingHeader->SensorPrimaryAltitude << " "
-             << "depth=" << PingHeader->SensorDepth << " "
-             << "pitch=" << PingHeader->SensorPitch << " "
-             << "roll=" << PingHeader->SensorRoll << " "
-             << "heading=" << PingHeader->SensorHeading << " "  // [h] Fish heading in degrees
-             << "heave=" << PingHeader->Heave << " "            // Sensor heave at start of ping. 
-                           // Positive value means sensor moved up.
-             << "yaw=" << PingHeader->Yaw << endl;              // Sensor yaw.  Positive means turn to right.
-        cout << "Tilt angle 0: " << XTFFileHeader->ChanInfo[0].TiltAngle << endl;        // Typically 30 degrees
-        cout << "Beam width 0: " << XTFFileHeader->ChanInfo[0].BeamWidth << endl;        // 3dB beam width, Typically 50 degrees
-        cout << "Tilt angle 1: " << XTFFileHeader->ChanInfo[1].TiltAngle << endl;        // Typically 30 degrees
-        cout << "Beam width 1: " << XTFFileHeader->ChanInfo[1].BeamWidth << endl;        // 3dB beam width, Typically 50 degrees
-        cout << ping.time_string_ << endl;
+	if (first){
+	  cout << "SONAR "
+	       << int(PingHeader->Year) << " "
+	       << int(PingHeader->Month) << " "
+	       << int(PingHeader->Day) << " "
+	       << int(PingHeader->Hour) << " "
+	       << int(PingHeader->Minute) << " "
+	       << int(PingHeader->Second) << " "
+	       << int(PingHeader->HSeconds) << " "
+	       << "Sound vel=" << PingHeader->SoundVelocity << " "
+	       << "Computed sound vel=" << PingHeader->ComputedSoundVelocity << " "
+	       << "Y=" << PingHeader->SensorYcoordinate << " "
+	       << "X=" << PingHeader->SensorXcoordinate << " "
+	       << "altitude=" << PingHeader->SensorPrimaryAltitude << " "
+	       << "depth=" << PingHeader->SensorDepth << " "
+	       << "pitch=" << PingHeader->SensorPitch << " "
+	       << "roll=" << PingHeader->SensorRoll << " "
+	       << "heading=" << PingHeader->SensorHeading << " "  // [h] Fish heading in degrees
+	       << "heave=" << PingHeader->Heave << " "            // Sensor heave at start of ping. 
+	    // Positive value means sensor moved up.
+	       << "yaw=" << PingHeader->Yaw << endl;              // Sensor yaw.  Positive means turn to right.
+	  cout << "Tilt angle 0: " << XTFFileHeader->ChanInfo[0].TiltAngle << endl;        // Typically 30 degrees
+	  cout << "Beam width 0: " << XTFFileHeader->ChanInfo[0].BeamWidth << endl;        // 3dB beam width, Typically 50 degrees
+	  cout << "Tilt angle 1: " << XTFFileHeader->ChanInfo[1].TiltAngle << endl;        // Typically 30 degrees
+	  cout << "Beam width 1: " << XTFFileHeader->ChanInfo[1].BeamWidth << endl;        // 3dB beam width, Typically 50 degrees
+	  cout << ping.time_string_ << endl;
+	  first=0;
+	}
     }
-
+    
     if (!pings.empty()) {
         pings[0].first_in_file_ = true;
     }
