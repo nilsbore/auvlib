@@ -1,6 +1,7 @@
 # auvlib
 
 [![Build Status](https://travis-ci.org/nilsbore/auvlib.svg?branch=update_libigl2)](https://travis-ci.org/nilsbore/auvlib)
+[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 Tools for reading AUV deployment data files and for
 processing and visualization of side scan and multibeam data.
