@@ -27,4 +27,4 @@ script:
     - make
 branches:
     only:
-        - travis
+        - update_libigl2
