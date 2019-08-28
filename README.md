@@ -1,5 +1,7 @@
 # auvlib
 
+[![Build Status](https://travis-ci.org/nilsbore/auvlib.svg?branch=update_libigl2)](https://travis-ci.org/nilsbore/auvlib)
+
 Tools for reading AUV deployment data files and for
 processing and visualization of side scan and multibeam data.
 Extensive documentation for the python API is available
