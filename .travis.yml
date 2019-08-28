@@ -17,10 +17,6 @@ before_install:
     - sudo apt-get install -y --allow-unauthenticated libcereal-dev libglfw3-dev libceres-dev libtinyxml2-dev libopencv-dev libboost-all-dev
 install:
     - git submodule update --init
-    - cd libigl
-    - git submodule update --init external/embree
-    - git submodule update --init external/glfw
-    - cd ..
 script:
     - mkdir build && cd build
     - cmake -DCMAKE_INSTALL_PREFIX=../install ../src
