@@ -82,9 +82,9 @@ void show_multiple_clouds(const vector<Eigen::MatrixXd>& clouds)
     viewer.data().set_points(0.01*points, colors);
     viewer.data().point_size = 10;
     viewer.data().line_width = 1;
-    viewer.core.is_animating = true;
-    viewer.core.animation_max_fps = 30.;
-    viewer.core.background_color << 1., 1., 1., 1.; // white background
+    viewer.core().is_animating = true;
+    viewer.core().animation_max_fps = 30.;
+    viewer.core().background_color << 1., 1., 1., 1.; // white background
 
     viewer.launch();
 }
@@ -218,9 +218,9 @@ pair<Eigen::Matrix4d, bool> align_points_to_mesh_icp_vis(const Eigen::MatrixXd& 
     viewer.data().point_size = 10;
     viewer.data().line_width = 1;
 
-    viewer.core.is_animating = true;
-    viewer.core.animation_max_fps = 30.;
-    viewer.core.background_color << 1., 1., 1., 1.; // white background
+    viewer.core().is_animating = true;
+    viewer.core().animation_max_fps = 30.;
+    viewer.core().background_color << 1., 1., 1., 1.; // white background
 
     Eigen::Affine3d T;
     viewer.callback_pre_draw = [&T, &P](igl::opengl::glfw::Viewer& viewer)

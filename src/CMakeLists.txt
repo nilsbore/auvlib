@@ -11,11 +11,11 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 # locations on all platforms.
 include(GNUInstallDirs)
 
-find_package(Ceres REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(glfw3 REQUIRED)
+find_package(Ceres REQUIRED)
 
 # libigl
 option(LIBIGL_USE_STATIC_LIBRARY "Use libigl as static library" OFF)
@@ -36,8 +36,11 @@ option(LIBIGL_WITH_TETGEN            "Use Tetgen"         OFF)
 option(LIBIGL_WITH_TRIANGLE          "Use Triangle"       OFF)
 option(LIBIGL_WITH_VIEWER            "Use OpenGL viewer"  ON)
 option(LIBIGL_WITH_XML               "Use XML"            OFF)
+#option(LIBIGL_EXPORT_TARGETS         "Export libigl CMake targets" ON)
 
+set(ENV{LIBIGL_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/libigl)
 find_package(LIBIGL REQUIRED QUIET)
+include(${CMAKE_CURRENT_BINARY_DIR}/embree/embree-config.cmake)
 
 # For some reason it seems like we need to do this after libigl
 find_package(Boost COMPONENTS system filesystem date_time REQUIRED)
@@ -58,6 +61,7 @@ add_subdirectory(cxxopts)
 include_directories(${PYBIND11_INCLUDE_DIR} ${CERES_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS})
 #include_directories(eigen_cereal/include)
 
+include(cmake/glad.cmake)
 add_subdirectory(libgsf)
 add_subdirectory(libxtf)
 add_subdirectory(eigen_cereal)

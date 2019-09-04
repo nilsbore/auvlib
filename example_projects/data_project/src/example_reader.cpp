@@ -12,7 +12,6 @@ using namespace gsf_data;
 using namespace all_data;
 using namespace navi_data;
 
-
 int main(int argc, char** argv)
 {
     string folder_str;

@@ -72,10 +72,10 @@ BaseDraper::BaseDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
 
     viewer.callback_pre_draw = std::bind(&BaseDraper::callback_pre_draw, this, std::placeholders::_1);
 
-    viewer.core.is_animating = true;
-    viewer.core.animation_max_fps = 30.;
+    viewer.core().is_animating = true;
+    viewer.core().animation_max_fps = 30.;
     //viewer.launch();
-    viewer.core.background_color << 1., 1., 1., 1.; // white background
+    viewer.core().background_color << 1., 1., 1., 1.; // white background
 
     //Eigen::Matrix2d mesh_bounds; mesh_bounds << 0., 0., bounds(1, 0)-bounds(0, 0), bounds(1, 1)-bounds(0, 1);
     set_texture(texture_image, bounds);
@@ -223,7 +223,7 @@ bool BaseDraper::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
 {
     glEnable(GL_CULL_FACE);
 
-    if (viewer.core.is_animating && i < pings.size()) {
+    if (viewer.core().is_animating && i < pings.size()) {
         //project_sss();
         Eigen::MatrixXd hits_left;
         Eigen::MatrixXd hits_right;
