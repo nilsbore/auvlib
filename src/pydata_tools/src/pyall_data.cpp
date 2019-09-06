@@ -104,4 +104,5 @@ PYBIND11_MODULE(all_data, m) {
     m.def("convert_matched_entries", &convert_matched_entries, "Matches xtf_sss_ping::PingsT and csv_nav_entry::EntriesT and assign pos data to pings");
     m.def("match_attitude", &match_attitude, "Match mbes_ping::PingsT and all_nav_attitude::EntriesT and assign attitude data to pings");
     m.def("convert_sound_speeds", &convert_sound_speeds, "Convert all_mbes_ping::PingsT to csv_asvp_sound_speed::EntriesT");
+    m.def("convert_attitudes", &convert_attitudes, "Convert all_nav_attitude::EntriesT to std_data::attitude_entry::EntriesT");
 }

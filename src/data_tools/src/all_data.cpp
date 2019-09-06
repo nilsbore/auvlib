@@ -537,6 +537,32 @@ csv_data::csv_asvp_sound_speed::EntriesT convert_sound_speeds(const all_mbes_pin
     return csv_data::csv_asvp_sound_speed::EntriesT { sound_speed };
 }
 
+std_data::attitude_entry::EntriesT convert_attitudes(const all_nav_attitude::EntriesT& attitudes)
+{
+    std_data::attitude_entry::EntriesT entries;
+    std_data::attitude_entry entry;
+    for (const all_nav_attitude& att : attitudes) {
+        for (const all_nav_attitude_sample& sample : att.samples) {
+            entry.roll = sample.roll;
+            entry.pitch = sample.pitch;
+            entry.yaw = sample.heading;
+            entry.heave = sample.heave;
+            entry.time_stamp_ = att.time_stamp_ + sample.ms_since_start;
+            entry.time_string_ = std_data::time_string_from_time_stamp(entry.time_stamp_);
+            entries.push_back(entry);
+        }
+        if (!att.samples.empty()) {
+            entries[entries.size() - att.samples.size()].first_in_file_ = att.first_in_file_;
+        }
+    }
+
+    std::stable_sort(entries.begin(), entries.end(), [](const std_data::attitude_entry& entry1, const std_data::attitude_entry& entry2) {
+        return entry1.time_stamp_ < entry2.time_stamp_;
+    });
+
+    return entries;
+}
+
 } // namespace all_data
 
 namespace std_data {

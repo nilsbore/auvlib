@@ -78,6 +78,28 @@ struct nav_entry
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
+struct attitude_entry
+{
+    using EntriesT = std::vector<attitude_entry, Eigen::aligned_allocator<attitude_entry> >;
+
+    std::string time_string_; // readable time stamp string
+    long long time_stamp_; // posix time stamp
+    bool first_in_file_; // is first entry in a file?
+    double roll;
+    double pitch;
+    double yaw;
+    double heave;
+
+    template <class Archive>
+    void serialize( Archive & ar )
+    {
+        ar(CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_), CEREAL_NVP(first_in_file_),
+           CEREAL_NVP(roll), CEREAL_NVP(pitch), CEREAL_NVP(yaw), CEREAL_NVP(heave));
+    }
+
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+};
+
 struct pt_submaps
 {
     using PointsT = std::vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> >;
@@ -193,6 +215,8 @@ void write_data_from_str(T& data, const std::string& path)
 {
     write_data<T>(data, boost::filesystem::path(path));
 }
+
+std::string time_string_from_time_stamp(long long time_stamp_);
 
 } // namespace std_data
 

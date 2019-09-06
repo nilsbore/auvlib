@@ -316,6 +316,38 @@ xtf_sss_ping::PingsT correct_sensor_offset(const xtf_sss_ping::PingsT& pings, co
     return new_pings;
 }
 
+xtf_sss_ping::PingsT match_attitudes(const xtf_sss_ping::PingsT& pings, const std_data::attitude_entry::EntriesT& entries)
+{
+    xtf_sss_ping::PingsT new_pings = pings;
+
+    auto pos = entries.begin();
+    for (xtf_sss_ping& ping : new_pings) {
+        pos = std::find_if(pos, entries.end(), [&](const std_data::attitude_entry& entry) {
+            return entry.time_stamp_ > ping.time_stamp_;
+        });
+
+        ping.pitch_ = 0.;
+        ping.roll_ = 0.;
+        double heave;
+        if (pos == entries.end()) {
+            ping.pitch_ = entries.back().pitch;
+            ping.roll_ = entries.back().roll;
+        }
+        else if (pos == entries.begin()) {
+                ping.pitch_ = pos->pitch;
+                ping.roll_ = pos->roll;
+        }
+        else {
+            const std_data::attitude_entry& previous = *(pos - 1);
+            double ratio = double(ping.time_stamp_ - previous.time_stamp_)/double(pos->time_stamp_ - previous.time_stamp_);
+            ping.pitch_ = previous.pitch + ratio*(pos->pitch - previous.pitch);
+            ping.roll_ = previous.roll + ratio*(pos->roll - previous.roll);
+        }
+    }
+
+    return new_pings;
+}
+
 } // namespace xtf_data
 
 namespace std_data {

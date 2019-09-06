@@ -53,4 +53,5 @@ PYBIND11_MODULE(xtf_data, m) {
     m.def("make_waterfall_image", &make_eigen_waterfall_image, "Create a cv2 waterfall image from xtf_sss_ping::PingsT");
     m.def("show_waterfall_image", &show_waterfall_image, "Show a waterfall image created from xtf_sss_ping::PingsT");
     m.def("correct_sensor_offset", &correct_sensor_offset, "Move the sensor onboard the vehicle with a given translation");
+    m.def("match_attitudes", &match_attitudes, "Get roll and pitch from std_data::attitude_entry by matching timestamps");
 }
