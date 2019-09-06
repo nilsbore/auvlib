@@ -526,4 +526,24 @@ Eigen::MatrixXd shade_image_from_normals(const Eigen::MatrixXd& N, const BoundsT
     return shade_image;
 }
 
+Eigen::MatrixXd normals_at_points(const Eigen::MatrixXd& points, const Eigen::MatrixXd& N, const BoundsT& bounds, double res)
+{
+    int cols = std::ceil((bounds(1, 0) - bounds(0, 0)) / res); // min/max should be in the center
+    int rows = std::ceil((bounds(1, 1) - bounds(0, 1)) / res);
+
+    cout << "Rows: " << rows << ", Cols: " << cols << endl;
+
+    Eigen::MatrixXd N_points = Eigen::MatrixXd::Zero(points.rows(), points.cols());
+
+    for (int i = 0; i < points.rows(); ++i) {
+        //int x = int((points(i, 0)-bounds(0, 0))/res);
+        //int y = int((points(i, 1)-bounds(0, 1))/res);
+        int x = int(points(i, 0)/res);
+        int y = int(points(i, 1)/res);
+        N_points.row(i) = N.row(y*cols+x);
+    }
+
+    return N_points;
+}
+
 } // namespace mesh_map
