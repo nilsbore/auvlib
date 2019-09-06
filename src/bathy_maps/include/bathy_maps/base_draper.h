@@ -56,6 +56,7 @@ protected:
     csv_data::csv_asvp_sound_speed::EntriesT sound_speeds;
     double sensor_yaw;
     bool ray_tracing_enabled; // is snell ray tracing enabled?
+    double tracing_map_size;
     std::default_random_engine generator; // hopefully not same seed every time
 
     // NOTE: these are new style functions
@@ -96,6 +97,7 @@ public:
 
     void set_texture(const Eigen::MatrixXd& texture, const BoundsT& texture_bounds);
     void set_sidescan_yaw(double new_sensor_yaw) { sensor_yaw = new_sensor_yaw; }
+    void set_tracing_map_size(double new_tracing_map_size) { tracing_map_size = new_tracing_map_size; }
     void set_ray_tracing_enabled(bool enabled);
     void set_vehicle_mesh(const Eigen::MatrixXd& new_V2, const Eigen::MatrixXi& new_F2, const Eigen::MatrixXd& new_C2);
 
