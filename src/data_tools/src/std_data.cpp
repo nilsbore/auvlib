@@ -11,6 +11,10 @@
 
 #include <data_tools/std_data.h>
 
+#define BOOST_NO_CXX11_SCOPED_ENUMS
+#include <boost/date_time.hpp>
+#undef BOOST_NO_CXX11_SCOPED_ENUMS
+
 using namespace std;
 
 namespace std_data {
@@ -24,6 +28,17 @@ template pt_submaps read_data<pt_submaps>(const boost::filesystem::path& path);
 template void write_data<nav_entry::EntriesT>(nav_entry::EntriesT& data, const boost::filesystem::path& path);
 template void write_data<mbes_ping::PingsT>(mbes_ping::PingsT& data, const boost::filesystem::path& path);
 template void write_data<pt_submaps>(pt_submaps& data, const boost::filesystem::path& path);
+
+std::string time_string_from_time_stamp(long long time_stamp_)
+{
+    // TODO: can this be a static variable instead? we could also use that in other libraries
+    const boost::posix_time::ptime epoch = boost::posix_time::time_from_string("1970-01-01 00:00:00.000");
+    boost::posix_time::ptime t = epoch + boost::posix_time::milliseconds(time_stamp_);
+    stringstream time_ss;
+    time_ss << t;
+    string time_string_ = time_ss.str();
+    return time_string_;
+}
 
 } // namespace std_data
 
