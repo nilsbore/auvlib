@@ -69,6 +69,7 @@ Eigen::MatrixXd make_eigen_waterfall_image(const xtf_sss_ping::PingsT& pings);
 void show_waterfall_image(const xtf_sss_ping::PingsT& pings);
 
 xtf_sss_ping::PingsT correct_sensor_offset(const xtf_sss_ping::PingsT& pings, const Eigen::Vector3d& sensor_offset);
+xtf_sss_ping::PingsT match_attitudes(const xtf_sss_ping::PingsT& pings, const std_data::attitude_entry::EntriesT& entries);
 
 } // namespace xtf_data
 
