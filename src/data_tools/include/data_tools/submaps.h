@@ -12,7 +12,7 @@
 #ifndef SUBMAPS_H
 #define SUBMAPS_H
 
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #include <iostream>
 #define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>

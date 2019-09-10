@@ -13,7 +13,7 @@
 #define DATA_STRUCTURES_H
 
 #include <map>
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #include <eigen_cereal/eigen_cereal.h>
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/vector.hpp>

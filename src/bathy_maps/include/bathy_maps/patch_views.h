@@ -12,7 +12,7 @@
 #ifndef PATCH_VIEWS_H
 #define PATCH_VIEWS_H
 
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #include <eigen_cereal/eigen_cereal.h>
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/vector.hpp>

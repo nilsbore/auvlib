@@ -12,7 +12,7 @@
 #ifndef MESH_MAP_H
 #define MESH_MAP_H
 
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #include <data_tools/std_data.h>
 #include <data_tools/xtf_data.h>
 

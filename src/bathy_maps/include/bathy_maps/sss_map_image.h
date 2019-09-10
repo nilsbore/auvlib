@@ -12,7 +12,7 @@
 #ifndef SSS_MAP_IMAGE_H
 #define SSS_MAP_IMAGE_H
 
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #include <eigen_cereal/eigen_cereal.h>
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/vector.hpp>

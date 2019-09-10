@@ -12,7 +12,7 @@
 #ifndef SNELL_RAY_TRACING_H
 #define SNELL_RAY_TRACING_H
 
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #include <ceres/ceres.h>
 
 class LayerWidthCostFunctor {
