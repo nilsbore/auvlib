@@ -13,6 +13,7 @@ include(GNUInstallDirs)
 
 find_package(OpenCV REQUIRED)
 find_package(OpenGL REQUIRED)
+find_package(TinyXML2 REQUIRED)
 
 # libigl
 option(LIBIGL_USE_STATIC_LIBRARY "Use libigl as static library" OFF)
@@ -35,9 +36,9 @@ option(LIBIGL_WITH_VIEWER            "Use OpenGL viewer"  ON)
 option(LIBIGL_WITH_XML               "Use XML"            OFF)
 #option(LIBIGL_EXPORT_TARGETS         "Export libigl CMake targets" ON)
 
-option(AUVLIB_WITH_GSF "Enable reading and processing gsf data" ON)
-option(AUVLIB_USE_LIBIGL_EIGEN "Use libigl's version of Eigen"  OFF)
-option(AUVLIB_USE_LIBIGL_GLFW "Use libigl's version of glfw"    OFF)
+option(AUVLIB_WITH_GSF "Enable reading and processing gsf data" OFF)
+option(AUVLIB_USE_LIBIGL_EIGEN "Use libigl's version of Eigen"  ON)
+option(AUVLIB_USE_LIBIGL_GLFW "Use libigl's version of glfw"    ON)
 option(AUVLIB_USE_PYTHON3 "Use python3 instead of python2"      OFF)
 
 set(ENV{LIBIGL_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/libigl)
@@ -58,7 +59,11 @@ else()
 endif()
 
 if(MSVC)
-  set(PYTHON_EXECUTABLE "")
+  if (AUVLIB_USE_PYTHON3)
+    set(PYTHON_EXECUTABLE C:/Python35/python.exe)
+  else()
+    set(PYTHON_EXECUTABLE C:/Python27/python.exe)
+  endif()
 else()
   if (AUVLIB_USE_PYTHON3)
     set(PYTHON_EXECUTABLE /usr/bin/python3.5)
@@ -83,7 +88,7 @@ message("Pybind11: " ${PYBIND11_INCLUDE_DIR})
 
 add_subdirectory(cxxopts)
 
-include_directories(${PYBIND11_INCLUDE_DIR} ${EIGEN3_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
+include_directories(${PYBIND11_INCLUDE_DIR} ${EIGEN3_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/cereal/include ${TinyXML2_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
 #include_directories(eigen_cereal/include)
 
