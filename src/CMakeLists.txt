@@ -11,10 +11,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 # locations on all platforms.
 include(GNUInstallDirs)
 
-find_package(Eigen3 REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(OpenGL REQUIRED)
-find_package(glfw3 REQUIRED)
 find_package(Ceres REQUIRED)
 
 # libigl
@@ -38,9 +36,25 @@ option(LIBIGL_WITH_VIEWER            "Use OpenGL viewer"  ON)
 option(LIBIGL_WITH_XML               "Use XML"            OFF)
 #option(LIBIGL_EXPORT_TARGETS         "Export libigl CMake targets" ON)
 
+option(AUVLIB_WITH_GSF "Enable reading and processing gsf data" ON)
+option(AUVLIB_USE_LIBIGL_EIGEN "Use libigl's version of Eigen"  OFF)
+option(AUVLIB_USE_LIBIGL_GLFW "Use libigl's version of glfw"    OFF)
+
 set(ENV{LIBIGL_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/libigl)
 find_package(LIBIGL REQUIRED QUIET)
 include(${CMAKE_CURRENT_BINARY_DIR}/embree/embree-config.cmake)
+
+if (${AUVLIB_USE_LIBIGL_GLFW})
+  set(GLFW3_LIBRARY glfw)
+else()
+  find_package(glfw3 REQUIRED)
+endif()
+
+if (${AUVLIB_USE_LIBIGL_EIGEN})
+
+else()
+  find_package(Eigen3 REQUIRED)
+endif()
 
 # For some reason it seems like we need to do this after libigl
 find_package(Boost COMPONENTS system filesystem date_time REQUIRED)
@@ -51,14 +65,24 @@ set(PYBIND11_CPP_STANDARD -std=c++11)
 #add_definitions(-DPYBIND11_PYTHON_VERSION=2.7)
 #set(PYBIND11_PYTHON_VERSION 2.7)
 #set(PYTHON_LIBRARIES /usr/lib/x86_64-linux-gnu/libpython2.7.so)
-set(PYTHON_EXECUTABLE /usr/bin/python2.7)
+if(MSVC)
+  set(PYTHON_EXECUTABLE "")
+else()
+  set(PYTHON_EXECUTABLE /usr/bin/python2.7)
+endif()
+
 add_subdirectory(pybind11)
 
 message("Pybind11: " ${PYBIND11_INCLUDE_DIR})
 
 add_subdirectory(cxxopts)
 
-include_directories(${PYBIND11_INCLUDE_DIR} ${CERES_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS})
+message(${EIGEN3_INCLUDE_DIRS})
+message(${Boost_INCLUDE_DIRS})
+message(${Boost_LIBRARY_DIRS})
+
+include_directories(${PYBIND11_INCLUDE_DIR} ${CERES_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
+link_directories(${Boost_LIBRARY_DIRS})
 #include_directories(eigen_cereal/include)
 
 include(cmake/glad.cmake)
