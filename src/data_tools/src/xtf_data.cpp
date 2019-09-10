@@ -20,7 +20,11 @@ extern "C" {
 
 //#include <stdio.h>
 #include <fcntl.h>
-#include <unistd.h>
+#ifdef _MSC_VER
+  #include <io.h>
+#else
+  #include <unistd.h>
+#endif
 //#include <stdlib.h>
 //#include <string.h>
 #include <opencv2/highgui/highgui.hpp>
@@ -123,7 +127,7 @@ xtf_sss_ping process_side_scan_ping(XTFPINGHEADER *PingHeader, XTFFILEHEADER *XT
    ping.heading_ = 0.5*M_PI-ping.heading_; // TODO: need to keep this for old data
    ping.sound_vel_ = PingHeader->SoundVelocity;
 
-   boost::posix_time::ptime data_time(boost::gregorian::date(PingHeader->Year, PingHeader->Month, PingHeader->Day), boost::posix_time::hours(PingHeader->Hour)+boost::posix_time::minutes(PingHeader->Minute)+boost::posix_time::seconds(PingHeader->Second)+boost::posix_time::milliseconds(10.*int(PingHeader->HSeconds))); 
+   boost::posix_time::ptime data_time(boost::gregorian::date(PingHeader->Year, PingHeader->Month, PingHeader->Day), boost::posix_time::hours(PingHeader->Hour)+boost::posix_time::minutes(PingHeader->Minute)+boost::posix_time::seconds(PingHeader->Second)+boost::posix_time::milliseconds(10*int(PingHeader->HSeconds))); 
    stringstream time_ss;
    time_ss << data_time;
    ping.time_string_ = time_ss.str();
