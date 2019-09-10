@@ -12,7 +12,7 @@
 #include <data_tools/all_data.h>
 #include <data_tools/lat_long_utm.h>
 #include <liball/all.h>
-#include <endian.h>
+//#include <endian.h>
 #include <fstream>
 
 #define BOOST_NO_CXX11_SCOPED_ENUMS
@@ -570,33 +570,33 @@ namespace std_data {
 using namespace all_data;
 
 template <>
-all_mbes_ping::PingsT parse_file<all_mbes_ping>(const boost::filesystem::path& path)
+all_mbes_ping::PingsT parse_file<all_mbes_ping>(const boost::filesystem::path& file)
 {
-    return parse_file_impl<all_mbes_ping, all_xyz88_datagram, 88>(path);
+    return parse_file_impl<all_mbes_ping, all_xyz88_datagram, 88>(file);
 }
 
 template <>
-all_nav_entry::EntriesT parse_file<all_nav_entry>(const boost::filesystem::path& path)
+all_nav_entry::EntriesT parse_file<all_nav_entry>(const boost::filesystem::path& file)
 {
-    return parse_file_impl<all_nav_entry, all_position_datagram, 80>(path);
+    return parse_file_impl<all_nav_entry, all_position_datagram, 80>(file);
 }
 
 template <>
-all_nav_depth::EntriesT parse_file<all_nav_depth>(const boost::filesystem::path& path)
+all_nav_depth::EntriesT parse_file<all_nav_depth>(const boost::filesystem::path& file)
 {
-    return parse_file_impl<all_nav_depth, all_depth_datagram, 104>(path);
+    return parse_file_impl<all_nav_depth, all_depth_datagram, 104>(file);
 }
 
 template <>
-all_nav_attitude::EntriesT parse_file<all_nav_attitude>(const boost::filesystem::path& path)
+all_nav_attitude::EntriesT parse_file<all_nav_attitude>(const boost::filesystem::path& file)
 {
-    return parse_file_impl<all_nav_attitude, all_attitude_datagram, 65>(path);
+    return parse_file_impl<all_nav_attitude, all_attitude_datagram, 65>(file);
 }
 
 template <>
-all_echosounder_depth::EntriesT parse_file<all_echosounder_depth>(const boost::filesystem::path& path)
+all_echosounder_depth::EntriesT parse_file<all_echosounder_depth>(const boost::filesystem::path& file)
 {
-    return parse_file_impl<all_echosounder_depth, all_echosounder_depth_datagram, 69>(path);
+    return parse_file_impl<all_echosounder_depth, all_echosounder_depth_datagram, 69>(file);
 }
 
 } // namespace std_data

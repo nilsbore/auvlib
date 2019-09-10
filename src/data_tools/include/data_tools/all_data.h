@@ -158,17 +158,21 @@ namespace std_data {
 
 //template <typename ReturnType>
 //std::vector<ReturnType, Eigen::aligned_allocator<ReturnType> > parse_file(const boost::filesystem::path& path);
-template <>
-all_data::all_mbes_ping::PingsT parse_file(const boost::filesystem::path& path);
 
 template <>
-all_data::all_nav_entry::EntriesT parse_file(const boost::filesystem::path& path);
+all_data::all_mbes_ping::PingsT parse_file(const boost::filesystem::path& file);
 
 template <>
-all_data::all_nav_depth::EntriesT parse_file(const boost::filesystem::path& path);
+all_data::all_nav_entry::EntriesT parse_file(const boost::filesystem::path& file);
 
 template <>
-all_data::all_nav_attitude::EntriesT parse_file(const boost::filesystem::path& path);
+all_data::all_nav_depth::EntriesT parse_file(const boost::filesystem::path& file);
+
+template <>
+all_data::all_nav_attitude::EntriesT parse_file(const boost::filesystem::path& file);
+
+template <>
+all_data::all_echosounder_depth::EntriesT parse_file(const boost::filesystem::path& file);
 
 }
 
