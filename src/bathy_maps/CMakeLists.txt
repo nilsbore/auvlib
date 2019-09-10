@@ -44,7 +44,9 @@ add_library(sss_meas_data src/sss_meas_data.cpp)
 
 add_library(sss_gen_sim src/sss_gen_sim.cpp)
 
-add_executable(test_mesh src/test_mesh.cpp)
+if(AUVLIB_WITH_GSF)
+  add_executable(test_mesh src/test_mesh.cpp)
+endif()
 
 # Define headers for this library. PUBLIC headers are used for
 # compiling the library, and will be added to consumers' build
@@ -117,7 +119,9 @@ target_link_libraries(align_map mesh_map std_data xyz_data ${GLFW3_LIBRARY} auvl
 
 target_link_libraries(drape_mesh snell_ray_tracing xtf_data ${GLFW3_LIBRARY} auvlib_glad)
 
-target_link_libraries(test_mesh std_data gsf_data xtf_data csv_data navi_data mesh_map draw_map patch_draper igl::embree ${OpenCV_LIBS} cxxopts)
+if(AUVLIB_WITH_GSF)
+  target_link_libraries(test_mesh std_data gsf_data xtf_data csv_data navi_data mesh_map draw_map patch_draper igl::embree ${OpenCV_LIBS} cxxopts)
+endif()
 
 target_link_libraries(patch_views eigen_cereal ${OpenCV_LIBS})
 

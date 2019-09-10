@@ -22,6 +22,7 @@ using namespace std;
 namespace gsf_data {
 
 using namespace std_data;
+using namespace csv_data;
 
 void match_sound_speeds(gsf_mbes_ping::PingsT& pings, gsf_sound_speed::SpeedsT& speeds)
 {
@@ -189,6 +190,85 @@ mbes_ping::PingsT convert_pings(gsf_mbes_ping::PingsT& pings)
             new_ping.beams.push_back(new_ping.pos_ + Rz*beam);
             new_ping.back_scatter.push_back(ping.amplitudes[i]);
             ++i;
+        }
+
+        new_pings.push_back(new_ping);
+    }
+
+    return new_pings;
+}
+
+mbes_ping::PingsT convert_matched_entries(gsf_mbes_ping::PingsT& pings, csv_nav_entry::EntriesT& entries)
+{
+    mbes_ping::PingsT new_pings;
+
+    std::stable_sort(entries.begin(), entries.end(), [](const csv_nav_entry& entry1, const csv_nav_entry& entry2) {
+        return entry1.time_stamp_ < entry2.time_stamp_;
+    });
+
+    auto pos = entries.begin();
+    for (gsf_mbes_ping& ping : pings) {
+        pos = std::find_if(pos, entries.end(), [&](const csv_nav_entry& entry) {
+            return entry.time_stamp_ > ping.time_stamp_;
+        });
+
+        mbes_ping new_ping;
+        new_ping.time_stamp_ = ping.time_stamp_;
+        new_ping.time_string_ = ping.time_string_;
+        new_ping.first_in_file_ = ping.first_in_file_;
+        //cout << "Ping has time: " << ping.time_string_ << ", time stamp: " << ping.time_stamp_ << endl;
+        if (pos == entries.end()) {
+            //cout << "Found only last entry with time: " << entries.back().time_string_ << ", time stamp: " << entries.back().time_stamp_ << endl;
+            new_ping.pos_ = entries.back().pos_;
+            new_ping.heading_ = entries.back().heading_;
+            new_ping.pitch_ = entries.back().pitch_;
+            new_ping.roll_ = entries.back().roll_;
+        }
+        else {
+            if (pos == entries.begin()) {
+                //cout << "Found only first entry with time: " << pos->time_string_ << ", time stamp: " << pos->time_stamp_ << endl;
+                new_ping.pos_ = pos->pos_;
+                if (ping.heading_ == 0) {
+                    new_ping.heading_ = pos->heading_;
+                    new_ping.pitch_ = pos->pitch_;
+                    new_ping.roll_ = pos->roll_;
+                }
+                else {
+                    new_ping.heading_ = ping.heading_;
+                    new_ping.pitch_ = ping.pitch_;
+                    new_ping.roll_ = ping.roll_;
+                }
+            }
+            else {
+                //cout << "Found entry with time: " << pos->time_string_ << ", time stamp: " << pos->time_stamp_ << endl;
+                csv_nav_entry& previous = *(pos - 1);
+                double ratio = double(ping.time_stamp_ - previous.time_stamp_)/double(pos->time_stamp_ - previous.time_stamp_);
+                new_ping.pos_ = previous.pos_ + ratio*(pos->pos_ - previous.pos_);
+                if (ping.heading_ == 0) {
+                    new_ping.heading_ = previous.heading_ + ratio*(pos->heading_ - previous.heading_);
+                    new_ping.pitch_ = previous.pitch_ + ratio*(pos->pitch_ - previous.pitch_);
+                    new_ping.roll_ = previous.roll_ + ratio*(pos->roll_ - previous.roll_);
+                }
+                else {
+                    new_ping.heading_ = ping.heading_;
+                    new_ping.pitch_ = ping.pitch_;
+                    new_ping.roll_ = ping.roll_;
+                    //cout << "heading diff: " << previous.yaw_ + ratio*(pos->yaw_ - previous.yaw_) - new_ping.heading_ << endl;
+                    //cout << "pitch diff: " << previous.pitch_ + ratio*(pos->pitch_ - previous.pitch_) - new_ping.pitch_ << endl;
+                    //cout << "roll diff: " << previous.roll_ + ratio*(pos->roll_ - previous.roll_) - new_ping.roll_ << endl;
+                }
+            }
+        }
+
+        for (const Eigen::Vector3d& beam : ping.beams) {
+            //new_ping.beams.push_back(new_ping.pos_ + beam);
+
+            Eigen::Matrix3d Rx = Eigen::AngleAxisd(new_ping.roll_, Eigen::Vector3d::UnitX()).matrix();
+            Eigen::Matrix3d Ry = Eigen::AngleAxisd(new_ping.pitch_, Eigen::Vector3d::UnitY()).matrix();
+            Eigen::Matrix3d Rz = Eigen::AngleAxisd(new_ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
+            Eigen::Matrix3d R = Rz*Ry*Rx;
+
+            new_ping.beams.push_back(new_ping.pos_ + R*beam);
         }
 
         new_pings.push_back(new_ping);
