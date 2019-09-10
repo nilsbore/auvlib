@@ -31,7 +31,7 @@ double compute_overlap_ratio(const Eigen::MatrixXd& P1, const Eigen::MatrixXd& P
     int overlapping_points = 0;
     for (int i = 0; i < P1.rows(); i += skip) {
         Eigen::MatrixXd::Index index;
-          // find nearest neighbour
+          // find near_est neighbour
         //(P2_sub.rowwise() - P1.row(i)).colwise().squaredNorm().minCoeff(&index);
         double dist = sqrt((P2_sub.rowwise() - P1.row(i)).colwise().squaredNorm().minCoeff(&index));
         //double dist = (P2_sub.row(index) - P1.row(i)).norm();
@@ -113,16 +113,16 @@ double points_to_mesh_rmse(const Eigen::MatrixXd& P, const Eigen::MatrixXd& V, c
     tree.squared_distance(V, F, P, sqrD, I, Q);
     //Eigen::ArrayXd temp = (P - Q).rowwise().squaredNorm().array();
     //cout << "Temp: " << temp.transpose() << endl;
-    Eigen::Array<bool, Eigen::Dynamic, 1> near = (P - Q).rowwise().squaredNorm().array() < assoc_threshold*assoc_threshold;
+    Eigen::Array<bool, Eigen::Dynamic, 1> near_ = (P - Q).rowwise().squaredNorm().array() < assoc_threshold*assoc_threshold;
 
-    int nbr_near = near.cast<int>().sum();
+    int nbr_near_ = near_.cast<int>().sum();
 
-    cout << "Number points near surface: " << nbr_near << endl;
+    cout << "Number points near_ surface: " << nbr_near_ << endl;
     cout << "Out of: " << P.rows() << endl;
     cout << "P rows: " << P.rows() << endl;
 
-    Eigen::MatrixXd goodP = igl::slice_mask(P, near, 1);
-    Eigen::MatrixXd goodQ = igl::slice_mask(Q, near, 1);
+    Eigen::MatrixXd goodP = igl::slice_mask(P, near_, 1);
+    Eigen::MatrixXd goodQ = igl::slice_mask(Q, near_, 1);
 
     cout << "GoodP rows: " << goodP.rows() << ", cols: " << goodP.cols() << endl;
 
@@ -142,13 +142,13 @@ Eigen::MatrixXd filter_points_mesh_offset(const Eigen::MatrixXd& P, const Eigen:
     cout << "Finding closes mesh points..." << endl;
 
     tree.squared_distance(V, F, P, sqrD, I, Q);
-    Eigen::Array<bool, Eigen::Dynamic, 1> near = sqrD.array() < offset*offset;
+    Eigen::Array<bool, Eigen::Dynamic, 1> near_ = sqrD.array() < offset*offset;
 
-    int nbr_near = near.cast<int>().sum();
+    int nbr_near_ = near_.cast<int>().sum();
 
-    cout << "Number points near surface: " << nbr_near << " out of: " << P.rows() << endl;
+    cout << "Number points near_ surface: " << nbr_near_ << " out of: " << P.rows() << endl;
 
-    Eigen::MatrixXd goodP = igl::slice_mask(P, near, 1);
+    Eigen::MatrixXd goodP = igl::slice_mask(P, near_, 1);
 
     cout << "GoodP rows: " << goodP.rows() << ", cols: " << goodP.cols() << endl;
 
@@ -304,26 +304,26 @@ tuple<Eigen::Matrix4d, double, bool> icp_iteration(const Eigen::MatrixXd& P, con
     Eigen::MatrixXd Q;
 
     tree.squared_distance(V, F, P, sqrD, I, Q);
-    //Eigen::Array<bool, Eigen::Dynamic, 1> near = (P - Q).rowwise().squaredNorm().array() < assoc_threshold*assoc_threshold;
+    //Eigen::Array<bool, Eigen::Dynamic, 1> near_ = (P - Q).rowwise().squaredNorm().array() < assoc_threshold*assoc_threshold;
     Eigen::Array<bool, Eigen::Dynamic, 1> close = (P - Q).leftCols<2>().rowwise().squaredNorm().array() < 0.1*0.1;
-    Eigen::Array<bool, Eigen::Dynamic, 1> near = sqrD.array() < assoc_threshold*assoc_threshold && close;
+    Eigen::Array<bool, Eigen::Dynamic, 1> near_ = sqrD.array() < assoc_threshold*assoc_threshold && close;
 
-    int nbr_near = near.cast<int>().sum();
-    cout << "Number points near surface: " << nbr_near << endl;
+    int nbr_near_ = near_.cast<int>().sum();
+    cout << "Number points near_ surface: " << nbr_near_ << endl;
     cout << "Out of: " << P.rows() << endl;
 
-    if (nbr_near < 100) {
+    if (nbr_near_ < 100) {
         cout << "Breaking since we do not have enough points!" << endl;
         return make_tuple(Eigen::Matrix4d::Identity(), 0., false);
     }
 
-    Eigen::MatrixXd goodP = igl::slice_mask(P, near, 1);
-    Eigen::MatrixXd goodQ = igl::slice_mask(Q, near, 1);
+    Eigen::MatrixXd goodP = igl::slice_mask(P, near_, 1);
+    Eigen::MatrixXd goodQ = igl::slice_mask(Q, near_, 1);
 
     Eigen::Vector3d meanP = goodP.rowwise().mean().transpose();
     Eigen::Vector3d meanQ = goodQ.rowwise().mean().transpose();
 
-    double mean_dist = igl::slice_mask(sqrD, near, 1).mean(); //(goodP - goodQ).rowwise().squaredNorm().mean();
+    double mean_dist = igl::slice_mask(sqrD, near_, 1).mean(); //(goodP - goodQ).rowwise().squaredNorm().mean();
 
     Eigen::Matrix3d covariance = 1./double(goodP.rows())*(goodQ.transpose().colwise() - meanQ)*(goodP.rowwise() - meanP.transpose());
 
