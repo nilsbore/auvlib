@@ -13,7 +13,6 @@ include(GNUInstallDirs)
 
 find_package(OpenCV REQUIRED)
 find_package(OpenGL REQUIRED)
-find_package(Ceres REQUIRED)
 
 # libigl
 option(LIBIGL_USE_STATIC_LIBRARY "Use libigl as static library" OFF)
@@ -37,23 +36,35 @@ option(LIBIGL_WITH_XML               "Use XML"            OFF)
 #option(LIBIGL_EXPORT_TARGETS         "Export libigl CMake targets" ON)
 
 option(AUVLIB_WITH_GSF "Enable reading and processing gsf data" ON)
-option(AUVLIB_USE_LIBIGL_EIGEN "Use libigl's version of Eigen"  OFF)
+option(AUVLIB_USE_LIBIGL_EIGEN "Use libigl's version of Eigen"  ON)
 option(AUVLIB_USE_LIBIGL_GLFW "Use libigl's version of glfw"    OFF)
+option(AUVLIB_USE_PYTHON3 "Use python3 instead of python2"      OFF)
 
 set(ENV{LIBIGL_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/libigl)
 find_package(LIBIGL REQUIRED QUIET)
 include(${CMAKE_CURRENT_BINARY_DIR}/embree/embree-config.cmake)
 
-if (${AUVLIB_USE_LIBIGL_GLFW})
+if (AUVLIB_USE_LIBIGL_GLFW)
+  #add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libigl/external/glfw) # this might be needed on windows?
   set(GLFW3_LIBRARY glfw)
 else()
   find_package(glfw3 REQUIRED)
 endif()
 
-if (${AUVLIB_USE_LIBIGL_EIGEN})
-
+if (AUVLIB_USE_LIBIGL_EIGEN)
+  set(EIGEN3_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/libigl/external/eigen)
 else()
   find_package(Eigen3 REQUIRED)
+endif()
+
+if(MSVC)
+  set(PYTHON_EXECUTABLE "")
+else()
+  if (AUVLIB_USE_PYTHON3)
+    set(PYTHON_EXECUTABLE /usr/bin/python3.5)
+  else()
+    set(PYTHON_EXECUTABLE /usr/bin/python2.7)
+  endif()
 endif()
 
 # For some reason it seems like we need to do this after libigl
@@ -65,11 +76,6 @@ set(PYBIND11_CPP_STANDARD -std=c++11)
 #add_definitions(-DPYBIND11_PYTHON_VERSION=2.7)
 #set(PYBIND11_PYTHON_VERSION 2.7)
 #set(PYTHON_LIBRARIES /usr/lib/x86_64-linux-gnu/libpython2.7.so)
-if(MSVC)
-  set(PYTHON_EXECUTABLE "")
-else()
-  set(PYTHON_EXECUTABLE /usr/bin/python2.7)
-endif()
 
 add_subdirectory(pybind11)
 
@@ -77,11 +83,7 @@ message("Pybind11: " ${PYBIND11_INCLUDE_DIR})
 
 add_subdirectory(cxxopts)
 
-message(${EIGEN3_INCLUDE_DIRS})
-message(${Boost_INCLUDE_DIRS})
-message(${Boost_LIBRARY_DIRS})
-
-include_directories(${PYBIND11_INCLUDE_DIR} ${CERES_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
+include_directories(${PYBIND11_INCLUDE_DIR} ${EIGEN3_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
 #include_directories(eigen_cereal/include)
 
