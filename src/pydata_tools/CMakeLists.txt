@@ -94,7 +94,7 @@ if(AUVLIB_WITH_GSF)
   set(AUVLIB_PYDATA_TOOLS_LIBS ${AUVLIB_PYDATA_TOOLS_LIBS} pygsf_data)
 endif()
 
-install(TARGETS 
+install(TARGETS ${AUVLIB_PYDATA_TOOLS_LIBS}
     LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}/auvlib/data_tools
 )  # This is for Windows
 
