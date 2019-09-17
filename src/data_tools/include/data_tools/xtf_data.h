@@ -81,6 +81,56 @@ cv::Mat  normalize_waterfall(const xtf_sss_ping::PingsT& pings, long* params);
 Eigen::MatrixXd make_eigen_waterfall_image(const xtf_sss_ping::PingsT& pings);
 void show_waterfall_image(const xtf_sss_ping::PingsT& pings);
 
+/**
+void  regularize_pings( xtf_sss_ping::PingsT& pings, const long * port_nadir, const long * stbd_nadir, double nadir_angle=0.27925268);
+
+This will use the two points along the nadir to define a flat bottom and then apply a cotan(incident angle) adjustment to the intensities of the pings.  One needs to call findNadirPort and findNadirStbd first and also give a value for the nadir angle. 
+
+*/
+
+void  regularize_pings( xtf_sss_ping::PingsT& pings, const long * port_nadir, const long * stbd_nadir, double nadir_angle=0.27925268);
+/**
+ RemoveLineArtifact_port(xtf_sss_ping::PingsT& pings, long * nadir, double minArtifactRange minr=30,  double minArtifactRange maxr=90, bool setzero=false)
+
+Our Port side Sidescan has an artifact that appears as a bright spot in about 25 cm of bins.  Which bins varies continously and smoothly in time accross bins.
+You can give some hints as to the range that the artifact wanders over and choose to set the values to 0 instead of trying to fill them with 'average' values nearby plus noise.
+
+nadir -  the array returned from calling findNadirPort. This array will be changed to contain the detected bin of the artifact.  
+
+ **/
+
+
+void removeLineArtifact_port(xtf_sss_ping::PingsT& pings, long * nadir, const double minArtifactRange=30,  const double maxArtifactRange=90, const bool setzero=false);
+/**
+ RemoveLineArtifact_stbd(xtf_sss_ping::PingsT& pings, long * nadir, double minArtifactRange minr=30,  double minArtifactRange maxr=90, bool setzero=false)
+
+Our Stbd side Sidescan has an artifact that appears as a bright spot in about 25 cm of bins.  Which bins varies continously and smoothly in time accross bins.
+You can give some hints as to the range that the artifact wanders over and choose to set the values to 0 instead of trying to fill them with 'average' values nearby plus noise.
+
+nadir -  the array returned from calling findNadirStbd. This array will be changed to contain the detected bin of the artifact.  
+
+ **/
+void removeLineArtifact_stbd(xtf_sss_ping::PingsT& pings, long * nadir, const double minArtifactRange=30,  const double maxArtifactRange=90, const bool setzero=false);
+/**
+This will look thru the pings on the port side and locate the index to the nadir.
+It will also set to 0 all intensities less then the minalt.  It also sets any intensities below zero or above 2^29 to 0.
+pings - the object to check
+nadir - a long array of length pings.size() that will hold the index to the nadir for each port side ping,
+minalt -  This should be the minimum altitude in m that the sone will see.  All data nearer than this will be set to 0.
+minintensityatnadir - This allow you to adjust things if it fails to find the nadir.
+*/
+ void findNadirPort(xtf_sss_ping::PingsT& pings, long * nadir, double minalt=10, long minintensityatnadir=500);
+
+/**
+This will look thru the pings on the starboard side and locate the index to the nadir.
+It will also set to 0 all intensities less then the minalt.  It also sets any intensities below zero or above 2^29 to 0.
+pings - the object to check
+nadir - a long array of length pings.size() that will hold the index to the nadir for each port side ping,
+minalt -  This should be the minimum altitude in m that the sone will see.  All data nearer than this will be set to 0.
+minintensityatnadir - This allow you to adjust things if it fails to find the nadir.
+*/
+ void findNadirStbd(xtf_sss_ping::PingsT& pings, long * nadir, double minalt=10, long minintensityatnadir=500);
+
 xtf_sss_ping::PingsT correct_sensor_offset(const xtf_sss_ping::PingsT& pings, const Eigen::Vector3d& sensor_offset);
 
 } // namespace xtf_data

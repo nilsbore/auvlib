@@ -13,7 +13,7 @@
 #include <cereal/archives/json.hpp>
 #include <data_tools/xtf_data.h>
 #include <opencv2/highgui/highgui.hpp>
-
+#include <cstdlib>
 using namespace std;
 using namespace std_data;
 using namespace xtf_data;
@@ -21,6 +21,7 @@ using namespace xtf_data;
 /** call as:
 ./create_xtf_waterfall ./pathtoXTFfolder maxIntensity rowdownsample 
 **/
+
 
 int main(int argc, char** argv)
 {
@@ -32,29 +33,65 @@ int main(int argc, char** argv)
     xtf_sss_ping::PingsT pings = parse_folder<xtf_sss_ping>(folder);
     long maxIntensity=65535;
     long rowdownsample=1;
- 
+    int chopup=0;
     if (argc>2) maxIntensity=atol(argv[2]);
     if (argc>3) rowdownsample=atol(argv[3]);
-		  
+    if (1) 
     for (auto pos = pings.begin(); pos != pings.end(); ) {
         auto next = std::find_if(pos, pings.end(), [&](const xtf_sss_ping& ping) {
             return ping.first_in_file_ && (&ping != &(*pos));
         });
         xtf_sss_ping::PingsT track_pings(pos, next);
 	int r = track_pings.size()/rowdownsample;
-        cv::Mat waterfall_img = make_waterfall_image(track_pings, 512, r, maxIntensity);
-	long params[4];
-	params[0]=512;
+     	long params[4];
+	params[0]=1024;
 	params[1]=r;
 	params[2]=0;
 	params[3]=0;
 	cv::Mat norm_img= normalize_waterfall(track_pings,params);
+	cv::imwrite("unnorm.png",norm_img);
+	cv::imshow("myuncrrected", norm_img);
+        cv::waitKey();
+        pos = next;
+
+    }
+    long p_nadir[pings.size()];
+    long s_nadir[pings.size()];
+    xtf_data::findNadirPort(pings,p_nadir,15,500);
+    xtf_data::findNadirStbd(pings,s_nadir,15,500);
+    removeLineArtifact_port(pings, p_nadir);    
+    
+    for (auto pos = pings.begin(); pos != pings.end(); ) {
+        auto next = std::find_if(pos, pings.end(), [&](const xtf_sss_ping& ping) {
+            return ping.first_in_file_ && (&ping != &(*pos));
+        });
+        xtf_sss_ping::PingsT track_pings(pos, next);
+	int r = track_pings.size()/rowdownsample;
+	long params[4];
+	params[0]=1024;
+	params[1]=r;
+	params[2]=0;
+	params[3]=0;
+	cv::Mat norm_img= normalize_waterfall(track_pings,params);
+	cv::imwrite("norm.png",norm_img);
+	cv::imshow("mynormed", norm_img);
+        cv::waitKey();
+        pos = next;
+    }
+    xtf_data::findNadirPort(pings,p_nadir,15,500);
+    xtf_data::regularize_pings(pings,p_nadir,s_nadir);
+
+    for (auto pos = pings.begin(); pos != pings.end(); ) {
+        auto next = std::find_if(pos, pings.end(), [&](const xtf_sss_ping& ping) {
+            return ping.first_in_file_ && (&ping != &(*pos));
+        });
+        xtf_sss_ping::PingsT track_pings(pos, next);
+	int r = track_pings.size()/rowdownsample;
+        cv::Mat waterfall_img = make_waterfall_image(track_pings, 1024, r, maxIntensity);
 	int rows=waterfall_img.rows;
 	int cols=waterfall_img.cols;
 	cv::imwrite("a.png",waterfall_img);
-	cv::imshow("My image", waterfall_img);
-	cv::imwrite("norm.png",norm_img);
-	cv::imshow("mynormed", norm_img);
+	cv::imshow("My regularzed image", waterfall_img);
         cv::waitKey();
         pos = next;
     }

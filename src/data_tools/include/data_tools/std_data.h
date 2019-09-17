@@ -154,17 +154,16 @@ std::vector<T, Eigen::aligned_allocator<T> > parse_folder_from_str(const std::st
 template <typename T>
 T read_data(const boost::filesystem::path& path)
 {
-    if (!boost::filesystem::exists(path)) {
+  if (!boost::filesystem::exists(path)) {
         std::cout << "File " << path << " does not exist..." << std::endl;
         exit(0);
     }
-
-    T rtn;
+  T rtn;
     std::ifstream is(path.string(), std::ifstream::binary);
     {
-        cereal::BinaryInputArchive archive(is);
-        archive(rtn);
-    }
+       cereal::BinaryInputArchive archive(is);
+       archive(rtn);
+   }
     is.close();
 
     return rtn;

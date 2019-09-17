@@ -31,6 +31,147 @@ using namespace std;
 
 namespace xtf_data {
 
+  void findNadirPort(xtf_sss_ping::PingsT& pings, long * nadir, double minalt, long minintensityatnadir){
+    double slantr=pings[0].port.slant_range;
+    double res=slantr/(double)pings[0].port.pings.size();//m per bin
+    double f=.995*.008/res; 
+    int w=pings[0].port.pings.size();
+    int maw=(int)((double)(.16/res+.5));
+    int minj=(int)((double)(minalt/res+.5));
+    if (maw<2)maw=2;
+    if (minj<10)minj=10;
+    //remove any funny stuff below min alt and check if scan is no good
+    for (int i = 0; i < pings.size(); i++) {
+      for (int j = 0; j <w; j++){
+	if ((pings[i].port.pings[j]<0)||(pings[i].port.pings[j]>(1<<29)))
+	  if (i>0)pings[i].port.pings[j]=pings[i-1].port.pings[j];
+	  else pings[i].port.pings[j]=0;
+      }
+      for (int j = 0; j <minj; j++) {
+	  pings[i].port.pings[j]=0;
+      }
+    }
+    
+    for (int i = 0; i < pings.size(); i++) {
+      nadir[i]=0;
+      long max=0;
+      long temp=0;
+      for (int j = 0; j < w-maw-1; j++) {
+	for (int k=j;k<j+maw; k++)
+	  temp+=pings[i].port.pings[k];
+	temp/=(maw);
+	if (max<temp)
+	  if (max< minintensityatnadir) max=temp;
+	  else {
+	    if (max*2<temp){
+	      max=temp;
+	      nadir[i]=j;
+	      j=w;
+	    }
+	  }
+	max*=f;
+	max+=(1-f)*temp;
+      }
+    }
+
+    //nadir is max of 3 values 
+    long lastn=nadir[0];
+    long long avg=lastn;
+    long long min=lastn;
+    long long max=lastn;
+    for(int i=2; i< pings.size(); i++){
+      long temp=nadir[i-1];
+      if (nadir[i-1]<lastn)
+	nadir[i-1]=lastn;
+      if (nadir[i-1]<nadir[i])
+      	nadir[i-1]=nadir[i];
+      lastn=temp;
+      avg+=lastn;
+      if (min>lastn)min=lastn;
+      if (max<lastn)max=lastn;
+    }
+    if (nadir[pings.size()-1]<lastn)
+      nadir[pings.size()-1]=lastn;
+    lastn=nadir[pings.size()-1];
+    avg+=lastn;
+    if (min>lastn)min=lastn;
+    if (max<lastn)max=lastn;
+    avg/=pings.size();
+    double nad=avg*res;
+    std::cout<<" Average Port Nadir is "<<nad<<" m and range is ("<<(min*res)<<", "<<(max*res)<<")\n";
+  }
+void findNadirStbd(xtf_sss_ping::PingsT& pings, long * nadir, double minalt, long minintensityatnadir){
+    double slantr=pings[0].stbd.slant_range;
+    double res=slantr/(double)pings[0].stbd.pings.size();//m per bin
+    double f=.995*.008/res; 
+    int w=pings[0].stbd.pings.size();
+    int maw=(int)((double)(.16/res+.5));
+    int minj=(int)((double)(minalt/res+.5));
+    if (maw<2)maw=2;
+  	
+    //remove any funny stuff below min alt and check if scan is no good
+    for (int i = 0; i < pings.size(); i++) {
+      for (int j = 0; j <w; j++){
+	if ((pings[i].stbd.pings[j]<0)||(pings[i].stbd.pings[j]>(1<<29)))
+	  if (i>0)pings[i].stbd.pings[j]=pings[i-1].stbd.pings[j];
+	  else pings[i].stbd.pings[j]=0;
+      }
+      for (int j = 0; j <minj; j++) {
+	  pings[i].stbd.pings[j]=0;
+      }
+    }
+    
+    for (int i = 0; i < pings.size(); i++) {
+      nadir[i]=0;
+      long max=0;
+      long temp=0;
+      for (int j = 0; j < w-maw-1; j++) {
+	for (int k=j;k<j+maw; k++)
+	  temp+=pings[i].stbd.pings[k];
+	temp/=(maw);
+	if (max<temp)
+	  if (max< minintensityatnadir) max=temp;
+	  else {
+	    if (max*2<temp){
+	      max=temp;
+	      nadir[i]=j;
+	      j=w;
+	    }
+	  }
+	max*=f;
+	max+=(1-f)*temp;
+      }
+    }
+
+    //nadir is max of 3 values 
+    long lastn=nadir[0];
+    long long avg=lastn;
+    long long min=lastn;
+    long long max=lastn;
+    for(int i=2; i< pings.size(); i++){
+      long temp=nadir[i-1];
+      if (nadir[i-1]<lastn)
+	nadir[i-1]=lastn;
+      if (nadir[i-1]<nadir[i])
+      	nadir[i-1]=nadir[i];
+      lastn=temp;
+      avg+=lastn;
+      if (min>lastn)min=lastn;
+      if (max<lastn)max=lastn;
+    }
+    if (nadir[pings.size()-1]<lastn)
+      nadir[pings.size()-1]=lastn;
+    lastn=nadir[pings.size()-1];
+       avg+=lastn;
+    if (min>lastn)min=lastn;
+    if (max<lastn)max=lastn;
+    avg/=pings.size();
+    double nad=avg*res;
+    std::cout<<" Average Starboard Nadir is "<<nad<<" m and range is ("<<(res*min)<<", "<<(res*max)<<")\n";
+
+
+  }
+
 cv::Mat make_waterfall_image(const xtf_sss_ping::PingsT& pings)
 {
     int rows = pings.size();
@@ -57,18 +198,57 @@ cv::Mat make_waterfall_image(const xtf_sss_ping::PingsT& pings)
     return resized_swath_img;
 }
 
+void  regularize_pings(xtf_sss_ping::PingsT& pings, const long * port_nadir, const long * stbd_nadir, double nadir_angle)
+{
+    //res is m per bin
+  double res=(double)pings[0].port.slant_range/(double)pings[0].port.pings.size();
+  double b=cos(nadir_angle)/2.0;
+  
+  int w=pings[0].port.pings.size();    
+  for (int i = 0; i < pings.size(); i++) {
+    double c=port_nadir[i];
+    if (c==0){
+      c=2.0*stbd_nadir[i];
+    }  else if (stbd_nadir[i]==0)c*=2.0;
+    else  c+=stbd_nadir[i];
+    if (c>1E-6){
+      double a=b*c;
+      for (int j = port_nadir[i]; j < w; j++) {
+	c=a/(double)j;
+	if (c>1)c=1;
+	if (c<.01) c=.01;
+	double phi=acos(c);
+	double intensity=pings[i].port.pings[j];
+	intensity*=sin(phi);
+	intensity/=c;
+	pings[i].port.pings[j]=(long)(intensity+.5);
+      }
+
+      for (int j = stbd_nadir[i]; j < w; j++) {
+	c=a/(double)j;
+	if (c>1)c=1;
+	if (c<.01) c=.01;
+	double phi=acos(c);
+	double intensity=pings[i].stbd.pings[j];
+	intensity*=sin(phi);
+	intensity/=c;
+	pings[i].stbd.pings[j]=(long)(intensity+.5);
+      }
+    }
+  }
+}
 cv::Mat  normalize_waterfall(const xtf_sss_ping::PingsT& pings, long* params)
-  {
-    int rows = pings.size();
-    long width=params[0];
-    long height=params[1];
-    long startping=params[2];
-    long endping=params[3];
-    if (startping<0) startping=0;
-    if ((endping>rows)||(endping<=0))endping=rows;
-    rows=endping-startping;
-    
-    int cols = pings[0].port.pings.size() + pings[0].stbd.pings.size();     
+{
+  int rows = pings.size();
+  long width=params[0];
+  long height=params[1];
+  long startping=params[2];
+  long endping=params[3];
+  if (startping<0) startping=0;
+  if ((endping>rows)||(endping<=0))endping=rows;
+  rows=endping-startping;
+  
+  int cols = pings[0].port.pings.size() + pings[0].stbd.pings.size();     
     int downsample=1;
     if (width>0) downsample=cols/width;
     else width=cols;
@@ -109,17 +289,20 @@ cv::Mat  normalize_waterfall(const xtf_sss_ping::PingsT& pings, long* params)
 	  int index=(j-mid)*downsample;
 	  for (int k=0; k<downsample; k++)
 	    {
-	      long temp=pings[startping+i*downrow+w].stbd.pings[index];
+	      long temp=pings[startping+i*downrow+w].port.pings[index];
 	      if ((temp>=0)&&(index<over)) acc+=temp;
 	      else num--;
+	      //	      if ((i==30)&&(j>344)&&(j<348))
+	      //cout<<temp<<" i "<<i<<" j "<<j<<" w "<<w<<" k "<<k<<"\n";
 	      index++;
 	    }
 	}
 	
 	if (num>0){
 	  m[j*height+i]=(long)(((double)acc/(double)num)+0.5);
-	  if (m[j*height+i]>maxPingIntensity[j])
+	  if (m[j*height+i]>maxPingIntensity[j]){
 	    maxPingIntensity[j]=m[j*height+i];
+	  }
 	  if (m[j*height+i]<minPingIntensity[j])
 	    minPingIntensity[j]=m[j*height+i];
 	}
@@ -158,12 +341,13 @@ cv::Mat  normalize_waterfall(const xtf_sss_ping::PingsT& pings, long* params)
     for (int j=0; j<width;j++){
       maxPingIntensity[j]*=1.05;//to avoid saturation
       if (maxPingIntensity[j]>maxmax) maxmax=maxPingIntensity[j];
-      if (minPingIntensity[j]>0)minPingIntensity[j]=0;
+      if (minPingIntensity[j]>10)minPingIntensity[j]=10;
     }
     for (int j=0; j<width;j++)
-       if (maxPingIntensity[j]<maxmax/4)maxPingIntensity[j]=maxmax/4;
+      if (maxPingIntensity[j]<maxmax/10)maxPingIntensity[j]=maxmax/10;
     
     if (width>2){//smooth the normalization values
+
       long long temp=maxPingIntensity[0]+maxPingIntensity[1];
       long long temp2=minPingIntensity[0]+minPingIntensity[1];
       maxPingIntensity[0]=temp/2;
@@ -232,6 +416,7 @@ cv::Mat  normalize_waterfall(const xtf_sss_ping::PingsT& pings, long* params)
       height=rows;
       downrow=1;
     }
+    int count=0;
     int num=0;
     long long acc=0;
     int mid=width/2;
@@ -248,9 +433,9 @@ cv::Mat  normalize_waterfall(const xtf_sss_ping::PingsT& pings, long* params)
 	  int index=(j-mid)*downsample;
 	  for (int k=0; k<downsample; k++)
 	    {
-	      long temp=pings[i*downrow+w].stbd.pings[index];
+	      long temp=pings[i*downrow+w].port.pings[index];
 	      if (temp>maxPingIntensity){
-		std::cout<<"Ping is "<<temp<<" which is above max Ping Intensity "<<maxPingIntensity<<"\n";    
+		count++;
 		temp=maxPingIntensity;
 	      }
 	      if (temp>=minPingIntensity)temp=temp-minPingIntensity;
@@ -277,7 +462,7 @@ cv::Mat  normalize_waterfall(const xtf_sss_ping::PingsT& pings, long* params)
 	      long temp=pings[i*downrow+w].stbd.pings[index];
 	      
 	      if (temp>maxPingIntensity){
-		std::cout<<"Ping is "<<temp<<" which is above max Ping Intensity "<<maxPingIntensity<<"\n";
+		count++;
 		temp=maxPingIntensity;
 	      }
 	      if (temp>=minPingIntensity)temp=temp-minPingIntensity;
@@ -297,8 +482,222 @@ cv::Mat  normalize_waterfall(const xtf_sss_ping::PingsT& pings, long* params)
      
       }
     }
+    double p=count*100.0/(rows*cols);
+    std::cout<<"There were "<<count<<" or "<<p<<"% above the maxPingIndensity of "<<maxPingIntensity<<"\n";
     return swath_img;
   }
+/**
+ RemoveLineArtifact_port(xtf_sss_ping::PingsT& pings, long * nadir, double minArtifactRange minr=30,  double minArtifactRange maxr=90, bool setzero=false)
+
+Our Port side Sidescan has an artifact that appears as a bright spot in about 25 cm of bins.  Which bins varies continously and smoothly in time accross bins.
+You can give some hints as to the range that the artifact wanders over and choose to set the values to 0 instead of trying to fill them with 'average' values nearby plus noise.
+
+nadir -  the array returned from calling findNadirPort. This array will be changed to contain the detected bin of the artifact.  
+
+ **/
+
+
+void removeLineArtifact_port(xtf_sss_ping::PingsT& pings, long * nadir, const double minArtifactRange,  const double maxArtifactRange, const bool setzero){
+    //res is m per bin
+    double res=(double)pings[0].port.slant_range/(double)pings[0].port.pings.size();
+    //This is the low pass filter applied as we move along the elements of a ping.  
+    double f=.995*.008/res; 
+    int jstart=(minArtifactRange/res);
+    int jend=(maxArtifactRange/res+.5);
+    int w=pings[0].port.pings.size();
+    if (jend>w)jend=w;
+    int jw=jend-jstart;
+    //this is the moveing avgerage widow size as we move along the ping elements
+    int maw=(int)((double)(.04/res+.5));
+    if (maw<2)maw=2;
+    int howmany=0;
+    long artifact=0;   
+    double running=jstart;
+    int countr=0;
+    int countfails=0;
+    //This sets how far the artifact can wander between pings.
+    double binmotion=10.0/res;
+    // this si the start value for the change in the moving average that is called a detection of the artifact.  It will be changed adaptively and stubornly to find all artifacts.
+    double testthreshold=3.5;
+    for (int i = 0; i < pings.size(); i++) { 
+      int jn=nadir[i];
+      nadir[i]=0;
+      double max=0;
+      long temp=0;
+      double mv=0;
+      
+      double tt=testthreshold;
+      while (nadir[i]==0){
+	for (int j = jn; j < jend-maw-1; j++) {
+	  for (int k=j;k<j+maw; k++)
+	    temp+=pings[i].port.pings[k];
+	  temp/=(maw);
+	  if (j==jn) max=temp;	      
+	  if (max<temp)
+	    if ((j>jstart)&&(max*tt<(double)temp)){
+	      double bn=binmotion;
+	       bn*=exp(2.0*countfails);
+	      if (countr<10) bn*=(10-countr);
+	      mv=j-running;	     
+	      if  ((countr==0)||((mv<bn)&&(mv>-bn))){
+		nadir[i]=j;
+		j=w;
+		artifact=temp;
+	      }
+	      else max=temp;
+	    }
+	  max*=f;
+	  max+=((double)temp*(1.0-f));
+	}
+	if (nadir[i]==0){
+	  tt*=.9;
+	}
+	if (tt<2) break;
+      }
+      
+      if (nadir[i]>0){
+	countr++;
+	countfails=0;
+	if (countr==1) running =nadir[i];
+	else    running=.9*running+.1*nadir[i];
+	
+	
+       
+	int top =nadir[i]+50+maw;
+	if (top>w) top=w;
+	
+	double avg=0;
+	if (!setzero){
+	  int sta=top+1/res;
+	  if (sta>w) sta=w-50;
+	  for (int k=sta; k<sta+50; k++)
+	    avg+=pings[i].port.pings[k];
+	  sta=nadir[i]-100-1/res;
+	  if (sta<0) sta=0;
+	  for (int k=sta; k<sta+50; k++)
+	    avg+=pings[i].port.pings[k];
+	  avg/=100;
+	}
+	double r1=(2.0*(double)rand())/((double)RAND_MAX);
+	for (int k=nadir[i]-50;k<top; k++){
+	  if(pings[i].port.pings[k]>artifact/(testthreshold-0.5)){
+	    howmany++;
+	    double r=((double)rand())/(1.0*(double)RAND_MAX) +.5;
+	    pings[i].port.pings[k]=avg*r*r1;
+	  }
+	}
+	
+      } else countfails++;
+    }
+    howmany/=countr;
+    std::cout<<"Corrected "<<countr<<" of "<<pings.size()<< " pings with an average of "<<howmany<<" bins (= "<<(howmany*res)<<"m) in each ping"<<"\n";   
+}
+
+/**
+ RemoveLineArtifact_stbd(xtf_sss_ping::PingsT& pings, long * nadir, double minArtifactRange minr=30,  double minArtifactRange maxr=90, bool setzero=false)
+
+Our Stbd side Sidescan has an artifact that appears as a bright spot in about 25 cm of bins.  Which bins varies continously and smoothly in time accross bins.
+You can give some hints as to the range that the artifact wanders over and choose to set the values to 0 instead of trying to fill them with 'average' values nearby plus noise.
+
+nadir -  the array returned from calling findNadirStbd. This array will be changed to contain the detected bin of the artifact.  
+
+ **/
+void removeLineArtifact_stbd(xtf_sss_ping::PingsT& pings, long * nadir, const double minArtifactRange,  const double maxArtifactRange, const bool setzero){
+    //res is m per bin
+    double res=(double)pings[0].stbd.slant_range/(double)pings[0].stbd.pings.size();
+    //This is the low pass filter applied as we move along the elements of a ping.  
+    double f=.995*.008/res; 
+    int jstart=(minArtifactRange/res);
+    int jend=(maxArtifactRange/res+.5);
+    int w=pings[0].stbd.pings.size();
+    if (jend>w)jend=w;
+    int jw=jend-jstart;
+    //this is the moveing avgerage widow size as we move along the ping elements
+    int maw=(int)((double)(.04/res+.5));
+    if (maw<2)maw=2;
+    int howmany=0;
+    long artifact=0;   
+    double running=jstart;
+    int countr=0;
+    int countfails=0;
+    //This sets how far the artifact can wander between pings.
+    double binmotion=10.0/res;
+    // this si the start value for the change in the moving average that is called a detection of the artifact.  It will be changed adaptively and stubornly to find all artifacts.
+    double testthreshold=3.5;
+    for (int i = 0; i < pings.size(); i++) { 
+      int jn=nadir[i];
+      nadir[i]=0;
+      double max=0;
+      long temp=0;
+      double mv=0;
+      
+      double tt=testthreshold;
+      while (nadir[i]==0){
+	for (int j = jn; j < jend-maw-1; j++) {
+	  for (int k=j;k<j+maw; k++)
+	    temp+=pings[i].stbd.pings[k];
+	  temp/=(maw);
+	  if (j==jn) max=temp;	      
+	  if (max<temp)
+	    if ((j>jstart)&&(max*tt<(double)temp)){
+	      double bn=binmotion;
+	       bn*=exp(2.0*countfails);
+	      if (countr<10) bn*=(10-countr);
+	      mv=j-running;	     
+	      if  ((countr==0)||((mv<bn)&&(mv>-bn))){
+		nadir[i]=j;
+		j=w;
+		artifact=temp;
+	      }
+	      else max=temp;
+	    }
+	  max*=f;
+	  max+=((double)temp*(1.0-f));
+	}
+	if (nadir[i]==0){
+	  tt*=.9;
+	}
+	if (tt<2) break;
+      }
+      
+      if (nadir[i]>0){
+	countr++;
+	countfails=0;
+	if (countr==1) running =nadir[i];
+	else    running=.9*running+.1*nadir[i];
+	
+	
+       
+	int top =nadir[i]+50+maw;
+	if (top>w) top=w;
+	
+	double avg=0;
+	if (!setzero){
+	  int sta=top+1/res;
+	  if (sta>w) sta=w-50;
+	  for (int k=sta; k<sta+50; k++)
+	    avg+=pings[i].stbd.pings[k];
+	  sta=nadir[i]-100-1/res;
+	  if (sta<0) sta=0;
+	  for (int k=sta; k<sta+50; k++)
+	    avg+=pings[i].stbd.pings[k];
+	  avg/=100;
+	}
+	double r1=(2.0*(double)rand())/((double)RAND_MAX);
+	for (int k=nadir[i]-50;k<top; k++){
+	  if(pings[i].stbd.pings[k]>artifact/(testthreshold-0.5)){
+	    howmany++;
+	    double r=((double)rand())/(1.0*(double)RAND_MAX) +.5;
+	    pings[i].stbd.pings[k]=avg*r*r1;
+	  }
+	}
+	
+      } else countfails++;
+    }
+    howmany/=countr;
+    std::cout<<"Corrected "<<countr<<" of "<<pings.size()<< " pings with an average of "<<howmany<<" bins (= "<<(howmany*res)<<"m) in each ping"<<"\n";   
+}
+
 
 
 Eigen::MatrixXd make_eigen_waterfall_image(const xtf_sss_ping::PingsT& pings)
