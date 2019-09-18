@@ -10,6 +10,7 @@
  */
 
 #include <data_tools/std_data.h>
+#include <data_tools/navi_data.h>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>

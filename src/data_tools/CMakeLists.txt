@@ -90,14 +90,20 @@ target_include_directories(xyz_data PUBLIC
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
 
-target_link_libraries(test_xtf xtf_data std_data navi_data ${OpenCV_LIBS} ${Boost_LIBRARIES})
+if(MSVC)
+  set(EXTRA_BOOST_LIBS "")
+else()
+  set(EXTRA_BOOST_LIBS ${Boost_LIBRARIES})
+endif()
 
-target_link_libraries(test_all all_data ${OpenCV_LIBS} ${Boost_LIBRARIES})
+target_link_libraries(test_xtf xtf_data std_data navi_data ${OpenCV_LIBS} ${EXTRA_BOOST_LIBS})
+
+target_link_libraries(test_all all_data ${OpenCV_LIBS} ${EXTRA_BOOST_LIBS})
 
 # Link the libraries
-target_link_libraries(submaps eigen_cereal ${Boost_LIBRARIES}) # ${PCL_LIBRARIES})
+target_link_libraries(submaps eigen_cereal ${EXTRA_BOOST_LIBS}) # ${PCL_LIBRARIES})
 
-target_link_libraries(std_data PUBLIC eigen_cereal ${Boost_LIBRARIES})
+target_link_libraries(std_data PUBLIC eigen_cereal ${EXTRA_BOOST_LIBS})
 
 target_link_libraries(benchmark PUBLIC eigen_cereal std_data ${OpenCV_LIBS})
 
@@ -107,14 +113,14 @@ target_link_libraries(csv_data PUBLIC std_data navi_data xtf_data)
 
 if(AUVLIB_WITH_GSF)
   target_link_libraries(gsf_data PUBLIC gsf std_data navi_data lat_long_utm csv_data)
-  target_link_libraries(test_submap_tracks gsf_data std_data navi_data ${OpenCV_LIBS} ${Boost_LIBRARIES})
+  target_link_libraries(test_submap_tracks gsf_data std_data navi_data ${OpenCV_LIBS} ${EXTRA_BOOST_LIBS})
 endif()
 
 target_link_libraries(xtf_data PUBLIC std_data navi_data xtf_reader lat_long_utm ${OpenCV_LIBS})
 
 target_link_libraries(all_data navi_data lat_long_utm csv_data ${OpenCV_LIBS})
 
-target_link_libraries(xyz_data std_data ${Boost_LIBRARIES})
+target_link_libraries(xyz_data std_data ${EXTRA_BOOST_LIBS})
 
 set(AUVLIB_DATA_TOOLS_LIBS data_transforms submaps std_data benchmark navi_data csv_data xtf_data all_data xyz_data lat_long_utm)
 

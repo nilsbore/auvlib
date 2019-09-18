@@ -52,7 +52,7 @@ target_include_directories(pybenchmark PUBLIC
 
 
 #target_link_libraries(pystd_data std_data eigen_cereal)
-target_link_libraries(pystd_data PRIVATE std_data eigen_cereal ${BOOST_LIBRARIES} pybind11::module)
+target_link_libraries(pystd_data PRIVATE std_data navi_data eigen_cereal ${BOOST_LIBRARIES} pybind11::module)
 set_target_properties(pystd_data PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
                                             OUTPUT_NAME "std_data"
                                             SUFFIX "${PYTHON_MODULE_EXTENSION}")

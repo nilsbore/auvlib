@@ -36,9 +36,9 @@ option(LIBIGL_WITH_VIEWER            "Use OpenGL viewer"  ON)
 option(LIBIGL_WITH_XML               "Use XML"            OFF)
 #option(LIBIGL_EXPORT_TARGETS         "Export libigl CMake targets" ON)
 
-option(AUVLIB_WITH_GSF "Enable reading and processing gsf data" ON)
-option(AUVLIB_USE_LIBIGL_EIGEN "Use libigl's version of Eigen"  OFF)
-option(AUVLIB_USE_LIBIGL_GLFW "Use libigl's version of glfw"    OFF)
+option(AUVLIB_WITH_GSF "Enable reading and processing gsf data" OFF)
+option(AUVLIB_USE_LIBIGL_EIGEN "Use libigl's version of Eigen"  ON)
+option(AUVLIB_USE_LIBIGL_GLFW "Use libigl's version of glfw"    ON)
 option(AUVLIB_USE_PYTHON3 "Use python3 instead of python2"      OFF)
 
 set(ENV{LIBIGL_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/libigl)
@@ -72,6 +72,11 @@ else()
   endif()
 endif()
 
+if (MSVC)
+  set(Boost_USE_STATIC_LIBS ON CACHE BOOL "use static libraries from Boost")
+  set(Boost_USE_MULTITHREADED ON)
+  set(Boost_USE_DEBUG_RUNTIME OFF)
+endif()
 # For some reason it seems like we need to do this after libigl
 find_package(Boost COMPONENTS system filesystem date_time REQUIRED)
 
