@@ -11,9 +11,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 # locations on all platforms.
 include(GNUInstallDirs)
 
-option(AUVLIB_WITH_GSF "Enable reading and processing gsf data"    OFF)
+option(AUVLIB_WITH_GSF "Enable reading and processing gsf data"    ON)
 option(AUVLIB_USE_LIBIGL_EIGEN "Use libigl's version of Eigen"     ON)
-option(AUVLIB_USE_LIBIGL_GLFW "Use libigl's version of glfw"       ON)
+option(AUVLIB_USE_LIBIGL_GLFW "Use libigl's version of glfw"       OFF)
 option(AUVLIB_USE_LIBIGL_TINYXML "Use libigl's version of tinyxml" ON)
 option(AUVLIB_USE_PYTHON3 "Use python3 instead of python2"         OFF)
 
