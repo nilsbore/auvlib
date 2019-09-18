@@ -11,7 +11,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 # locations on all platforms.
 include(GNUInstallDirs)
 
-find_package(OpenCV REQUIRED)
+find_package(OpenCV REQUIRED core highgui)
 find_package(OpenGL REQUIRED)
 find_package(TinyXML2 REQUIRED)
 
