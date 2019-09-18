@@ -2,7 +2,7 @@ version: 1.0.{build}
 os: Visual Studio 2017
 platform: x64
 clone_folder: C:\projects\auvlib
-shallow_clone: true
+#shallow_clone: true
 branches:
   only:
     - master
@@ -13,7 +13,7 @@ environment:
     OpenCV_DIR: C:/tools/opencv/build/x64/vc14/lib
     PYTHON: 27
 install:
-  - cd c:\projects\auvlib
+  - cd C:\projects\auvlib
   - git submodule update --init 
   - cinst python2
   - cinst OpenCV --version 3.4.7
