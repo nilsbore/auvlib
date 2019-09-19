@@ -37,32 +37,35 @@ pair<Eigen::VectorXd, Eigen::MatrixXd> trace_multiple_layers(const Eigen::Vector
     return make_pair(end_times, layer_widths);
 }
 
+#ifndef _MSC_VER
+class LayerWidthCostFunctor {
+public:
+    LayerWidthCostFunctor(double height, double speed) : height(height), speed(speed)
+    {
+    }
+
+    template <typename T>
+    bool operator()(const T* const x1, const T* const x2, T* e) const
+    {
+        e[0] = pow((*x2-*x1)*(*x2-*x1)+T(height*height), 0.25)/T(sqrt(speed));
+        return true;
+    }
+
+    static ceres::CostFunction* Create(double height, double speed)
+    {
+        return new ceres::AutoDiffCostFunction<LayerWidthCostFunctor, 1, 1, 1>(
+            new LayerWidthCostFunctor(height, speed));
+    }
+
+private:
+    double height;
+    double speed;
+};
+#endif
+
 pair<double, Eigen::VectorXd> trace_single_layers(const Eigen::VectorXd& layer_depths, const Eigen::VectorXd& layer_speeds, const Eigen::Vector2d& end_point)
 {
 #ifndef _MSC_VER
-    class LayerWidthCostFunctor {
-    public:
-        LayerWidthCostFunctor(double height, double speed) : height(height), speed(speed)
-        {
-        }
-
-        template <typename T>
-        bool operator()(const T* const x1, const T* const x2, T* e) const
-        {
-            e[0] = pow((*x2-*x1)*(*x2-*x1)+T(height*height), 0.25)/T(sqrt(speed));
-            return true;
-        }
-    
-        static ceres::CostFunction* Create(double height, double speed)
-        {
-            return new ceres::AutoDiffCostFunction<LayerWidthCostFunctor, 1, 1, 1>(
-                new LayerWidthCostFunctor(height, speed));
-        }
-
-    private:
-        double height;
-        double speed;
-    };
     Eigen::VectorXd layer_widths(layer_depths.rows()+2);
     layer_widths(0) = 0.;
 
