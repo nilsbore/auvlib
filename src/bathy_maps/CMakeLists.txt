@@ -150,5 +150,7 @@ install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 # just go into 'cmake'.
 install(EXPORT BathyMapsConfig DESTINATION share/BathyMaps/cmake)
 
-# This makes the project importable from the build directory
-export(TARGETS draw_map mesh_map align_map drape_mesh patch_draper base_draper map_draper patch_views sss_map_image sss_meas_data sss_gen_sim FILE BathyMapsConfig.cmake)
+if (AUVLIB_EXPORT_BUILD)
+  # This makes the project importable from the build directory
+  export(TARGETS draw_map mesh_map align_map drape_mesh patch_draper base_draper map_draper patch_views sss_map_image sss_meas_data sss_gen_sim FILE BathyMapsConfig.cmake)
+endif()
