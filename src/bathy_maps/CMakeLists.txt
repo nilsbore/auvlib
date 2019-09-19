@@ -112,7 +112,7 @@ target_include_directories(sss_gen_sim PUBLIC
 target_link_libraries(draw_map std_data ${OpenCV_LIBS})
 
 #target_link_libraries(mesh_map std_data igl::embree ${OpenCV_LIBS} glad ${GLFW3_LIBRARY} ${OPENGL_LIBRARY} ${OPENGL_glu_LIBRARY} -lpthread)
-target_link_libraries(mesh_map PRIVATE std_data ${OpenCV_LIBS} ${GLFW3_LIBRARY} auvlib_glad -lpthread ${TinyXML2_LIBRARIES})
+target_link_libraries(mesh_map std_data ${OpenCV_LIBS} ${GLFW3_LIBRARY} auvlib_glad -lpthread ${TinyXML2_LIBRARIES})
 
 target_link_libraries(align_map mesh_map std_data xyz_data ${GLFW3_LIBRARY} auvlib_glad -lpthread) # ${TinyXML2_LIBRARIES})
 
