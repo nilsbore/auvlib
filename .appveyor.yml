@@ -29,9 +29,10 @@ build_script:
       -DAUVLIB_WITH_GSF=OFF
       -DAUVLIB_USE_LIBIGL_GLFW=ON
       -DAUVLIB_USE_LIBIGL_TINYXML=ON
-      -DCMAKE_INSTALL_PREFIX=../install
       -DCMAKE_SKIP_INSTALL_RULES=true
       ../
+      #-DCMAKE_INSTALL_PREFIX=../install
   - set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
   - set MSBuildOptions=/v:m /m /p:BuildInParallel=true /p:Configuration=%CONFIG% /logger:%MSBuildLogger%
-  - msbuild %MSBuildOptions% INSTALL.vcxproj
+  #- msbuild %MSBuildOptions% INSTALL.vcxproj
+  - msbuild %MSBuildOptions% ALL_BUILD.vcxproj
