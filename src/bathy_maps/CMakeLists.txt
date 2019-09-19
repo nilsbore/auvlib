@@ -44,7 +44,9 @@ add_library(sss_meas_data src/sss_meas_data.cpp)
 
 add_library(sss_gen_sim src/sss_gen_sim.cpp)
 
-add_executable(test_mesh src/test_mesh.cpp)
+if(AUVLIB_WITH_GSF)
+  add_executable(test_mesh src/test_mesh.cpp)
+endif()
 
 # Define headers for this library. PUBLIC headers are used for
 # compiling the library, and will be added to consumers' build
@@ -110,14 +112,16 @@ target_include_directories(sss_gen_sim PUBLIC
 target_link_libraries(draw_map std_data ${OpenCV_LIBS})
 
 #target_link_libraries(mesh_map std_data igl::embree ${OpenCV_LIBS} glad ${GLFW3_LIBRARY} ${OPENGL_LIBRARY} ${OPENGL_glu_LIBRARY} -lpthread)
-target_link_libraries(mesh_map PRIVATE std_data ${OpenCV_LIBS} ${GLFW3_LIBRARY} auvlib_glad -lpthread -ltinyxml2) # ${TinyXML2_LIBRARIES})
+target_link_libraries(mesh_map std_data ${OpenCV_LIBS} ${GLFW3_LIBRARY} auvlib_glad -lpthread ${TinyXML2_LIBRARIES})
 
 target_link_libraries(align_map mesh_map std_data xyz_data ${GLFW3_LIBRARY} auvlib_glad -lpthread) # ${TinyXML2_LIBRARIES})
 
 
 target_link_libraries(drape_mesh snell_ray_tracing xtf_data ${GLFW3_LIBRARY} auvlib_glad)
 
-target_link_libraries(test_mesh std_data gsf_data xtf_data csv_data navi_data mesh_map draw_map patch_draper igl::embree ${OpenCV_LIBS} cxxopts)
+if(AUVLIB_WITH_GSF)
+  target_link_libraries(test_mesh std_data gsf_data xtf_data csv_data navi_data mesh_map draw_map patch_draper igl::embree ${OpenCV_LIBS} cxxopts)
+endif()
 
 target_link_libraries(patch_views eigen_cereal ${OpenCV_LIBS})
 
@@ -146,5 +150,7 @@ install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 # just go into 'cmake'.
 install(EXPORT BathyMapsConfig DESTINATION share/BathyMaps/cmake)
 
-# This makes the project importable from the build directory
-export(TARGETS draw_map mesh_map align_map drape_mesh patch_draper base_draper map_draper patch_views sss_map_image sss_meas_data sss_gen_sim FILE BathyMapsConfig.cmake)
+if (AUVLIB_EXPORT_BUILD)
+  # This makes the project importable from the build directory
+  export(TARGETS draw_map mesh_map align_map drape_mesh patch_draper base_draper map_draper patch_views sss_map_image sss_meas_data sss_gen_sim FILE BathyMapsConfig.cmake)
+endif()

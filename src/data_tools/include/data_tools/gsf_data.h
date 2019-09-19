@@ -14,6 +14,7 @@
 
 #include <data_tools/std_data.h>
 #include <data_tools/navi_data.h>
+#include <data_tools/csv_data.h>
 
 namespace gsf_data {
 
@@ -97,6 +98,8 @@ struct gsf_nav_entry
 void match_sound_speeds(gsf_mbes_ping::PingsT& pings, gsf_sound_speed::SpeedsT& speeds);
 
 std_data::mbes_ping::PingsT convert_matched_entries(gsf_mbes_ping::PingsT& pings, gsf_nav_entry::EntriesT& entries);
+
+std_data::mbes_ping::PingsT convert_matched_entries(gsf_data::gsf_mbes_ping::PingsT& pings, csv_data::csv_nav_entry::EntriesT& entries);
 
 std_data::mbes_ping::PingsT convert_pings(gsf_mbes_ping::PingsT& pings);
 

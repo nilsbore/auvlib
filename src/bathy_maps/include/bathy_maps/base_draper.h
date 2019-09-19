@@ -15,7 +15,7 @@
 #include <igl/opengl/glfw/Viewer.h>
 #include <igl/opengl/gl.h>
 
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #include <random>
 
 #include <data_tools/xtf_data.h>

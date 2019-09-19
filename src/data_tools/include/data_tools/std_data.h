@@ -13,7 +13,7 @@
 #define DATA_STRUCTURES_H
 
 #include <map>
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #include <eigen_cereal/eigen_cereal.h>
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/vector.hpp>
@@ -27,6 +27,12 @@
 #include <boost/filesystem.hpp>
 #include <boost/range.hpp>
 #undef BOOST_NO_CXX11_SCOPED_ENUMS
+
+#define _USE_MATH_DEFINES
+#include <cmath>
+#ifndef M_PI // For windows
+  #define M_PI 3.14159265358979323846
+#endif
 
 namespace std_data {
 

@@ -32,7 +32,7 @@ PYBIND11_MODULE(map_draper, m) {
     py::class_<sss_map_image>(m, "sss_map_image", "Class for sidescan views of a patch from different survey lines")
         .def(py::init<>())
         .def_readwrite("bounds", &sss_map_image::bounds, "Member")
-        .def_readwrite("sss_map_image", &sss_map_image::sss_map_image, "Member")
+        .def_readwrite("sss_map_image", &sss_map_image::sss_map_image_, "Member")
         .def_readwrite("sss_waterfall_image", &sss_map_image::sss_waterfall_image, "Member")
         .def_readwrite("sss_waterfall_cross_track", &sss_map_image::sss_waterfall_cross_track, "Member")
         .def_readwrite("sss_waterfall_depth", &sss_map_image::sss_waterfall_depth, "Member")

@@ -1,7 +1,7 @@
 #ifndef ALIGN_MAP_H
 #define ALIGN_MAP_H
 
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #include <igl/AABB.h>
 #include <data_tools/xyz_data.h>
 

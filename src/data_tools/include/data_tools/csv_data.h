@@ -14,7 +14,6 @@
 
 #include <data_tools/std_data.h>
 #include <data_tools/navi_data.h>
-#include <data_tools/gsf_data.h>
 #include <data_tools/xtf_data.h>
 
 namespace csv_data {
@@ -77,7 +76,6 @@ struct csv_asvp_sound_speed
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
-std_data::mbes_ping::PingsT convert_matched_entries(gsf_data::gsf_mbes_ping::PingsT& pings, csv_nav_entry::EntriesT& entries);
 xtf_data::xtf_sss_ping::PingsT convert_matched_entries(xtf_data::xtf_sss_ping::PingsT& pings, csv_data::csv_nav_entry::EntriesT& entries);
 
 } // namespace csv_data

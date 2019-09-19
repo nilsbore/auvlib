@@ -2,7 +2,11 @@
 #include <iostream>
 #include <stdio.h>
 #include <fcntl.h>
-#include <unistd.h>
+#ifdef _MSC_VER
+  #include <io.h>
+#else
+  #include <unistd.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 extern "C" {

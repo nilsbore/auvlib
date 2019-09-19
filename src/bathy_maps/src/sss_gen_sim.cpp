@@ -489,7 +489,7 @@ bool SSSGenSim::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
         time_windows.tail(time_windows_right.rows()) = time_windows_right;
         time_windows.head(time_windows_left.rows()) = time_windows_left.reverse();
 
-        for (int i = 0; i < std::min(time_windows.rows(), long(waterfall_image.cols)); ++i) {
+        for (int i = 0; i < std::min(time_windows.rows(), int64_t(waterfall_image.cols)); ++i) {
             waterfall_image.at<uint8_t>(0, i) = uint8_t(255.*time_windows(i));
         }
 
