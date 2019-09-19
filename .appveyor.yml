@@ -15,7 +15,7 @@ environment:
 install:
   - cd C:\projects\auvlib
   - git submodule update --init 
-  - cinst python2
+  #- cinst python2 appveyor already has python
   - cinst OpenCV --version 3.4.7
 build:
   parallel: true
