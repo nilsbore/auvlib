@@ -122,3 +122,9 @@ For more complete documentation on C++ library usage, see [the overview document
 * [@dawierha](https://github.com/dawierha)
 * [@ignaciotb](https://github.com/ignaciotb)
 * [@xyp8023](https://github.com/xyp8023)
+
+## Acknowledgements
+
+This work was supported by Stiftelsen för Strategisk Forskning (SSF)
+through the Swedish Maritime Robotics Centre (SMaRC) (IRC15-0046).
+See [the SMARC website](https://smarc.se/) for details.
