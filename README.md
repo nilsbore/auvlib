@@ -1,5 +1,9 @@
 # auvlib
 
+[![Build Status](https://travis-ci.org/nilsbore/auvlib.svg?branch=master)](https://travis-ci.org/nilsbore/auvlib)
+[![Build status](https://ci.appveyor.com/api/projects/status/kcfxp0jlpwqxt2fs/branch/master?svg=true)](https://ci.appveyor.com/project/nilsbore/auvlib/branch/master)
+[![license](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+
 Tools for reading AUV deployment data files and for
 processing and visualization of side scan and multibeam data.
 Extensive documentation for the python API is available
@@ -20,10 +24,6 @@ sudo apt-get install libcereal-dev libglfw3-dev libceres-dev libtinyxml2-dev
 Once cloned, you need to get the libigl submodule and some of its dependencies:
 ```
 git submodule update --init
-cd libigl
-git submodule update --init external/embree
-git submodule update --init external/glfw
-cd ..
 ```
 
 When done, create a `build` folder in the repo root, and run
@@ -121,3 +121,10 @@ For more complete documentation on C++ library usage, see [the overview document
 * [@nilsbore](https://github.com/nilsbore)
 * [@dawierha](https://github.com/dawierha)
 * [@ignaciotb](https://github.com/ignaciotb)
+* [@xyp8023](https://github.com/xyp8023)
+
+## Acknowledgements
+
+This work was supported by Stiftelsen för Strategisk Forskning (SSF)
+through the Swedish Maritime Robotics Centre (SMaRC) (IRC15-0046).
+See [the SMARC website](https://smarc.se/) for details.

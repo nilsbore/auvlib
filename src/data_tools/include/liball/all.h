@@ -12,20 +12,26 @@
 #ifndef ALL_H
 #define ALL_H
 
+#ifdef _MSC_VER
+  #define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop) )
+#else
+  #define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
+#endif
+
 // this is shared as the first part of all .all datagrams
-struct all_common_header {
+PACK(struct all_common_header {
     unsigned int bytes; // Number of bytes in datagram
     unsigned char start_id; // Start identifier = STX (Always 02h)
     unsigned char data_type; // Type of datagram = X (58h, 88d)
-} __attribute__((packed));
+});
 
-struct all_common_end {
+PACK(struct all_common_end {
     // end of repeat cycle
 	unsigned char end_ident; // End identifier = ETX (Always 03h)
 	unsigned short checksum; // Check sum of data between STX and ETX
-} __attribute__((packed));
+});
 
-struct all_xyz88_datagram {
+PACK(struct all_xyz88_datagram {
     // common header, see all_common_header
 
     // data description
@@ -46,9 +52,9 @@ struct all_xyz88_datagram {
     // repeat cycle, see all_xyz88_datagram_repeat
 
     // end of repeat cycle, see all_common_end
-} __attribute__((packed));
+});
 
-struct all_position_datagram {
+PACK(struct all_position_datagram {
     // common header, see all_common_header
 
     // data description
@@ -71,9 +77,9 @@ struct all_position_datagram {
     // Position input datagram as received
 
     // end of repeat cycle, see all_common_end
-} __attribute__((packed));
+});
 
-struct all_depth_datagram {
+PACK(struct all_depth_datagram {
     // common header, see all_common_header
 
     // data description
@@ -87,9 +93,9 @@ struct all_depth_datagram {
     unsigned char height_type; // Height type
 
     // end of repeat cycle, see all_common_end
-} __attribute__((packed));
+});
 
-struct all_echosounder_depth_datagram {
+PACK(struct all_echosounder_depth_datagram {
     // common header, see all_common_header
 
     // data description
@@ -105,10 +111,10 @@ struct all_echosounder_depth_datagram {
     char source_id; // Source identifier (S, T, 1, 2 or 3)
 
     // end of repeat cycle, see all_common_end
-} __attribute__((packed));
+});
 
 // repeats nbr_beams times as given in all_xyz88_datagram
-struct all_xyz88_datagram_repeat {
+PACK(struct all_xyz88_datagram_repeat {
     // repeat cycle data
     float depth; // Depth (z) from transmit transducer in m
 	float across_track; // Acrosstrack distance (y) in m
@@ -119,9 +125,9 @@ struct all_xyz88_datagram_repeat {
 	unsigned char detection_info; // Detection information
 	char rt_cleaning_info; // Real time cleaning information
 	short reflectivity; // Reflectivity (BS) in 0.1 dB resolution (Example: –20.1 dB = FF37h= 65335)
-} __attribute__((packed));
+});
 
-struct all_attitude_datagram {
+PACK(struct all_attitude_datagram {
     unsigned short model_nbr; // EM model number (Example: EM 710 = 710)
     unsigned int date; // Date = year*10000 + month*100 + day (Example: Sep 26, 2005 = 20050926)
     unsigned int time; // Time since midnight in milliseconds (Example: 08:12:51.234 = 29570234)
@@ -130,15 +136,17 @@ struct all_attitude_datagram {
 
     unsigned short nbr_entries; // = N 2U 1 – —
     //Repeat cycle – N entries of: 12*N —
-} __attribute__((packed));
+});
 
-struct all_attitude_datagram_repeat {
+PACK(struct all_attitude_datagram_repeat {
     unsigned short ms_since_start; // Time in milliseconds since record start 2U 0 to 65534 —
     unsigned short sensor_status; // Sensor status 2U — 1
     short roll; // Roll in 0.01° 2S -18000 to 18000 —
     short pitch; // Pitch in 0.01° 2S -18000 to 18000 —
     short heave; // Heave in cm 2S -1000 to 10000 —
     unsigned short heading; //– Heading in 0.01° 2U 0 to 35999 —
-} __attribute__((packed));
+});
+
+#undef PACK
 
 #endif // ALL_H

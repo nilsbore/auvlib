@@ -12,7 +12,7 @@
 #ifndef DRAPE_MESH_H
 #define DRAPE_MESH_H
 
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #include <data_tools/xtf_data.h>
 #include <data_tools/csv_data.h>
 

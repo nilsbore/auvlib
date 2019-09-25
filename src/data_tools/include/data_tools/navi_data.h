@@ -12,7 +12,7 @@
 #ifndef NAVI_DATA_H
 #define NAVI_DATA_H
 
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #include <data_tools/std_data.h>
 
 namespace navi_data {

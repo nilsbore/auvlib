@@ -12,7 +12,7 @@
 #ifndef MESH_MAP_H
 #define MESH_MAP_H
 
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #include <data_tools/std_data.h>
 #include <data_tools/xtf_data.h>
 
@@ -48,6 +48,7 @@ namespace mesh_map {
     std::tuple<Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXd, BoundsT> mesh_and_normals_from_pings(const std_data::mbes_ping::PingsT& pings, double res);
     Eigen::MatrixXd shade_image_from_normals(const Eigen::MatrixXd& N, const BoundsT& bounds, double res, const Eigen::Vector3d& light_dir);
     Eigen::MatrixXd compute_normals(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F);
+    Eigen::MatrixXd normals_at_points(const Eigen::MatrixXd& points, const Eigen::MatrixXd& N, const BoundsT& bounds, double res);
 
     void write_dae_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const boost::filesystem::path& filename);
     void write_dae_mesh_from_str(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const std::string& filename);

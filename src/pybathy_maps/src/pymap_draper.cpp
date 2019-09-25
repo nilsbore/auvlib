@@ -32,7 +32,7 @@ PYBIND11_MODULE(map_draper, m) {
     py::class_<sss_map_image>(m, "sss_map_image", "Class for sidescan views of a patch from different survey lines")
         .def(py::init<>())
         .def_readwrite("bounds", &sss_map_image::bounds, "Member")
-        .def_readwrite("sss_map_image", &sss_map_image::sss_map_image, "Member")
+        .def_readwrite("sss_map_image", &sss_map_image::sss_map_image_, "Member")
         .def_readwrite("sss_waterfall_image", &sss_map_image::sss_waterfall_image, "Member")
         .def_readwrite("sss_waterfall_cross_track", &sss_map_image::sss_waterfall_cross_track, "Member")
         .def_readwrite("sss_waterfall_depth", &sss_map_image::sss_waterfall_depth, "Member")
@@ -60,6 +60,7 @@ PYBIND11_MODULE(map_draper, m) {
                       const xtf_sss_ping::PingsT&, const MapImageDraper::BoundsT&,
                       const csv_asvp_sound_speed::EntriesT&>())
         .def("set_sidescan_yaw", &MapImageDraper::set_sidescan_yaw, "Set yaw correction of sidescan with respect to nav frame")
+        .def("set_tracing_map_size", &MapImageDraper::set_tracing_map_size, "Set size of slice of map where we do ray tracing. Smaller makes it faster but you might cut off valid sidescan angles")
         .def("set_ray_tracing_enabled", &MapImageDraper::set_ray_tracing_enabled, "Set if ray tracing through water layers should be enabled. Takes more time but is recommended if there are large speed differences")
         .def("set_vehicle_mesh", &MapImageDraper::set_vehicle_mesh, "Provide the viewer with a vehicle model, purely for visualization")
         .def("show", &MapImageDraper::show, "Start the draping, and show the visualizer")
@@ -75,6 +76,7 @@ PYBIND11_MODULE(map_draper, m) {
                       const xtf_sss_ping::PingsT&, const MeasDataDraper::BoundsT&,
                       const csv_asvp_sound_speed::EntriesT&>())
         .def("set_sidescan_yaw", &MeasDataDraper::set_sidescan_yaw, "Set yaw correction of sidescan with respect to nav frame")
+        .def("set_tracing_map_size", &MeasDataDraper::set_tracing_map_size, "Set size of slice of map where we do ray tracing. Smaller makes it faster but you might cut off valid sidescan angles")
         .def("set_ray_tracing_enabled", &MeasDataDraper::set_ray_tracing_enabled, "Set if ray tracing through water layers should be enabled. Takes more time but is recommended if there are large speed differences")
         .def("set_vehicle_mesh", &MeasDataDraper::set_vehicle_mesh, "Provide the viewer with a vehicle model, purely for visualization")
         .def("show", &MeasDataDraper::show, "Start the draping, and show the visualizer")

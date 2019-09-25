@@ -2,14 +2,14 @@
 
 ## Compiling
 
-First, create a directory named `gpgs_build` within this directory:
+First, create a directory named `build` within the auvlib project:
 ```
-mkdir gpgs_build
-cd gpgs_build
+mkdir build
+cd build
 ```
 Then, run cmake using:
 ```
-cmake -DCMAKE_INSTALL_PREFIX=../gpgs_install ../../..
+cmake -DCMAKE_INSTALL_PREFIX=../install ..
 ```
 followed by make: `make && make install`.
 Now, go to the `complete_project` directory and create a build folder for that project:
@@ -20,11 +20,7 @@ cd build
 ```
 Now, run cmake using
 ```
-PATH=$PATH:../gpgs_install/share/ cmake ..
+PATH=$PATH:../../../install/share/ cmake ..
 ```
 followed by make: `make`.
 Now everything should have compiled.
-
-## Running
-
-The example program is identical to the one of [`slam_process_ceres`](https://github.com/nilsbore/gpgs_slam#running).

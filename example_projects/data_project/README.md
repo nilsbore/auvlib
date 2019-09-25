@@ -2,14 +2,14 @@
 
 ## Compiling
 
-First, create a directory named `gpgs_build` within this directory:
+First, create a directory named `build` within the auvlib project:
 ```
-mkdir gpgs_build
-cd gpgs_build
+mkdir build
+cd build
 ```
 Then, run cmake using:
 ```
-cmake -DCMAKE_INSTALL_PREFIX=../gpgs_install ../../..
+cmake -DCMAKE_INSTALL_PREFIX=../install ..
 ```
 followed by make: `make && make install`.
 Now, go to the `data_project` directory and create a build folder for that project:

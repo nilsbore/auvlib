@@ -197,12 +197,18 @@ typedef unsigned int        DWORD;
 typedef unsigned int	    UINT;
 typedef int                 LONG;
 
+#ifdef _MSC_VER
+  #define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop) )
+#else
+  #define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
+#endif
+
 // Channel information structure (contained in the file header).
 // One-time information describing each channel.  64 bytes long.
 // This is data pertaining to each channel that will not change
 // during the course of a run.
 ///////////////////////////////////////////////////////////////////////////////
-typedef struct {
+PACK(typedef struct {
    BYTE TypeOfChannel;     // PORT, STBD, SBOT or BATH
    BYTE SubChannelNumber;
    WORD CorrectionFlags;   // 1=raw, 2=Corrected
@@ -249,14 +255,14 @@ typedef struct {
 
    char ReservedArea2[54];
 
-} __attribute__((packed)) CHANINFO;
+}) CHANINFO;
 
 
    
 // XTF File header.
 // Total of 1024 bytes.
 ///////////////////////////////////////////////////////////////////////////////
-typedef struct {
+PACK(typedef struct {
    BYTE FileFormat;        // 50 for Q-MIPS file format, 51 for Isis format
    BYTE SystemType;        // Type of system used to record this file.  202=Isis
    char RecordingProgramName[8];    // Example: "Isis"
@@ -317,7 +323,7 @@ typedef struct {
    CHANINFO ChanInfo[6];  // Each CHANINFO struct is 128 bytes.
                           // If more than 6 channels needed, header record
                           // grows 1K in size for each additional 8 channels.
-} __attribute__((packed)) XTFFILEHEADER;
+}) XTFFILEHEADER;
 
 
 // The XTFATTITUDEDATA structure used to store information from a TSS or 
@@ -330,7 +336,7 @@ typedef struct {
 //
 // Attitude data packet, 64 bytes in length.
 ///////////////////////////////////////////////////////////////////////////////
-typedef struct {
+PACK(typedef struct {
    // 
    // Type of header
    //
@@ -369,14 +375,14 @@ typedef struct {
 
    BYTE  Reserved3[10];
 
-} __attribute__((packed)) XTFATTITUDEDATA;
+}) XTFATTITUDEDATA;
 
 
 // Sonar or Bathy Ping header
 // The data here can change from ping to ping but will pertain to all
 // channels that are at the same time as this ping.  256 bytes in length.
 ///////////////////////////////////////////////////////////////////////////////
-typedef struct {
+PACK(typedef struct {
 
    // 
    // Type of header
@@ -599,7 +605,7 @@ typedef struct {
    //
    BYTE ReservedSpace2[11]; // Currently unused
 
-} __attribute__((packed)) XTFPINGHEADER, XTFBATHHEADER;
+}) XTFPINGHEADER, XTFBATHHEADER;
 
 
 
@@ -610,7 +616,7 @@ typedef struct {
 // may be printed in realtime or in playback.  This can be activated
 // in the Print Annotation dialog box.
 ///////////////////////////////////////////////////////////////////////////////
-typedef struct {
+PACK(typedef struct {
 
    WORD MagicNumber;      // Set to 0xFACE
    BYTE HeaderType;       // XTF_HEADER_NOTES (1)
@@ -632,7 +638,7 @@ typedef struct {
 
    char  NotesText[256-56];
 
-} __attribute__((packed)) XTFNOTESHEADER;
+}) XTFNOTESHEADER;
 
 
 // RAW ASCII data received over serial port
@@ -643,7 +649,7 @@ typedef struct {
 // data for all usefull information.
 
 ///////////////////////////////////////////////////////////////////////////////
-typedef struct {
+PACK(typedef struct {
 
    WORD MagicNumber;      // Set to 0xFACE
    BYTE HeaderType;       // will be XTF_HEADER_RAW_SERIAL (7)
@@ -668,14 +674,14 @@ typedef struct {
    char  RawAsciiData[64-30]; // will be padded in 64-byte increments to make 
                               // structure an even multiple of 64 bytes
 
-} __attribute__((packed)) XTFRAWSERIALHEADER;
+}) XTFRAWSERIALHEADER;
 
 
 // Ping Channel header 
 // This is data that can be unique to each channel from ping to ping.
 // Is is stored at the front of each channel of sonar data.
 ///////////////////////////////////////////////////////////////////////////////
-typedef struct {
+PACK(typedef struct {
 
    WORD  ChannelNumber;    // Typically, 
                            // 0=port (low frequency)
@@ -732,7 +738,9 @@ typedef struct {
    BYTE  ReservedSpace[4];      // reserved for future expansion
    //BYTE  ReservedSpace[6];      // reserved for future expansion
 
-} __attribute__((packed)) XTFPINGCHANHEADER;
+}) XTFPINGCHANHEADER;
 //} XTFPINGCHANHEADER;
+
+#undef PACK
 
 #endif // XTF_H

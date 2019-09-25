@@ -14,7 +14,7 @@
 
 #include <data_tools/navi_data.h>
 #include <data_tools/csv_data.h>
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>
 #undef BOOST_NO_CXX11_SCOPED_ENUMS
@@ -150,6 +150,7 @@ struct all_echosounder_depth {
 std_data::mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_entry::EntriesT& entries);
 std_data::mbes_ping::PingsT match_attitude(std_data::mbes_ping::PingsT& pings, all_nav_attitude::EntriesT& entries);
 csv_data::csv_asvp_sound_speed::EntriesT convert_sound_speeds(const all_mbes_ping::PingsT& pings);
+std_data::attitude_entry::EntriesT convert_attitudes(const all_nav_attitude::EntriesT& attitudes);
 
 } // namespace all_data
 
@@ -157,17 +158,21 @@ namespace std_data {
 
 //template <typename ReturnType>
 //std::vector<ReturnType, Eigen::aligned_allocator<ReturnType> > parse_file(const boost::filesystem::path& path);
-template <>
-all_data::all_mbes_ping::PingsT parse_file(const boost::filesystem::path& path);
 
 template <>
-all_data::all_nav_entry::EntriesT parse_file(const boost::filesystem::path& path);
+all_data::all_mbes_ping::PingsT parse_file(const boost::filesystem::path& file);
 
 template <>
-all_data::all_nav_depth::EntriesT parse_file(const boost::filesystem::path& path);
+all_data::all_nav_entry::EntriesT parse_file(const boost::filesystem::path& file);
 
 template <>
-all_data::all_nav_attitude::EntriesT parse_file(const boost::filesystem::path& path);
+all_data::all_nav_depth::EntriesT parse_file(const boost::filesystem::path& file);
+
+template <>
+all_data::all_nav_attitude::EntriesT parse_file(const boost::filesystem::path& file);
+
+template <>
+all_data::all_echosounder_depth::EntriesT parse_file(const boost::filesystem::path& file);
 
 }
 
