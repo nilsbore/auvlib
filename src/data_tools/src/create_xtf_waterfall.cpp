@@ -31,12 +31,17 @@ int main(int argc, char** argv)
   boost::filesystem::path folder(argv[1]);
     
     xtf_sss_ping::PingsT pings = parse_folder<xtf_sss_ping>(folder);
-    long maxIntensity=65535;
+     long maxIntensity=65535;
     long rowdownsample=1;
     int chopup=0;
     if (argc>2) maxIntensity=atol(argv[2]);
     if (argc>3) rowdownsample=atol(argv[3]);
-    if (1) 
+
+    long p_nadir[pings.size()];
+    long s_nadir[pings.size()];
+   long artif[pings.size()];
+  
+              if (0) 
     for (auto pos = pings.begin(); pos != pings.end(); ) {
         auto next = std::find_if(pos, pings.end(), [&](const xtf_sss_ping& ping) {
             return ping.first_in_file_ && (&ping != &(*pos));
@@ -55,12 +60,25 @@ int main(int argc, char** argv)
         pos = next;
 
     }
-    long p_nadir[pings.size()];
-    long s_nadir[pings.size()];
-    xtf_data::findNadirPort(pings,p_nadir,15,500);
-    xtf_data::findNadirStbd(pings,s_nadir,15,500);
-    removeLineArtifact_port(pings, p_nadir);    
-    
+    long w=pings[0].port.pings.size()-100;
+    // generally the minimum intensity param must be adjusted for differe bottoms and SSL is much brighter so also max intensity has to be like 500000 
+   removeLineArtifact_port(pings, artif,10,120,0, 1000, .088, 3, .032);
+   // removeLineArtifact_port(pings, artif,120,220,1, 100, 2.0, 1, 20.0);    
+    xtf_data::findNadirPort(pings,p_nadir,5,1000, 100);
+    xtf_data::findNadirStbd(pings,s_nadir,5,1000, 100);
+    if (0) //plot the artifact line bright or 0
+    for (int i=0; i<pings.size(); i++){
+      for (int k=0; k<100; k++){
+	if (artif[i]<w)
+	  pings[i].port.pings[artif[i]+k]=0;//100000;
+      }
+    }
+
+
+    //    
+
+
+    if(0)
     for (auto pos = pings.begin(); pos != pings.end(); ) {
         auto next = std::find_if(pos, pings.end(), [&](const xtf_sss_ping& ping) {
             return ping.first_in_file_ && (&ping != &(*pos));
@@ -78,19 +96,29 @@ int main(int argc, char** argv)
         cv::waitKey();
         pos = next;
     }
-    xtf_data::findNadirPort(pings,p_nadir,15,500);
-    xtf_data::regularize_pings(pings,p_nadir,s_nadir);
 
+
+    xtf_data::regularize_pings(pings,p_nadir,s_nadir, (16.0/180.0*M_PI));
+    //plot the nadir in a bright wide line
+
+    for (int i=0; i<pings.size(); i++){
+      for (int k=0; k<100; k++){
+	if (p_nadir[i]<w)
+	  pings[i].port.pings[p_nadir[i]+k]=maxIntensity;
+	if (s_nadir[i]<w)
+	   pings[i].stbd.pings[s_nadir[i]+k]=maxIntensity;
+      }
+    }
     for (auto pos = pings.begin(); pos != pings.end(); ) {
         auto next = std::find_if(pos, pings.end(), [&](const xtf_sss_ping& ping) {
             return ping.first_in_file_ && (&ping != &(*pos));
         });
         xtf_sss_ping::PingsT track_pings(pos, next);
 	int r = track_pings.size()/rowdownsample;
-        cv::Mat waterfall_img = make_waterfall_image(track_pings, 1024, r, maxIntensity);
+	        cv::Mat waterfall_img = make_waterfall_image(track_pings, 1024, r, maxIntensity);
 	int rows=waterfall_img.rows;
 	int cols=waterfall_img.cols;
-	cv::imwrite("a.png",waterfall_img);
+	//cv::imwrite("a.png",waterfall_img);
 	cv::imshow("My regularzed image", waterfall_img);
         cv::waitKey();
         pos = next;

@@ -90,36 +90,43 @@ This will use the two points along the nadir to define a flat bottom and then ap
 
 void  regularize_pings( xtf_sss_ping::PingsT& pings, const long * port_nadir, const long * stbd_nadir, double nadir_angle=0.27925268);
 /**
- RemoveLineArtifact_port(xtf_sss_ping::PingsT& pings, long * nadir, double minArtifactRange minr=30,  double minArtifactRange maxr=90, bool setzero=false)
+ RemoveLineArtifact_port(xtf_sss_ping::PingsT& pings, long * nadir, double minArtifactRange minr=30,  double minArtifactRange maxr=90, bool setzero=false, float minintensity=3000, float period=.088, int numberofpeaks=3, float peakwidth=.032)
 
-Our Port side Sidescan has an artifact that appears as a bright spot in about 25 cm of bins.  Which bins varies continously and smoothly in time accross bins.
+Our Port side Sidescan has an artifact that appears as three bright narrow lines about 8.8 cam appart and 3.2 cm in width.  Which bins varies continously and smoothly in time accross bins.
 You can give some hints as to the range that the artifact wanders over and choose to set the values to 0 instead of trying to fill them with 'average' values nearby plus noise.
 
-nadir -  the array returned from calling findNadirPort. This array will be changed to contain the detected bin of the artifact.  
+artif -  This array will be changed to contain the detected bin of the artifact.  Should be allocated to pings.size();  
+mininitensity is the minimum filter weighted signal that will be deteted
+period - the distance in m between peaks in the artifact
+numberofpeaks - the number of peaks in the artifact 
+peakwidth -  width of each peak in m.   
+returns the number of pings that were adjusted
 
  **/
 
 
-void removeLineArtifact_port(xtf_sss_ping::PingsT& pings, long * nadir, const double minArtifactRange=30,  const double maxArtifactRange=90, const bool setzero=false);
+int removeLineArtifact_port(xtf_sss_ping::PingsT& pings, long * artif, const double minArtifactRange=30,  const double maxArtifactRange=90, const bool setzero=false, float minintensity=3000, float period=.088, int numberofpeaks=3, float peakwidth=.032);
 /**
- RemoveLineArtifact_stbd(xtf_sss_ping::PingsT& pings, long * nadir, double minArtifactRange minr=30,  double minArtifactRange maxr=90, bool setzero=false)
-
-Our Stbd side Sidescan has an artifact that appears as a bright spot in about 25 cm of bins.  Which bins varies continously and smoothly in time accross bins.
+ RemoveLineArtifact_stbd(xtf_sss_ping::PingsT& pings, long * nadir, double minArtifactRange minr=30,  double minArtifactRange maxr=90, bool setzero=false, float minintensity=3000, float period=.088, int numberofpeaks=3, float peakwidth=.03)
 You can give some hints as to the range that the artifact wanders over and choose to set the values to 0 instead of trying to fill them with 'average' values nearby plus noise.
 
-nadir -  the array returned from calling findNadirStbd. This array will be changed to contain the detected bin of the artifact.  
-
+artif -  This array will be changed to contain the detected bin of the artifact.  Should be allocated to pings.size();  
+mininitensity is the minimum filter weighted signal that will be deteted
+period is the distance in m between peaks in the artifact
+numberofpeaks is the number of peaks in the artifact 
+returns the number of pings that were adjusted
  **/
-void removeLineArtifact_stbd(xtf_sss_ping::PingsT& pings, long * nadir, const double minArtifactRange=30,  const double maxArtifactRange=90, const bool setzero=false);
+int removeLineArtifact_stbd(xtf_sss_ping::PingsT& pings, long * artif, const double minArtifactRange=30,  const double maxArtifactRange=90, const bool setzero=false, float minintensity=3000, float period=.088, int numberofpeaks=3, float peakwidth=.032);
 /**
 This will look thru the pings on the port side and locate the index to the nadir.
 It will also set to 0 all intensities less then the minalt.  It also sets any intensities below zero or above 2^29 to 0.
 pings - the object to check
 nadir - a long array of length pings.size() that will hold the index to the nadir for each port side ping,
 minalt -  This should be the minimum altitude in m that the sone will see.  All data nearer than this will be set to 0.
-minintensityatnadir - This allow you to adjust things if it fails to find the nadir.
+minintensityatnadir - This allow you to adjust things if it fails to find the nadir.  The right value can be low like 500 for weak SSH signals at high altitude or high like 100,000 for SSL signals at low altitde.  
+returns the number of nadir points detected.  Undetected points will be filled in by adjacent values if present or simply set to minalt.
 */
- void findNadirPort(xtf_sss_ping::PingsT& pings, long * nadir, double minalt=10, long minintensityatnadir=500);
+ int findNadirPort(xtf_sss_ping::PingsT& pings, long * nadir, double minalt=10, long minintensityatnadir=500, double maxrange=170);
 
 /**
 This will look thru the pings on the starboard side and locate the index to the nadir.
@@ -127,11 +134,14 @@ It will also set to 0 all intensities less then the minalt.  It also sets any in
 pings - the object to check
 nadir - a long array of length pings.size() that will hold the index to the nadir for each port side ping,
 minalt -  This should be the minimum altitude in m that the sone will see.  All data nearer than this will be set to 0.
-minintensityatnadir - This allow you to adjust things if it fails to find the nadir.
-*/
- void findNadirStbd(xtf_sss_ping::PingsT& pings, long * nadir, double minalt=10, long minintensityatnadir=500);
+minintensityatnadir - This allow you to adjust things if it fails to find the nadir.  The right value can be low like 500 for weak SSH signals at high altitude or high like 100,000 for SSL signals at low altitde.  
+returns the number of nadir points detected. Undetected points will be filled in by adjacent values if present or simply set to minalt.
 
-xtf_sss_ping::PingsT correct_sensor_offset(const xtf_sss_ping::PingsT& pings, const Eigen::Vector3d& sensor_offset);
+*/
+ int findNadirStbd(xtf_sss_ping::PingsT& pings, long * nadir, double minalt=10, long minintensityatnadir=500, double maxrange=170);
+
+
+xtf_sss_ping::PingsT correct_sensor_offset(const xtf_sss_ping::PingsT& side, const Eigen::Vector3d& sensor_offset);
 
 } // namespace xtf_data
 
