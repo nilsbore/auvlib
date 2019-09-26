@@ -43,6 +43,7 @@ public:
     void rotate_crop_image(const Eigen::Vector3d& first_pos, const Eigen::Vector3d& last_pos, double result_width);
     void write_image(const boost::filesystem::path& path);
     void write_image_from_str(const std::string& path);
+    cv::Mat make_image() { return bathy_map.clone(); }
     void show();
 };
 
