@@ -197,7 +197,7 @@ xtf_sss_ping process_side_scan_ping(XTFPINGHEADER *PingHeader, XTFFILEHEADER *XT
               ping_channel->pings.push_back(Imagery[i]);
           }
           else {
-              ping_channel->pings.push_back(int(Imagery[i])  << (9 - ChanHeader->Weight));
+              ping_channel->pings.push_back((int)(Imagery[i]) << (12 - ChanHeader->Weight));
           }
       }
       ping_channel->time_duration = ChanHeader->TimeDuration;
