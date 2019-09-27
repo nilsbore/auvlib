@@ -30,30 +30,114 @@ extern "C" {
 using namespace std;
 
 namespace xtf_data {
+  /*
+    checks the up to 5 tracks
 
-int findNadirPort(xtf_sss_ping::PingsT& pings, long * nadir, double minalt, long minintensityatnadir, double maxrange){
+i -index of the current detection
+ 
+h - the length of detect.
+
+detect - the detected points length h, detect[i] is the range bin of the current detection 
+
+labels is legth 2h and the first h elements are track labels for the corresponding detect element.  After that come the h counts of the tracks.  So that labels[lables[k]+h-1] are the number of detections assigned label value of labels[k]. Label values run from 1 to h.
+
+last5 -  the array of length 5 that holds the labels of the last 5 tracks
+
+ latest - the index of the most recent track label.  if latest<0 there are less than 5 tracks and one must add 4 to latest to get the index.
+
+nextlabel - keeps track of the next free label number ready to be assigned and updated  if the current detection is not matched to an existing track.
+
+binmotion is the number of bins between adjacent detections for them to stll be part of same track.
+    
+    returns counttrack
+   */
+  
+  long trackLines(const long i,  const long h, long * detect, long * labels, long * last5,  int &latest, int  &nextlabel, const double binmotion )
+  {
+    long track=-1;
+    //    if ((detect[i]<1)||(detect[i]>h-1)) return 0;
+    long counttrack=-1;
+    long  *counts=&labels[h-1];
+    int tp=5;
+    int late=latest;
+    if(latest<0){
+      late=4+latest;
+      tp=late+1;
+    }
+    int label=-1;
+    int bestl=-1;
+
+    //last5 has 'i' ping number values for the last 5 detections
+    //labels[<h] has the label of the track for that ping which is also the index into counts
+    //counts[label[i]] has the number of pings with that label
+    if (tp>0)
+      for (int k=0; k<tp; k++){
+	int kk=(5+late-k)%5;
+	int cnt=counts[labels[last5[kk]]];
+	if (cnt>counttrack){
+	  counttrack=cnt;
+	  track=last5[kk];
+	}
+	float mv=detect[i]-detect[last5[kk]];
+	if (mv<0)mv=-mv;
+	if (cnt>100)mv/=4.0;
+	else if (cnt>50)mv/=2.0;
+	if (mv<binmotion) {
+	  if ((label==-1)||(cnt>bestl)){
+	    label=labels[last5[kk]];
+	    bestl=cnt;
+	  }
+	}
+      }
+    if (label==-1){
+      label=nextlabel;
+      nextlabel++;
+    }
+    late=(late+1)%5;
+    last5[late]=i;
+    if (latest<0) latest=late-4;
+    else latest=late;	
+    if (labels[i]>0){
+      if (counts[label]>counts[labels[i]]){
+	counts[labels[i]]--;
+	labels[i]=label;
+	counts[labels[i]]++;
+      }
+    }else{
+      labels[i]=label;
+      counts[labels[i]]++;
+    }
+    if (counts[labels[i]]>counttrack)  track=i;
+    
+    return track;
+  }
+  
+  int findNadirPort(xtf_sss_ping::PingsT& pings, long * nadir, double minalt, long minintensityatnadir, double maxrange){
   //res is m per bin
   double res=(double)pings[0].port.slant_range/(double)pings[0].port.pings.size();
   long w=pings[0].port.pings.size();
   long h=pings.size();
   //moving average window size
-  int per=(int)((double)(1.2/res+.5));
-  if (per<2)per=2;
+  int maw=(int)((double)(1.2/res+.5));
+  if (maw<2)maw=2;
   int pw=(int)((double)(.8/res+.5));
   if (pw<2)pw=2;
-  int maw=per;
   int minj=(int)((double)(minalt/res+.5));
-  if (minj<5)minj=5;
-  minj+=maw;
+  minj-=maw;  //to allow derivatives at minalt
+  if (minj<2)minj=2;  
+  minj+=maw;  //to keep range=(j+minj)*res
   int jw=(int)((double)(maxrange/res+.5));
+  jw+=maw+pw;  //to allow second derivatives at max range
   if (jw>w)jw=w;
-  jw=(jw-minj-maw);
+  jw-=(maw+pw);  //j range is min alt to max range but m mw must extend beyond that
+  jw=(jw-minj);
   jw+=maw;
-  int mw=jw+maw;
+  int mw=jw+2*maw;
   unsigned long mvavg[mw];  //avg (j,j+maw)
-
+  int nfiles=0;
   //remove and check if scan is no good
   for (int i = 0; i < h; i++) {
+    if (pings[i].first_in_file_)nfiles++;
     for (int j = 0; j <minj; j++) {
       pings[i].port.pings[j]=0;
     }
@@ -63,113 +147,465 @@ int findNadirPort(xtf_sss_ping::PingsT& pings, long * nadir, double minalt, long
 	else pings[i].port.pings[j]=0;
     }
   }
+  nfiles=0;
+  long fsizes[nfiles];
+  for (int i = 0; i < h; i++) {
+    if (pings[i].first_in_file_){
+      if (i>0){
+	if (nfiles==0)fsizes[nfiles]=i;
+	else fsizes[nfiles]=i-fsizes[nfiles-1];
+	nfiles++;
+      }
+    }
+  }
+  fsizes[nfiles]=h-fsizes[nfiles-1];
+  nfiles++;
+  
   //This sets how far the nadir can wander between pings.
   double binmotion=1.5/res;
-  float wgt[maw];
-  float wgt2[per];
-  float d=1.0/(float)per;  
-  for (int k=0; k<per; k++) {
-    wgt[k]=-d;
-    wgt2[k]=d;
-    wgt[k+per]=d;
-  }
-  long long avg=0;
-  int max=0;
-  int min=w;
   float mv=0;
   float bestmv=0;
   int counttrack=0;
   int countr=0;
   float running=minj+maw;
-  for (long i=0; i<h; i++){
-    mvavg[0]=mvavg[0]+=pings[i].port.pings[minj-maw]+pw/2;;
-    for (int k=1;k<pw; k++)mvavg[0]+=pings[i].port.pings[minj-maw+k];
-    for (int j=1; j<mw; j++){
-      mvavg[j]=mvavg[j-1];
-      mvavg[j]-=pings[i].port.pings[j-1+minj-maw];
-      mvavg[j]+=pings[i].port.pings[j-1+pw+minj-maw];
-      mvavg[j-1]/=pw;
-    }
-    mvavg[mw-1]/=pw;
-    nadir[i]=0;
-    float maxscore=0;
-    int jmax=0;
-    bestmv=0;
-     int jstart=maw;
-    int jend=jw-maw;
-    for( int j=0; j<mw-maw; j++){
-      double score=mvavg[j];
-
-      score=-score;
-      score+=mvavg[j+maw];
-       if (score>minintensityatnadir) {
-	score/=(double)mvavg[j];;
-	if (score>0){
-	  if (counttrack>5){
-	    mv=j-running;
-	    if (mv<0) mv=-mv;
-	    mv/=binmotion;
-	    double x=(6-counttrack*.02);
-	    if (x<0.1)x=0.1;
-	    if ((counttrack>100)&&(mv<2.0))score+2.0;
-	    else if ((counttrack>2)&&(mv<x))score-=mv*mv*(1.5/(x*x));
-	    else score-=1.5;
+  for (int direction=0; direction<2; direction++)
+    for (long ii=0; ii<h; ii++){
+      long i=ii;
+      if (direction%2){
+	i=h-1-ii;
+	if (ii>0)
+	  if (pings[i+1].first_in_file_){
+	    counttrack=0;
+	    running=minj+maw;
 	  }
-	  if(score>maxscore){
-	    maxscore=score;
-	    jmax=j;
-	    bestmv=mv;
-	    if (counttrack<3)
-	      if (score>0.5)
-		j=mw;
+      }else {
+	if (direction==0)nadir[i]=0;
+      	if (pings[i].first_in_file_){
+	  counttrack=0;
+	  running=minj+maw;
+	}
+      }
+      if (nadir[i]>0){
+	if (counttrack>5){
+	  mv=nadir[i]-minj-running;
+	  if (mv<0) mv=-mv;
+	  if (mv>binmotion)nadir[i]=0;
+	}
+      }
+      if (nadir[i]==0){
+	mvavg[0]=pings[i].port.pings[minj-maw]+pw/2;;
+	for (int k=1;k<pw; k++)mvavg[0]+=pings[i].port.pings[minj-maw+k];
+	for (int j=1; j<mw; j++){
+	  mvavg[j]=mvavg[j-1];
+	  mvavg[j]-=pings[i].port.pings[j-1+minj-maw];
+	  mvavg[j]+=pings[i].port.pings[j-1+pw+minj-maw];
+	  mvavg[j-1]/=pw;
+	}
+	mvavg[mw-1]/=pw;
+	float maxscore=0;
+	int jmax=0;
+	bestmv=-1;
+	int jstart=maw;
+	int jend=jw-maw;
+	for( int j=0; j<jw; j++){
+	  unsigned long temp=mvavg[j+maw];// first derivative
+	  if ((temp>minintensityatnadir)&&(mvavg[j]<temp)) {
+	    double score=temp;
+	    temp=mvavg[j+2*maw]+mvavg[j];
+	    temp=(temp>>1);
+	    score-=temp;
+	    score/=(double)(mvavg[j]+10);
+	    if (score>0){
+	      mv=j-running;
+	      if (mv<0) mv=-mv;
+	      mv/=binmotion;
+	      if (counttrack>5){
+		double x=(6-counttrack*.02);
+		if (x<1)x=1.0;
+		if ((counttrack<100)||(mv>1.0))
+		  if (mv<x)score-=mv*mv*(1.5/(x*x));
+		  else score-=1.5;
+	      }
+	      if(score>maxscore){
+		if ((bestmv>-1)&&(mv>bestmv)&&(counttrack>3))j=mw;
+		else{
+		  maxscore=score;
+		  jmax=j;
+		  bestmv=mv;
+		  if (counttrack<5)
+		    if (score>0.5)
+		      j=mw;
+		}
+	      }
+	    }
 	  }
+	}
+	if(jmax>0)nadir[i]=jmax+minj;
+	if(nadir[i]>0){
+	  if (counttrack>0)
+	    if (bestmv<1.0) {
+	      running=nadir[i]-minj;
+	      counttrack++;
+	    }else counttrack--;
+	  else {
+	    running=nadir[i]-minj;
+	    counttrack++;
+	  }
+	} else {
+	  if (counttrack>100)
+	    counttrack=(counttrack>>1);
+	  else counttrack=0;
+	//nadir[i]=running;
 	}
       }
     }
-    if(jmax>0)nadir[i]=jmax+minj;
-    if(nadir[i]>0){
-      if (nadir[i]>max)max=nadir[i];
-      if (nadir[i]<min)min=nadir[i];
-      avg+=nadir[i];
-      countr++;
-      if (counttrack>0)
-	if (bestmv<1) {
-	  running=nadir[i]-minj;
-	  counttrack++;
-	}else counttrack--;
-      else {
-	running=nadir[i]-minj;
-	counttrack++;
+  long last5[5];
+  int latest=-5;
+  long labels[2*h];
+  std::memset(labels, 0, sizeof labels);
+  long  *counts=&labels[h-1];
+  int nextlabel=1;
+  running =minj;
+  for(long i=0; i<h;i++){
+    if (pings[i].first_in_file_)latest=-5;
+    if (nadir[i]>0){
+      double bm=binmotion/1.5;
+      if (counttrack>100)bm/=4.0;
+      else if (counttrack>50)bm/=2.0;
+      long track=trackLines(i, h, nadir, labels, last5, latest, nextlabel, bm);
+      if (track>-1){
+	running=nadir[track];
+	counttrack=counts[labels[track]];
       }
-    } else {
-      counttrack=0;
-      nadir[i]=running;
+    }	
+  }
+  fsizes[nfiles]=h-fsizes[nfiles-1];
+  nfiles++;
+  int limits[nfiles];
+  for (int i=0; i<nfiles; i++)
+    if (fsizes[i]>200)limits[i]=25;
+    else limits[i]=fsizes[i]/8;
+  nfiles=-1;
+  for(int i=0; i<h; i++){
+    if (pings[i].first_in_file_)nfiles++;
+    if (labels[i]>0){
+      if (counts[labels[i]]<limits[nfiles]){
+	counts[labels[i]]--;
+	labels[i]=0;
+	nadir[i]=0;
+      } 
     }
+  }
+  long firstinfile=0; 
+  running=0;
+  for (long i=0; i<h; i++){
+    if (pings[i].first_in_file_){
+      firstinfile=i;      
+      running=0;
+    }
+    if (nadir[i]==0){
+      long next=0;
+      long ii=i+1;
+      while (ii<h){
+	if (pings[ii].first_in_file_){
+	  ii=h;
+	}else{
+	  if (nadir[ii]>0){
+	    next=ii;
+	    ii=h;
+	  }
+	}
+	ii++;
+      }
+      if (next>0){
+	if (running>0)
+	  nadir[i]=(float)(0.5+(running*(float)(next-i)+(float)nadir[next])/(float)(next-i+1));
+	else
+	  nadir[i]=nadir[next];
+      } else {
+	if (running>0)
+	  nadir[i]=running;
+	else
+	  nadir[i]=minj;
+      }
+    }
+    running =nadir[i]; 
+  }
+  countr=0;
+  long long avg=0;
+  int max=0;
+  int min=w;
+  for (long i=2; i<h-2;i++)
+    nadir[i]=((nadir[i-2]+nadir[i-1]+nadir[i+1]+nadir[i+2])>>2);
+  for (long i=0; i<h;i++){
+    if (nadir[i]>max)max=nadir[i];
+    if (nadir[i]<min)min=nadir[i];
+    avg+=nadir[i];
+    countr++;
   }
   double nad=((double)avg/countr);
   std::cout<<(h-countr)<<" not tracked, "<<countr<<" tracked "<<" of "<<h<<" pings. \n";
   std::cout<<"Avg Port Nadir is "<<(res*nad)<<" m and range is ("<<(min*res)<<", "<<(max*res)<<")\n";
   return countr;
 }
+  int findNadirStbd(xtf_sss_ping::PingsT& pings, long * nadir, double minalt, long minintensityatnadir, double maxrange){
+  //res is m per bin
+  double res=(double)pings[0].stbd.slant_range/(double)pings[0].stbd.pings.size();
+  long w=pings[0].stbd.pings.size();
+  long h=pings.size();
+  //moving average window size
+  int maw=(int)((double)(1.2/res+.5));
+  if (maw<2)maw=2;
+  int pw=(int)((double)(.8/res+.5));
+  if (pw<2)pw=2;
+  int minj=(int)((double)(minalt/res+.5));
+  minj-=maw;  //to allow derivatives at minalt
+  if (minj<2)minj=2;  
+  minj+=maw;  //to keep range=(j+minj)*res
+  int jw=(int)((double)(maxrange/res+.5));
+  jw+=maw+pw;  //to allow second derivatives at max range
+  if (jw>w)jw=w;
+  jw-=(maw+pw);  //j range is min alt to max range but m mw must extend beyond that
+  jw=(jw-minj);
+  jw+=maw;
+  int mw=jw+2*maw;
+  unsigned long mvavg[mw];  //avg (j,j+maw)
+  int nfiles=0;
+  //remove and check if scan is no good
+  for (int i = 0; i < h; i++) {
+    if (pings[i].first_in_file_)nfiles++;
+    for (int j = 0; j <minj; j++) {
+      pings[i].stbd.pings[j]=0;
+    }
+    for (int j = minj; j <w; j++){
+      if ((pings[i].stbd.pings[j]<0)||(pings[i].stbd.pings[j]>(1<<29)))
+	if (i>0)pings[i].stbd.pings[j]=pings[i-1].stbd.pings[j];
+	else pings[i].stbd.pings[j]=0;
+    }
+  }
+  nfiles=0;
+  long fsizes[nfiles];
+  for (int i = 0; i < h; i++) {
+    if (pings[i].first_in_file_){
+      if (i>0){
+	if (nfiles==0)fsizes[nfiles]=i;
+	else fsizes[nfiles]=i-fsizes[nfiles-1];
+	nfiles++;
+      }
+    }
+  }
+  fsizes[nfiles]=h-fsizes[nfiles-1];
+  nfiles++;
+  
+  //This sets how far the nadir can wander between pings.
+  double binmotion=1.5/res;
+  float mv=0;
+  float bestmv=0;
+  int counttrack=0;
+  int countr=0;
+  float running=minj+maw;
+  for (int direction=0; direction<2; direction++)
+    for (long ii=0; ii<h; ii++){
+      long i=ii;
+      if (direction%2){
+	i=h-1-ii;
+	if (ii>0)
+	  if (pings[i+1].first_in_file_){
+	    counttrack=0;
+	    running=minj+maw;
+	  }
+      }else {
+	if (direction==0)nadir[i]=0;
+      	if (pings[i].first_in_file_){
+	  counttrack=0;
+	  running=minj+maw;
+	}
+      }
+      if (nadir[i]>0){
+	if (counttrack>5){
+	  mv=nadir[i]-minj-running;
+	  if (mv<0) mv=-mv;
+	  if (mv>binmotion)nadir[i]=0;
+	}
+      }
+      if (nadir[i]==0){
+	mvavg[0]=pings[i].stbd.pings[minj-maw]+pw/2;;
+	for (int k=1;k<pw; k++)mvavg[0]+=pings[i].stbd.pings[minj-maw+k];
+	for (int j=1; j<mw; j++){
+	  mvavg[j]=mvavg[j-1];
+	  mvavg[j]-=pings[i].stbd.pings[j-1+minj-maw];
+	  mvavg[j]+=pings[i].stbd.pings[j-1+pw+minj-maw];
+	  mvavg[j-1]/=pw;
+	}
+	mvavg[mw-1]/=pw;
+	float maxscore=0;
+	int jmax=0;
+	bestmv=-1;
+	int jstart=maw;
+	int jend=jw-maw;
+	for( int j=0; j<jw; j++){
+	  unsigned long temp=mvavg[j+maw];// first derivative
+	  if ((temp>minintensityatnadir)&&(mvavg[j]<temp)) {
+	    double score=temp;
+	    temp=mvavg[j+2*maw]+mvavg[j];
+	    temp=(temp>>1);
+	    score-=temp;
+	    score/=(double)(mvavg[j]+10);
+	    if (score>0){
+	      mv=j-running;
+	      if (mv<0) mv=-mv;
+	      mv/=binmotion;
+	      if (counttrack>5){
+		double x=(6-counttrack*.02);
+		if (x<1)x=1.0;
+		if ((counttrack<100)||(mv>1.0))
+		  if (mv<x)score-=mv*mv*(1.5/(x*x));
+		  else score-=1.5;
+	      }
+	      if(score>maxscore){
+		if ((bestmv>-1)&&(mv>bestmv)&&(counttrack>3))j=mw;
+		else{
+		  maxscore=score;
+		  jmax=j;
+		  bestmv=mv;
+		  if (counttrack<5)
+		    if (score>0.5)
+		      j=mw;
+		}
+	      }
+	    }
+	  }
+	}
+	if(jmax>0)nadir[i]=jmax+minj;
+	if(nadir[i]>0){
+	  if (counttrack>0)
+	    if (bestmv<1.0) {
+	      running=nadir[i]-minj;
+	      counttrack++;
+	    }else counttrack--;
+	  else {
+	    running=nadir[i]-minj;
+	    counttrack++;
+	  }
+	} else {
+	  if (counttrack>100)
+	    counttrack=(counttrack>>1);
+	  else counttrack=0;
+	//nadir[i]=running;
+	}
+      }
+    }
+  long last5[5];
+  int latest=-5;
+  long labels[2*h];
+  std::memset(labels, 0, sizeof labels);
+  long  *counts=&labels[h-1];
+  int nextlabel=1;
+  running =minj;
+  for(long i=0; i<h;i++){
+    if (pings[i].first_in_file_)latest=-5;
+    if (nadir[i]>0){
+      double bm=binmotion/1.5;
+      if (counttrack>100)bm/=4.0;
+      else if (counttrack>50)bm/=2.0;
+      long track=trackLines(i, h, nadir, labels, last5, latest, nextlabel, bm);
+      if (track>-1){
+	running=nadir[track];
+	counttrack=counts[labels[track]];
+      }
+    }	
+  }
+  fsizes[nfiles]=h-fsizes[nfiles-1];
+  nfiles++;
+  int limits[nfiles];
+  for (int i=0; i<nfiles; i++)
+    if (fsizes[i]>200)limits[i]=25;
+    else limits[i]=fsizes[i]/8;
+  nfiles=-1;
+  for(int i=0; i<h; i++){
+    if (pings[i].first_in_file_)nfiles++;
+    if (labels[i]>0){
+      if (counts[labels[i]]<limits[nfiles]){
+	counts[labels[i]]--;
+	labels[i]=0;
+	nadir[i]=0;
+      } 
+    }
+  }
+  long firstinfile=0; 
+  running=0;
+  for (long i=0; i<h; i++){
+    if (pings[i].first_in_file_){
+      firstinfile=i;      
+      running=0;
+    }
+    if (nadir[i]==0){
+      long next=0;
+      long ii=i+1;
+      while (ii<h){
+	if (pings[ii].first_in_file_){
+	  ii=h;
+	}else{
+	  if (nadir[ii]>0){
+	    next=ii;
+	    ii=h;
+	  }
+	}
+	ii++;
+      }
+      if (next>0){
+	if (running>0)
+	  nadir[i]=(float)(0.5+(running*(float)(next-i)+(float)nadir[next])/(float)(next-i+1));
+	else
+	  nadir[i]=nadir[next];
+      } else {
+	if (running>0)
+	  nadir[i]=running;
+	else
+	  nadir[i]=minj;
+      }
+    }
+    running =nadir[i]; 
+  }
+  countr=0;
+  long long avg=0;
+  int max=0;
+  int min=w;
+  for (long i=2; i<h-2;i++)
+    nadir[i]=((nadir[i-2]+nadir[i-1]+nadir[i+1]+nadir[i+2])>>2);
+  for (long i=0; i<h;i++){
+    if (nadir[i]>max)max=nadir[i];
+    if (nadir[i]<min)min=nadir[i];
+    avg+=nadir[i];
+    countr++;
+  }
+  double nad=((double)avg/countr);
+  std::cout<<(h-countr)<<" not tracked, "<<countr<<" tracked "<<" of "<<h<<" pings. \n";
+  std::cout<<"Avg Stbd Nadir is "<<(res*nad)<<" m and range is ("<<(min*res)<<", "<<(max*res)<<")\n";
+  return countr;
+}
+  /*
 int findNadirStbd(xtf_sss_ping::PingsT& pings, long * nadir, double minalt, long minintensityatnadir, double maxrange){
   //res is m per bin
   double res=(double)pings[0].stbd.slant_range/(double)pings[0].stbd.pings.size();
   long w=pings[0].stbd.pings.size();
   long h=pings.size();
   //moving average window size
-  int per=(int)((double)(1.2/res+.5));
-  if (per<2)per=2;
+  int maw=(int)((double)(1.2/res+.5));
+  if (maw<2)maw=2;
   int pw=(int)((double)(.8/res+.5));
   if (pw<2)pw=2;
-  int maw=per;
   int minj=(int)((double)(minalt/res+.5));
-  if (minj<5)minj=5;
-  minj+=maw;
+  minj-=maw;  //to allow derivatives at minalt
+  if (minj<2)minj=2;  
+  minj+=maw;  //to keep range=(j+minj)*res
   int jw=(int)((double)(maxrange/res+.5));
+  jw+=maw+pw;  //to allow second derivatives at max range
   if (jw>w)jw=w;
-  jw=(jw-minj-maw);
+  jw-=(maw+pw);  //j range is min alt to max range but m mw must extend beyond that
+  jw=(jw-minj);
   jw+=maw;
-  int mw=jw+maw;
+  int mw=jw+2*maw;
   unsigned long mvavg[mw];  //avg (j,j+maw)
 
   //remove and check if scan is no good
@@ -185,92 +621,155 @@ int findNadirStbd(xtf_sss_ping::PingsT& pings, long * nadir, double minalt, long
   }
   //This sets how far the nadir can wander between pings.
   double binmotion=1.5/res;
-  float wgt[maw];
-  float wgt2[per];
-  float d=1.0/(float)per;  
-  for (int k=0; k<per; k++) {
-    wgt[k]=-d;
-    wgt2[k]=d;
-    wgt[k+per]=d;
-  }
-  long long avg=0;
-  int max=0;
-  int min=w;
   float mv=0;
   float bestmv=0;
   int counttrack=0;
   int countr=0;
   float running=minj+maw;
-  for (long i=0; i<h; i++){
-    mvavg[0]=mvavg[0]+=pings[i].stbd.pings[minj-maw]+pw/2;;
-    for (int k=1;k<pw; k++)mvavg[0]+=pings[i].stbd.pings[minj-maw+k];
-    for (int j=1; j<mw; j++){
-      mvavg[j]=mvavg[j-1];
-      mvavg[j]-=pings[i].stbd.pings[j-1+minj-maw];
-      mvavg[j]+=pings[i].stbd.pings[j-1+pw+minj-maw];
-      mvavg[j-1]/=pw;
-    }
-    mvavg[mw-1]/=pw;
-    nadir[i]=0;
-    float maxscore=0;
-    int jmax=0;
-    bestmv=0;
-     int jstart=maw;
-    int jend=jw-maw;
-    for( int j=0; j<mw-maw; j++){
-      double score=mvavg[j];
-
-      score=-score;
-      score+=mvavg[j+maw];
-       if (score>minintensityatnadir) {
-	score/=(double)mvavg[j];;
-	if (score>0){
-	  if (counttrack>5){
-	    mv=j-running;
-	    if (mv<0) mv=-mv;
-	    mv/=binmotion;
-	    double x=(6-counttrack*.02);
-	    if (x<0.1)x=0.1;
-	    if ((counttrack>100)&&(mv<2.0))score+2.0;
-	    else if ((counttrack>2)&&(mv<x))score-=mv*mv*(1.5/(x*x));
-	    else score-=1.5;
+  for (int direction=0; direction<2; direction++)
+    for (long ii=0; ii<h; ii++){
+      long i=ii;
+      if (direction%2){
+	i=h-1-ii;
+	if (ii>0)
+	  if (pings[i+1].first_in_file_){
+	    counttrack=0;
+	    running=minj+maw;
 	  }
-	  if(score>maxscore){
-	    maxscore=score;
-	    jmax=j;
-	    bestmv=mv;
-	    if (counttrack<3)
-	      if (score>0.5)
-		j=mw;
+      }else {
+	if (direction==0)nadir[i]=0;
+      	if (pings[i].first_in_file_){
+	  counttrack=0;
+	  running=minj+maw;
+	}
+      }
+      if (nadir[i]>0){
+	if (counttrack>5){
+	  mv=nadir[i]-minj-running;
+	  if (mv<0) mv=-mv;
+	  mv/=binmotion;
+	  if (mv>1)nadir[i]=0;
+	}
+      }
+      if (nadir[i]==0){
+	mvavg[0]=pings[i].stbd.pings[minj-maw]+pw/2;;
+	for (int k=1;k<pw; k++)mvavg[0]+=pings[i].stbd.pings[minj-maw+k];
+	for (int j=1; j<mw; j++){
+	  mvavg[j]=mvavg[j-1];
+	  mvavg[j]-=pings[i].stbd.pings[j-1+minj-maw];
+	  mvavg[j]+=pings[i].stbd.pings[j-1+pw+minj-maw];
+	  mvavg[j-1]/=pw;
+	}
+	mvavg[mw-1]/=pw;
+	float maxscore=0;
+	int jmax=0;
+	bestmv=-1;
+	int jstart=maw;
+	int jend=jw-maw;
+	for( int j=0; j<jw; j++){
+	  unsigned long temp=mvavg[j+maw];// first derivative
+	  double score=temp;
+	  if ((temp>minintensityatnadir)&&(mvavg[j]<(score*.8))) {
+	    temp=mvavg[j+2*maw]+mvavg[j];
+	    temp=(temp>>1);
+	    score=-score;
+	    score+=temp;
+	    score/=(double)(mvavg[j]+.1);
+	    if (score>0){
+	      mv=j-running;
+	      if (mv<0) mv=-mv;
+	      mv/=binmotion;
+	      if (counttrack>5){
+		double x=(6-counttrack*.02);
+		if (x<1)x=1.0;
+		if ((counttrack<100)||(mv>1.0))
+		  if (mv<x)score-=mv*mv*(1.5/(x*x));
+		  else score-=1.5;
+	      }
+	      if(score>maxscore){
+		if ((bestmv>-1)&&(mv>bestmv)&&(counttrack>3))j=mw;
+		else{
+		  maxscore=score;
+		  jmax=j;
+		  bestmv=mv;
+		  if (counttrack<5)
+		    if (score>0.5)
+		      j=mw;
+		}
+	      }
+	    }
 	  }
+	}
+	if(jmax>0)nadir[i]=jmax+minj;
+	if(nadir[i]>0){
+	  if (counttrack>0)
+	    if (bestmv<1.0) {
+	      running=nadir[i]-minj;
+	      counttrack++;
+	    }else counttrack--;
+	  else {
+	    running=nadir[i]-minj;
+	    counttrack++;
+	  }
+	} else {
+	  if (counttrack>100)
+	    counttrack=(counttrack>>1);
+	  else counttrack=0;
+	//nadir[i]=running;
 	}
       }
     }
-    if(jmax>0)nadir[i]=jmax+minj;
-    if(nadir[i]>0){
-      if (nadir[i]>max)max=nadir[i];
-      if (nadir[i]<min)min=nadir[i];
-      avg+=nadir[i];
-      countr++;
-      if (counttrack>0)
-	if (bestmv<1) {
-	  running=nadir[i]-minj;
-	  counttrack++;
-	}else counttrack--;
-      else {
-	running=nadir[i]-minj;
-	counttrack++;
-      }
-    } else {
-      counttrack=0;
-      nadir[i]=running;
+
+  long long avg=0;
+  int max=0;
+  int min=w;
+  long firstinfile=0; 
+  running=0;
+  for (long i=0; i<h; i++){
+    if (pings[i].first_in_file_){
+      firstinfile=i;      
+      running=0;
     }
+    if (nadir[i]==0){
+      long next=0;
+      long ii=i+1;
+      while (ii<h){
+	if (pings[ii].first_in_file_){
+	  ii=h;
+	}else{
+	  if (nadir[ii]>0){
+	    next=ii;
+	    ii=h;
+	  }
+	}
+	ii++;
+      }
+      if (next>0){
+	if (running>0)
+	  nadir[i]=(float)(0.5+(running*(float)(next-i)+(float)nadir[next])/(float)(next-i+1));
+	else
+	  nadir[i]=nadir[next];
+      } else {
+	if (running>0)
+	  nadir[i]=running;
+	else
+	  nadir[i]=minj;
+      }
+     
+    }
+    running =nadir[i]; 
+    if (nadir[i]>max)max=nadir[i];
+    if (nadir[i]<min)min=nadir[i];
+    avg+=nadir[i];
+    countr++;
   }
+  
   double nad=((double)avg/countr);
   std::cout<<(h-countr)<<" not tracked, "<<countr<<" tracked "<<" of "<<h<<" pings. \n";
   std::cout<<"Avg Starboard Nadir is "<<(res*nad)<<" m and range is ("<<(min*res)<<", "<<(max*res)<<")\n";
   return countr;
 }
+  */
 cv::Mat make_waterfall_image(const xtf_sss_ping::PingsT& pings)
 {
     int rows = pings.size();
@@ -278,7 +777,7 @@ cv::Mat make_waterfall_image(const xtf_sss_ping::PingsT& pings)
     cv::Mat swath_img = cv::Mat(rows, cols, CV_8UC3, cv::Scalar(255, 255, 255));
     for (int i = 0; i < pings.size(); ++i) {
         for (int j = 0; j < pings[i].port.pings.size(); ++j) {
-            cv::Point3_<uchar>* p = swath_img.ptr<cv::Point3_<uchar> >(i, pings[0].stbd.pings.size()+j);
+            cv::Point3_<uchar>* p = swath_img.ptr<cv::Point3_<uchar> >(i, pings[0].port.pings.size()+j);
             p->z = uchar(255.*(float(pings[i].port.pings[j]) + 32767.)/(2.*32767.));
             p->y = uchar(255.*(float(pings[i].port.pings[j]) + 32767.)/(2.*32767.));
             p->x = uchar(255.*(float(pings[i].port.pings[j]) + 32767.)/(2.*32767.));
@@ -318,6 +817,8 @@ void  regularize_pings(xtf_sss_ping::PingsT& pings, const long * port_nadir, con
 {
     //res is m per bin
   double res=(double)pings[0].port.slant_range/(double)pings[0].port.pings.size();
+
+
   double cn=cos(2.0*nadir_angle);
   double sn=sin(2.0*nadir_angle);
   int w=pings[0].port.pings.size();    
@@ -330,7 +831,8 @@ void  regularize_pings(xtf_sss_ping::PingsT& pings, const long * port_nadir, con
     if (r2==0)r2=r1;
     if (r1>1E-6){
       double x=sqrt(((cn*r1-r2)/sn)*((cn*r1-r2)/sn)+r1*r1);
-      for (int j = port_nadir[i]; j < w; j++) {
+      //      for (int j = port_nadir[i]; j < w; j++) {
+      for (int j = 0; j < w; j++) {
 	double c=x/(double)j;
 	if (c>1)c=1;
 	if (c<.01) c=.01;
@@ -340,7 +842,8 @@ void  regularize_pings(xtf_sss_ping::PingsT& pings, const long * port_nadir, con
 	intensity/=c;
 	pings[i].port.pings[j]=(long)(intensity+.5);
       }
-      for (int j = stbd_nadir[i]; j < w; j++) {
+      //      for (int j = stbd_nadir[i]; j < w; j++) {
+      for (int j = 0; j < w; j++) {
 	double c=x/(double)j;
 	if (c>1)c=1;
 	if (c<.01) c=.01;
@@ -602,7 +1105,9 @@ cv::Mat  normalize_waterfall(const xtf_sss_ping::PingsT& pings, long* params)
     std::cout<<"There were "<<count<<" or "<<p<<"% above the maxPingIndensity of "<<maxPingIntensity<<"\n";
     return swath_img;
   }
-/**
+
+  
+  /*
  RemoveLineArtifact_port(xtf_sss_ping::PingsT& pings, long * nadir, double minArtifactRange minr=30,  double minArtifactRange maxr=90, bool setzero=false)
 
 Our Port side Sidescan has an artifact that appears as a bright spot in about 25 cm of bins.  Which bins varies continously and smoothly in time accross bins.
@@ -646,27 +1151,28 @@ You can give some hints as to the range that the artifact wanders over and choos
   float running=jw/2+minj;
   long last5[5];
   int latest=-5;
-  long counts[h+1];
-  std::memset(counts, 0, sizeof counts);  
-  long labels[h];
+  long labels[2*h];
   std::memset(labels, 0, sizeof labels);
+  long  *counts=&labels[h-1];
   int nextlabel=1;
   float scale=1;
   for (int direction=0; direction<6; direction++){
     if (direction>1)   scale=0.1*(float)direction;
     for (long ii=0; ii<h; ii++){
+      if (ii==0)latest=-5;
       int i=ii;
-      if (ii==0){
-	latest=-5;
+      int nindex=i+1;
+      int inc=1;
+      if (direction%2==1) {
+	i=h-1-i;
+	nindex=h-1-nindex;
+	inc=-1;
+	if (i<h-1)
+	  if (pings[i+1].first_in_file_)latest=-5;
+      } else {
+	if (pings[i].first_in_file_)latest=-5;
       }
       if (direction>0){
-	int nindex=i+1;
-	int inc=1;
-	if (direction%2==1) {
-	  i=h-1-i;
-	  nindex=h-1-nindex;
-	  inc=-1;
-	}
 	if (counttrack>20)
 	  while ((nindex<h-1)&&(nindex>1)){
 	    if (labels[nindex]>0){
@@ -682,9 +1188,9 @@ You can give some hints as to the range that the artifact wanders over and choos
 	    }
 	    nindex+=inc;
 	  }
-      } else{
-	artif[i]=0;
-      }
+      } else artif[i]=0;
+      
+
       if (artif[i]==0){
 	mvavg[0]=mvavg[0]+=pings[i].port.pings[minj-maw]+pw/2;;
 	for (int k=1;k<pw; k++)mvavg[0]+=pings[i].port.pings[minj-maw+k];
@@ -741,66 +1247,12 @@ You can give some hints as to the range that the artifact wanders over and choos
 	}
 	if(maxscore>0)artif[i]=jmax+minj;
       }
-      if(artif[i]>0){
-	
-
-	int tp=5;
-	int late=latest;
-	if(latest<0){
-	  late=4+latest;
-	  tp=late+1;
+      if (artif[i]>0){
+      	long track=trackLines(i, h, artif, labels, last5, latest, nextlabel, (binmotion/4.0));
+	if (track>-1){
+	  running=artif[track];
+	  counttrack=counts[labels[track]];
 	}
-	int label=-1;
-	int bestl=-1;
-	counttrack=-1;
-	//last5 has 'i' ping number values for the last 5 detections
-	//labels[<h] has the label of the track for that ping which is also the index into counts
-	//counts[label[i]] has the number of pings with that label
-	if (tp>0)
-	  for (int k=0; k<tp; k++){
-	    int kk=(5+late-k)%5;
-	    int cnt=counts[labels[last5[kk]]];
-	    if (cnt>counttrack){
-	      running=artif[last5[kk]];
-	      counttrack=cnt;
-	    }
-	    float diff=artif[i]-artif[last5[kk]];
-	    if (diff<0)diff=-diff;
-	    diff/=binmotion;
-	    if (cnt>100)diff/=4.0;
-	    else if (cnt>50)diff/=2.0;
-	    if (diff<.25) {
-	      if (label==-1) {
-		label=labels[last5[kk]];
-		bestl=cnt;
-	      }else if (cnt>bestl){
-		label=labels[last5[kk]];
-		bestl=cnt;
-	      }
-	    }
-	  }
-	if (label==-1){
-	  label=nextlabel;
-	  nextlabel++;
-	}
-	late=(late+1)%5;
-	last5[late]=i;
-	if (labels[i]>0){
-	  if (counts[label]>counts[labels[i]]){
-	    counts[labels[i]]--;
-	    labels[i]=label;
-	    counts[labels[i]]++;
-	  }
-	}else{
-	  labels[i]=label;
-	  counts[labels[i]]++;
-	}
-	if (counts[labels[i]]>counttrack){
-	  running=artif[i];
-	  counttrack=counts[labels[i]];
-	}
-	if (latest<0) latest=late-4;
-	else latest=late;	
       }
     }
     countr=0;
@@ -813,17 +1265,20 @@ You can give some hints as to the range that the artifact wanders over and choos
 	} else countr++;
       }
     }
-    for (int i=1; i<nextlabel;i++){
-      if (counts[i]==0){
-	for (int ii=i+1; ii<nextlabel; ii++)
-	  counts[ii-1]=counts[ii];
-	nextlabel--;
-	counts[nextlabel]=0;
-	for (int ii=0; ii<h; ii++)
-	  if (labels[ii]>i)labels[ii]--;
-	i--;
+    if (nextlabel>1)
+      for (int i=1; i<nextlabel;i++){
+	if (counts[i]==0){
+	  if (nextlabel>i+1)
+	    for (int ii=i+1; ii<nextlabel; ii++)
+	      counts[ii-1]=counts[ii];
+	  nextlabel--;
+	  counts[nextlabel]=0;
+	  for (int ii=0; ii<h; ii++)
+	    if (labels[ii]>i)labels[ii]--;
+	  i--;
+	}
+	
       }
-    }
   }
   double mean=0;
   for (int i=1; i<h-1; i++){
@@ -837,7 +1292,7 @@ You can give some hints as to the range that the artifact wanders over and choos
 	}
     }else mean+=(artif[i]);
   }
-  double offset=(double)(pw+numpeaks*(numpeaks-1))/2.0;
+  double offset=(double)(pw+per*(numpeaks-1))/2.0;
   mean/=(double)countr;
   mean+=(offset);
   mean*=res;
@@ -937,18 +1392,22 @@ nadir -  the array returned from calling findNadirStbd. This array will be chang
   for (int direction=0; direction<6; direction++){
     if (direction>1)   scale=0.1*(float)direction;
     for (long ii=0; ii<h; ii++){
+      if (ii==0)latest=-5;
       int i=ii;
-      if (ii==0){
-	latest=-5;
+      int nindex=i+1;
+      int inc=1;
+      if (direction%2==1) {
+	i=h-1-i;
+	nindex=h-1-nindex;
+	inc=-1;
+	if (i<h-1)
+	  if (pings[i+1].first_in_file_)latest=-5;
+      } else {
+	if (pings[i].first_in_file_)latest=-5;
       }
       if (direction>0){
 	int nindex=i+1;
 	int inc=1;
-	if (direction%2==1) {
-	  i=h-1-i;
-	  nindex=h-1-nindex;
-	  inc=-1;
-	}
 	if (counttrack>20)
 	  while ((nindex<h-1)&&(nindex>1)){
 	    if (labels[nindex]>0){
@@ -1024,65 +1483,11 @@ nadir -  the array returned from calling findNadirStbd. This array will be chang
 	if(maxscore>0)artif[i]=jmax+minj;
       }
       if(artif[i]>0){
-	
-
-	int tp=5;
-	int late=latest;
-	if(latest<0){
-	  late=4+latest;
-	  tp=late+1;
+      	long track=trackLines(i, h, artif, labels, last5, latest, nextlabel, (binmotion/4.0));
+	if (track>-1){
+	  running=artif[track];
+	  counttrack=counts[labels[track]];
 	}
-	int label=-1;
-	int bestl=-1;
-	counttrack=-1;
-	//last5 has 'i' ping number values for the last 5 detections
-	//labels[<h] has the label of the track for that ping which is also the index into counts
-	//counts[label[i]] has the number of pings with that label
-	if (tp>0)
-	  for (int k=0; k<tp; k++){
-	    int kk=(5+late-k)%5;
-	    int cnt=counts[labels[last5[kk]]];
-	    if (cnt>counttrack){
-	      running=artif[last5[kk]];
-	      counttrack=cnt;
-	    }
-	    float diff=artif[i]-artif[last5[kk]];
-	    if (diff<0)diff=-diff;
-	    diff/=binmotion;
-	    if (cnt>100)diff/=4.0;
-	    else if (cnt>50)diff/=2.0;
-	    if (diff<.25) {
-	      if (label==-1) {
-		label=labels[last5[kk]];
-		bestl=cnt;
-	      }else if (cnt>bestl){
-		label=labels[last5[kk]];
-		bestl=cnt;
-	      }
-	    }
-	  }
-	if (label==-1){
-	  label=nextlabel;
-	  nextlabel++;
-	}
-	late=(late+1)%5;
-	last5[late]=i;
-	if (labels[i]>0){
-	  if (counts[label]>counts[labels[i]]){
-	    counts[labels[i]]--;
-	    labels[i]=label;
-	    counts[labels[i]]++;
-	  }
-	}else{
-	  labels[i]=label;
-	  counts[labels[i]]++;
-	}
-	if (counts[labels[i]]>counttrack){
-	  running=artif[i];
-	  counttrack=counts[labels[i]];
-	}
-	if (latest<0) latest=late-4;
-	else latest=late;	
       }
     }
     countr=0;
@@ -1095,17 +1500,20 @@ nadir -  the array returned from calling findNadirStbd. This array will be chang
 	} else countr++;
       }
     }
-    for (int i=1; i<nextlabel;i++){
-      if (counts[i]==0){
-	for (int ii=i+1; ii<nextlabel; ii++)
-	  counts[ii-1]=counts[ii];
-	nextlabel--;
-	counts[nextlabel]=0;
-	for (int ii=0; ii<h; ii++)
-	  if (labels[ii]>i)labels[ii]--;
-	i--;
+     if (nextlabel>1)
+      for (int i=1; i<nextlabel;i++){
+	if (counts[i]==0){
+	  if (nextlabel>i+1)
+	    for (int ii=i+1; ii<nextlabel; ii++)
+	      counts[ii-1]=counts[ii];
+	  nextlabel--;
+	  counts[nextlabel]=0;
+	  for (int ii=0; ii<h; ii++)
+	    if (labels[ii]>i)labels[ii]--;
+	  i--;
+	}
+	
       }
-    }
   }
   double mean=0;
   for (int i=1; i<h-1; i++){
@@ -1120,7 +1528,7 @@ nadir -  the array returned from calling findNadirStbd. This array will be chang
 	}
     } else mean+=(artif[i]);
   }
-  double offset=(double)(pw+numpeaks*(numpeaks-1))/2.0;
+  double offset=(double)(pw+per*(numpeaks-1))/2.0;
   mean/=countr;
   mean+=offset;
     mean*=res;

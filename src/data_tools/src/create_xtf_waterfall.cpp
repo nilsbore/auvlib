@@ -62,10 +62,10 @@ int main(int argc, char** argv)
     }
     long w=pings[0].port.pings.size()-100;
     // generally the minimum intensity param must be adjusted for differe bottoms and SSL is much brighter so also max intensity has to be like 500000 
-   removeLineArtifact_port(pings, artif,10,120,0, 1000, .088, 3, .032);
+    removeLineArtifact_port(pings, artif,10,120,0, 1000, .088, 3, .032);
    // removeLineArtifact_port(pings, artif,120,220,1, 100, 2.0, 1, 20.0);    
-    xtf_data::findNadirPort(pings,p_nadir,5,1000, 100);
-    xtf_data::findNadirStbd(pings,s_nadir,5,1000, 100);
+    xtf_data::findNadirPort(pings,p_nadir,10,1000, 80);
+    xtf_data::findNadirStbd(pings,s_nadir,10,1000, 80);
     if (0) //plot the artifact line bright or 0
     for (int i=0; i<pings.size(); i++){
       for (int k=0; k<100; k++){
@@ -98,7 +98,7 @@ int main(int argc, char** argv)
     }
 
 
-    xtf_data::regularize_pings(pings,p_nadir,s_nadir, (16.0/180.0*M_PI));
+
     //plot the nadir in a bright wide line
 
     for (int i=0; i<pings.size(); i++){
@@ -118,7 +118,25 @@ int main(int argc, char** argv)
 	        cv::Mat waterfall_img = make_waterfall_image(track_pings, 1024, r, maxIntensity);
 	int rows=waterfall_img.rows;
 	int cols=waterfall_img.cols;
-	//cv::imwrite("a.png",waterfall_img);
+	cv::imwrite("notregularized.png",waterfall_img);
+	cv::imshow("Before regularization image", waterfall_img);
+        cv::waitKey();
+        pos = next;
+    }
+
+
+     xtf_data::regularize_pings(pings,p_nadir,s_nadir, (22.31/180.0*M_PI));
+
+    for (auto pos = pings.begin(); pos != pings.end(); ) {
+        auto next = std::find_if(pos, pings.end(), [&](const xtf_sss_ping& ping) {
+            return ping.first_in_file_ && (&ping != &(*pos));
+        });
+        xtf_sss_ping::PingsT track_pings(pos, next);
+	int r = track_pings.size()/rowdownsample;
+	        cv::Mat waterfall_img = make_waterfall_image(track_pings, 1024, r, maxIntensity);
+	int rows=waterfall_img.rows;
+	int cols=waterfall_img.cols;
+	//cv::imwrite("regularized.png",waterfall_img);
 	cv::imshow("My regularzed image", waterfall_img);
         cv::waitKey();
         pos = next;
