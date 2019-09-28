@@ -28,13 +28,10 @@ add_library(xyz_data src/xyz_data.cpp)
 
 add_executable(test_xtf src/test_xtf.cpp)
 
-<<<<<<< HEAD
 add_executable(create_xtf_waterfall src/create_xtf_waterfall.cpp)
 
 add_executable(test_submap_tracks src/test_submap_tracks.cpp)
 
-=======
->>>>>>> df31e9d4109182d6ee3fc860c44e7397fe5a453f
 add_executable(test_all src/test_all.cpp)
 
 # Define headers for this library. PUBLIC headers are used for
@@ -98,17 +95,16 @@ target_include_directories(xyz_data PUBLIC
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
 
-<<<<<<< HEAD
+
 target_link_libraries(test_xtf  xtf_data std_data navi_data ${OpenCV_LIBS} ${Boost_LIBRARIES})
 
 target_link_libraries(create_xtf_waterfall  xtf_data std_data navi_data ${OpenCV_LIBS} ${Boost_LIBRARIES})
-=======
+
 if(MSVC)
   set(EXTRA_BOOST_LIBS "")
 else()
   set(EXTRA_BOOST_LIBS ${Boost_LIBRARIES})
 endif()
->>>>>>> df31e9d4109182d6ee3fc860c44e7397fe5a453f
 
 target_link_libraries(test_xtf xtf_data std_data navi_data ${OpenCV_LIBS} ${EXTRA_BOOST_LIBS})
 
