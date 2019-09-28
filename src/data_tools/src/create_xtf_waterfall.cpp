@@ -22,6 +22,7 @@ using namespace xtf_data;
 ./create_xtf_waterfall ./pathtoXTFfolder maxIntensity rowdownsample 
 **/
 
+extern int verbose_level;
 
 int main(int argc, char** argv)
 {
@@ -29,8 +30,8 @@ int main(int argc, char** argv)
   
   //boost::filesystem::path folder("/home/nbore/Data/KTH_GBG_PING/Ping_Unprocessed/2-Raw_Data/SSS/xtf");
   boost::filesystem::path folder(argv[1]);
-    
-    xtf_sss_ping::PingsT pings = parse_folder<xtf_sss_ping>(folder);
+  //verbose_level=0;
+    xtf_sss_ping::PingsT pings = parse_folder_ordered<xtf_sss_ping>(folder);
      long maxIntensity=65535;
     long rowdownsample=1;
     int chopup=0;
@@ -40,8 +41,8 @@ int main(int argc, char** argv)
     long p_nadir[pings.size()];
     long s_nadir[pings.size()];
    long artif[pings.size()];
-  
-              if (0) 
+   std::cout<<folder<<" is parsed\n";
+   if (0) 
     for (auto pos = pings.begin(); pos != pings.end(); ) {
         auto next = std::find_if(pos, pings.end(), [&](const xtf_sss_ping& ping) {
             return ping.first_in_file_ && (&ping != &(*pos));
@@ -63,7 +64,6 @@ int main(int argc, char** argv)
     long w=pings[0].port.pings.size()-100;
     // generally the minimum intensity param must be adjusted for differe bottoms and SSL is much brighter so also max intensity has to be like 500000 
     removeLineArtifact_port(pings, artif,10,120,0, 1000, .088, 3, .032);
-   // removeLineArtifact_port(pings, artif,120,220,1, 100, 2.0, 1, 20.0);    
     xtf_data::findNadirPort(pings,p_nadir,10,1000, 80);
     xtf_data::findNadirStbd(pings,s_nadir,10,1000, 80);
     if (0) //plot the artifact line bright or 0
@@ -102,30 +102,32 @@ int main(int argc, char** argv)
     //plot the nadir in a bright wide line
 
     for (int i=0; i<pings.size(); i++){
-      for (int k=0; k<100; k++){
-	if (p_nadir[i]<w)
-	  pings[i].port.pings[p_nadir[i]+k]=maxIntensity;
-	if (s_nadir[i]<w)
-	   pings[i].stbd.pings[s_nadir[i]+k]=maxIntensity;
+      for (int k=0; k<40; k++){
+	if (p_nadir[i]-k>0)
+	  pings[i].port.pings[p_nadir[i]-k]=maxIntensity;
+	if (s_nadir[i]-k>0)
+	   pings[i].stbd.pings[s_nadir[i]-k]=maxIntensity;
       }
     }
+    int n=1;
     for (auto pos = pings.begin(); pos != pings.end(); ) {
         auto next = std::find_if(pos, pings.end(), [&](const xtf_sss_ping& ping) {
             return ping.first_in_file_ && (&ping != &(*pos));
         });
         xtf_sss_ping::PingsT track_pings(pos, next);
+	std::cerr<<n<<"th file\n";
+	n++;
 	int r = track_pings.size()/rowdownsample;
 	        cv::Mat waterfall_img = make_waterfall_image(track_pings, 1024, r, maxIntensity);
-	int rows=waterfall_img.rows;
-	int cols=waterfall_img.cols;
 	cv::imwrite("notregularized.png",waterfall_img);
 	cv::imshow("Before regularization image", waterfall_img);
         cv::waitKey();
         pos = next;
     }
 
-
-     xtf_data::regularize_pings(pings,p_nadir,s_nadir, (22.31/180.0*M_PI));
+    std::cout<<" Regularizing Now\n";
+    n=1;
+     xtf_data::regularize_pings(pings,p_nadir,s_nadir, (22/180.0*M_PI));
 
     for (auto pos = pings.begin(); pos != pings.end(); ) {
         auto next = std::find_if(pos, pings.end(), [&](const xtf_sss_ping& ping) {
@@ -134,8 +136,8 @@ int main(int argc, char** argv)
         xtf_sss_ping::PingsT track_pings(pos, next);
 	int r = track_pings.size()/rowdownsample;
 	        cv::Mat waterfall_img = make_waterfall_image(track_pings, 1024, r, maxIntensity);
-	int rows=waterfall_img.rows;
-	int cols=waterfall_img.cols;
+	std::cerr<<n<<"th file\n";
+	n++;
 	//cv::imwrite("regularized.png",waterfall_img);
 	cv::imshow("My regularzed image", waterfall_img);
         cv::waitKey();

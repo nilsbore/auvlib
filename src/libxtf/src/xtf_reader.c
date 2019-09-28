@@ -245,7 +245,7 @@ unsigned int ReadXTFFormatFileData(int infl, unsigned char *buffer) {
       //printf("\nCan't read 64 bytes\n");
       return 0xFFFF;
    }
-   printf("Amount Read %d",AmountRead);
+if (0)printf("Amount Read %d",AmountRead);
    PacketHeader = (XTFPINGHEADER *) SrcPtr;
    RecordLength = PacketHeader->NumBytesThisRecord;
    if (RecordLength> 268435456) {

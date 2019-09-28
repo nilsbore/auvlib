@@ -30,6 +30,7 @@ extern "C" {
 using namespace std;
 
 namespace xtf_data {
+int verbose_level=1;
   /*
     checks the up to 5 tracks
 
@@ -111,6 +112,13 @@ binmotion is the number of bins between adjacent detections for them to stll be 
     
     return track;
   }
+
+  /*
+We average in .8 m windows and then compare 3 of these space at 1.2 m intervals.
+The middle window must have an average intensity above minintensityatnadir and be larger than the first window.   Then the second derivative foune by these three is compared and the maximum taken as the detection.  There is also a factor to favor points near the recently found nadir points.  The nadir is taken as the start of the middle window (found empirically).
+ 
+   */
+
   
   int findNadirPort(xtf_sss_ping::PingsT& pings, long * nadir, double minalt, long minintensityatnadir, double maxrange){
   //res is m per bin
@@ -344,8 +352,10 @@ binmotion is the number of bins between adjacent detections for them to stll be 
     countr++;
   }
   double nad=((double)avg/countr);
-  std::cout<<(h-countr)<<" not tracked, "<<countr<<" tracked "<<" of "<<h<<" pings. \n";
-  std::cout<<"Avg Port Nadir is "<<(res*nad)<<" m and range is ("<<(min*res)<<", "<<(max*res)<<")\n";
+  if (verbose_level>1){
+    std::cout<<(h-countr)<<" not tracked, "<<countr<<" tracked "<<" of "<<h<<" pings. \n";
+    std::cout<<"Avg Port Nadir is "<<(res*nad)<<" m and range is ("<<(min*res)<<", "<<(max*res)<<")\n";
+  }
   return countr;
 }
   int findNadirStbd(xtf_sss_ping::PingsT& pings, long * nadir, double minalt, long minintensityatnadir, double maxrange){
@@ -580,196 +590,12 @@ binmotion is the number of bins between adjacent detections for them to stll be 
     countr++;
   }
   double nad=((double)avg/countr);
-  std::cout<<(h-countr)<<" not tracked, "<<countr<<" tracked "<<" of "<<h<<" pings. \n";
-  std::cout<<"Avg Stbd Nadir is "<<(res*nad)<<" m and range is ("<<(min*res)<<", "<<(max*res)<<")\n";
-  return countr;
-}
-  /*
-int findNadirStbd(xtf_sss_ping::PingsT& pings, long * nadir, double minalt, long minintensityatnadir, double maxrange){
-  //res is m per bin
-  double res=(double)pings[0].stbd.slant_range/(double)pings[0].stbd.pings.size();
-  long w=pings[0].stbd.pings.size();
-  long h=pings.size();
-  //moving average window size
-  int maw=(int)((double)(1.2/res+.5));
-  if (maw<2)maw=2;
-  int pw=(int)((double)(.8/res+.5));
-  if (pw<2)pw=2;
-  int minj=(int)((double)(minalt/res+.5));
-  minj-=maw;  //to allow derivatives at minalt
-  if (minj<2)minj=2;  
-  minj+=maw;  //to keep range=(j+minj)*res
-  int jw=(int)((double)(maxrange/res+.5));
-  jw+=maw+pw;  //to allow second derivatives at max range
-  if (jw>w)jw=w;
-  jw-=(maw+pw);  //j range is min alt to max range but m mw must extend beyond that
-  jw=(jw-minj);
-  jw+=maw;
-  int mw=jw+2*maw;
-  unsigned long mvavg[mw];  //avg (j,j+maw)
-
-  //remove and check if scan is no good
-  for (int i = 0; i < h; i++) {
-    for (int j = 0; j <minj; j++) {
-      pings[i].stbd.pings[j]=0;
-    }
-    for (int j = minj; j <w; j++){
-      if ((pings[i].stbd.pings[j]<0)||(pings[i].stbd.pings[j]>(1<<29)))
-	if (i>0)pings[i].stbd.pings[j]=pings[i-1].stbd.pings[j];
-	else pings[i].stbd.pings[j]=0;
-    }
+  if (verbose_level>1){
+    std::cout<<(h-countr)<<" not tracked, "<<countr<<" tracked "<<" of "<<h<<" pings. \n";
+    std::cout<<"Avg Stbd Nadir is "<<(res*nad)<<" m and range is ("<<(min*res)<<", "<<(max*res)<<")\n";
   }
-  //This sets how far the nadir can wander between pings.
-  double binmotion=1.5/res;
-  float mv=0;
-  float bestmv=0;
-  int counttrack=0;
-  int countr=0;
-  float running=minj+maw;
-  for (int direction=0; direction<2; direction++)
-    for (long ii=0; ii<h; ii++){
-      long i=ii;
-      if (direction%2){
-	i=h-1-ii;
-	if (ii>0)
-	  if (pings[i+1].first_in_file_){
-	    counttrack=0;
-	    running=minj+maw;
-	  }
-      }else {
-	if (direction==0)nadir[i]=0;
-      	if (pings[i].first_in_file_){
-	  counttrack=0;
-	  running=minj+maw;
-	}
-      }
-      if (nadir[i]>0){
-	if (counttrack>5){
-	  mv=nadir[i]-minj-running;
-	  if (mv<0) mv=-mv;
-	  mv/=binmotion;
-	  if (mv>1)nadir[i]=0;
-	}
-      }
-      if (nadir[i]==0){
-	mvavg[0]=pings[i].stbd.pings[minj-maw]+pw/2;;
-	for (int k=1;k<pw; k++)mvavg[0]+=pings[i].stbd.pings[minj-maw+k];
-	for (int j=1; j<mw; j++){
-	  mvavg[j]=mvavg[j-1];
-	  mvavg[j]-=pings[i].stbd.pings[j-1+minj-maw];
-	  mvavg[j]+=pings[i].stbd.pings[j-1+pw+minj-maw];
-	  mvavg[j-1]/=pw;
-	}
-	mvavg[mw-1]/=pw;
-	float maxscore=0;
-	int jmax=0;
-	bestmv=-1;
-	int jstart=maw;
-	int jend=jw-maw;
-	for( int j=0; j<jw; j++){
-	  unsigned long temp=mvavg[j+maw];// first derivative
-	  double score=temp;
-	  if ((temp>minintensityatnadir)&&(mvavg[j]<(score*.8))) {
-	    temp=mvavg[j+2*maw]+mvavg[j];
-	    temp=(temp>>1);
-	    score=-score;
-	    score+=temp;
-	    score/=(double)(mvavg[j]+.1);
-	    if (score>0){
-	      mv=j-running;
-	      if (mv<0) mv=-mv;
-	      mv/=binmotion;
-	      if (counttrack>5){
-		double x=(6-counttrack*.02);
-		if (x<1)x=1.0;
-		if ((counttrack<100)||(mv>1.0))
-		  if (mv<x)score-=mv*mv*(1.5/(x*x));
-		  else score-=1.5;
-	      }
-	      if(score>maxscore){
-		if ((bestmv>-1)&&(mv>bestmv)&&(counttrack>3))j=mw;
-		else{
-		  maxscore=score;
-		  jmax=j;
-		  bestmv=mv;
-		  if (counttrack<5)
-		    if (score>0.5)
-		      j=mw;
-		}
-	      }
-	    }
-	  }
-	}
-	if(jmax>0)nadir[i]=jmax+minj;
-	if(nadir[i]>0){
-	  if (counttrack>0)
-	    if (bestmv<1.0) {
-	      running=nadir[i]-minj;
-	      counttrack++;
-	    }else counttrack--;
-	  else {
-	    running=nadir[i]-minj;
-	    counttrack++;
-	  }
-	} else {
-	  if (counttrack>100)
-	    counttrack=(counttrack>>1);
-	  else counttrack=0;
-	//nadir[i]=running;
-	}
-      }
-    }
-
-  long long avg=0;
-  int max=0;
-  int min=w;
-  long firstinfile=0; 
-  running=0;
-  for (long i=0; i<h; i++){
-    if (pings[i].first_in_file_){
-      firstinfile=i;      
-      running=0;
-    }
-    if (nadir[i]==0){
-      long next=0;
-      long ii=i+1;
-      while (ii<h){
-	if (pings[ii].first_in_file_){
-	  ii=h;
-	}else{
-	  if (nadir[ii]>0){
-	    next=ii;
-	    ii=h;
-	  }
-	}
-	ii++;
-      }
-      if (next>0){
-	if (running>0)
-	  nadir[i]=(float)(0.5+(running*(float)(next-i)+(float)nadir[next])/(float)(next-i+1));
-	else
-	  nadir[i]=nadir[next];
-      } else {
-	if (running>0)
-	  nadir[i]=running;
-	else
-	  nadir[i]=minj;
-      }
-     
-    }
-    running =nadir[i]; 
-    if (nadir[i]>max)max=nadir[i];
-    if (nadir[i]<min)min=nadir[i];
-    avg+=nadir[i];
-    countr++;
-  }
-  
-  double nad=((double)avg/countr);
-  std::cout<<(h-countr)<<" not tracked, "<<countr<<" tracked "<<" of "<<h<<" pings. \n";
-  std::cout<<"Avg Starboard Nadir is "<<(res*nad)<<" m and range is ("<<(min*res)<<", "<<(max*res)<<")\n";
   return countr;
-}
-  */
+  }
 cv::Mat make_waterfall_image(const xtf_sss_ping::PingsT& pings)
 {
     int rows = pings.size();
@@ -858,7 +684,8 @@ void  regularize_pings(xtf_sss_ping::PingsT& pings, const long * port_nadir, con
 }
 cv::Mat  normalize_waterfall(const xtf_sss_ping::PingsT& pings, long* params)
 {
-  int rows = pings.size();
+
+  long rows = pings.size();
   long width=params[0];
   long height=params[1];
   long startping=params[2];
@@ -866,154 +693,140 @@ cv::Mat  normalize_waterfall(const xtf_sss_ping::PingsT& pings, long* params)
   if (startping<0) startping=0;
   if ((endping>rows)||(endping<=0))endping=rows;
   rows=endping-startping;
-  
-  int cols = pings[0].port.pings.size() + pings[0].stbd.pings.size();     
-    int downsample=1;
-    if (width>0) downsample=cols/width;
-    else width=cols;
-    if (downsample==0){
+  long cols = pings[0].port.pings.size() + pings[0].stbd.pings.size();     
+  int downsample=1;
+  if (width>0) downsample=cols/width;
+  else width=cols;
+  if (downsample==0){
       width=cols;
       downsample=1;
-    }
-
-    int downrow=1;
-    if (height>0)downrow=rows/height;
-    else height=rows;
-    if (downrow==0) {
-      height=rows;
-      downrow=1;
-    }
-    long maxPingIntensity[width];
-    long minPingIntensity[width];
-    std::memset(maxPingIntensity, 0, sizeof maxPingIntensity);
-    std::memset(minPingIntensity, 256, sizeof minPingIntensity);
-    int num=0;
-    long long acc=0;
-    int mid=width/2;
-    
-    if ((height*rows)<=0){
-      return cv::Mat(0, 0, CV_8UC1, cv::Scalar(0));
-    }
-    cv::Mat swath_img = cv::Mat(height, width, CV_8UC1, cv::Scalar(0));
-    int toprow= pings.size()-downrow+1;
-    long m[height*width];
-    
-    for(int i=0; i< height; i++){
-      for (int j=mid; j<width; j++){
-
-	acc=0;
-	num=(downrow*downsample);
-	for (int  w=0; w<downrow; w++){
-	  int over=pings[startping+i*downrow+w].port.pings.size();
-	  int index=(j-mid)*downsample;
-	  for (int k=0; k<downsample; k++)
-	    {
-	      long temp=pings[startping+i*downrow+w].port.pings[index];
-	      if ((temp>=0)&&(index<over)) acc+=temp;
-	      else num--;
-	      //	      if ((i==30)&&(j>344)&&(j<348))
-	      //cout<<temp<<" i "<<i<<" j "<<j<<" w "<<w<<" k "<<k<<"\n";
-	      index++;
-	    }
-	}
-	
-	if (num>0){
-	  m[j*height+i]=(long)(((double)acc/(double)num)+0.5);
-	  if (m[j*height+i]>maxPingIntensity[j]){
-	    maxPingIntensity[j]=m[j*height+i];
+  }
+  int downrow=1;
+  if (height>0)downrow=rows/height;
+  else height=rows;
+  if (downrow==0) {
+    height=rows;
+    downrow=1;
+  }
+  long maxPingIntensity[width];
+  long minPingIntensity[width];
+  std::memset(maxPingIntensity, 0, sizeof maxPingIntensity);
+  std::memset(minPingIntensity, 256, sizeof minPingIntensity);
+  long num=0;
+  long long acc=0;
+  int mid=width/2;
+  if ((height*rows)<=0){
+    return cv::Mat(0, 0, CV_8UC1, cv::Scalar(0));
+  }
+  cv::Mat swath_img = cv::Mat(height, width, CV_8UC1, cv::Scalar(0));
+  long toprow= pings.size()-downrow+1;
+  long m[height*width];
+  for(long i=0; i< height; i++){
+    for (int j=mid; j<width; j++){
+      acc=0;
+      num=(downrow*downsample);
+      for (int  w=0; w<downrow; w++){
+	int over=pings[startping+i*downrow+w].port.pings.size();
+	int index=(j-mid)*downsample;
+	for (int k=0; k<downsample; k++){
+	    long temp=pings[startping+i*downrow+w].port.pings[index];
+	    if ((temp>=0)&&(index<over)) acc+=temp;
+	    else num--;
+	    index++;
 	  }
-	  if (m[j*height+i]<minPingIntensity[j])
-	    minPingIntensity[j]=m[j*height+i];
-	}
-	else {
-	  m[j*height+i]=0;
-	}
       }
-      for (int j=0; j<mid; j++){
-	acc=0;
-	num=(downrow*downsample);
-	for ( int w=0; w<downrow; w++){
-	  int over=pings[startping+i*downrow+w].stbd.pings.size();
-	  int index=(mid-j)*downsample-1;
-	  for (int k=0; k<downsample; k++)
-	    {
-	      long temp=pings[startping+i*downrow+w].stbd.pings[index];
-	      
-		//weird values in some pings of =-2147483648=-2^31=FFFFFFFF
-	      if ((temp>=0)&&(index<over)) acc+=temp;
-	      else num--;
-	      index--;
-	    }
-	  
+      if (num>0){
+	m[j*height+i]=(long)(((double)acc/(double)num)+0.5);
+	if (m[j*height+i]>maxPingIntensity[j]){
+	  maxPingIntensity[j]=m[j*height+i];
 	}
-	if (num>0){
+	if (m[j*height+i]<minPingIntensity[j])
+	  minPingIntensity[j]=m[j*height+i];
+      }
+      else {
+	m[j*height+i]=0;
+      }
+    }
+    for (int j=0; j<mid; j++){
+      acc=0;
+      num=(downrow*downsample);
+      for ( int w=0; w<downrow; w++){
+	int over=pings[startping+i*downrow+w].stbd.pings.size();
+	int index=(mid-j)*downsample-1;
+	for (int k=0; k<downsample; k++)
+	  {
+	    long temp=pings[startping+i*downrow+w].stbd.pings[index];
+	    //weird values in some pings of =-2147483648=-2^31=FFFFFFFF
+	    if ((temp>=0)&&(index<over)) acc+=temp;
+	    else num--;
+	    index--;
+	  }
+      }
+      if (num>0){
 	  m[j*height+i]=(long)((double)acc/(double)num+0.5);
 	  if (m[j*height+i]>maxPingIntensity[j])
 	    maxPingIntensity[j]=m[j*height+i];
 	  if (m[j*height+i]<minPingIntensity[j])
 	    minPingIntensity[j]=m[j*height+i];
-	}
-	else m[j*height+i]=0;	
       }
+      else m[j*height+i]=0;	
     }
-    long maxmax=0;
-    for (int j=0; j<width;j++){
-      maxPingIntensity[j]*=1.05;//to avoid saturation
-      if (maxPingIntensity[j]>maxmax) maxmax=maxPingIntensity[j];
-      if (minPingIntensity[j]>10)minPingIntensity[j]=10;
-    }
-    for (int j=0; j<width;j++)
-      if (maxPingIntensity[j]<maxmax/10)maxPingIntensity[j]=maxmax/10;
-    
-    if (width>2){//smooth the normalization values
-
-      long long temp=maxPingIntensity[0]+maxPingIntensity[1];
-      long long temp2=minPingIntensity[0]+minPingIntensity[1];
-      maxPingIntensity[0]=temp/2;
-      temp+=maxPingIntensity[2];
-      maxPingIntensity[1]=temp/3;
-      maxPingIntensity[0]=temp2/2;
-      temp2+=minPingIntensity[2];
-      minPingIntensity[1]=temp2/3;
-      for (int j=2; j<width;j++){
-	temp-=maxPingIntensity[j-2];
-	temp2-=minPingIntensity[j-2];
-	temp+=maxPingIntensity[j];
-	temp2+=minPingIntensity[j];
-	minPingIntensity[j]=temp2/3;
-	maxPingIntensity[j]=temp/3;
-      }
-      temp=maxPingIntensity[0]+maxPingIntensity[1];
-      temp2=minPingIntensity[0]+minPingIntensity[1];
-      maxPingIntensity[0]=temp/2;
-      temp+=maxPingIntensity[2];
-      maxPingIntensity[1]=temp/3;
-      maxPingIntensity[0]=temp2/2;
-      temp2+=minPingIntensity[2];
-      minPingIntensity[1]=temp2/3;
-      for (int j=2; j<width;j++){
-	temp-=maxPingIntensity[j-2];
-	temp2-=minPingIntensity[j-2];
-	temp+=maxPingIntensity[j];
-	temp2+=minPingIntensity[j];
-	minPingIntensity[j]=temp2/3;
-	maxPingIntensity[j]=temp/3;
-      }
-    }
-    
-    for (int j=0; j<width;j++){
-      for (int i=0; i<height; i++){
-	unsigned short temp=(unsigned short)(255*((double)(m[i+j*height]-minPingIntensity[j])/(double)(maxPingIntensity[j]-minPingIntensity[j]))+0.5);
-	cv::Scalar_<uchar>* p = swath_img.ptr<cv::Scalar_<uchar> >(i,j);
-	if (temp>255){
-	  temp=255;
-	}	
-	p[0]=(uchar)temp;	
-      }
-    }
-    return swath_img;
   }
-
+  long maxmax=0;
+  for (int j=0; j<width;j++){
+    maxPingIntensity[j]*=1.05;//to avoid saturation
+    if (maxPingIntensity[j]>maxmax) maxmax=maxPingIntensity[j];
+      if (minPingIntensity[j]>10)minPingIntensity[j]=10;
+  }
+  for (int j=0; j<width;j++)
+    if (maxPingIntensity[j]<maxmax/10)maxPingIntensity[j]=maxmax/10;
+  if (width>2){//smooth the normalization values
+    long long temp=maxPingIntensity[0]+maxPingIntensity[1];
+    long long temp2=minPingIntensity[0]+minPingIntensity[1];
+    maxPingIntensity[0]=temp/2;
+    temp+=maxPingIntensity[2];
+    maxPingIntensity[1]=temp/3;
+    maxPingIntensity[0]=temp2/2;
+    temp2+=minPingIntensity[2];
+    minPingIntensity[1]=temp2/3;
+    for (int j=2; j<width;j++){
+      temp-=maxPingIntensity[j-2];
+      temp2-=minPingIntensity[j-2];
+      temp+=maxPingIntensity[j];
+      temp2+=minPingIntensity[j];
+      minPingIntensity[j]=temp2/3;
+      maxPingIntensity[j]=temp/3;
+    }
+    temp=maxPingIntensity[0]+maxPingIntensity[1];
+    temp2=minPingIntensity[0]+minPingIntensity[1];
+    maxPingIntensity[0]=temp/2;
+    temp+=maxPingIntensity[2];
+    maxPingIntensity[1]=temp/3;
+    maxPingIntensity[0]=temp2/2;
+    temp2+=minPingIntensity[2];
+    minPingIntensity[1]=temp2/3;
+    for (int j=2; j<width;j++){
+      temp-=maxPingIntensity[j-2];
+      temp2-=minPingIntensity[j-2];
+      temp+=maxPingIntensity[j];
+      temp2+=minPingIntensity[j];
+      minPingIntensity[j]=temp2/3;
+      maxPingIntensity[j]=temp/3;
+    }
+  }
+  for (int j=0; j<width;j++){
+    for (int i=0; i<height; i++){
+      unsigned short temp=(unsigned short)(255*((double)(m[i+j*height]-minPingIntensity[j])/(double)(maxPingIntensity[j]-minPingIntensity[j]))+0.5);
+      cv::Scalar_<uchar>* p = swath_img.ptr<cv::Scalar_<uchar> >(i,j);
+      if (temp>255){
+	temp=255;
+      }	
+      p[0]=(uchar)temp;	
+    }
+  }
+  return swath_img;
+}
+  
   cv::Mat make_waterfall_image(const xtf_sss_ping::PingsT& pings, long width, long height, long maxPingIntensity, long minPingIntensity)
   {
     if (maxPingIntensity<1)maxPingIntensity=65535;
@@ -1102,7 +915,9 @@ cv::Mat  normalize_waterfall(const xtf_sss_ping::PingsT& pings, long* params)
       }
     }
     double p=count*100.0/(rows*cols);
-    std::cout<<"There were "<<count<<" or "<<p<<"% above the maxPingIndensity of "<<maxPingIntensity<<"\n";
+    if (verbose_level>1){
+      std::cout<<"There were "<<count<<" or "<<p<<"% above the maxPingIndensity of "<<maxPingIntensity<<"\n";
+    }
     return swath_img;
   }
 
@@ -1330,12 +1145,14 @@ You can give some hints as to the range that the artifact wanders over and choos
     }
   }
   howmany/=pings.size();
-  std::cout<<(h-countr)<<" not tracked, "<<countr<<" tracked "<<" of "<<h<<" pings. \n"<<(nextlabel-1)<<" tracks of lengths: ";
-  for (int i=1; i<nextlabel; i++)
-    std::cout<<counts[i]<<" ";
-  std::cout<<"\n";  
-  std::cout<<mean<<" range and  width of "<<howmany<<" bins (= "<<(howmany*res)<<"m) in each ping"<<"\n";
-  return countr;
+ if (verbose_level>1){
+   std::cout<<(h-countr)<<" not tracked, "<<countr<<" tracked "<<" of "<<h<<" pings. \n"<<(nextlabel-1)<<" tracks of lengths: ";
+   for (int i=1; i<nextlabel; i++)
+     std::cout<<counts[i]<<" ";
+   std::cout<<"\n";  
+   std::cout<<mean<<" range and  width of "<<howmany<<" bins (= "<<(howmany*res)<<"m) in each ping"<<"\n";
+ }
+ return countr;
 }
   
 /**
@@ -1568,11 +1385,13 @@ nadir -  the array returned from calling findNadirStbd. This array will be chang
     }
   }
   howmany/=pings.size();
-  std::cout<<(h-countr)<<" not tracked, "<<countr<<" tracked "<<" of "<<h<<" pings. \n"<<(nextlabel-1)<<" tracks of lengths: ";
-  for (int i=1; i<nextlabel; i++)
-    std::cout<<counts[i]<<" ";
-  std::cout<<"\n";  
-  std::cout<<mean<<"avg. range and  width of "<<howmany<<" bins (= "<<(howmany*res)<<"m) in each ping"<<"\n";
+  if (verbose_level>1){
+    std::cout<<(h-countr)<<" not tracked, "<<countr<<" tracked "<<" of "<<h<<" pings. \n"<<(nextlabel-1)<<" tracks of lengths: ";
+    for (int i=1; i<nextlabel; i++)
+      std::cout<<counts[i]<<" ";
+    std::cout<<"\n";  
+    std::cout<<mean<<"avg. range and  width of "<<howmany<<" bins (= "<<(howmany*res)<<"m) in each ping"<<"\n";
+  }
   return countr;
 }
 
@@ -1717,22 +1536,22 @@ xtf_sss_ping process_side_scan_ping(XTFPINGHEADER *PingHeader, XTFFILEHEADER *XT
       }
       ping_channel->time_duration = ChanHeader->TimeDuration;
       ping_channel->slant_range = ChanHeader->SlantRange;
-
-      // Do whatever processing on the sidescan imagery here.
-      //cout << "Processing a side scan ping!!" << endl;
-      cout << "Size of short: " << sizeof(short) << endl;
-      cout << "Channel number: " << int(ChannelNumber) << endl;
-      //cout << "Channel name: " << ChannelName << endl;
-      cout << "Bytes per sample: " << int(BytesPerSample) << endl;
-      cout << "Samples per chan: " << int(SamplesPerChan) << endl;
-      cout << "Ground range: " << int(ChanHeader->GroundRange) << endl; // seems to always be 0
-      cout << "Slant range: " << int(ChanHeader->SlantRange) << endl;
-      cout << "Time duration: " << ChanHeader->TimeDuration << endl;
-      cout << "SecondsPerPing: " << ChanHeader->SecondsPerPing << endl; // seems to always be 0
-      cout << "GAIN Code: " << ChanHeader->GainCode << endl;
-      cout << "Initial GAIN Code: " << ChanHeader->InitialGainCode << endl;
-      cout << "Weight: " << ChanHeader->Weight << endl;
-
+      if (verbose_level>2){
+	// Do whatever processing on the sidescan imagery here.
+	//cout << "Processing a side scan ping!!" << endl;
+	cout << "Size of short: " << sizeof(short) << endl;
+	cout << "Channel number: " << int(ChannelNumber) << endl;
+	//cout << "Channel name: " << ChannelName << endl;
+	cout << "Bytes per sample: " << int(BytesPerSample) << endl;
+	cout << "Samples per chan: " << int(SamplesPerChan) << endl;
+	cout << "Ground range: " << int(ChanHeader->GroundRange) << endl; // seems to always be 0
+	cout << "Slant range: " << int(ChanHeader->SlantRange) << endl;
+	cout << "Time duration: " << ChanHeader->TimeDuration << endl;
+	cout << "SecondsPerPing: " << ChanHeader->SecondsPerPing << endl; // seems to always be 0
+	cout << "GAIN Code: " << ChanHeader->GainCode << endl;
+	cout << "Initial GAIN Code: " << ChanHeader->InitialGainCode << endl;
+	cout << "Weight: " << ChanHeader->Weight << endl;
+      }
       // skip past the imagery;
       Ptr += BytesThisChannel;
    }
@@ -1781,8 +1600,9 @@ xtf_sss_ping::PingsT read_xtf_file(int infl, XTFFILEHEADER* XTFFileHeader, unsig
         xtf_sss_ping ping = process_side_scan_ping((XTFPINGHEADER*)PingHeader, XTFFileHeader);
         ping.first_in_file_ = false;
         pings.push_back(ping);
-	if (first){
-	  cout << "SONAR "
+	if (verbose_level>1)
+	  if (first){
+	    cout << "SONAR "
 	       << int(PingHeader->Year) << " "
 	       << int(PingHeader->Month) << " "
 	       << int(PingHeader->Day) << " "
@@ -1816,10 +1636,10 @@ xtf_sss_ping::PingsT read_xtf_file(int infl, XTFFILEHEADER* XTFFileHeader, unsig
     }
 
     if (amt == 0xFFFF) {
-        cout << "Stopped - read -1 bytes" << endl;
+        if (verbose_level>0)cout << "Stopped - read -1 bytes" << endl;
     }
 
-    cout << "Done!" << endl;
+    if (verbose_level>0)cout << "Done!" << endl;
 
     return pings;
 }
@@ -1860,21 +1680,23 @@ xtf_sss_ping::PingsT parse_file(const boost::filesystem::path& file)
       sizeof(XTFRAWSERIALHEADER) != 64   ||
       sizeof(XTFPINGCHANHEADER)  != 64
       ) {
-         cout << "Error: Bad structure size! " <<
-            sizeof(XTFFILEHEADER)       << " " <<
-            sizeof(CHANINFO)            << " " <<
-            sizeof(XTFPINGHEADER)       << " " <<
-            sizeof(XTFNOTESHEADER)      << " " <<
-            sizeof(XTFBATHHEADER)       << " " <<
-            sizeof(XTFRAWSERIALHEADER)  << " " <<
-            sizeof(XTFPINGCHANHEADER)   << endl;
-         return pings;
+     if (verbose_level)
+       cout << "Error: Bad structure size! " <<
+	 sizeof(XTFFILEHEADER)       << " " <<
+	 sizeof(CHANINFO)            << " " <<
+	 sizeof(XTFPINGHEADER)       << " " <<
+	 sizeof(XTFNOTESHEADER)      << " " <<
+	 sizeof(XTFBATHHEADER)       << " " <<
+	 sizeof(XTFRAWSERIALHEADER)  << " " <<
+	 sizeof(XTFPINGCHANHEADER)   << endl;
+     return pings;
    }
 
    int infl = open(file.string().c_str(), O_RDONLY, 0000200);
    if (infl <= 0) {
+     if (verbose_level)
        cout << "Error: Can't open " << file.string() << " for reading!" << endl;
-       return pings;
+     return pings;
    }
 
    //
@@ -1883,7 +1705,7 @@ xtf_sss_ping::PingsT parse_file(const boost::filesystem::path& file)
    // NOTE: max file size is 268MB!
    unsigned char* buffer = (unsigned char*)malloc(268435456);
    if (buffer == NULL) {
-       cout << "Can't allocate memory!" << endl;
+     if (verbose_level)  cout << "Can't allocate memory!" << endl;
        exit(-1);
        return pings;
    }

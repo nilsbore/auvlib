@@ -21,6 +21,7 @@
 
 namespace xtf_data {
 
+
 struct xtf_sss_ping_side
 {
     std::vector<int> pings;

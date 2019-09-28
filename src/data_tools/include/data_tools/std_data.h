@@ -144,6 +144,30 @@ std::vector<T, Eigen::aligned_allocator<T> > parse_folder(const boost::filesyste
 
     return pings;
 }
+template <typename T>
+std::vector<T, Eigen::aligned_allocator<T> > parse_folder_ordered(const boost::filesystem::path& folder)
+{
+	
+    	std::vector<T, Eigen::aligned_allocator<T> > pings;
+  	std::list < boost::filesystem::directory_entry>filelist;	
+
+    	if(!boost::filesystem::is_directory(folder)) {
+        	std::cout << folder << " is not a directory containing" << std::endl;
+        	return pings;
+    	}
+
+    	for (auto& entry : boost::make_iterator_range(boost::filesystem::directory_iterator(folder), {})) {
+      	if (boost::filesystem::is_directory(entry.path())) continue;
+        	filelist.push_back(entry);
+    	}	
+	filelist.sort();
+	for(boost::filesystem::directory_entry entry :filelist){
+		std::cout<<"parsing file "<<entry.path()<<"\n";
+		std::vector<T, Eigen::aligned_allocator<T> > file_pings = parse_file<T>(entry.path());
+		pings.insert(pings.end(), file_pings.begin(), file_pings.end());
+    	}
+    return pings;
+}
 
 template <typename T>
 std::vector<T, Eigen::aligned_allocator<T> > parse_folder_from_str(const std::string& folder)
