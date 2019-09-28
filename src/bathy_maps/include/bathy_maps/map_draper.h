@@ -31,6 +31,7 @@ protected:
     //sss_map_image_builder map_image_builder;
     MapSaver map_image_builder;
     bool store_map_images;
+    bool close_when_done;
 
 public:
     
@@ -39,6 +40,7 @@ public:
     void set_image_callback(const std::function<void(MapType)>& callback) { save_callback = callback; }
     void set_resolution(double new_resolution);
     void set_store_map_images(bool store) { store_map_images = store; }
+    void set_close_when_done(bool close) { close_when_done = close; }
 
     MapDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
               const xtf_data::xtf_sss_ping::PingsT& pings,

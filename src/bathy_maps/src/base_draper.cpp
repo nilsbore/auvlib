@@ -25,7 +25,8 @@ BaseDraper::BaseDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
                        const csv_asvp_sound_speed::EntriesT& sound_speeds)
     : pings(pings), i(0), V1(V1), F1(F1),
       sound_speeds(sound_speeds), bounds(bounds),
-      sensor_yaw(0.), ray_tracing_enabled(false)
+      sensor_yaw(0.), ray_tracing_enabled(false),
+      tracing_map_size(200.), intensity_multiplier(1.)
 {
     offset = Eigen::Vector3d(bounds(0, 0), bounds(0, 1), 0.);
 
@@ -72,10 +73,10 @@ BaseDraper::BaseDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
 
     viewer.callback_pre_draw = std::bind(&BaseDraper::callback_pre_draw, this, std::placeholders::_1);
 
-    viewer.core.is_animating = true;
-    viewer.core.animation_max_fps = 30.;
+    viewer.core().is_animating = true;
+    viewer.core().animation_max_fps = 30.;
     //viewer.launch();
-    viewer.core.background_color << 1., 1., 1., 1.; // white background
+    viewer.core().background_color << 1., 1., 1., 1.; // white background
 
     //Eigen::Matrix2d mesh_bounds; mesh_bounds << 0., 0., bounds(1, 0)-bounds(0, 0), bounds(1, 1)-bounds(0, 1);
     set_texture(texture_image, bounds);
@@ -97,8 +98,8 @@ void BaseDraper::add_texture_intensities(const Eigen::MatrixXd& hits, const Eige
     for (int j = 0; j < hits.rows(); ++j) {
         int y = int(hits(j, 1));
         int x = int(hits(j, 0));
-        if (x >= 0 && x < texture_image.cols() && y >= 0 && y < texture_image.rows()) {
-            texture_image(y, x) = std::max(intensities(j), 0.01);
+        if (intensities(j) != 0 && x >= 0 && x < texture_image.cols() && y >= 0 && y < texture_image.rows()) {
+            texture_image(y, x) = intensity_multiplier*std::max(intensities(j), 0.01);
         }
     }
 }
@@ -223,7 +224,7 @@ bool BaseDraper::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
 {
     glEnable(GL_CULL_FACE);
 
-    if (viewer.core.is_animating && i < pings.size()) {
+    if (viewer.core().is_animating && i < pings.size()) {
         //project_sss();
         Eigen::MatrixXd hits_left;
         Eigen::MatrixXd hits_right;
@@ -301,8 +302,8 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> BaseDr
     Eigen::VectorXd mod_right;
 
     Eigen::Vector3d offset_pos = pings[i].pos_ - offset;
-    if ((offset_pos - pos_small).norm() > 50.) {
-        tie(V1_small, F1_small) = mesh_map::cut_square_around_point(V1, F1, offset_pos.head<2>(), 200.);
+    if ((offset_pos - pos_small).norm() > tracing_map_size/4.) {
+        tie(V1_small, F1_small) = mesh_map::cut_square_around_point(V1, F1, offset_pos.head<2>(), tracing_map_size);
         if (V1_small.rows() == 0) {
             V1_small = V1;
             F1_small = F1;

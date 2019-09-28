@@ -40,5 +40,6 @@ PYBIND11_MODULE(mesh_map, m) {
     m.def("mesh_and_normals_from_pings", &mesh_map::mesh_and_normals_from_pings, "Get vertices, faces, normals and bounds form mbes_ping::PingsT");
     m.def("shade_image_from_normals", &mesh_map::shade_image_from_normals, "Compute [0, 1] shade image from normals and lighting direction");
     m.def("compute_normals", &mesh_map::compute_normals, "Compute normals from the mesh, per vertex");
+    m.def("normals_at_points", &mesh_map::normals_at_points, "Get the normals at a set of points on the mesh");
 
 }

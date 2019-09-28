@@ -12,7 +12,7 @@
 #include <data_tools/all_data.h>
 #include <data_tools/lat_long_utm.h>
 #include <liball/all.h>
-#include <endian.h>
+//#include <endian.h>
 #include <fstream>
 
 #define BOOST_NO_CXX11_SCOPED_ENUMS
@@ -523,7 +523,7 @@ csv_data::csv_asvp_sound_speed::EntriesT convert_sound_speeds(const all_mbes_pin
 
     for (const all_mbes_ping& ping : pings) {
         int index = int(double(nbr_bins) * (ping.transducer_depth_ - min->transducer_depth_) / (max->transducer_depth_ - min->transducer_depth_));
-        vels[index] += ping.sound_vel_;
+        vels[index] += 0.1*ping.sound_vel_;
         counts[index] += 1.;
     }
 
@@ -537,6 +537,32 @@ csv_data::csv_asvp_sound_speed::EntriesT convert_sound_speeds(const all_mbes_pin
     return csv_data::csv_asvp_sound_speed::EntriesT { sound_speed };
 }
 
+std_data::attitude_entry::EntriesT convert_attitudes(const all_nav_attitude::EntriesT& attitudes)
+{
+    std_data::attitude_entry::EntriesT entries;
+    std_data::attitude_entry entry;
+    for (const all_nav_attitude& att : attitudes) {
+        for (const all_nav_attitude_sample& sample : att.samples) {
+            entry.roll = sample.roll;
+            entry.pitch = sample.pitch;
+            entry.yaw = sample.heading;
+            entry.heave = sample.heave;
+            entry.time_stamp_ = att.time_stamp_ + sample.ms_since_start;
+            entry.time_string_ = std_data::time_string_from_time_stamp(entry.time_stamp_);
+            entries.push_back(entry);
+        }
+        if (!att.samples.empty()) {
+            entries[entries.size() - att.samples.size()].first_in_file_ = att.first_in_file_;
+        }
+    }
+
+    std::stable_sort(entries.begin(), entries.end(), [](const std_data::attitude_entry& entry1, const std_data::attitude_entry& entry2) {
+        return entry1.time_stamp_ < entry2.time_stamp_;
+    });
+
+    return entries;
+}
+
 } // namespace all_data
 
 namespace std_data {
@@ -544,33 +570,33 @@ namespace std_data {
 using namespace all_data;
 
 template <>
-all_mbes_ping::PingsT parse_file<all_mbes_ping>(const boost::filesystem::path& path)
+all_mbes_ping::PingsT parse_file<all_mbes_ping>(const boost::filesystem::path& file)
 {
-    return parse_file_impl<all_mbes_ping, all_xyz88_datagram, 88>(path);
+    return parse_file_impl<all_mbes_ping, all_xyz88_datagram, 88>(file);
 }
 
 template <>
-all_nav_entry::EntriesT parse_file<all_nav_entry>(const boost::filesystem::path& path)
+all_nav_entry::EntriesT parse_file<all_nav_entry>(const boost::filesystem::path& file)
 {
-    return parse_file_impl<all_nav_entry, all_position_datagram, 80>(path);
+    return parse_file_impl<all_nav_entry, all_position_datagram, 80>(file);
 }
 
 template <>
-all_nav_depth::EntriesT parse_file<all_nav_depth>(const boost::filesystem::path& path)
+all_nav_depth::EntriesT parse_file<all_nav_depth>(const boost::filesystem::path& file)
 {
-    return parse_file_impl<all_nav_depth, all_depth_datagram, 104>(path);
+    return parse_file_impl<all_nav_depth, all_depth_datagram, 104>(file);
 }
 
 template <>
-all_nav_attitude::EntriesT parse_file<all_nav_attitude>(const boost::filesystem::path& path)
+all_nav_attitude::EntriesT parse_file<all_nav_attitude>(const boost::filesystem::path& file)
 {
-    return parse_file_impl<all_nav_attitude, all_attitude_datagram, 65>(path);
+    return parse_file_impl<all_nav_attitude, all_attitude_datagram, 65>(file);
 }
 
 template <>
-all_echosounder_depth::EntriesT parse_file<all_echosounder_depth>(const boost::filesystem::path& path)
+all_echosounder_depth::EntriesT parse_file<all_echosounder_depth>(const boost::filesystem::path& file)
 {
-    return parse_file_impl<all_echosounder_depth, all_echosounder_depth_datagram, 69>(path);
+    return parse_file_impl<all_echosounder_depth, all_echosounder_depth_datagram, 69>(file);
 }
 
 } // namespace std_data

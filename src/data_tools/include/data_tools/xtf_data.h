@@ -13,7 +13,7 @@
 #define XTF_DATA_H
 
 #include <data_tools/navi_data.h>
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>
 #undef BOOST_NO_CXX11_SCOPED_ENUMS
@@ -82,6 +82,7 @@ cv::Mat  normalize_waterfall(const xtf_sss_ping::PingsT& pings, long* params);
 Eigen::MatrixXd make_eigen_waterfall_image(const xtf_sss_ping::PingsT& pings);
 void show_waterfall_image(const xtf_sss_ping::PingsT& pings);
 
+<<<<<<< HEAD
 /**
 void  regularize_pings( xtf_sss_ping::PingsT& pings, const long * port_nadir, const long * stbd_nadir, double nadir_angle=0.27925268);
 
@@ -143,6 +144,10 @@ returns the number of nadir points detected. Undetected points will be filled in
 
 
 xtf_sss_ping::PingsT correct_sensor_offset(const xtf_sss_ping::PingsT& side, const Eigen::Vector3d& sensor_offset);
+=======
+xtf_sss_ping::PingsT correct_sensor_offset(const xtf_sss_ping::PingsT& pings, const Eigen::Vector3d& sensor_offset);
+xtf_sss_ping::PingsT match_attitudes(const xtf_sss_ping::PingsT& pings, const std_data::attitude_entry::EntriesT& entries);
+>>>>>>> df31e9d4109182d6ee3fc860c44e7397fe5a453f
 
 } // namespace xtf_data
 

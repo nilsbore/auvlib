@@ -11,7 +11,11 @@
 
 #include <data_tools/lat_long_utm.h>
 
+#define _USE_MATH_DEFINES
 #include <cmath>
+#ifndef M_PI // For windows
+  #define M_PI 3.14159265358979323846
+#endif
 
 using namespace std;
 

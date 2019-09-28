@@ -14,6 +14,10 @@ project(sonar_tracing)
 #  CMAKE_ARGS -DEMBREE_ISPC_SUPPORT=OFF
 #)
 
+if(NOT MSVC)
+  find_package(Ceres REQUIRED)
+  include_directories(${CERES_INCLUDE_DIRS})
+endif()
 
 #include_directories(../../libigl/external/glad/include)
 #include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../libigl/external/embree/include)

@@ -3,7 +3,7 @@
 
 #include <cereal/cereal.hpp>
 #include <cereal/archives/binary.hpp>
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #include <fstream>
 
 namespace cereal

@@ -20,7 +20,11 @@ extern "C" {
 
 //#include <stdio.h>
 #include <fcntl.h>
-#include <unistd.h>
+#ifdef _MSC_VER
+  #include <io.h>
+#else
+  #include <unistd.h>
+#endif
 //#include <stdlib.h>
 //#include <string.h>
 #include <opencv2/highgui/highgui.hpp>
@@ -1461,7 +1465,7 @@ xtf_sss_ping process_side_scan_ping(XTFPINGHEADER *PingHeader, XTFFILEHEADER *XT
    ping.heading_ = 0.5*M_PI-ping.heading_; // TODO: need to keep this for old data
    ping.sound_vel_ = PingHeader->SoundVelocity;
 
-   boost::posix_time::ptime data_time(boost::gregorian::date(PingHeader->Year, PingHeader->Month, PingHeader->Day), boost::posix_time::hours(PingHeader->Hour)+boost::posix_time::minutes(PingHeader->Minute)+boost::posix_time::seconds(PingHeader->Second)+boost::posix_time::milliseconds(10.*int(PingHeader->HSeconds))); 
+   boost::posix_time::ptime data_time(boost::gregorian::date(PingHeader->Year, PingHeader->Month, PingHeader->Day), boost::posix_time::hours(PingHeader->Hour)+boost::posix_time::minutes(PingHeader->Minute)+boost::posix_time::seconds(PingHeader->Second)+boost::posix_time::milliseconds(10*int(PingHeader->HSeconds))); 
    stringstream time_ss;
    time_ss << data_time;
    ping.time_string_ = time_ss.str();
@@ -1531,7 +1535,7 @@ xtf_sss_ping process_side_scan_ping(XTFPINGHEADER *PingHeader, XTFFILEHEADER *XT
               ping_channel->pings.push_back(Imagery[i]);
           }
           else {
-              ping_channel->pings.push_back(int(Imagery[i])  << (9 - ChanHeader->Weight));
+              ping_channel->pings.push_back((int)(Imagery[i]) << (12 - ChanHeader->Weight));
           }
       }
       ping_channel->time_duration = ChanHeader->TimeDuration;
@@ -1653,6 +1657,38 @@ xtf_sss_ping::PingsT correct_sensor_offset(const xtf_sss_ping::PingsT& pings, co
         // sidescan offset from the center of motion
         //ping.pos_.array() += (2.*Rz.col(0) + -1.5*Rz.col(1)).array();
         ping.pos_.array() += (sensor_offset(0)*Rz.col(0) + sensor_offset(1)*Rz.col(1) + sensor_offset(2)*Rz.col(2)).array();
+    }
+
+    return new_pings;
+}
+
+xtf_sss_ping::PingsT match_attitudes(const xtf_sss_ping::PingsT& pings, const std_data::attitude_entry::EntriesT& entries)
+{
+    xtf_sss_ping::PingsT new_pings = pings;
+
+    auto pos = entries.begin();
+    for (xtf_sss_ping& ping : new_pings) {
+        pos = std::find_if(pos, entries.end(), [&](const std_data::attitude_entry& entry) {
+            return entry.time_stamp_ > ping.time_stamp_;
+        });
+
+        ping.pitch_ = 0.;
+        ping.roll_ = 0.;
+        double heave;
+        if (pos == entries.end()) {
+            ping.pitch_ = entries.back().pitch;
+            ping.roll_ = entries.back().roll;
+        }
+        else if (pos == entries.begin()) {
+                ping.pitch_ = pos->pitch;
+                ping.roll_ = pos->roll;
+        }
+        else {
+            const std_data::attitude_entry& previous = *(pos - 1);
+            double ratio = double(ping.time_stamp_ - previous.time_stamp_)/double(pos->time_stamp_ - previous.time_stamp_);
+            ping.pitch_ = previous.pitch + ratio*(pos->pitch - previous.pitch);
+            ping.roll_ = previous.roll + ratio*(pos->roll - previous.roll);
+        }
     }
 
     return new_pings;

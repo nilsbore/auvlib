@@ -13,7 +13,7 @@
 #define XYZ_DATA_H
 
 #include <data_tools/std_data.h>
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>
 #undef BOOST_NO_CXX11_SCOPED_ENUMS

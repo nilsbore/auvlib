@@ -141,10 +141,10 @@ void show_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F)
 
     //viewer.callback_pre_draw = std::bind(&IglVisCallback::callback_pre_draw, this, std::placeholders::_1);
     //viewer.callback_key_pressed = std::bind(&IglVisCallback::callback_key_pressed, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-    viewer.core.is_animating = true;
-    viewer.core.animation_max_fps = 30.;
+    viewer.core().is_animating = true;
+    viewer.core().animation_max_fps = 30.;
 	//viewer.launch();
-    viewer.core.background_color << 1., 1., 1., 1.; // white background
+    viewer.core().background_color << 1., 1., 1., 1.; // white background
 	viewer.launch();
 }
 
@@ -237,10 +237,10 @@ void show_textured_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
 
     //viewer.callback_pre_draw = std::bind(&IglVisCallback::callback_pre_draw, this, std::placeholders::_1);
     //viewer.callback_key_pressed = std::bind(&IglVisCallback::callback_key_pressed, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-    viewer.core.is_animating = true;
-    viewer.core.animation_max_fps = 30.;
+    viewer.core().is_animating = true;
+    viewer.core().animation_max_fps = 30.;
 	//viewer.launch();
-    viewer.core.background_color << 1., 1., 1., 1.; // white background
+    viewer.core().background_color << 1., 1., 1., 1.; // white background
 	viewer.launch();
 }
 
@@ -524,6 +524,26 @@ Eigen::MatrixXd shade_image_from_normals(const Eigen::MatrixXd& N, const BoundsT
     }
 
     return shade_image;
+}
+
+Eigen::MatrixXd normals_at_points(const Eigen::MatrixXd& points, const Eigen::MatrixXd& N, const BoundsT& bounds, double res)
+{
+    int cols = std::ceil((bounds(1, 0) - bounds(0, 0)) / res); // min/max should be in the center
+    int rows = std::ceil((bounds(1, 1) - bounds(0, 1)) / res);
+
+    cout << "Rows: " << rows << ", Cols: " << cols << endl;
+
+    Eigen::MatrixXd N_points = Eigen::MatrixXd::Zero(points.rows(), points.cols());
+
+    for (int i = 0; i < points.rows(); ++i) {
+        //int x = int((points(i, 0)-bounds(0, 0))/res);
+        //int y = int((points(i, 1)-bounds(0, 1))/res);
+        int x = int(points(i, 0)/res);
+        int y = int(points(i, 1)/res);
+        N_points.row(i) = N.row(y*cols+x);
+    }
+
+    return N_points;
 }
 
 } // namespace mesh_map

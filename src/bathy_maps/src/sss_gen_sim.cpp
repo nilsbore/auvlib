@@ -106,7 +106,9 @@ void SSSGenSim::generate_sss_window()
     Rect.points(vertices);
 
     cv::Mat vis_image;
-    cv::applyColorMap(height_map_vis_cv, vis_image, cv::COLORMAP_JET);
+    // TODO: the current function is not used atm, but needs this
+    // function that does not exist on some opencv versions
+    //cv::applyColorMap(height_map_vis_cv, vis_image, cv::COLORMAP_JET);
     for (int i = 0; i < 4; i++) {
         cv::line(vis_image, vertices[i], vertices[(i+1)%4], cv::Scalar(0,0,255), 1);
     }
@@ -487,7 +489,7 @@ bool SSSGenSim::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
         time_windows.tail(time_windows_right.rows()) = time_windows_right;
         time_windows.head(time_windows_left.rows()) = time_windows_left.reverse();
 
-        for (int i = 0; i < std::min(time_windows.rows(), long(waterfall_image.cols)); ++i) {
+        for (int i = 0; i < std::min(time_windows.rows(), int64_t(waterfall_image.cols)); ++i) {
             waterfall_image.at<uint8_t>(0, i) = uint8_t(255.*time_windows(i));
         }
 

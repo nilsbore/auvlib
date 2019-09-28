@@ -32,7 +32,7 @@ PYBIND11_MODULE(map_draper, m) {
     py::class_<sss_map_image>(m, "sss_map_image", "Class for sidescan views of a patch from different survey lines")
         .def(py::init<>())
         .def_readwrite("bounds", &sss_map_image::bounds, "Member")
-        .def_readwrite("sss_map_image", &sss_map_image::sss_map_image, "Member")
+        .def_readwrite("sss_map_image", &sss_map_image::sss_map_image_, "Member")
         .def_readwrite("sss_waterfall_image", &sss_map_image::sss_waterfall_image, "Member")
         .def_readwrite("sss_waterfall_cross_track", &sss_map_image::sss_waterfall_cross_track, "Member")
         .def_readwrite("sss_waterfall_depth", &sss_map_image::sss_waterfall_depth, "Member")
@@ -60,6 +60,8 @@ PYBIND11_MODULE(map_draper, m) {
                       const xtf_sss_ping::PingsT&, const MapImageDraper::BoundsT&,
                       const csv_asvp_sound_speed::EntriesT&>())
         .def("set_sidescan_yaw", &MapImageDraper::set_sidescan_yaw, "Set yaw correction of sidescan with respect to nav frame")
+        .def("set_tracing_map_size", &MapImageDraper::set_tracing_map_size, "Set size of slice of map where we do ray tracing. Smaller makes it faster but you might cut off valid sidescan angles")
+        .def("set_intensity_multiplier", &MapImageDraper::set_intensity_multiplier, "Set a value to multiply the sidescan intensity with when displaying on top of mesh")
         .def("set_ray_tracing_enabled", &MapImageDraper::set_ray_tracing_enabled, "Set if ray tracing through water layers should be enabled. Takes more time but is recommended if there are large speed differences")
         .def("set_vehicle_mesh", &MapImageDraper::set_vehicle_mesh, "Provide the viewer with a vehicle model, purely for visualization")
         .def("show", &MapImageDraper::show, "Start the draping, and show the visualizer")
@@ -67,6 +69,7 @@ PYBIND11_MODULE(map_draper, m) {
         .def("set_resolution", &MapImageDraper::set_resolution, "Set the resolution of the gathered maps, default is ~3.75")
         .def("set_image_callback", &MapImageDraper::set_image_callback, "Set the function to be called when an entire sidescan map is done")
         .def("set_store_map_images", &MapImageDraper::set_store_map_images, "Set if the draper should save and return map images at the end")
+        .def("set_close_when_done", &MapImageDraper::set_close_when_done, "Set if the draper should close when done draping")
         .def("get_images", &MapImageDraper::get_images, "Get all the sss_map_image::ImagesT that have been gathered so far");
 
     py::class_<MeasDataDraper>(m, "MeasDataDraper", "Class for draping the whole data set of sidescan pings onto a bathymetry mesh")
@@ -75,6 +78,8 @@ PYBIND11_MODULE(map_draper, m) {
                       const xtf_sss_ping::PingsT&, const MeasDataDraper::BoundsT&,
                       const csv_asvp_sound_speed::EntriesT&>())
         .def("set_sidescan_yaw", &MeasDataDraper::set_sidescan_yaw, "Set yaw correction of sidescan with respect to nav frame")
+        .def("set_tracing_map_size", &MeasDataDraper::set_tracing_map_size, "Set size of slice of map where we do ray tracing. Smaller makes it faster but you might cut off valid sidescan angles")
+        .def("set_intensity_multiplier", &MeasDataDraper::set_intensity_multiplier, "Set a value to multiply the sidescan intensity with when displaying on top of mesh")
         .def("set_ray_tracing_enabled", &MeasDataDraper::set_ray_tracing_enabled, "Set if ray tracing through water layers should be enabled. Takes more time but is recommended if there are large speed differences")
         .def("set_vehicle_mesh", &MeasDataDraper::set_vehicle_mesh, "Provide the viewer with a vehicle model, purely for visualization")
         .def("show", &MeasDataDraper::show, "Start the draping, and show the visualizer")
@@ -82,6 +87,7 @@ PYBIND11_MODULE(map_draper, m) {
         .def("set_resolution", &MeasDataDraper::set_resolution, "Set the resolution of the gathered maps, default is ~3.75")
         .def("set_image_callback", &MeasDataDraper::set_image_callback, "Set the function to be called when an entire sidescan map is done")
         .def("set_store_map_images", &MeasDataDraper::set_store_map_images, "Set if the draper should save and return map images at the end")
+        .def("set_close_when_done", &MeasDataDraper::set_close_when_done, "Set if the draper should close when done draping")
         .def("get_images", &MeasDataDraper::get_images, "Get all the sss_map_image::ImagesT that have been gathered so far");
 
     m.def("drape_maps", &drape_maps, "Overlay xtf_sss_ping::PingsT sidescan data on a mesh and get sss_map_image::ViewsT");

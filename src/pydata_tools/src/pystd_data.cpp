@@ -10,6 +10,7 @@
  */
 
 #include <data_tools/std_data.h>
+#include <data_tools/navi_data.h>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>
@@ -49,7 +50,19 @@ PYBIND11_MODULE(std_data, m) {
         .def_static("parse_folder", &parse_folder_from_str<nav_entry>, "Parse nav_entry from folder of ASCII files exported from NaviEdit")
         .def_static("read_data", &read_data_from_str<nav_entry::EntriesT>, "Read nav_entry::Entries from .cereal file");
 
+    py::class_<attitude_entry>(m, "attitude_entry", "Standard class interface for working with attitude data")
+        .def(py::init<>())
+        .def_readwrite("time_string_", &attitude_entry::time_string_, "Member")
+        .def_readwrite("time_stamp_", &attitude_entry::time_stamp_, "Member")
+        .def_readwrite("first_in_file_", &attitude_entry::first_in_file_, "Member")
+        .def_readwrite("roll", &attitude_entry::roll, "Member")
+        .def_readwrite("pitch", &attitude_entry::pitch, "Member")
+        .def_readwrite("yaw", &attitude_entry::yaw, "Member")
+        .def_readwrite("heave", &attitude_entry::heave, "Member")
+        .def_static("read_data", &read_data_from_str<attitude_entry::EntriesT>, "Read attitude_entry::Entries from .cereal file");
+
     m.def("write_data", &write_data_from_str<mbes_ping::PingsT>, "Write mbes_ping::PingsT to .cereal file");
     m.def("write_data", &write_data_from_str<nav_entry::EntriesT>, "Write nav_entry::EntriesT to .cereal file");
+    m.def("write_data", &write_data_from_str<attitude_entry::EntriesT>, "Write attitude_entry::EntriesT to .cereal file");
 
 }
