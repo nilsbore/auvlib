@@ -523,7 +523,7 @@ csv_data::csv_asvp_sound_speed::EntriesT convert_sound_speeds(const all_mbes_pin
 
     for (const all_mbes_ping& ping : pings) {
         int index = int(double(nbr_bins) * (ping.transducer_depth_ - min->transducer_depth_) / (max->transducer_depth_ - min->transducer_depth_));
-        vels[index] += ping.sound_vel_;
+        vels[index] += 0.1*ping.sound_vel_;
         counts[index] += 1.;
     }
 

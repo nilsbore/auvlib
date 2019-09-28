@@ -34,6 +34,7 @@ MapDraper<MapSaver>::MapDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi&
     //tie(rows, cols) = map_image_builder.get_map_image_shape();
     //draping_vis_texture = Eigen::MatrixXd::Zero(rows, cols);
     store_map_images = true;
+    close_when_done = true;
 }
 
 template <typename MapSaver>
@@ -71,7 +72,9 @@ bool MapDraper<MapSaver>::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
     }
 
     if (i >= pings.size()) {
-        glfwSetWindowShouldClose(viewer.window, 1);
+        if (close_when_done) {
+            glfwSetWindowShouldClose(viewer.window, 1);
+        }
         return false;
     }
 
@@ -123,6 +126,7 @@ bool MapDraper<MapSaver>::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
 
     if (i % 10 == 0) {
         visualize_vehicle();
+        visualize_intensities();
         visualize_rays(hits_left, hits_right);
     }
 

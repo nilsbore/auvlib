@@ -25,7 +25,8 @@ BaseDraper::BaseDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
                        const csv_asvp_sound_speed::EntriesT& sound_speeds)
     : pings(pings), i(0), V1(V1), F1(F1),
       sound_speeds(sound_speeds), bounds(bounds),
-      sensor_yaw(0.), ray_tracing_enabled(false), tracing_map_size(200.)
+      sensor_yaw(0.), ray_tracing_enabled(false),
+      tracing_map_size(200.), intensity_multiplier(1.)
 {
     offset = Eigen::Vector3d(bounds(0, 0), bounds(0, 1), 0.);
 
@@ -97,8 +98,8 @@ void BaseDraper::add_texture_intensities(const Eigen::MatrixXd& hits, const Eige
     for (int j = 0; j < hits.rows(); ++j) {
         int y = int(hits(j, 1));
         int x = int(hits(j, 0));
-        if (x >= 0 && x < texture_image.cols() && y >= 0 && y < texture_image.rows()) {
-            texture_image(y, x) = std::max(intensities(j), 0.01);
+        if (intensities(j) != 0 && x >= 0 && x < texture_image.cols() && y >= 0 && y < texture_image.rows()) {
+            texture_image(y, x) = intensity_multiplier*std::max(intensities(j), 0.01);
         }
     }
 }

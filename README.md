@@ -18,6 +18,9 @@ On Ubuntu 16.04, use the following command to install all dependencies:
 ```
 sudo apt-get install libcereal-dev libglfw3-dev libceres-dev libtinyxml2-dev
 ```
+On 18.04 the dependencies should be similar. Note that you may need to provide
+the flags `-DAUVLIB_USE_LIBIGL_TINYXML=ON -DAUVLIB_USE_LIBIGL_GLFW=ON` to cmake.
+In that case, ignore the errors about missing install targets.
 
 ## Building
 

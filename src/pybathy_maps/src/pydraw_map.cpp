@@ -33,5 +33,29 @@ PYBIND11_MODULE(draw_map, m) {
         .def("draw_targets", &BathyMapImage::draw_targets, "Draw point targets from dict of points")
         .def("rotate_crop_image", &BathyMapImage::rotate_crop_image, "Rotate and crop the image from a start and an end point, and a width in between")
         .def("show", &BathyMapImage::show, "Show the drawn bathy map")
+        .def("make_image", &BathyMapImage::make_image, "Get the drawn image")
         .def("write_image", &BathyMapImage::write_image_from_str, "Save image to file");
+
+    // from http://alexsm.com/pybind11-buffer-protocol-opencv-to-numpy/
+    pybind11::class_<cv::Mat>(m, "Image", pybind11::buffer_protocol())
+        .def_buffer([](cv::Mat& im) -> pybind11::buffer_info {
+            return pybind11::buffer_info(
+                // Pointer to buffer
+                im.data,
+                // Size of one scalar
+                sizeof(unsigned char),
+                // Python struct-style format descriptor
+                pybind11::format_descriptor<unsigned char>::format(),
+                // Number of dimensions
+                3,
+                // Buffer dimensions
+                { im.rows, im.cols, im.channels() },
+                // Strides (in bytes) for each index
+                {
+                    sizeof(unsigned char) * im.channels() * im.cols,
+                    sizeof(unsigned char) * im.channels(),
+                    sizeof(unsigned char)
+                }
+            );
+        });
 }
