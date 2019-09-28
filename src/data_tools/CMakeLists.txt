@@ -30,7 +30,7 @@ add_executable(test_xtf src/test_xtf.cpp)
 
 add_executable(create_xtf_waterfall src/create_xtf_waterfall.cpp)
 
-add_executable(test_submap_tracks src/test_submap_tracks.cpp)
+#add_executable(test_submap_tracks src/test_submap_tracks.cpp)
 
 add_executable(test_all src/test_all.cpp)
 
