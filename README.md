@@ -11,6 +11,11 @@ Extensive documentation for the python API is available
 
 ![Draping example](https://github.com/nilsbore/auvlib/raw/master/data/draping_example.png)
 
+To use auvlib on Linux, it is recommended to build the library on your machine (see the following sections).
+On Windows, it is instead recommended to use the pre-compiled statically linked python
+libraries. See the [releases page](https://github.com/nilsbore/auvlib/releases) for details
+on how to install and use the latest release.
+
 ## Dependencies
 
 auvlib has been tested on Ubuntu 16.04 and 18.04.
