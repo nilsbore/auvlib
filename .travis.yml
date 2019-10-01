@@ -10,11 +10,11 @@ git:
 before_install:
     - echo $LANG
     - echo $LC_ALL
-    - sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
-    - sudo apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 421C365BD9FF1F717815A3895523BAEEB01FA116
+    #- sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+    #- sudo apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 421C365BD9FF1F717815A3895523BAEEB01FA116
     - sudo apt-get update
-    - apt list libceres-dev -a
-    - sudo apt-get install -y --allow-unauthenticated libcereal-dev libglfw3-dev libceres-dev libtinyxml2-dev libopencv-dev libboost-all-dev
+    #- apt list libceres-dev -a
+    - sudo apt-get install -y --allow-unauthenticated libcereal-dev libglfw3-dev libtinyxml2-dev libopencv-dev libboost-all-dev xorg-dev
 install:
     - git submodule update --init
 script:

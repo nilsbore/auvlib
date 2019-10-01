@@ -17,6 +17,7 @@ option(AUVLIB_USE_LIBIGL_GLFW "Use libigl's version of glfw"       OFF)
 option(AUVLIB_USE_LIBIGL_TINYXML "Use libigl's version of tinyxml" OFF)
 option(AUVLIB_USE_PYTHON3 "Use python3 instead of python2"         OFF)
 option(AUVLIB_EXPORT_BUILD "Export build dir configs"              ON)
+option(AUVLIB_WITH_CERES "Use the ceres library, required for refraction tracing" OFF)
 
 # libigl
 option(LIBIGL_USE_STATIC_LIBRARY "Use libigl as static library" OFF)
