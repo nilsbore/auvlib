@@ -14,9 +14,10 @@ project(sonar_tracing)
 #  CMAKE_ARGS -DEMBREE_ISPC_SUPPORT=OFF
 #)
 
-if(NOT MSVC)
+if(NOT MSVC AND AUVLIB_WITH_CERES)
   find_package(Ceres REQUIRED)
   include_directories(${CERES_INCLUDE_DIRS})
+  add_definitions(-DWITH_CERES)
 endif()
 
 #include_directories(../../libigl/external/glad/include)

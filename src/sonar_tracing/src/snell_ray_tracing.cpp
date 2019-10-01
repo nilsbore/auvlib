@@ -15,7 +15,8 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#ifndef _MSC_VER
+//#ifndef _MSC_VER
+#ifdef WITH_CERES
   #include <ceres/ceres.h>
 #endif
 
@@ -37,7 +38,8 @@ pair<Eigen::VectorXd, Eigen::MatrixXd> trace_multiple_layers(const Eigen::Vector
     return make_pair(end_times, layer_widths);
 }
 
-#ifndef _MSC_VER
+//#ifndef _MSC_VER
+#ifdef WITH_CERES
 class LayerWidthCostFunctor {
 public:
     LayerWidthCostFunctor(double height, double speed) : height(height), speed(speed)
@@ -65,7 +67,8 @@ private:
 
 pair<double, Eigen::VectorXd> trace_single_layers(const Eigen::VectorXd& layer_depths, const Eigen::VectorXd& layer_speeds, const Eigen::Vector2d& end_point)
 {
-#ifndef _MSC_VER
+//#ifndef _MSC_VER
+#ifdef WITH_CERES
     Eigen::VectorXd layer_widths(layer_depths.rows()+2);
     layer_widths(0) = 0.;
 
