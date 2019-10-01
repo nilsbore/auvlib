@@ -33,7 +33,7 @@ PYBIND11_MODULE(align_map, m) {
 
     py::class_<BBTree>(m, "BBTree", "Class for constructing AABB bounding box tree from mesh")
         .def(py::init<const Eigen::MatrixXd&, const Eigen::MatrixXi&>(), "Constructor")
-        .def_readonly("tree", &BBTree::tree, "Member");
+        .def_readonly("tree", &BBTree::tree, "Tree data structure used for speeding up proximity calculation");
     py::class_<igl::AABB<Eigen::MatrixXd, 3> >(m, "iglAABB", "Class for constructing AABB bounding box tree from mesh");
     /*py::class_<igl::AABB<Eigen::MatrixXd, 3> >(m, "BBTree", "Class for constructing AABB bounding box tree from mesh")
         .def(py::init<>(), "Constructor")
