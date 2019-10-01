@@ -14,20 +14,21 @@ Extensive documentation for the python API is available
 ## Dependencies
 
 auvlib has been tested on Ubuntu 16.04 and 18.04.
-On Ubuntu 16.04, use the following command to install all dependencies:
+On Ubuntu 16.04 and 18.04, use the following command to install all dependencies:
 ```
-sudo apt-get install libcereal-dev libglfw3-dev libceres-dev libtinyxml2-dev
+sudo apt-get install libcereal-dev libglfw3-dev libtinyxml2-dev libboost-all-dev libopencv-dev xorg-dev
 ```
-On 18.04 the dependencies should be similar. Note that you may need to provide
-the flags `-DAUVLIB_USE_LIBIGL_TINYXML=ON -DAUVLIB_USE_LIBIGL_GLFW=ON` to cmake.
-In that case, ignore the errors about missing install targets.
-
 ## Building
 
 Once cloned, you need to get the libigl submodule and some of its dependencies:
 ```
 git submodule update --init
 ```
+
+**NOTE:** On 18.04 you currently also need to provide the flags
+`-DAUVLIB_USE_LIBIGL_TINYXML=ON -DAUVLIB_USE_LIBIGL_GLFW=ON` to cmake below.
+In that case, ignore the error about the `tinyxml2` and `glfw` targets not being in the export set;
+build files are still generated properly.
 
 When done, create a `build` folder in the repo root, and run
 ```
