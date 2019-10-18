@@ -55,6 +55,8 @@ protected:
     //Eigen::MatrixXd N_faces; // the normals of F1, V1, i.e. the bathymetry mesh
     csv_data::csv_asvp_sound_speed::EntriesT sound_speeds;
     double sensor_yaw;
+    Eigen::Vector3d sensor_offset_port;
+    Eigen::Vector3d sensor_offset_stbd;
     bool ray_tracing_enabled; // is snell ray tracing enabled?
     double tracing_map_size;
     double intensity_multiplier;
@@ -66,7 +68,9 @@ protected:
 
     double compute_simple_sound_vel();
 
-    Eigen::VectorXd compute_times(const Eigen::MatrixXd& P);
+    std::pair<Eigen::Vector3d, Eigen::Vector3d> get_port_stbd_sensor_origins();
+
+    Eigen::VectorXd compute_times(const Eigen::Vector3d& sensor_origin, const Eigen::MatrixXd& P);
 
     Eigen::VectorXi compute_bin_indices(const Eigen::VectorXd& times, const xtf_data::xtf_sss_ping_side& ping, size_t nbr_windows);
 
@@ -76,7 +80,8 @@ protected:
     Eigen::VectorXd compute_intensities(const Eigen::VectorXd& times, 
                                         const xtf_data::xtf_sss_ping_side& ping);
 
-    void visualize_rays(const Eigen::MatrixXd& hits_left, const Eigen::MatrixXd& hits_right);
+    //void visualize_rays(const Eigen::MatrixXd& hits_left, const Eigen::MatrixXd& hits_right);
+    void visualize_rays(const Eigen::Vector3d& sensor_origin, const Eigen::MatrixXd& hits, bool clear=false);
 
     void visualize_vehicle();
 
@@ -98,6 +103,7 @@ public:
 
     void set_texture(const Eigen::MatrixXd& texture, const BoundsT& texture_bounds);
     void set_sidescan_yaw(double new_sensor_yaw) { sensor_yaw = new_sensor_yaw; }
+    void set_sidescan_port_stbd_offsets(const Eigen::Vector3d& new_offset_port, const Eigen::Vector3d& new_offset_stbd) { sensor_offset_port = new_offset_port; sensor_offset_stbd = new_offset_stbd; }
     void set_tracing_map_size(double new_tracing_map_size) { tracing_map_size = new_tracing_map_size; }
     void set_intensity_multiplier(double new_intensity_multiplier) { intensity_multiplier = new_intensity_multiplier; }
     void set_ray_tracing_enabled(bool enabled);

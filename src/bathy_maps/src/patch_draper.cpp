@@ -94,8 +94,11 @@ void PatchDraper::handle_patches()
     tie(hits_left, hits_right, normals_left, normals_right) = project();
 
     // these should take care of computing bending if set
-    Eigen::VectorXd times_left = compute_times(hits_left);
-    Eigen::VectorXd times_right = compute_times(hits_right);
+    Eigen::Vector3d origin_port;
+    Eigen::Vector3d origin_stbd;
+    tie(origin_port, origin_stbd) = get_port_stbd_sensor_origins();
+    Eigen::VectorXd times_left = compute_times(origin_port, hits_left);
+    Eigen::VectorXd times_right = compute_times(origin_stbd, hits_right);
 
     // compute the ground truth intensities
     Eigen::VectorXd intensities_left = compute_intensities(times_left, pings[i].port);
@@ -106,7 +109,9 @@ void PatchDraper::handle_patches()
 
     if (i % 10 == 0) {
         visualize_vehicle();
-        visualize_rays(hits_left, hits_right);
+        //visualize_rays(hits_left, hits_right);
+        visualize_rays(origin_port, hits_left, true);
+        visualize_rays(origin_stbd, hits_right);
     }
 
     i += 1;

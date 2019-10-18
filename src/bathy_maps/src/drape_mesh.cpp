@@ -97,7 +97,7 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi> comput
     return make_tuple(hits_left, hits_right, hits_left_inds, hits_right_inds);
 }
 
-tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi, Eigen::VectorXd, Eigen::VectorXd> embree_compute_hits(const Eigen::Vector3d& origin, const Eigen::Matrix3d& R, double tilt_angle, double beam_width, const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1)
+tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi, Eigen::VectorXd, Eigen::VectorXd> embree_compute_hits(const Eigen::Vector3d& origin_port, const Eigen::Vector3d& origin_stbd, const Eigen::Matrix3d& R, double tilt_angle, double beam_width, const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1)
 {
     auto start = chrono::high_resolution_clock::now();
     igl::Hit hit;
@@ -121,7 +121,10 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi, Eigen:
     Eigen::MatrixXd dirs = Eigen::MatrixXd(nbr_lines, dirs_left.cols());
     dirs << dirs_left, dirs_right;
     Eigen::MatrixXd P = Eigen::MatrixXd(nbr_lines, 3);
-    P.rowwise() = origin.transpose();
+
+    // TODO: we can easily split origin into origin_port and origin_stbd
+    P.topRows(dirs_left.rows()).rowwise() = origin_port.transpose();
+    P.bottomRows(dirs_right.rows()).rowwise() = origin_stbd.transpose();
     Eigen::MatrixXd hits = igl::embree::line_mesh_intersection(P, dirs, V1, F1);
     stop = chrono::high_resolution_clock::now();
     duration = chrono::duration_cast<chrono::microseconds>(stop - start);
@@ -143,9 +146,9 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi, Eigen:
             // we actually get the coordinates within the triangle also, we could use that
             //hits_left.row(hit_count) = V1.row(vind);
             hits_left.row(hit_count) = global_hits.row(i);
-            double nn = (origin - hits_left.row(hit_count).transpose()).norm();
-            Eigen::Vector3d dir = origin - hits_left.row(hit_count).transpose();
-            dir.normalize();
+            //double nn = (origin - hits_left.row(hit_count).transpose()).norm();
+            //Eigen::Vector3d dir = origin - hits_left.row(hit_count).transpose();
+            //dir.normalize();
             mod_left(hit_count) = 1.; //(1./dir.dot(N_faces.row(hit).transpose()))*(nn/60.);
             ++hit_count;
         }
@@ -166,9 +169,9 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi, Eigen:
             // we actually get the coordinates within the triangle also, we could use that
             //hits_right.row(hit_count) = V1.row(vind);
             hits_right.row(hit_count) = global_hits.row(dirs_left.rows() + i);
-            double nn = (origin - hits_right.row(hit_count).transpose()).norm();
-            Eigen::Vector3d dir = origin - hits_right.row(hit_count).transpose();
-            dir.normalize();
+            //double nn = (origin - hits_right.row(hit_count).transpose()).norm();
+            //Eigen::Vector3d dir = origin - hits_right.row(hit_count).transpose();
+            //dir.normalize();
             mod_right(hit_count) = 1.; //(1./dir.dot(N_faces.row(hit).transpose()))*(nn/60.);
             ++hit_count;
         }
