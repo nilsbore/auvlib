@@ -40,6 +40,7 @@ PYBIND11_MODULE(patch_draper, m) {
                       const xtf_sss_ping::PingsT&, const BaseDraper::BoundsT&,
                       const csv_asvp_sound_speed::EntriesT&>())
         .def("set_sidescan_yaw", &BaseDraper::set_sidescan_yaw, "Set yaw correction of sidescan with respect to nav frame")
+        .def("set_sidescan_port_stbd_offsets", &BaseDraper::set_sidescan_port_stbd_offsets, "Set offsets of sidescan port and stbd sides with respect to nav frame")
         .def("set_ray_tracing_enabled", &BaseDraper::set_ray_tracing_enabled, "Set if ray tracing through water layers should be enabled. Takes more time but is recommended if there are large speed differences")
         .def("set_vehicle_mesh", &BaseDraper::set_vehicle_mesh, "Provide the viewer with a vehicle model, purely for visualization")
         .def("show", &BaseDraper::show, "Start the draping, and show the visualizer");
@@ -50,6 +51,7 @@ PYBIND11_MODULE(patch_draper, m) {
                       const xtf_sss_ping::PingsT&, const PatchDraper::BoundsT&,
                       const csv_asvp_sound_speed::EntriesT&>())
         .def("set_sidescan_yaw", &PatchDraper::set_sidescan_yaw, "Set yaw correction of sidescan with respect to nav frame")
+        .def("set_sidescan_port_stbd_offsets", &PatchDraper::set_sidescan_port_stbd_offsets, "Set offsets of sidescan port and stbd sides with respect to nav frame")
         .def("set_tracing_map_size", &PatchDraper::set_tracing_map_size, "Set size of slice of map where we do ray tracing. Smaller makes it faster but you might cut off valid sidescan angles")
         .def("set_ray_tracing_enabled", &PatchDraper::set_ray_tracing_enabled, "Set if ray tracing through water layers should be enabled. Takes more time but is recommended if there are large speed differences")
         .def("set_vehicle_mesh", &PatchDraper::set_vehicle_mesh, "Provide the viewer with a vehicle model, purely for visualization")

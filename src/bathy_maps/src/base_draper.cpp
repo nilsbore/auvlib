@@ -29,6 +29,8 @@ BaseDraper::BaseDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
       tracing_map_size(200.), intensity_multiplier(1.)
 {
     offset = Eigen::Vector3d(bounds(0, 0), bounds(0, 1), 0.);
+    sensor_offset_port = Eigen::Vector3d::Zero();
+    sensor_offset_stbd = Eigen::Vector3d::Zero();
 
     //double first_heading = pings[0].heading_;
     //hit_sums = Eigen::VectorXd(V1.rows()); hit_sums.setZero();
@@ -232,9 +234,17 @@ bool BaseDraper::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
         Eigen::MatrixXd normals_right;
         tie(hits_left, hits_right, normals_left, normals_right) = project();
 
+        Eigen::Vector3d origin_port;
+        Eigen::Vector3d origin_stbd;
+        tie(origin_port, origin_stbd) = get_port_stbd_sensor_origins();
+        Eigen::VectorXd times_left = compute_times(origin_port, hits_left);
+        Eigen::VectorXd times_right = compute_times(origin_stbd, hits_right);
+
         if (i % 10 == 0) {
             visualize_vehicle();
-            visualize_rays(hits_left, hits_right);
+            //visualize_rays(hits_left, hits_right);
+            visualize_rays(origin_port, hits_left, true);
+            visualize_rays(origin_stbd, hits_right);
         }
         ++i;
     }
@@ -285,6 +295,16 @@ void drape_viewer(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
     viewer.show();
 }
 
+pair<Eigen::Vector3d, Eigen::Vector3d> BaseDraper::get_port_stbd_sensor_origins()
+{
+    Eigen::Matrix3d Ry = Eigen::AngleAxisd(pings[i].pitch_, Eigen::Vector3d::UnitY()).matrix();
+    Eigen::Matrix3d Rz = Eigen::AngleAxisd(pings[i].heading_, Eigen::Vector3d::UnitZ()).matrix();
+    Eigen::Vector3d offset_pos = pings[i].pos_ - offset;
+    Eigen::Vector3d origin_port = offset_pos + Rz*Ry*sensor_offset_port;
+    Eigen::Vector3d origin_stbd = offset_pos + Rz*Ry*sensor_offset_stbd;
+    return make_pair(origin_port, origin_stbd);
+}
+
 // New style functions follow here:
 tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> BaseDraper::project()
 {
@@ -325,9 +345,17 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> BaseDr
         tilt_angle = 1.4*pings[i].port.tilt_angle;
     }
 
+    /*
+    Eigen::Vector3d origin_port = offset_pos + Rz*Ry*sensor_offset_port;
+    Eigen::Vector3d origin_stbd = offset_pos + Rz*Ry*sensor_offset_stbd;
+    */
+    Eigen::Vector3d origin_port;
+    Eigen::Vector3d origin_stbd;
+    tie(origin_port, origin_stbd) = get_port_stbd_sensor_origins();
+
     auto start = chrono::high_resolution_clock::now();
     //tie(hits_left, hits_right, hits_left_inds, hits_right_inds, mod_left, mod_right) = embree_compute_hits(offset_pos, R, 1.4*pings[i].port.tilt_angle, pings[i].port.beam_width + 0.2, V1_small, F1_small);
-    tie(hits_left, hits_right, hits_left_inds, hits_right_inds, mod_left, mod_right) = embree_compute_hits(offset_pos, R, tilt_angle, beam_width, V1_small, F1_small);
+    tie(hits_left, hits_right, hits_left_inds, hits_right_inds, mod_left, mod_right) = embree_compute_hits(origin_port, origin_stbd, R, tilt_angle, beam_width, V1_small, F1_small);
     auto stop = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
     cout << "embree_compute_hits time: " << duration.count() << " microseconds" << endl;
@@ -352,11 +380,11 @@ double BaseDraper::compute_simple_sound_vel()
     return sound_vel;
 }
 
-Eigen::VectorXd BaseDraper::compute_times(const Eigen::MatrixXd& P)
+Eigen::VectorXd BaseDraper::compute_times(const Eigen::Vector3d& sensor_origin, const Eigen::MatrixXd& P)
 {
-    Eigen::Vector3d pos = pings[i].pos_ - offset;
+    //Eigen::Vector3d pos = pings[i].pos_ - offset;
     double sound_vel = compute_simple_sound_vel();
-    Eigen::VectorXd times = 2.*(P.rowwise() - pos.transpose()).rowwise().norm()/sound_vel;
+    Eigen::VectorXd times = 2.*(P.rowwise() - sensor_origin.transpose()).rowwise().norm()/sound_vel;
     return times;
 }
 
@@ -412,6 +440,21 @@ Eigen::VectorXd BaseDraper::compute_intensities(const Eigen::VectorXd& times,
     return intensities;
 }
 
+void BaseDraper::visualize_rays(const Eigen::Vector3d& sensor_origin, const Eigen::MatrixXd& hits, bool clear)
+{
+    Eigen::MatrixXi E;
+    Eigen::MatrixXd P(hits.rows(), 3);
+    P.rowwise() = sensor_origin.transpose();
+    if (clear) {
+        viewer.data().set_edges(P, E, Eigen::RowVector3d(1., 0., 0.));
+        viewer.data().add_edges(P, hits, Eigen::RowVector3d(1., 0., 0.));
+    }
+    else {
+        viewer.data().add_edges(P, hits, Eigen::RowVector3d(0., 1., 0.));
+    }
+}
+
+/*
 void BaseDraper::visualize_rays(const Eigen::MatrixXd& hits_left, const Eigen::MatrixXd& hits_right)
 {
     Eigen::MatrixXi E;
@@ -423,6 +466,7 @@ void BaseDraper::visualize_rays(const Eigen::MatrixXd& hits_left, const Eigen::M
     P.rowwise() = (pings[i].pos_ - offset).transpose();
     viewer.data().add_edges(P, hits_right, Eigen::RowVector3d(0., 1., 0.));
 }
+*/
 
 void BaseDraper::visualize_vehicle()
 {

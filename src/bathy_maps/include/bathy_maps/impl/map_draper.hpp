@@ -87,8 +87,12 @@ bool MapDraper<MapSaver>::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
     tie(hits_left, hits_right, normals_left, normals_right) = project();
 
     // these should take care of computing bending if set
-    Eigen::VectorXd times_left = compute_times(hits_left);
-    Eigen::VectorXd times_right = compute_times(hits_right);
+    // TODO: add origin to compute times
+    Eigen::Vector3d origin_port;
+    Eigen::Vector3d origin_stbd;
+    tie(origin_port, origin_stbd) = get_port_stbd_sensor_origins();
+    Eigen::VectorXd times_left = compute_times(origin_port, hits_left);
+    Eigen::VectorXd times_right = compute_times(origin_stbd, hits_right);
 
     // compute the elevation waterfall row
     Eigen::VectorXd sss_depths_left = convert_to_time_bins(times_left, hits_left.col(2), pings[i].port, map_image_builder.get_waterfall_bins());
@@ -127,7 +131,9 @@ bool MapDraper<MapSaver>::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
     if (i % 10 == 0) {
         visualize_vehicle();
         visualize_intensities();
-        visualize_rays(hits_left, hits_right);
+        //visualize_rays(hits_left, hits_right);
+        visualize_rays(origin_port, hits_left, true);
+        visualize_rays(origin_stbd, hits_right);
     }
 
     cout << "Done visualizing" << endl;

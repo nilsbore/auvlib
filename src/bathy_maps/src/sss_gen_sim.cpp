@@ -438,8 +438,11 @@ bool SSSGenSim::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
     tie(hits_left, hits_right, normals_left, normals_right) = project();
 
     // compute travel times
-    Eigen::VectorXd times_left = compute_times(hits_left);
-    Eigen::VectorXd times_right = compute_times(hits_right);
+    Eigen::Vector3d origin_port;
+    Eigen::Vector3d origin_stbd;
+    tie(origin_port, origin_stbd) = get_port_stbd_sensor_origins();
+    Eigen::VectorXd times_left = compute_times(origin_port, hits_left);
+    Eigen::VectorXd times_right = compute_times(origin_stbd, hits_right);
 
     // compute the intensity values for vis
     Eigen::VectorXd gt_intensities_left = compute_intensities(times_left, pings[i].port);
@@ -526,7 +529,9 @@ bool SSSGenSim::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
 
     if (i % 10 == 0) {
         //visualize_vehicle();
-        visualize_rays(hits_left, hits_right);
+        //visualize_rays(hits_left, hits_right);
+        visualize_rays(origin_port, hits_left, true);
+        visualize_rays(origin_stbd, hits_right);
         visualize_intensities();
     }
 
