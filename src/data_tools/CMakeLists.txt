@@ -20,6 +20,8 @@ add_library(csv_data src/csv_data.cpp)
 
 add_library(xtf_data src/xtf_data.cpp)
 
+add_library(jsf_data src/jsf_data.cpp)
+
 add_library(lat_long_utm src/lat_long_utm.cpp)
 
 add_library(all_data src/all_data.cpp)
@@ -75,6 +77,11 @@ target_include_directories(xtf_data PUBLIC
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
 
+target_include_directories(jsf_data PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+    PRIVATE src)
+
 target_include_directories(lat_long_utm PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
@@ -118,11 +125,13 @@ endif()
 
 target_link_libraries(xtf_data PUBLIC std_data navi_data xtf_reader lat_long_utm ${OpenCV_LIBS})
 
+target_link_libraries(jsf_data PUBLIC std_data)
+
 target_link_libraries(all_data navi_data lat_long_utm csv_data ${OpenCV_LIBS})
 
 target_link_libraries(xyz_data std_data ${EXTRA_BOOST_LIBS})
 
-set(AUVLIB_DATA_TOOLS_LIBS data_transforms submaps std_data benchmark navi_data csv_data xtf_data all_data xyz_data lat_long_utm)
+set(AUVLIB_DATA_TOOLS_LIBS data_transforms submaps std_data benchmark navi_data csv_data xtf_data jsf_data all_data xyz_data lat_long_utm)
 
 if(AUVLIB_WITH_GSF)
   set(AUVLIB_DATA_TOOLS_LIBS ${AUVLIB_DATA_TOOLS_LIBS} gsf_data)
