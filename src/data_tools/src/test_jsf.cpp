@@ -24,12 +24,12 @@ using namespace std_data;
 
 int main(int argc, char** argv){
     int rtn=0;
-    // boost::filesystem::path path("/home/yipingxie/Downloads/SSH-0007-KTH1-20190615-090603.JSF");
+    boost::filesystem::path path("/home/yipingxie/Downloads/SSH-0007-KTH1-20190615-090603.JSF");
     // boost::filesystem::path path("/home/yipingxie/Downloads/SSL-0037-low1-20190615-111128.JSF");
-    boost::filesystem::path path("/home/yipingxie/Downloads/SSH-0023-high9-20190615-102808.JSF");
+    // boost::filesystem::path path("/home/yipingxie/Downloads/SSH-0023-high9-20190615-102808.JSF");
 
 
-    jsf_sss_ping::PingsT pings = parse_file<jsf_sss_ping>(path);
+    jsf_sss_ping::PingsT pings = parse_file(path);
     int rows = pings.size();
     int cols = pings[0].port.pings.size() + pings[0].stbd.pings.size();
  

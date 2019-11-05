@@ -237,7 +237,6 @@ jsf_sss_ping::PingsT read_jsf_file(ifstream& input, jsf_msg_header& jsf_hdr){
 }
 
 
-template <typename ReturnType>
 jsf_sss_ping::PingsT parse_file_impl(const boost::filesystem::path& path){
     jsf_sss_ping::PingsT pings;
     if (boost::filesystem::extension(path) != ".JSF") {
@@ -270,10 +269,9 @@ jsf_sss_ping::PingsT parse_file_impl(const boost::filesystem::path& path){
 namespace std_data{
 using namespace jsf_data;
 
-template <>
-jsf_sss_ping::PingsT parse_file<jsf_sss_ping>(const boost::filesystem::path& file)
+jsf_sss_ping::PingsT parse_file(const boost::filesystem::path& file)
 {
-    return parse_file_impl<jsf_sss_ping>(file);
+    return parse_file_impl(file);
 }
 
 
