@@ -62,6 +62,7 @@ void show_waterfall_image(const jsf_sss_ping::PingsT& pings);
 
 namespace std_data {
 
+template <>
 jsf_data::jsf_sss_ping::PingsT parse_file(const boost::filesystem::path& file);
 
 }

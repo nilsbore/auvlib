@@ -269,7 +269,8 @@ jsf_sss_ping::PingsT parse_file_impl(const boost::filesystem::path& path){
 namespace std_data{
 using namespace jsf_data;
 
-jsf_sss_ping::PingsT parse_file(const boost::filesystem::path& file)
+template <>
+jsf_sss_ping::PingsT parse_file<jsf_sss_ping>(const boost::filesystem::path& file)
 {
     return parse_file_impl(file);
 }
