@@ -94,7 +94,7 @@ jsf_sss_ping_side process_side_scan_ping_side(ifstream& input, jsf_msg_header& j
 
     if (jsf_sonar_data_hdr.data_format==0){
         int16_t env_data;
-        float scaled_env_data[jsf_sonar_data_hdr.spls_num_in_pkt];
+        float* scaled_env_data = new float[jsf_sonar_data_hdr.spls_num_in_pkt];
         for (int i=0; i<jsf_sonar_data_hdr.spls_num_in_pkt; ++i){
 
             input.read(reinterpret_cast<char*>(&env_data), sizeof(env_data));
@@ -106,8 +106,8 @@ jsf_sss_ping_side process_side_scan_ping_side(ifstream& input, jsf_msg_header& j
     else if ((jsf_sonar_data_hdr.data_format==1)){
         cout<<"data format: " <<jsf_sonar_data_hdr.data_format<<endl<<"has real and imginary part, stored in pings and pings_phase respectively";
         int16_t analytic_sig_data[2];
-        float scaled_sig_data_real[jsf_sonar_data_hdr.spls_num_in_pkt];
-        float scaled_sig_data_img[jsf_sonar_data_hdr.spls_num_in_pkt];
+        float* scaled_sig_data_real = new float[jsf_sonar_data_hdr.spls_num_in_pkt];
+        float* scaled_sig_data_img = new float[jsf_sonar_data_hdr.spls_num_in_pkt];
 
         for (int i=0; i<jsf_sonar_data_hdr.spls_num_in_pkt; ++i){
             input.read(reinterpret_cast<char*>(&analytic_sig_data), sizeof(analytic_sig_data));
