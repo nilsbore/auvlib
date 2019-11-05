@@ -1,4 +1,4 @@
-/* Copyright 2018 Nils Bore (nbore@kth.se), Yiping Xie (yipingx@kth.se)
+/* Copyright 2019 Yiping Xie (yipingx@kth.se)
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  *
@@ -9,62 +9,33 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef JSF_DATA_H
-#define JSF_DATA_H
 
-#include <data_tools/std_data.h>
-#include <libjsf/jsf.h>
-#include <Eigen/Dense>
-#define BOOST_NO_CXX11_SCOPED_ENUMS
-#include <boost/filesystem.hpp>
-#undef BOOST_NO_CXX11_SCOPED_ENUMS
-#include <opencv2/core/core.hpp>
+#include <fstream>
+#include <iostream>
+#include <cereal/archives/json.hpp>
+#include <data_tools/jsf_data.h>
+#include <opencv2/highgui/highgui.hpp>
 
-
-namespace jsf_data {
-
-struct jsf_sss_ping_side
-{
-    std::vector<float> pings;
-    std::vector<float> pings_phase;
-	template <class Archive>
-    void serialize( Archive & ar )
-    {
-        ar(CEREAL_NVP(pings), CEREAL_NVP(pings_phase) );
-    }
-};
-
-struct jsf_sss_ping
-{
-    using PingsT = std::vector<jsf_sss_ping, Eigen::aligned_allocator<jsf_sss_ping> >;
-
-    bool first_in_file_;
-    std::string time_string_; // readable time stamp string
-    long long time_stamp_; // posix time stamp
-    jsf_sss_ping_side port;
-    jsf_sss_ping_side stbd;
-    bool is_bad;
+using namespace std;
+using namespace jsf_data;
+using namespace std_data;
 
 
-	template <class Archive>
-    void serialize( Archive & ar )
-    {
-        ar(CEREAL_NVP(first_in_file_), CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_), CEREAL_NVP(port), CEREAL_NVP(stbd), CEREAL_NVP(is_bad));
-    }
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-};
+
+int main(int argc, char** argv){
+    int rtn=0;
+    boost::filesystem::path path(argv[1]);
 
 
-cv::Mat make_waterfall_image(const jsf_sss_ping::PingsT& pings);
-void show_waterfall_image(const jsf_sss_ping::PingsT& pings);
+    jsf_sss_ping::PingsT pings = parse_file<jsf_sss_ping>(path);
+    int rows = pings.size();
+    int cols = pings[0].port.pings.size() + pings[0].stbd.pings.size();
+ 
+    printf("rows num: %d\n", rows);
+    printf("cols num: %d\n", cols);
 
-} // namespace jsf_data
+    
+    show_waterfall_image(pings);
 
-namespace std_data {
-
-template <>
-jsf_data::jsf_sss_ping::PingsT parse_file(const boost::filesystem::path& file);
-
+    return rtn;
 }
-
-#endif // JSF_DATA_H

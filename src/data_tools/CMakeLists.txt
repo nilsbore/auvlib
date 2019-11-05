@@ -32,6 +32,9 @@ add_executable(test_xtf src/test_xtf.cpp)
 
 add_executable(test_all src/test_all.cpp)
 
+add_executable(test_jsf src/test_jsf.cpp)
+
+
 # Define headers for this library. PUBLIC headers are used for
 # compiling the library, and will be added to consumers' build
 # paths.
@@ -107,6 +110,8 @@ target_link_libraries(test_xtf xtf_data std_data navi_data ${OpenCV_LIBS} ${EXTR
 
 target_link_libraries(test_all all_data ${OpenCV_LIBS} ${EXTRA_BOOST_LIBS})
 
+target_link_libraries(test_jsf jsf_data ${OpenCV_LIBS} ${EXTRA_BOOST_LIBS})
+
 # Link the libraries
 target_link_libraries(submaps eigen_cereal ${EXTRA_BOOST_LIBS}) # ${PCL_LIBRARIES})
 
@@ -125,7 +130,7 @@ endif()
 
 target_link_libraries(xtf_data PUBLIC std_data navi_data xtf_reader lat_long_utm ${OpenCV_LIBS})
 
-target_link_libraries(jsf_data PUBLIC std_data)
+target_link_libraries(jsf_data PUBLIC std_data ${OpenCV_LIBS})
 
 target_link_libraries(all_data navi_data lat_long_utm csv_data ${OpenCV_LIBS})
 
