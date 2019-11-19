@@ -24,13 +24,12 @@
 #endif
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-
+#include <bitset>
 
 # define SONAR_MESSAGE_HEADER_START 0X1601
 # define SONAR_DATA_TYPE 0X0050
 # define DVL_DATA_TYPE 0X0820
 # define SITUATION_DATA_TYPE 0X082A
-
 
 using namespace std;
 
@@ -72,7 +71,7 @@ void show_waterfall_image(const jsf_sss_ping::PingsT& pings)
     cv::waitKey();
 }
 
-// skip data other than sonar data (type=80)
+// skip data 
 void skip_data(ifstream& input, jsf_msg_header jsf_hdr){
     int nbr_bytes;
     for (int i = 0; i < jsf_hdr.following_bytes; i++){   
@@ -81,16 +80,8 @@ void skip_data(ifstream& input, jsf_msg_header jsf_hdr){
 }
 
 
-jsf_sss_ping_side process_side_scan_ping_side(ifstream& input, jsf_msg_header& jsf_hdr, jsf_sonar_data_msg_header& jsf_sonar_data_hdr){
+jsf_sss_ping_side process_side_scan_ping_side(ifstream& input,  jsf_msg_header& jsf_hdr,  jsf_sonar_data_msg_header& jsf_sonar_data_hdr){
     jsf_sss_ping_side ping_side;
-    if(jsf_hdr.start_marker!=SONAR_MESSAGE_HEADER_START){
-        cout<<"error start marker: "<<jsf_hdr.start_marker<<endl;
-        exit(0);
-    }
-    if(jsf_hdr.msg_type!= SONAR_DATA_TYPE){
-        cout<<"Error message type: "<<jsf_hdr.msg_type<<endl;
-        exit(0);
-    }
 
     if (jsf_sonar_data_hdr.data_format==0){
         int16_t env_data;
@@ -101,7 +92,7 @@ jsf_sss_ping_side process_side_scan_ping_side(ifstream& input, jsf_msg_header& j
         }
     }
     else if ((jsf_sonar_data_hdr.data_format==1)){
-        cout<<"data format: " <<jsf_sonar_data_hdr.data_format<<endl<<"has real and imginary part, stored in pings and pings_phase respectively";
+        cout << "Data format: " << jsf_sonar_data_hdr.data_format << "has real and imginary part, stored in pings and pings_phase respectively" << endl;
         int16_t analytic_sig_data[2];
 
         for (int i=0; i<jsf_sonar_data_hdr.spls_num_in_pkt; ++i){
@@ -112,7 +103,7 @@ jsf_sss_ping_side process_side_scan_ping_side(ifstream& input, jsf_msg_header& j
             }
     }
     else{
-        cout<<"skip data format: " <<jsf_sonar_data_hdr.data_format<<endl;
+        cout << "Skip data format: " << jsf_sonar_data_hdr.data_format << endl;
         for (int i = 0; i < jsf_hdr.following_bytes-sizeof(jsf_sonar_data_hdr); i++){   
             int16_t nbr_bytes;
             input.read(reinterpret_cast<char*>(&nbr_bytes), sizeof(char));
@@ -123,13 +114,63 @@ jsf_sss_ping_side process_side_scan_ping_side(ifstream& input, jsf_msg_header& j
 
 
 
+template <typename ReturnType, typename JsfHeaderType>
+ReturnType read_datagram(std::ifstream& input,  JsfHeaderType& header,  jsf_msg_header& jsf_hdr)
+{
+    ReturnType rtn;
+	return rtn;
+}
 
-jsf_sss_ping process_side_scan_ping(ifstream& input, jsf_msg_header& jsf_hdr, jsf_sonar_data_msg_header& jsf_sonar_data_hdr){
+template <typename ReturnType, typename JsfHeaderType, int Code>
+vector<ReturnType, Eigen::aligned_allocator<ReturnType> > parse_file_impl(const boost::filesystem::path& path)
+{
+    vector<ReturnType, Eigen::aligned_allocator<ReturnType> > returns;
+    if (boost::filesystem::extension(path) != ".JSF") {
+        cout << "Not an .JSF file, skipping..." << endl;
+        cout << "Extension: " << boost::filesystem::extension(path) << endl;
+        return returns;
+    }
 
+    ifstream input;
+    input.open(path.string(), ios::binary);
+    if (input.fail()) {
+        cout << "ERROR: Cannot open the file..." << endl;
+        exit(0);
+        return returns;
+    }
+    while (!input.eof()){
+        jsf_msg_header jsf_hdr;
+        input.read(reinterpret_cast<char*>(&jsf_hdr),sizeof(jsf_hdr));
+        if (jsf_hdr.start_marker != SONAR_MESSAGE_HEADER_START){
+            cout << "Invalid file format! start marker: " << jsf_hdr.start_marker << endl;
+            break;
+        }
+
+        if (jsf_hdr.msg_type==Code){
+            JsfHeaderType header;
+            input.read(reinterpret_cast<char*>(&header), sizeof(header));
+            returns.push_back(read_datagram<ReturnType, JsfHeaderType>(input, header, jsf_hdr));
+            returns.back().first_in_file_ = false;
+        }
+        else{
+            skip_data(input,jsf_hdr);
+        }
+    }
+
+    if (!returns.empty()) {
+        returns[0].first_in_file_ = true;
+    }
+
+	return returns;
+    
+}
+
+template <>
+jsf_sss_ping read_datagram<jsf_sss_ping, jsf_sonar_data_msg_header>(std::ifstream& input,  jsf_sonar_data_msg_header& jsf_sonar_data_hdr,  jsf_msg_header& jsf_hdr)
+{
     jsf_sss_ping ping;
-    input.read(reinterpret_cast<char*>(&jsf_sonar_data_hdr),sizeof(jsf_sonar_data_hdr));
-    jsf_sss_ping_side ping_side_cur;
-    ping_side_cur = process_side_scan_ping_side(input, jsf_hdr, jsf_sonar_data_hdr);
+    jsf_sss_ping_side ping_side;
+    ping_side = process_side_scan_ping_side(input, jsf_hdr, jsf_sonar_data_hdr);
 
     const boost::posix_time::ptime epoch = boost::posix_time::time_from_string("1970-01-01 00:00:00.000");
     boost::posix_time::ptime data_time;
@@ -146,113 +187,117 @@ jsf_sss_ping process_side_scan_ping(ifstream& input, jsf_msg_header& jsf_hdr, js
     boost::posix_time::time_duration const diff = data_time - epoch;
     ping.time_stamp_ = diff.total_milliseconds();
 
- 
-    jsf_msg_header jsf_hdr_next;
-    input.read(reinterpret_cast<char*>(&jsf_hdr_next),sizeof(jsf_hdr_next));
 
-    while((jsf_hdr_next.msg_type!=SONAR_DATA_TYPE)&&(!input.eof())){
-        skip_data(input, jsf_hdr_next);
-        input.read(reinterpret_cast<char*>(&jsf_hdr_next),sizeof(jsf_hdr_next));
+    ping.channel_num=jsf_hdr.channel_num;
 
-        if (jsf_hdr_next.start_marker != SONAR_MESSAGE_HEADER_START){
-            cout << "Invalid file format! start marker: "<<jsf_hdr_next.start_marker << endl;
-            exit(0);
-        }
-    }
-    
-    // continue to read next channel
-    jsf_sonar_data_msg_header jsf_sonar_data_hdr_next;    
-    input.read(reinterpret_cast<char*>(&jsf_sonar_data_hdr_next),sizeof(jsf_sonar_data_hdr_next));
-    jsf_sss_ping_side ping_side_nxt;
-    if (jsf_hdr_next.start_marker == SONAR_MESSAGE_HEADER_START){
-        ping_side_nxt = process_side_scan_ping_side(input, jsf_hdr_next, jsf_sonar_data_hdr_next);
-    }  
-
-        if(jsf_hdr.channel_num==0){
-            ping.port = ping_side_cur;
-            ping.stbd = ping_side_nxt;
-        }
-        else{
-            ping.stbd = ping_side_cur;
-            ping.port = ping_side_nxt;
-        }
-  
-
-    // determine if it is a bad ping 
-    if(((jsf_hdr.channel_num+jsf_hdr_next.channel_num)!=1)||((jsf_sonar_data_hdr.ping_time_in_sec!=jsf_sonar_data_hdr_next.ping_time_in_sec))){
-        ping.is_bad = true;
+    if(jsf_hdr.channel_num==0){
+        ping.port = ping_side;
     }
     else{
-        ping.is_bad = false;
+        ping.stbd = ping_side;
     }
+  
     ping.first_in_file_ = false;
     return ping;
 
 }
 
+template <>
+dvl_reading read_datagram<dvl_reading, jsf_dvl_msg_header>(std::ifstream& input,  jsf_dvl_msg_header& jsf_dvl_msg,  jsf_msg_header& jsf_hdr)
+{
+    dvl_reading reading;
+    const boost::posix_time::ptime epoch = boost::posix_time::time_from_string("1970-01-01 00:00:00.000");
+    boost::posix_time::ptime data_time;
+
+    data_time = epoch + boost::posix_time::seconds(jsf_dvl_msg.time_in_sec) + boost::posix_time::milliseconds(jsf_dvl_msg.ms_in_cur_sec);
+    
+    stringstream time_ss;
+    time_ss << data_time;
+    reading.time_string_ = time_ss.str();
+    boost::posix_time::time_duration const diff = data_time - epoch;
+    reading.time_stamp_ = diff.total_milliseconds();
+
+
+    reading.vel_wrt_bottom_ = Eigen::Vector3d(jsf_dvl_msg.x_vel_wrt_bottom/1000., jsf_dvl_msg.y_vel_wrt_bottom/1000., jsf_dvl_msg.z_vel_wrt_bottom/1000.);
+    reading.vel_wrt_water_ = Eigen::Vector3d(jsf_dvl_msg.x_vel_wrt_water/1000., jsf_dvl_msg.y_vel_wrt_water/1000., jsf_dvl_msg.z_vel_wrt_water/1000.);
+    reading.dist_to_bottom_ = Eigen::Vector4d(jsf_dvl_msg.dist_to_bottom_in_cm[0]/100., jsf_dvl_msg.dist_to_bottom_in_cm[1]/100,jsf_dvl_msg.dist_to_bottom_in_cm[2]/100.,jsf_dvl_msg.dist_to_bottom_in_cm[3]/100.);
+    reading.depth_ = jsf_dvl_msg.depth_in_dm/10.;
+    reading.pitch_ = jsf_dvl_msg.pitch/100./180.*M_PI;
+    reading.roll_ = jsf_dvl_msg.roll/100./180.*M_PI;
+    reading.heading_ = jsf_dvl_msg.heading/100./180.*M_PI;
+    reading.salinity_ = jsf_dvl_msg.salinity;
+    reading.temp_ = jsf_dvl_msg.temp/100.;
+    reading.sound_vel_ = jsf_dvl_msg.sound_vel;
+
+    // initialize the flag
+    reading.flag_["Vxy"] = false; // bit 0
+    reading.flag_["Vz"] = false; // bit 2
+    reading.flag_["Vxy_water"] = false; // bit 3
+    reading.flag_["Vz_water"] = false; // bit 4
+    reading.flag_["dist_bottom"] = false; // bit 5
+    reading.flag_["heading"] = false; // bit 6
+    reading.flag_["pitch"] = false; // bit 7
+    reading.flag_["roll"] = false; // bit 8
+    reading.flag_["temp"] = false; // bit 9
+    reading.flag_["depth"] = false; // bit 10
+    reading.flag_["salinity"] = false; // bit 11
+    reading.flag_["sound_vel"] = false; // bit 12
+
+    reading.ship_coord_ = false; // bit 1
+    reading.error_ = false; // bit 31
 
 
 
-
-jsf_sss_ping::PingsT read_jsf_file(ifstream& input, jsf_msg_header& jsf_hdr){
-    jsf_sss_ping::PingsT pings;
-    jsf_sonar_data_msg_header jsf_sonar_data_hdr;
-    while (!input.eof()){
-        input.read(reinterpret_cast<char*>(&jsf_hdr),sizeof(jsf_hdr));
-        if (jsf_hdr.start_marker != SONAR_MESSAGE_HEADER_START){
-            cout << "Invalid file format! start marker: "<<jsf_hdr.start_marker << endl;
-            break;
-        }
-
-        if (jsf_hdr.msg_type==SONAR_DATA_TYPE){
-            jsf_sss_ping ping= process_side_scan_ping(input, jsf_hdr, jsf_sonar_data_hdr);
-
-            if (ping.is_bad){
-                cout << pings.size()+1 <<"th ping is a bad ping, ignore!"<<endl;
-            }
-            else{
-                pings.push_back(ping);
-            }
-            
-        }
-        else{
-            skip_data(input,jsf_hdr);
-        }
-    }
-    cout<<"Read Done!"<<endl;
-
-    if (!pings.empty()) {
-        pings[0].first_in_file_ = true;
-    }
-    return pings;
-
-}
-
-
-jsf_sss_ping::PingsT parse_file_impl(const boost::filesystem::path& path){
-    jsf_sss_ping::PingsT pings;
-    if (boost::filesystem::extension(path) != ".JSF") {
-        cout << "Not an .JSF file, skipping..." << endl;
-        cout << "Extension: " << boost::filesystem::extension(path) << endl;
-        return pings;
-    }
-
-    ifstream input;
-    input.open(path.string(), ios::binary);
-    if (input.fail()) {
-        cout << "ERROR: Cannot open the file..." << endl;
-        exit(0);
-        return pings;
-    }
-
-    jsf_msg_header jsf_hdr;
-
-    pings = read_jsf_file(input, jsf_hdr);
-    cout<<"pings size is: "<<pings.size()<<endl;
-    return pings;
+    // bit 0
+    if (jsf_dvl_msg.flag & 0x01) reading.flag_["Vxy"] = true;
+     
+    // bit 1
+    if (jsf_dvl_msg.flag & 0x02) reading.ship_coord_ = true;
     
 
+    // bit 2
+    if (jsf_dvl_msg.flag & 0x04) reading.flag_["Vz"] = true;
+
+    // bit 3
+    if (jsf_dvl_msg.flag & 0x08) reading.flag_["Vxy_water"] = true;
+    
+    // bit 4
+    if (jsf_dvl_msg.flag & 0x10) reading.flag_["Vz_water"] = true;
+
+    // bit 5
+    if (jsf_dvl_msg.flag & 0x20) reading.flag_["dist_bottom"] = true;
+    
+    // bit 6
+    if (jsf_dvl_msg.flag & 0x40) reading.flag_["heading"] = true;
+    
+    // bit 7
+    if (jsf_dvl_msg.flag & 0x80) reading.flag_["pitch"] = true;
+    
+    // bit 8
+    if (jsf_dvl_msg.flag & 0x100) reading.flag_["roll"] = true;
+    
+    // bit 9
+    if (jsf_dvl_msg.flag & 0x200) reading.flag_["temp"] = true;
+
+    // bit 10
+    if (jsf_dvl_msg.flag & 0x400) reading.flag_["depth"] = true;
+
+    // bit 11
+    if (jsf_dvl_msg.flag & 0x800) reading.flag_["salinity"] = true;
+
+    // bit 12
+    if (jsf_dvl_msg.flag & 0x1000) reading.flag_["sound_vel"] = true; 
+
+    // bit 31
+    if(jsf_dvl_msg.flag & 0x100000000){
+        cout << "Error detected! flag in decimal: " << fixed << jsf_dvl_msg.flag << endl;
+        reading.error_ = true;
+    }
+
+    return reading;
+
 }
+
 
 } // namespace jsf_data
 
@@ -264,9 +309,36 @@ using namespace jsf_data;
 template <>
 jsf_sss_ping::PingsT parse_file<jsf_sss_ping>(const boost::filesystem::path& file)
 {
-    return parse_file_impl(file);
+    jsf_sss_ping::PingsT pings = parse_file_impl<jsf_sss_ping, jsf_sonar_data_msg_header, 80>(file);
+    jsf_sss_ping::PingsT fixed_pings;
+    int start;
+    if ((pings[0].time_stamp_ - pings[1].time_stamp_)<2) start = 0;
+    else if ((pings[1].time_stamp_ - pings[2].time_stamp_)<2) start = 1;
+    for (int i = start; i < pings.size()-1; i+=2){
+        jsf_sss_ping fixed_ping;
+
+        if ((pings[i].channel_num==0)&&(pings[i+1].channel_num==1)){
+            fixed_ping = pings[i];
+            fixed_ping.stbd = pings[i+1].stbd;
+            fixed_pings.push_back(fixed_ping);
+        }
+        else if((pings[i].channel_num==1)&&(pings[i+1].channel_num==0)){
+            fixed_ping = pings[i];
+            fixed_ping.port = pings[i+1].port;
+            fixed_pings.push_back(fixed_ping);
+        }
+        else {
+            cout << "Invalid data format! channel numbers are: " << pings[i].channel_num << " and " << pings[i+1].channel_num << endl;
+            break;
+        }
+    }
+    return fixed_pings;
 }
 
-
+template <>
+dvl_reading::Readings parse_file<dvl_reading>(const boost::filesystem::path& file)
+{
+    return parse_file_impl<dvl_reading, jsf_dvl_msg_header, 2080>(file);
+}
 
 } // namespace std_data

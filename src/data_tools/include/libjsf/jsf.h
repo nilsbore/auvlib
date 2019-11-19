@@ -122,7 +122,7 @@ PACK(struct jsf_sonar_data_msg_header{
     uint16_t packet_num; // Packet Number; Each ping starts with packet 1
     int16_t ad_decimation_times_100; // 100 times the A/D Decimation Factor
     int16_t decimation_factor; // Decimation Factor after the FFT
-    int16_t water_temp; // Water Temperature in uints of 1/100 degree C
+    int16_t water_temp; // Water Temperature in uints of 1/10 degree C
     float layback_in_m; // Layback in meters
     int32_t reserved_8; // Reserved
     uint16_t cable_out_in_dm; // Cable Out in Decimeters
@@ -136,7 +136,7 @@ PACK(struct jsf_dvl_msg_header{
     int32_t ms_in_cur_sec; // Milliseconds in the current second
     uint8_t reserved_0[4]; // Reserved
     uint32_t flag; // Flags. Indicates which values are present
-    int32_t dis_to_bottom_in_cm[4]; // 4 Intergers: Disctance to bottom in cm for up to 4 beams
+    int32_t dist_to_bottom_in_cm[4]; // 4 Intergers: Disctance to bottom in cm for up to 4 beams
     int16_t x_vel_wrt_bottom; // X Velocity with respect to the bottom in mm/second; Positive => Starboard or East; -32768 indicates an invalid reading
     int16_t y_vel_wrt_bottom; // Y Velocity; Positive => Forward or North (mm/second)
     int16_t z_vel_wrt_bottom; // Z Velocity; Positive => Upward  (mm/second)
@@ -144,9 +144,9 @@ PACK(struct jsf_dvl_msg_header{
     int16_t y_vel_wrt_water; // Y Velocity; Positive => Forward or North
     int16_t z_vel_wrt_water; // Z Velocity; Positive => Upward 
     uint16_t depth_in_dm; // Depth from depth sensor in decimeters
-    int16_t pitch; // Pitch -180 to +180 degree (units = 0.001 of a degree) + Bow up
-    int16_t roll; // Roll -180 to +180 degree (units = 0.001 of a degree) + Port up
-    uint16_t heading; // Heading 0 to 360 degree (units = 0.001 of a degree) 
+    int16_t pitch; // Pitch -180 to +180 degree (units = 0.01 of a degree) + Bow up
+    int16_t roll; // Roll -180 to +180 degree (units = 0.01 of a degree) + Port up
+    uint16_t heading; // Heading 0 to 360 degree (units = 0.01 of a degree) 
     uint16_t salinity; // Salinity in 1 part per thousand
     int16_t temp; // Temperature in uints of 1/100 of a degree Celsius
     int16_t sound_vel; // Sound velocity in meters per second
