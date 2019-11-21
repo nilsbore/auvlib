@@ -203,9 +203,9 @@ jsf_sss_ping read_datagram<jsf_sss_ping, jsf_sonar_data_msg_header>(std::ifstrea
 }
 
 template <>
-dvl_reading read_datagram<dvl_reading, jsf_dvl_msg_header>(std::ifstream& input,  jsf_dvl_msg_header& jsf_dvl_msg,  jsf_msg_header& jsf_hdr)
+jsf_dvl_ping read_datagram<jsf_dvl_ping, jsf_dvl_msg_header>(std::ifstream& input,  jsf_dvl_msg_header& jsf_dvl_msg,  jsf_msg_header& jsf_hdr)
 {
-    dvl_reading reading;
+    jsf_dvl_ping ping;
     const boost::posix_time::ptime epoch = boost::posix_time::time_from_string("1970-01-01 00:00:00.000");
     boost::posix_time::ptime data_time;
 
@@ -213,88 +213,88 @@ dvl_reading read_datagram<dvl_reading, jsf_dvl_msg_header>(std::ifstream& input,
     
     stringstream time_ss;
     time_ss << data_time;
-    reading.time_string_ = time_ss.str();
+    ping.time_string_ = time_ss.str();
     boost::posix_time::time_duration const diff = data_time - epoch;
-    reading.time_stamp_ = diff.total_milliseconds();
+    ping.time_stamp_ = diff.total_milliseconds();
 
 
-    reading.vel_wrt_bottom_ = Eigen::Vector3d(jsf_dvl_msg.x_vel_wrt_bottom/1000., jsf_dvl_msg.y_vel_wrt_bottom/1000., jsf_dvl_msg.z_vel_wrt_bottom/1000.);
-    reading.vel_wrt_water_ = Eigen::Vector3d(jsf_dvl_msg.x_vel_wrt_water/1000., jsf_dvl_msg.y_vel_wrt_water/1000., jsf_dvl_msg.z_vel_wrt_water/1000.);
-    reading.dist_to_bottom_ = Eigen::Vector4d(jsf_dvl_msg.dist_to_bottom_in_cm[0]/100., jsf_dvl_msg.dist_to_bottom_in_cm[1]/100,jsf_dvl_msg.dist_to_bottom_in_cm[2]/100.,jsf_dvl_msg.dist_to_bottom_in_cm[3]/100.);
-    reading.depth_ = jsf_dvl_msg.depth_in_dm/10.;
-    reading.pitch_ = jsf_dvl_msg.pitch/100./180.*M_PI;
-    reading.roll_ = jsf_dvl_msg.roll/100./180.*M_PI;
-    reading.heading_ = jsf_dvl_msg.heading/100./180.*M_PI;
-    reading.salinity_ = jsf_dvl_msg.salinity;
-    reading.temp_ = jsf_dvl_msg.temp/100.;
-    reading.sound_vel_ = jsf_dvl_msg.sound_vel;
+    ping.vel_wrt_bottom_ = Eigen::Vector3d(jsf_dvl_msg.x_vel_wrt_bottom/1000., jsf_dvl_msg.y_vel_wrt_bottom/1000., jsf_dvl_msg.z_vel_wrt_bottom/1000.);
+    ping.vel_wrt_water_ = Eigen::Vector3d(jsf_dvl_msg.x_vel_wrt_water/1000., jsf_dvl_msg.y_vel_wrt_water/1000., jsf_dvl_msg.z_vel_wrt_water/1000.);
+    ping.dist_to_bottom_ = Eigen::Vector4d(jsf_dvl_msg.dist_to_bottom_in_cm[0]/100., jsf_dvl_msg.dist_to_bottom_in_cm[1]/100,jsf_dvl_msg.dist_to_bottom_in_cm[2]/100.,jsf_dvl_msg.dist_to_bottom_in_cm[3]/100.);
+    ping.depth_ = jsf_dvl_msg.depth_in_dm/10.;
+    ping.pitch_ = jsf_dvl_msg.pitch/100./180.*M_PI;
+    ping.roll_ = jsf_dvl_msg.roll/100./180.*M_PI;
+    ping.heading_ = jsf_dvl_msg.heading/100./180.*M_PI;
+    ping.salinity_ = jsf_dvl_msg.salinity;
+    ping.temp_ = jsf_dvl_msg.temp/100.;
+    ping.sound_vel_ = jsf_dvl_msg.sound_vel;
 
     // initialize the flag
-    reading.flag_["Vxy"] = false; // bit 0
-    reading.flag_["Vz"] = false; // bit 2
-    reading.flag_["Vxy_water"] = false; // bit 3
-    reading.flag_["Vz_water"] = false; // bit 4
-    reading.flag_["dist_bottom"] = false; // bit 5
-    reading.flag_["heading"] = false; // bit 6
-    reading.flag_["pitch"] = false; // bit 7
-    reading.flag_["roll"] = false; // bit 8
-    reading.flag_["temp"] = false; // bit 9
-    reading.flag_["depth"] = false; // bit 10
-    reading.flag_["salinity"] = false; // bit 11
-    reading.flag_["sound_vel"] = false; // bit 12
+    ping.flag_["Vxy"] = false; // bit 0
+    ping.flag_["Vz"] = false; // bit 2
+    ping.flag_["Vxy_water"] = false; // bit 3
+    ping.flag_["Vz_water"] = false; // bit 4
+    ping.flag_["dist_bottom"] = false; // bit 5
+    ping.flag_["heading"] = false; // bit 6
+    ping.flag_["pitch"] = false; // bit 7
+    ping.flag_["roll"] = false; // bit 8
+    ping.flag_["temp"] = false; // bit 9
+    ping.flag_["depth"] = false; // bit 10
+    ping.flag_["salinity"] = false; // bit 11
+    ping.flag_["sound_vel"] = false; // bit 12
 
-    reading.ship_coord_ = false; // bit 1
-    reading.error_ = false; // bit 31
+    ping.ship_coord_ = false; // bit 1
+    ping.error_ = false; // bit 31
 
 
 
     // bit 0
-    if (jsf_dvl_msg.flag & 0x01) reading.flag_["Vxy"] = true;
+    if (jsf_dvl_msg.flag & 0x01) ping.flag_["Vxy"] = true;
      
     // bit 1
-    if (jsf_dvl_msg.flag & 0x02) reading.ship_coord_ = true;
+    if (jsf_dvl_msg.flag & 0x02) ping.ship_coord_ = true;
     
 
     // bit 2
-    if (jsf_dvl_msg.flag & 0x04) reading.flag_["Vz"] = true;
+    if (jsf_dvl_msg.flag & 0x04) ping.flag_["Vz"] = true;
 
     // bit 3
-    if (jsf_dvl_msg.flag & 0x08) reading.flag_["Vxy_water"] = true;
+    if (jsf_dvl_msg.flag & 0x08) ping.flag_["Vxy_water"] = true;
     
     // bit 4
-    if (jsf_dvl_msg.flag & 0x10) reading.flag_["Vz_water"] = true;
+    if (jsf_dvl_msg.flag & 0x10) ping.flag_["Vz_water"] = true;
 
     // bit 5
-    if (jsf_dvl_msg.flag & 0x20) reading.flag_["dist_bottom"] = true;
+    if (jsf_dvl_msg.flag & 0x20) ping.flag_["dist_bottom"] = true;
     
     // bit 6
-    if (jsf_dvl_msg.flag & 0x40) reading.flag_["heading"] = true;
+    if (jsf_dvl_msg.flag & 0x40) ping.flag_["heading"] = true;
     
     // bit 7
-    if (jsf_dvl_msg.flag & 0x80) reading.flag_["pitch"] = true;
+    if (jsf_dvl_msg.flag & 0x80) ping.flag_["pitch"] = true;
     
     // bit 8
-    if (jsf_dvl_msg.flag & 0x100) reading.flag_["roll"] = true;
+    if (jsf_dvl_msg.flag & 0x100) ping.flag_["roll"] = true;
     
     // bit 9
-    if (jsf_dvl_msg.flag & 0x200) reading.flag_["temp"] = true;
+    if (jsf_dvl_msg.flag & 0x200) ping.flag_["temp"] = true;
 
     // bit 10
-    if (jsf_dvl_msg.flag & 0x400) reading.flag_["depth"] = true;
+    if (jsf_dvl_msg.flag & 0x400) ping.flag_["depth"] = true;
 
     // bit 11
-    if (jsf_dvl_msg.flag & 0x800) reading.flag_["salinity"] = true;
+    if (jsf_dvl_msg.flag & 0x800) ping.flag_["salinity"] = true;
 
     // bit 12
-    if (jsf_dvl_msg.flag & 0x1000) reading.flag_["sound_vel"] = true; 
+    if (jsf_dvl_msg.flag & 0x1000) ping.flag_["sound_vel"] = true; 
 
     // bit 31
     if(jsf_dvl_msg.flag & 0x100000000){
         cout << "Error detected! flag in decimal: " << fixed << jsf_dvl_msg.flag << endl;
-        reading.error_ = true;
+        ping.error_ = true;
     }
 
-    return reading;
+    return ping;
 
 }
 
@@ -318,6 +318,7 @@ jsf_sss_ping::PingsT parse_file<jsf_sss_ping>(const boost::filesystem::path& fil
         jsf_sss_ping fixed_ping;
 
         if ((pings[i].channel_num==0)&&(pings[i+1].channel_num==1)){
+
             fixed_ping = pings[i];
             fixed_ping.stbd = pings[i+1].stbd;
             fixed_pings.push_back(fixed_ping);
@@ -336,9 +337,9 @@ jsf_sss_ping::PingsT parse_file<jsf_sss_ping>(const boost::filesystem::path& fil
 }
 
 template <>
-dvl_reading::Readings parse_file<dvl_reading>(const boost::filesystem::path& file)
+jsf_dvl_ping::PingsT parse_file<jsf_dvl_ping>(const boost::filesystem::path& file)
 {
-    return parse_file_impl<dvl_reading, jsf_dvl_msg_header, 2080>(file);
+    return parse_file_impl<jsf_dvl_ping, jsf_dvl_msg_header, 2080>(file);
 }
 
 } // namespace std_data

@@ -62,9 +62,9 @@ cv::Mat make_waterfall_image(const jsf_sss_ping::PingsT& pings);
 void show_waterfall_image(const jsf_sss_ping::PingsT& pings);
 
 
-struct dvl_reading
+struct jsf_dvl_ping
 {
-    using Readings = std::vector<dvl_reading, Eigen::aligned_allocator<dvl_reading> >;
+    using PingsT = std::vector<jsf_dvl_ping, Eigen::aligned_allocator<jsf_dvl_ping> >;
 
     bool first_in_file_;
     std::string time_string_; // readable time stamp string
@@ -106,7 +106,7 @@ template <>
 jsf_data::jsf_sss_ping::PingsT parse_file(const boost::filesystem::path& file);
 
 template <>
-jsf_data::dvl_reading::Readings parse_file(const boost::filesystem::path& file);
+jsf_data::jsf_dvl_ping::PingsT parse_file(const boost::filesystem::path& file);
 
 }
 
