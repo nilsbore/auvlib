@@ -46,13 +46,12 @@ struct jsf_sss_ping
     long long time_stamp_; // posix time stamp
     jsf_sss_ping_side port;
     jsf_sss_ping_side stbd;
-    int channel_num; // channel number, 0 -> port, 1 -> starboard
 
 
 	template <class Archive>
     void serialize( Archive & ar )
     {
-        ar(CEREAL_NVP(first_in_file_), CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_), CEREAL_NVP(port), CEREAL_NVP(stbd), CEREAL_NVP(channel_num));
+        ar(CEREAL_NVP(first_in_file_), CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_), CEREAL_NVP(port), CEREAL_NVP(stbd));
     }
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };

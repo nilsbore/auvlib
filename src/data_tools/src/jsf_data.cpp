@@ -188,7 +188,6 @@ jsf_sss_ping read_datagram<jsf_sss_ping, jsf_sonar_data_msg_header>(std::ifstrea
     ping.time_stamp_ = diff.total_milliseconds();
 
 
-    ping.channel_num=jsf_hdr.channel_num;
 
     if(jsf_hdr.channel_num==0){
         ping.port = ping_side;
@@ -316,20 +315,19 @@ jsf_sss_ping::PingsT parse_file<jsf_sss_ping>(const boost::filesystem::path& fil
     else if ((pings[1].time_stamp_ - pings[2].time_stamp_)<2) start = 1;
     for (int i = start; i < pings.size()-1; i+=2){
         jsf_sss_ping fixed_ping;
-
-        if ((pings[i].channel_num==0)&&(pings[i+1].channel_num==1)){
+        if ((pings[i].port.pings.size()!=0)&&(pings[i+1].stbd.pings.size()!=0)){
 
             fixed_ping = pings[i];
             fixed_ping.stbd = pings[i+1].stbd;
             fixed_pings.push_back(fixed_ping);
         }
-        else if((pings[i].channel_num==1)&&(pings[i+1].channel_num==0)){
+        else if ((pings[i].stbd.pings.size()!=0)&&(pings[i+1].port.pings.size()!=0)){
             fixed_ping = pings[i];
             fixed_ping.port = pings[i+1].port;
             fixed_pings.push_back(fixed_ping);
         }
         else {
-            cout << "Invalid data format! channel numbers are: " << pings[i].channel_num << " and " << pings[i+1].channel_num << endl;
+            cout << "Invalid data format! Channel numbers are not 0 and 1!" << endl;
             break;
         }
     }
