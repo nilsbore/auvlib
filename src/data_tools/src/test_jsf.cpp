@@ -20,22 +20,42 @@ using namespace std;
 using namespace jsf_data;
 using namespace std_data;
 
-
-
-int main(int argc, char** argv){
-    int rtn=0;
-    boost::filesystem::path path(argv[1]);
-
-
+void test_parse_sss(const boost::filesystem::path& path)
+{
     jsf_sss_ping::PingsT pings = parse_file<jsf_sss_ping>(path);
     int rows = pings.size();
     int cols = pings[0].port.pings.size() + pings[0].stbd.pings.size();
  
     printf("rows num: %d\n", rows);
     printf("cols num: %d\n", cols);
-
-    
     show_waterfall_image(pings);
+
+}
+
+void test_parse_dvl(const boost::filesystem::path& path)
+{
+    jsf_dvl_ping::PingsT pings = parse_file<jsf_dvl_ping>(path);
+    for (auto i:pings){
+        if(i.error_)  cout << "Error occured, time string is: " << i.time_string_ << endl;
+        
+        bool all_false_flag=true;
+
+        for (auto & k: i.flag_){
+            if (k.second) all_false_flag = false;
+        }
+        if (all_false_flag) cout << "All flags are false, time string is: " << i.time_string_ << endl;
+    
+    }
+    cout << "Sound velocity from the first dvl data: " << pings[0].sound_vel_ << " m/s" << endl;
+}
+
+int main(int argc, char** argv){
+    int rtn=0;
+    boost::filesystem::path path(argv[1]);
+
+    test_parse_dvl(path);
+
+    test_parse_sss(path);
 
     return rtn;
 }

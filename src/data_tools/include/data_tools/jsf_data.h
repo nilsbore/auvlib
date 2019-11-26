@@ -19,7 +19,10 @@
 #include <boost/filesystem.hpp>
 #undef BOOST_NO_CXX11_SCOPED_ENUMS
 #include <opencv2/core/core.hpp>
-
+#include <unordered_map> 
+#ifndef M_PI // For windows
+  #define M_PI 3.14159265358979323846
+#endif
 
 namespace jsf_data {
 
@@ -43,13 +46,12 @@ struct jsf_sss_ping
     long long time_stamp_; // posix time stamp
     jsf_sss_ping_side port;
     jsf_sss_ping_side stbd;
-    bool is_bad;
 
 
 	template <class Archive>
     void serialize( Archive & ar )
     {
-        ar(CEREAL_NVP(first_in_file_), CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_), CEREAL_NVP(port), CEREAL_NVP(stbd), CEREAL_NVP(is_bad));
+        ar(CEREAL_NVP(first_in_file_), CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_), CEREAL_NVP(port), CEREAL_NVP(stbd));
     }
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
@@ -58,12 +60,52 @@ struct jsf_sss_ping
 cv::Mat make_waterfall_image(const jsf_sss_ping::PingsT& pings);
 void show_waterfall_image(const jsf_sss_ping::PingsT& pings);
 
+
+struct jsf_dvl_ping
+{
+    using PingsT = std::vector<jsf_dvl_ping, Eigen::aligned_allocator<jsf_dvl_ping> >;
+
+    bool first_in_file_;
+    std::string time_string_; // readable time stamp string
+    long long time_stamp_; // posix time stamp
+
+    Eigen::Vector4d dist_to_bottom_; // Disctance to bottom in meter for up to 4 beams
+    bool ship_coord_; // true -> velocity in ship coordinates; false -> velocity in earth coordinates
+    Eigen::Vector3d vel_wrt_bottom_; // (x,y,z) Velocity with respect to the bottom in m/second
+    Eigen::Vector3d vel_wrt_water_; // (x,y,z) Velocity with respect to a water layer in m/second
+    
+    double depth_; // Depth from depth sensor in meters
+    double pitch_; // Pitch in radian + Bow up
+    double roll_; // Roll in radian + Port up
+    double heading_; // Heading in radian 
+
+    double salinity_; // Salinity in 1 part per thousand
+    double temp_; // Temperature in degree Celsius
+    double sound_vel_; // Sound velocity in meters per second
+
+    std::unordered_map<std::string,bool> flag_; // flag indicates which values present
+    bool error_; // true -> error detected
+
+    template <class Archive>
+    void serialize( Archive & ar )
+    {
+        ar(CEREAL_NVP(first_in_file_), CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_), CEREAL_NVP(ship_coord_), CEREAL_NVP(dist_to_bottom_), CEREAL_NVP(vel_wrt_bottom_), CEREAL_NVP(vel_wrt_water_), 
+        CEREAL_NVP(depth_), CEREAL_NVP(pitch_), CEREAL_NVP(roll_), CEREAL_NVP(heading_), CEREAL_NVP(salinity_), CEREAL_NVP(temp_), CEREAL_NVP(sound_vel_),  CEREAL_NVP(flag_), CEREAL_NVP(error_));
+    }
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+};
+
+
 } // namespace jsf_data
 
 namespace std_data {
 
 template <>
 jsf_data::jsf_sss_ping::PingsT parse_file(const boost::filesystem::path& file);
+
+template <>
+jsf_data::jsf_dvl_ping::PingsT parse_file(const boost::filesystem::path& file);
 
 }
 
