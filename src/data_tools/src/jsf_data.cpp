@@ -42,16 +42,18 @@ cv::Mat make_waterfall_image(const jsf_sss_ping::PingsT& pings)
     cv::Mat swath_img = cv::Mat(rows, cols, CV_8UC3, cv::Scalar(255, 255, 255));
     for (int i = 0; i < pings.size(); ++i) {
         for (int j = 0; j < pings[i].port.pings.size(); ++j) {
+            uchar intensity = uchar(std::min(std::max(255.*.005*pings[i].port.pings[j], 0.), 255.));
             cv::Point3_<uchar>* p = swath_img.ptr<cv::Point3_<uchar> >(i, pings[0].stbd.pings.size()+j);
-            p->z = uchar(255.*pings[i].port.pings[j]);
-            p->y = uchar(255.*pings[i].port.pings[j]);
-            p->x = uchar(255.*pings[i].port.pings[j]);
+            p->z = intensity;
+            p->y = intensity;
+            p->x = intensity;
         }
         for (int j = 0; j < pings[i].stbd.pings.size(); ++j) {
+            uchar intensity = uchar(std::min(std::max(255.*.005*pings[i].stbd.pings[j], 0.), 255.));
             cv::Point3_<uchar>* p = swath_img.ptr<cv::Point3_<uchar> >(i, pings[0].stbd.pings.size()-j-1);
-            p->z = uchar(255.*pings[i].stbd.pings[j]);
-            p->y = uchar(255.*pings[i].stbd.pings[j]);
-            p->x = uchar(255.*pings[i].stbd.pings[j]);
+            p->z = intensity;
+            p->y = intensity;
+            p->x = intensity;
         }
     }
     cv::Mat resized_swath_img;//dst image
@@ -184,8 +186,6 @@ jsf_sss_ping read_datagram<jsf_sss_ping, jsf_sonar_data_msg_header>(std::ifstrea
     boost::posix_time::time_duration const diff = data_time - epoch;
     ping.time_stamp_ = diff.total_milliseconds();
 
-
-
     if (jsf_hdr.channel_num == 0) {
         ping.port = ping_side;
     }
@@ -194,6 +194,7 @@ jsf_sss_ping read_datagram<jsf_sss_ping, jsf_sonar_data_msg_header>(std::ifstrea
     }
   
     ping.first_in_file_ = false;
+
     return ping;
 
 }
@@ -212,7 +213,6 @@ jsf_dvl_ping read_datagram<jsf_dvl_ping, jsf_dvl_msg_header>(std::ifstream& inpu
     ping.time_string_ = time_ss.str();
     boost::posix_time::time_duration const diff = data_time - epoch;
     ping.time_stamp_ = diff.total_milliseconds();
-
 
     ping.vel_wrt_bottom_ = Eigen::Vector3d(jsf_dvl_msg.x_vel_wrt_bottom/1000., jsf_dvl_msg.y_vel_wrt_bottom/1000., jsf_dvl_msg.z_vel_wrt_bottom/1000.);
     ping.vel_wrt_water_ = Eigen::Vector3d(jsf_dvl_msg.x_vel_wrt_water/1000., jsf_dvl_msg.y_vel_wrt_water/1000., jsf_dvl_msg.z_vel_wrt_water/1000.);

@@ -35,7 +35,8 @@ void test_parse_sss(const boost::filesystem::path& path)
 void test_parse_dvl(const boost::filesystem::path& path)
 {
     jsf_dvl_ping::PingsT pings = parse_file<jsf_dvl_ping>(path);
-    for (auto i:pings){
+    cout << "Number of dvl pings: " << pings.size() << endl;
+    for (auto i : pings) {
         if(i.error_)  cout << "Error occured, time string is: " << i.time_string_ << endl;
         
         bool all_false_flag=true;
@@ -46,7 +47,9 @@ void test_parse_dvl(const boost::filesystem::path& path)
         if (all_false_flag) cout << "All flags are false, time string is: " << i.time_string_ << endl;
     
     }
-    cout << "Sound velocity from the first dvl data: " << pings[0].sound_vel_ << " m/s" << endl;
+    if (!pings.empty()) {
+        cout << "Sound velocity from the first dvl data: " << pings[0].sound_vel_ << " m/s" << endl;
+    }
 }
 
 int main(int argc, char** argv){
