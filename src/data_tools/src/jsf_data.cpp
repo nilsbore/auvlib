@@ -35,7 +35,6 @@ using namespace std;
 
 namespace jsf_data{
 
-
 cv::Mat make_waterfall_image(const jsf_sss_ping::PingsT& pings)
 {
     int rows = pings.size();
@@ -56,13 +55,10 @@ cv::Mat make_waterfall_image(const jsf_sss_ping::PingsT& pings)
         }
     }
     cv::Mat resized_swath_img;//dst image
-    cv::resize(swath_img, resized_swath_img, cv::Size(cols/32, rows/4));//resize image
+    cv::resize(swath_img, resized_swath_img, cv::Size(512, rows));//resize image
     
     return resized_swath_img;
 }
-
-
-
 
 void show_waterfall_image(const jsf_sss_ping::PingsT& pings)
 {
@@ -72,39 +68,40 @@ void show_waterfall_image(const jsf_sss_ping::PingsT& pings)
 }
 
 // skip data 
-void skip_data(ifstream& input, jsf_msg_header jsf_hdr){
+void skip_data(ifstream& input, jsf_msg_header jsf_hdr)
+{
     int nbr_bytes;
-    for (int i = 0; i < jsf_hdr.following_bytes; i++){   
+    for (int i = 0; i < jsf_hdr.following_bytes; i++) {
         input.read(reinterpret_cast<char*>(&nbr_bytes), sizeof(char));
     }
 }
 
 
-jsf_sss_ping_side process_side_scan_ping_side(ifstream& input,  jsf_msg_header& jsf_hdr,  jsf_sonar_data_msg_header& jsf_sonar_data_hdr){
+jsf_sss_ping_side process_side_scan_ping_side(ifstream& input,  jsf_msg_header& jsf_hdr,  jsf_sonar_data_msg_header& jsf_sonar_data_hdr)
+{
     jsf_sss_ping_side ping_side;
 
-    if (jsf_sonar_data_hdr.data_format==0){
+    if (jsf_sonar_data_hdr.data_format==0) {
         int16_t env_data;
-        for (int i=0; i<jsf_sonar_data_hdr.spls_num_in_pkt; ++i){
+        for (int i = 0; i < jsf_sonar_data_hdr.spls_num_in_pkt; ++i) {
             input.read(reinterpret_cast<char*>(&env_data), sizeof(env_data));
             ping_side.pings.push_back(ldexpf((float)env_data, -jsf_sonar_data_hdr.weighting_factor_n));
 
         }
     }
-    else if ((jsf_sonar_data_hdr.data_format==1)){
+    else if (jsf_sonar_data_hdr.data_format==1) {
         cout << "Data format: " << jsf_sonar_data_hdr.data_format << "has real and imginary part, stored in pings and pings_phase respectively" << endl;
         int16_t analytic_sig_data[2];
 
-        for (int i=0; i<jsf_sonar_data_hdr.spls_num_in_pkt; ++i){
+        for (int i = 0; i < jsf_sonar_data_hdr.spls_num_in_pkt; ++i) {
             input.read(reinterpret_cast<char*>(&analytic_sig_data), sizeof(analytic_sig_data));
             ping_side.pings.push_back(ldexpf((float)analytic_sig_data[0], -jsf_sonar_data_hdr.weighting_factor_n));
             ping_side.pings_phase.push_back(ldexpf((float)analytic_sig_data[1], -jsf_sonar_data_hdr.weighting_factor_n));
-
-            }
+        }
     }
     else{
         cout << "Skip data format: " << jsf_sonar_data_hdr.data_format << endl;
-        for (int i = 0; i < jsf_hdr.following_bytes-sizeof(jsf_sonar_data_hdr); i++){   
+        for (int i = 0; i < jsf_hdr.following_bytes-sizeof(jsf_sonar_data_hdr); i++) {
             int16_t nbr_bytes;
             input.read(reinterpret_cast<char*>(&nbr_bytes), sizeof(char));
         }
@@ -125,7 +122,7 @@ template <typename ReturnType, typename JsfHeaderType, int Code>
 vector<ReturnType, Eigen::aligned_allocator<ReturnType> > parse_file_impl(const boost::filesystem::path& path)
 {
     vector<ReturnType, Eigen::aligned_allocator<ReturnType> > returns;
-    if (boost::filesystem::extension(path) != ".JSF") {
+    if (boost::filesystem::extension(path) != ".JSF" && boost::filesystem::extension(path) != ".jsf") {
         cout << "Not an .JSF file, skipping..." << endl;
         cout << "Extension: " << boost::filesystem::extension(path) << endl;
         return returns;
@@ -138,21 +135,21 @@ vector<ReturnType, Eigen::aligned_allocator<ReturnType> > parse_file_impl(const 
         exit(0);
         return returns;
     }
-    while (!input.eof()){
+    while (!input.eof()) {
         jsf_msg_header jsf_hdr;
         input.read(reinterpret_cast<char*>(&jsf_hdr),sizeof(jsf_hdr));
-        if (jsf_hdr.start_marker != SONAR_MESSAGE_HEADER_START){
+        if (jsf_hdr.start_marker != SONAR_MESSAGE_HEADER_START) {
             cout << "Invalid file format! start marker: " << jsf_hdr.start_marker << endl;
             break;
         }
 
-        if (jsf_hdr.msg_type==Code){
+        if (jsf_hdr.msg_type == Code) {
             JsfHeaderType header;
             input.read(reinterpret_cast<char*>(&header), sizeof(header));
             returns.push_back(read_datagram<ReturnType, JsfHeaderType>(input, header, jsf_hdr));
             returns.back().first_in_file_ = false;
         }
-        else{
+        else {
             skip_data(input,jsf_hdr);
         }
     }
@@ -175,10 +172,10 @@ jsf_sss_ping read_datagram<jsf_sss_ping, jsf_sonar_data_msg_header>(std::ifstrea
     const boost::posix_time::ptime epoch = boost::posix_time::time_from_string("1970-01-01 00:00:00.000");
     boost::posix_time::ptime data_time;
 
-    if (jsf_hdr.prot_ver>=8){
+    if (jsf_hdr.prot_ver >= 8) {
         data_time = epoch + boost::posix_time::seconds(jsf_sonar_data_hdr.ping_time_in_sec) + boost::posix_time::milliseconds(jsf_sonar_data_hdr.today_in_ms%1000);
     }
-    else{
+    else {
         boost::posix_time::ptime data_time(boost::gregorian::date(jsf_sonar_data_hdr.cpu_year, 1, 1), boost::posix_time::hours(jsf_sonar_data_hdr.cpu_day*24-24)+boost::posix_time::minutes(0)+boost::posix_time::seconds(0)+boost::posix_time::milliseconds(jsf_sonar_data_hdr.today_in_ms)); 
     }
     stringstream time_ss;
@@ -189,10 +186,10 @@ jsf_sss_ping read_datagram<jsf_sss_ping, jsf_sonar_data_msg_header>(std::ifstrea
 
 
 
-    if(jsf_hdr.channel_num==0){
+    if (jsf_hdr.channel_num == 0) {
         ping.port = ping_side;
     }
-    else{
+    else {
         ping.stbd = ping_side;
     }
   
@@ -244,8 +241,6 @@ jsf_dvl_ping read_datagram<jsf_dvl_ping, jsf_dvl_msg_header>(std::ifstream& inpu
 
     ping.ship_coord_ = false; // bit 1
     ping.error_ = false; // bit 31
-
-
 
     // bit 0
     if (jsf_dvl_msg.flag & 0x01) ping.flag_["Vxy"] = true;
@@ -302,7 +297,8 @@ jsf_dvl_ping read_datagram<jsf_dvl_ping, jsf_dvl_msg_header>(std::ifstream& inpu
 
 
 
-namespace std_data{
+namespace std_data {
+
 using namespace jsf_data;
 
 template <>
@@ -311,17 +307,21 @@ jsf_sss_ping::PingsT parse_file<jsf_sss_ping>(const boost::filesystem::path& fil
     jsf_sss_ping::PingsT pings = parse_file_impl<jsf_sss_ping, jsf_sonar_data_msg_header, 80>(file);
     jsf_sss_ping::PingsT fixed_pings;
     int start;
-    if ((pings[0].time_stamp_ - pings[1].time_stamp_)<2) start = 0;
-    else if ((pings[1].time_stamp_ - pings[2].time_stamp_)<2) start = 1;
-    for (int i = start; i < pings.size()-1; i+=2){
+    if ((pings[0].time_stamp_ - pings[1].time_stamp_) < 2) {
+        start = 0;
+    }
+    else if ((pings[1].time_stamp_ - pings[2].time_stamp_) < 2) {
+        start = 1;
+    }
+    for (int i = start; i < pings.size()-1; i+=2) {
         jsf_sss_ping fixed_ping;
-        if ((pings[i].port.pings.size()!=0)&&(pings[i+1].stbd.pings.size()!=0)){
+        if (pings[i].port.pings.size() != 0 && pings[i+1].stbd.pings.size() != 0) {
 
             fixed_ping = pings[i];
             fixed_ping.stbd = pings[i+1].stbd;
             fixed_pings.push_back(fixed_ping);
         }
-        else if ((pings[i].stbd.pings.size()!=0)&&(pings[i+1].port.pings.size()!=0)){
+        else if (pings[i].stbd.pings.size() != 0 && pings[i+1].port.pings.size() != 0) {
             fixed_ping = pings[i];
             fixed_ping.port = pings[i+1].port;
             fixed_pings.push_back(fixed_ping);
