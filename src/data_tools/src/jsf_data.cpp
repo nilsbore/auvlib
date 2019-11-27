@@ -196,12 +196,12 @@ jsf_sss_ping read_datagram<jsf_sss_ping, jsf_sonar_data_msg_header>(std::ifstrea
     double easting, northing;
     string utm_zone;
     tie(northing, easting, utm_zone) = lat_long_utm::lat_long_to_UTM(ping.lat_, ping.long_);
-    cout << "UTM ZONE: " << utm_zone << endl;
+    //cout << "UTM ZONE: " << utm_zone << endl;
     ping.utm_zone = utm_zone;
     ping.pos_ = Eigen::Vector3d(easting, northing, -0.001*jsf_sonar_data_hdr.depth_in_mm);
     ping_side = process_side_scan_ping_side(input, jsf_hdr, jsf_sonar_data_hdr);
 
-    cout << "Coord units: " << jsf_sonar_data_hdr.coord_units << endl;
+    //cout << "Coord units: " << jsf_sonar_data_hdr.coord_units << endl;
 
     const boost::posix_time::ptime epoch = boost::posix_time::time_from_string("1970-01-01 00:00:00.000");
     boost::posix_time::ptime data_time;
@@ -340,10 +340,26 @@ xtf_data::xtf_sss_ping::PingsT convert_to_xtf_pings(const jsf_sss_ping::PingsT& 
         cping.lat_ = ping.lat_;
         cping.long_ = ping.long_;
         cping.pos_ = ping.pos_;
+        cping.sound_vel_ = ping.sound_vel;
+
+        cping.stbd.time_duration = ping.stbd.time_duration;
+        cping.stbd.pings.resize(ping.stbd.pings.size());
+        for (int i = 0; i < ping.stbd.pings.size(); ++i)
+        {
+            cping.stbd.pings[i] = int(2.*32767.*(.005*ping.stbd.pings[i] - .5));
+        }
+
+        cping.port.time_duration = ping.port.time_duration;
+        cping.port.pings.resize(ping.port.pings.size());
+        for (int i = 0; i < ping.port.pings.size(); ++i)
+        {
+            cping.port.pings[i] = int(2.*32767.*(.005*ping.port.pings[i] - .5));
+        }
 
         converted.push_back(cping);
     }
 
+    return converted;
 }
 
 
