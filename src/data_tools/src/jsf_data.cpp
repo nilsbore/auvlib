@@ -25,6 +25,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <bitset>
+#include <data_tools/lat_long_utm.h>
 
 # define SONAR_MESSAGE_HEADER_START 0X1601
 # define SONAR_DATA_TYPE 0X0050
@@ -34,6 +35,15 @@
 using namespace std;
 
 namespace jsf_data{
+
+    jsf_sss_ping::PingsT filter_frequency(const jsf_sss_ping::PingsT& pings, int desired_freq)
+    {
+        jsf_sss_ping::PingsT filtered_pings;
+
+        std::copy_if(pings.begin(), pings.end(), std::back_inserter(filtered_pings), [&](const jsf_sss_ping& ping){ return ping.frequency == desired_freq; });
+
+        return filtered_pings;
+    }
 
 cv::Mat make_waterfall_image(const jsf_sss_ping::PingsT& pings)
 {
@@ -82,6 +92,11 @@ void skip_data(ifstream& input, jsf_msg_header jsf_hdr)
 jsf_sss_ping_side process_side_scan_ping_side(ifstream& input,  jsf_msg_header& jsf_hdr,  jsf_sonar_data_msg_header& jsf_sonar_data_hdr)
 {
     jsf_sss_ping_side ping_side;
+
+    ping_side.time_duration = double(jsf_sonar_data_hdr.spls_num_in_pkt - 1)*double(jsf_sonar_data_hdr.spl_intvl_in_ns)*1e-9;
+
+
+    //cout << "Freq: " << jsf_sonar_data_hdr.spl_freq_in_hz << endl;
 
     if (jsf_sonar_data_hdr.data_format==0) {
         int16_t env_data;
@@ -169,7 +184,24 @@ jsf_sss_ping read_datagram<jsf_sss_ping, jsf_sonar_data_msg_header>(std::ifstrea
 {
     jsf_sss_ping ping;
     jsf_sss_ping_side ping_side;
+    ping.frequency = jsf_sonar_data_hdr.spl_freq_in_hz;
+    ping.sound_vel = jsf_sonar_data_hdr.sound_speed_in_m_per_s;
+    ping.rpy = Eigen::Vector3d(jsf_sonar_data_hdr.roll, jsf_sonar_data_hdr.pitch, jsf_sonar_data_hdr.compass_heading);
+    ping.rpy.head<2>() = M_PI/32768.*ping.rpy.head<2>();
+    ping.rpy[2] = .5*M_PI - M_PI/180.*0.01*ping.rpy[2];
+
+    // NOTE: this is only valid if coord_units == 2
+    ping.lat_ = 0.0001/60.*double(jsf_sonar_data_hdr.y_coord);
+    ping.long_ = 0.0001/60.*double(jsf_sonar_data_hdr.x_coord);
+    double easting, northing;
+    string utm_zone;
+    tie(northing, easting, utm_zone) = lat_long_utm::lat_long_to_UTM(ping.lat_, ping.long_);
+    cout << "UTM ZONE: " << utm_zone << endl;
+    ping.utm_zone = utm_zone;
+    ping.pos_ = Eigen::Vector3d(easting, northing, -0.001*jsf_sonar_data_hdr.depth_in_mm);
     ping_side = process_side_scan_ping_side(input, jsf_hdr, jsf_sonar_data_hdr);
+
+    cout << "Coord units: " << jsf_sonar_data_hdr.coord_units << endl;
 
     const boost::posix_time::ptime epoch = boost::posix_time::time_from_string("1970-01-01 00:00:00.000");
     boost::posix_time::ptime data_time;
@@ -289,6 +321,28 @@ jsf_dvl_ping read_datagram<jsf_dvl_ping, jsf_dvl_msg_header>(std::ifstream& inpu
     }
 
     return ping;
+
+}
+
+xtf_data::xtf_sss_ping::PingsT convert_to_xtf_pings(const jsf_sss_ping::PingsT& pings)
+{
+    xtf_data::xtf_sss_ping::PingsT converted;
+    converted.reserve(pings.size());
+
+    for (const jsf_sss_ping& ping : pings) {
+        xtf_data::xtf_sss_ping cping;
+        cping.time_stamp_ = ping.time_stamp_;
+        cping.time_string_ = ping.time_string_;
+        cping.first_in_file_ = ping.first_in_file_;
+        cping.roll_ = ping.rpy[0];
+        cping.pitch_ = ping.rpy[1];
+        cping.heading_ = ping.rpy[2];
+        cping.lat_ = ping.lat_;
+        cping.long_ = ping.long_;
+        cping.pos_ = ping.pos_;
+
+        converted.push_back(cping);
+    }
 
 }
 

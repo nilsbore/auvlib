@@ -13,6 +13,7 @@
 #define JSF_DATA_H
 
 #include <data_tools/std_data.h>
+#include <data_tools/xtf_data.h>
 #include <libjsf/jsf.h>
 #include <Eigen/Dense>
 #define BOOST_NO_CXX11_SCOPED_ENUMS
@@ -30,10 +31,12 @@ struct jsf_sss_ping_side
 {
     std::vector<float> pings;
     std::vector<float> pings_phase;
+    double time_duration;
+
 	template <class Archive>
     void serialize( Archive & ar )
     {
-        ar(CEREAL_NVP(pings), CEREAL_NVP(pings_phase) );
+        ar(CEREAL_NVP(pings), CEREAL_NVP(pings_phase), CEREAL_NVP(time_duration));
     }
 };
 
@@ -41,25 +44,27 @@ struct jsf_sss_ping
 {
     using PingsT = std::vector<jsf_sss_ping, Eigen::aligned_allocator<jsf_sss_ping> >;
 
-    bool first_in_file_;
     std::string time_string_; // readable time stamp string
     long long time_stamp_; // posix time stamp
+
     jsf_sss_ping_side port;
     jsf_sss_ping_side stbd;
-
+    bool first_in_file_;
+    Eigen::Vector3d rpy;
+    double lat_;
+    double long_;
+    std::string utm_zone;
+    double sound_vel;
+    uint16_t frequency;
+    Eigen::Vector3d pos_;
 
 	template <class Archive>
     void serialize( Archive & ar )
     {
-        ar(CEREAL_NVP(first_in_file_), CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_), CEREAL_NVP(port), CEREAL_NVP(stbd));
+        ar(CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_), CEREAL_NVP(port), CEREAL_NVP(stbd), CEREAL_NVP(first_in_file_), CEREAL_NVP(rpy), CEREAL_NVP(lat_), CEREAL_NVP(long_), CEREAL_NVP(utm_zone), CEREAL_NVP(sound_vel), CEREAL_NVP(frequency), CEREAL_NVP(pos_));
     }
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
-
-
-cv::Mat make_waterfall_image(const jsf_sss_ping::PingsT& pings);
-void show_waterfall_image(const jsf_sss_ping::PingsT& pings);
-
 
 struct jsf_dvl_ping
 {
@@ -95,6 +100,11 @@ struct jsf_dvl_ping
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 };
+
+cv::Mat make_waterfall_image(const jsf_sss_ping::PingsT& pings);
+void show_waterfall_image(const jsf_sss_ping::PingsT& pings);
+jsf_sss_ping::PingsT filter_frequency(const jsf_sss_ping::PingsT& pings, int desired_freq);
+xtf_data::xtf_sss_ping::PingsT convert_to_xtf_pings(const jsf_sss_ping::PingsT& pings);
 
 
 } // namespace jsf_data
