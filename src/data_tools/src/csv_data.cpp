@@ -264,8 +264,12 @@ csv_asvp_sound_speed::EntriesT parse_file(const boost::filesystem::path& file)
             continue;
         }
         istringstream iss(line);
-
 		iss >> dbar >> vel;
+
+        if (counter >= entry.dbars.rows()) {
+            entry.dbars.conservativeResize(counter+1000);
+            entry.vels.conservativeResize(counter+1000);
+        }
         entry.dbars(counter) = dbar;
         entry.vels(counter) = vel;
         ++counter;
