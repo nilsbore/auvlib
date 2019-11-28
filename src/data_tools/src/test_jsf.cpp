@@ -25,17 +25,26 @@ void test_parse_sss(const boost::filesystem::path& path)
     jsf_sss_ping::PingsT pings = parse_file<jsf_sss_ping>(path);
     int rows = pings.size();
     int cols = pings[0].port.pings.size() + pings[0].stbd.pings.size();
+
+    for (const jsf_data::jsf_sss_ping& ping : pings) {
+        cout << "Ping duration:" << ping.port.time_duration << endl;
+        cout << "Ping pos: " << ping.pos_.transpose() << endl;
+        cout << "Ping rpy: " << ping.rpy.transpose() << endl;
+    }
+
+    jsf_sss_ping::PingsT filtered_pings = filter_frequency(pings, 21269);
  
     printf("rows num: %d\n", rows);
     printf("cols num: %d\n", cols);
-    show_waterfall_image(pings);
+    show_waterfall_image(filtered_pings);
 
 }
 
 void test_parse_dvl(const boost::filesystem::path& path)
 {
     jsf_dvl_ping::PingsT pings = parse_file<jsf_dvl_ping>(path);
-    for (auto i:pings){
+    cout << "Number of dvl pings: " << pings.size() << endl;
+    for (auto i : pings) {
         if(i.error_)  cout << "Error occured, time string is: " << i.time_string_ << endl;
         
         bool all_false_flag=true;
@@ -46,7 +55,9 @@ void test_parse_dvl(const boost::filesystem::path& path)
         if (all_false_flag) cout << "All flags are false, time string is: " << i.time_string_ << endl;
     
     }
-    cout << "Sound velocity from the first dvl data: " << pings[0].sound_vel_ << " m/s" << endl;
+    if (!pings.empty()) {
+        cout << "Sound velocity from the first dvl data: " << pings[0].sound_vel_ << " m/s" << endl;
+    }
 }
 
 int main(int argc, char** argv){

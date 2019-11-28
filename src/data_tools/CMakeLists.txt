@@ -130,7 +130,7 @@ endif()
 
 target_link_libraries(xtf_data PUBLIC std_data navi_data xtf_reader lat_long_utm ${OpenCV_LIBS})
 
-target_link_libraries(jsf_data PUBLIC std_data ${OpenCV_LIBS})
+target_link_libraries(jsf_data PUBLIC std_data lat_long_utm xtf_data ${OpenCV_LIBS})
 
 target_link_libraries(all_data navi_data lat_long_utm csv_data ${OpenCV_LIBS})
 
