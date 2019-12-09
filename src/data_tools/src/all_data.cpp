@@ -117,28 +117,16 @@ vector<ReturnType, Eigen::aligned_allocator<ReturnType> > parse_file(const boost
 */
 
 template <typename ReturnType, typename AllHeaderType>
-ReturnType read_datagram(std::ifstream& input, const AllHeaderType& header)
+ReturnType read_datagram(std::istream& input, const AllHeaderType& header)
 {
     ReturnType rtn;
 	return rtn;
 }
 
 template <typename ReturnType, typename AllHeaderType, int Code>
-vector<ReturnType, Eigen::aligned_allocator<ReturnType> > parse_file_impl(const boost::filesystem::path& path)
+vector<ReturnType, Eigen::aligned_allocator<ReturnType> > parse_stream_impl(istream& input)
 {
 	vector<ReturnType, Eigen::aligned_allocator<ReturnType> > returns;
-    if (boost::filesystem::extension(path) != ".all") {
-        cout << "Not an .all file, skipping..." << endl;
-        return returns;
-    }
-
-    std::ifstream input;
-	input.open(path.string(), std::ios::binary);
-	if (input.fail()) {
-        cout << "ERROR: Cannot open the file..." << endl;
-        exit(0);
-    }
-    //cout << "Opened " << path << " for reading..." << endl;
 
     unsigned int nbr_bytes;
     unsigned char start_id;
@@ -201,6 +189,25 @@ vector<ReturnType, Eigen::aligned_allocator<ReturnType> > parse_file_impl(const 
 	return returns;
 }
 
+template <typename ReturnType, typename AllHeaderType, int Code>
+vector<ReturnType, Eigen::aligned_allocator<ReturnType> > parse_file_impl(const boost::filesystem::path& path)
+{
+    if (boost::filesystem::extension(path) != ".all") {
+        cout << "Not an .all file, skipping..." << endl;
+        return vector<ReturnType, Eigen::aligned_allocator<ReturnType> >(0);
+    }
+
+    std::ifstream input;
+	input.open(path.string(), std::ios::binary);
+	if (input.fail()) {
+        cout << "ERROR: Cannot open the file..." << endl;
+        exit(0);
+    }
+    //cout << "Opened " << path << " for reading..." << endl;
+    
+    return parse_stream_impl<ReturnType, AllHeaderType, Code>(input);
+}
+
 pair<long long, string> parse_all_time(unsigned int date, unsigned int time)
 {
     const boost::posix_time::ptime epoch = boost::posix_time::time_from_string("1970-01-01 00:00:00.000");
@@ -227,7 +234,7 @@ pair<long long, string> parse_all_time(unsigned int date, unsigned int time)
 }
 
 template <>
-all_mbes_ping read_datagram<all_mbes_ping, all_xyz88_datagram>(std::ifstream& input, const all_xyz88_datagram& header)
+all_mbes_ping read_datagram<all_mbes_ping, all_xyz88_datagram>(std::istream& input, const all_xyz88_datagram& header)
 {
 	//cout << "Total number of beams: " << header.nbr_beams << endl;
     //cout << "Valid number of beams: " << header.nbr_valid << endl;
@@ -264,7 +271,7 @@ all_mbes_ping read_datagram<all_mbes_ping, all_xyz88_datagram>(std::ifstream& in
 }
 
 template <>
-all_nav_entry read_datagram<all_nav_entry, all_position_datagram>(std::ifstream& input, const all_position_datagram& header)
+all_nav_entry read_datagram<all_nav_entry, all_position_datagram>(std::istream& input, const all_position_datagram& header)
 {
 	//cout << "Got a position datagram, skipping: " << int(header.nbr_bytes_input) << endl;
 
@@ -292,7 +299,7 @@ all_nav_entry read_datagram<all_nav_entry, all_position_datagram>(std::ifstream&
 }
 
 template <>
-all_nav_depth read_datagram<all_nav_depth, all_depth_datagram>(std::ifstream& input, const all_depth_datagram& header)
+all_nav_depth read_datagram<all_nav_depth, all_depth_datagram>(std::istream& input, const all_depth_datagram& header)
 {
 	all_nav_depth entry;
 	entry.id_ = header.height_count;
@@ -305,7 +312,7 @@ all_nav_depth read_datagram<all_nav_depth, all_depth_datagram>(std::ifstream& in
 }
 
 template <>
-all_nav_attitude read_datagram<all_nav_attitude, all_attitude_datagram>(std::ifstream& input, const all_attitude_datagram& header)
+all_nav_attitude read_datagram<all_nav_attitude, all_attitude_datagram>(std::istream& input, const all_attitude_datagram& header)
 {
 	all_nav_attitude entry;
 	entry.id_ = header.attitude_count;
@@ -332,7 +339,7 @@ all_nav_attitude read_datagram<all_nav_attitude, all_attitude_datagram>(std::ifs
 }
 
 template <>
-all_echosounder_depth read_datagram<all_echosounder_depth, all_echosounder_depth_datagram>(std::ifstream& input, const all_echosounder_depth_datagram& header)
+all_echosounder_depth read_datagram<all_echosounder_depth, all_echosounder_depth_datagram>(std::istream& input, const all_echosounder_depth_datagram& header)
 {
 	all_echosounder_depth entry;
 	entry.id_ = header.echo_count;
@@ -561,6 +568,30 @@ std_data::attitude_entry::EntriesT convert_attitudes(const all_nav_attitude::Ent
     });
 
     return entries;
+}
+
+void StreamParser::parse_packet(const std::string& packet_load)
+{
+    std::istringstream input(packet_load);
+
+    if (mbes_callback) {
+        all_mbes_ping::PingsT pings = parse_stream_impl<all_mbes_ping, all_xyz88_datagram, 88>(input);
+        if (!pings.empty()) {
+            mbes_callback(pings[0]);
+        }
+        input.clear();
+        input.seekg(0, std::ios::beg);
+    }
+
+    if (nav_entry_callback) {
+        all_nav_entry::EntriesT entries = parse_stream_impl<all_nav_entry, all_position_datagram, 80>(input);
+        if (!entries.empty()) {
+            nav_entry_callback(entries[0]);
+        }
+        input.clear();
+        input.seekg(0, std::ios::beg);
+    }
+
 }
 
 } // namespace all_data
