@@ -12,6 +12,8 @@
 #ifndef DATA_STRUCTURES_H
 #define DATA_STRUCTURES_H
 
+
+
 #include <map>
 #include <Eigen/Dense>
 #include <eigen_cereal/eigen_cereal.h>
@@ -33,6 +35,13 @@
 #ifndef M_PI // For windows
   #define M_PI 3.14159265358979323846
 #endif
+
+//Here you can comment out more decending from highest to have less printout, comment all to have none from the XTF
+#define M_VERBOSE_DATA_0
+#define M_VERBOSE_DATA_1
+#define M_VERBOSE_DATA_2
+//#define M_VERBOSE_DATA_3
+//#define M_VERBOSE_DATA_4
 
 namespace std_data {
 
@@ -157,12 +166,16 @@ std::vector<T, Eigen::aligned_allocator<T> > parse_folder(const boost::filesyste
     std::vector<T, Eigen::aligned_allocator<T> > pings;
 
     if(!boost::filesystem::is_directory(folder)) {
+#ifdef VERBOSE_DATA_0
         std::cout << folder << " is not a directory containing" << std::endl;
+#endif
         return pings;
     }
 
     for (auto& entry : boost::make_iterator_range(boost::filesystem::directory_iterator(folder), {})) {
+#ifdef VERBOSE_DATA_0
         std::cout << entry << "\n";
+#endif
 	    if (boost::filesystem::is_directory(entry.path())) {
 		    continue;
 		}
@@ -180,8 +193,10 @@ std::vector<T, Eigen::aligned_allocator<T> > parse_folder_ordered(const boost::f
   	std::list < boost::filesystem::directory_entry>filelist;	
 
     	if(!boost::filesystem::is_directory(folder)) {
-        	std::cout << folder << " is not a directory containing" << std::endl;
-        	return pings;
+      #ifdef VERBOSE_DATA_0
+  	std::cout << folder << " is not a directory containing" << std::endl;
+      #endif
+  	return pings;
     	}
 
     	for (auto& entry : boost::make_iterator_range(boost::filesystem::directory_iterator(folder), {})) {
@@ -190,7 +205,9 @@ std::vector<T, Eigen::aligned_allocator<T> > parse_folder_ordered(const boost::f
     	}	
 	filelist.sort();
 	for(boost::filesystem::directory_entry entry :filelist){
+#ifdef VERBOSE_DATA_0
 		std::cout<<"parsing file "<<entry.path()<<"\n";
+#endif
 		std::vector<T, Eigen::aligned_allocator<T> > file_pings = parse_file<T>(entry.path());
 		pings.insert(pings.end(), file_pings.begin(), file_pings.end());
     	}
@@ -207,7 +224,9 @@ template <typename T>
 T read_data(const boost::filesystem::path& path)
 {
   if (!boost::filesystem::exists(path)) {
+#ifdef VERBOSE_DATA_0
         std::cout << "File " << path << " does not exist..." << std::endl;
+#endif
         exit(0);
     }
   T rtn;

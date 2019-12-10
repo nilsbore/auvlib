@@ -5,6 +5,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+//Here you can comment out more decending from highest to have less printout, comment all to have none from the XTF  
+//#define M_VERBOSE_XTF_0
+//#define M_VERBOSE_XTF_1
+//#define M_VERBOSE_XTF_2
+//#define M_VERBOSE_XTF_3
+//#define M_VERBOSE_XTF_4
+
+
 // Possible types of data when multiple channels are involved.
 #define NUM_DATA_TYPES 7
 char *ChannelTypes[NUM_DATA_TYPES] = {
@@ -101,12 +109,14 @@ void ReadXTFFile(int infl, XTFFILEHEADER* XTFFileHeader, unsigned char* buffer) 
             break;
 
          default : ptr = "OTHER"; 
+#ifdef M_VERBOSE_XTF_0
             printf("%s  \r", ptr);
+#endif
             continue;
             break;
       }
 
-
+#ifdef M_VERBOSE_XTF_0
       printf("%s %02u/%02u/%02u %02u:%02u:%02u Y=%.6lf X=%.6lf pitch=%.1f roll=%.1f\r",
          ptr,
          PingHeader->Month,
@@ -119,25 +129,32 @@ void ReadXTFFile(int infl, XTFFILEHEADER* XTFFileHeader, unsigned char* buffer) 
          PingHeader->SensorXcoordinate,
          PingHeader->SensorPitch,
          PingHeader->SensorRoll);
-
+#endif
       //if (kbhit()) if (getchar() == 27) {
       if (getchar() == 27) {
+#ifdef M_VERBOSE_XTF_0
          printf("\nUser pressed ESC\n");
+#endif
          break; // press ESC to quit.
       }
    }
 
    if (amt == 0xFFFF) {
+#ifdef M_VERBOSE_XTF_0
       printf("\nStopped - read -1 bytes\n");
+#endif
    }
    else {
+#ifdef M_VERBOSE_XTF_0
       printf("\nDon't know why loop stopped.\n");
+#endif
    }
-
+#ifdef M_VERBOSE_XTF_0
    printf("\n\nPacket count: %u sonar, %u hidden, %u bathy, %u annotation, %u attitude, %d raw serial\n",
       NumSonar, NumHidden, NumBathy, NumAnnotation, NumAttitude, NumSerial); 
 
    printf("\nDone!\n");
+#endif
 }
 
 BOOL ReadXTFHeader(int infl, XTFFILEHEADER *XTFFileHeader, unsigned char* buffer) {
@@ -150,19 +167,24 @@ BOOL ReadXTFHeader(int infl, XTFFILEHEADER *XTFFileHeader, unsigned char* buffer
    // Read file header
    //
    if (read(infl, XTFFileHeader, FILEHEADERSIZE) != FILEHEADERSIZE) {
+#ifdef M_VERBOSE_XTF_0
       printf("Error reading file header!\n");
+#endif
       return FALSE;
    }
 
    if (XTFFileHeader->FileFormat != FMT_XTF) {
+#ifdef M_VERBOSE_XTF_0
       printf("Bad header ID (%d) -- this file is not an XTF format file!\n", XTFFileHeader->FileFormat);
+#endif
       return FALSE;
    }
-
+#ifdef M_VERBOSE_XTF_0
    printf("This file contains %ld sonar pings and %ld bathymetry pings\n\n",
       XTFFmtLastPingNumberInFile(infl, XTF_HEADER_SONAR, buffer),
       XTFFmtLastPingNumberInFile(infl, XTF_HEADER_BATHY, buffer) + 
       XTFFmtLastPingNumberInFile(infl, XTF_HEADER_ELAC, buffer));
+#endif
 
    // align back to start of data.  0xFF matches any kind of packet.
    int StartPing = 0;
@@ -176,9 +198,9 @@ void ProcessXTFHeader(int infl, XTFFILEHEADER *XTFFileHeader, unsigned char* buf
 /*****************************************************************************/
 
    int chan;
-
+#ifdef M_VERBOSE_XTF_0
    printf("\nXTF File header information:\n");
-
+#endif
    int NumSonarChans = XTFFileHeader->NumberOfSonarChannels;
    int NumBathyChans = XTFFileHeader->NumberOfBathymetryChannels;
 
@@ -196,21 +218,23 @@ void ProcessXTFHeader(int infl, XTFFILEHEADER *XTFFileHeader, unsigned char* buf
          read(infl, buffer+1024, Cnt*1024);
       }
    }
+#ifdef M_VERBOSE_XTF_0
 
    printf("Recording program version: %s\n",XTFFileHeader->RecordingProgramVersion);
 
    printf("Number of Sonar channels: %d\n", NumSonarChans);
-
+#endif
    for (chan=0; chan<NumSonarChans; chan++) {
       int chtype = XTFFileHeader->ChanInfo[chan].TypeOfChannel;
       if (chtype >= NUM_DATA_TYPES) chtype = NUM_DATA_TYPES-1;
-
+#ifdef M_VERBOSE_XTF_0
       printf("   Sonar channel %d is %s, %d byte(s) per sample\n", 
          chan, 
          ChannelTypes[chtype],
          XTFFileHeader->ChanInfo[chan].BytesPerSample);
+#endif
    }                                                   
-
+#ifdef M_VERBOSE_XTF_0
    printf("Number of Bathymetry channels: %d\n", NumBathyChans);
    for (chan=0; chan<NumBathyChans; chan++) {
       printf("   Bathy channel %d is %s, mounted %.1f degrees\n", 
@@ -220,6 +244,7 @@ void ProcessXTFHeader(int infl, XTFFILEHEADER *XTFFileHeader, unsigned char* buf
    }
 
    printf("\n");
+#endif
 }
 
 unsigned int ReadXTFFormatFileData(int infl, unsigned char *buffer) {
@@ -242,14 +267,20 @@ unsigned int ReadXTFFormatFileData(int infl, unsigned char *buffer) {
 
       // Read in 64 bytes just to get going
    if ((AmountRead = read(infl, SrcPtr, 64)) != 64) {
-      //printf("\nCan't read 64 bytes\n");
+#ifdef M_VERBOSE_XTF_4
+      printf("\nCan't read 64 bytes\n");
+#endif
       return 0xFFFF;
    }
-if (0)printf("Amount Read %d",AmountRead);
+#ifdef M_VERBOSE_XTF_4
+printf("Amount Read %d",AmountRead);
+#endif
    PacketHeader = (XTFPINGHEADER *) SrcPtr;
    RecordLength = PacketHeader->NumBytesThisRecord;
    if (RecordLength> 268435456) {
+#ifdef M_VERBOSE_XTF_0
      printf("Oh No! Record Length too large for buffer"); 
+#endif
      return 0xFFFF;
    }
    SrcPtr += AmountRead;  
@@ -350,7 +381,9 @@ BOOL AlignIsisFmtFile(int infl, unsigned char RecordType, unsigned char *TempBuf
          return TRUE;
       }
    }
-   // printf("\nNever found alignment!\n");
+#ifdef M_VERBOSE_XTF_4
+   printf("\nNever found alignment!\n");
+#endif
    return FALSE;
 }
    
@@ -571,14 +604,17 @@ void ProcessMultibeamPing(XTFBATHHEADER *PingHeader) {
 
    if (LastTimeTag) {
       if (BathyTimeTag < LastTimeTag) {
-         // printf("\n*****BATHY TIME WENT BACKWARDS by %ld milliseconds!\n",LastTimeTag-BathyTimeTag);
+#ifdef M_VERBOSE_XTF_4
+         printf("\n*****BATHY TIME WENT BACKWARDS by %ld milliseconds!\n",LastTimeTag-BathyTimeTag);
+#endif
       }
       else {
          AvgN += (BathyTimeTag - LastTimeTag);
          AvgD ++;
-
-         // printf("Bathy time diff: %ld (avg=%ld)\n", BathyTimeTag - LastTimeTag, AvgN/ AvgD);
-      }
+#ifdef M_VERBOSE_XTF_4
+         printf("Bathy time diff: %ld (avg=%ld)\n", BathyTimeTag - LastTimeTag, AvgN/ AvgD);
+#endif
+      	}
    }
    LastTimeTag = BathyTimeTag;
    //

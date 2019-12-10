@@ -1,4 +1,4 @@
-/* Copyright 2018 Nils Bore (nbore@kth.se)
+/* Copyright 2019 john folkesson (johnf@kth.se)
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  *
@@ -12,7 +12,7 @@
 #include <iostream>
 #include <cereal/archives/json.hpp>
 #include <data_tools/xtf_data.h>
-#include <data_tools/dtools.hpp>
+#include <preprocess/sidescan.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <cstdlib>
@@ -28,90 +28,89 @@ extern int verbose_level;
 
 int main(int argc, char** argv)
 {
-  dtools::SidescanSide port("Port");
-  dtools::SidescanSide stbd("S");
-  if (1){
-    boost::filesystem::path folder(argv[1]);
-    port.xtf_parse(folder);
-    cout<<"Port parsed\n";
-    stbd.xtf_parse(folder);
-    cout<<"stbd parsed\n";
-    //xtf_sss_ping::PingsT pings = parse_folder_ordered<xtf_sss_ping>(folder);
-    //port=pings;
-    //  stbd=pings;
-    std::cout<<folder<<" is parsed\n";
+  boost::filesystem::path folder(argv[1]);
+  preprocess::Sidescan sss(folder);
+  std::cout<<folder<<" is parsed\n";
+  preprocess::Sidescan temp;
+  //pointless illustrations:
+  //You can find an index for a  time value:
+  Cure::Timestamp t(1787364382.2);
+  long index=sss.find(t);
+  //index is actually -1 now if that time in seconds since 1970 is not in sss
+  //You can grap part of sss between two index values:
+  sss.set(temp, 100,250);
+  // (You can also do that with Cure::Timestamps.)
+  //You can translate between the types with this:
+  xtf_data::xtf_sss_ping::PingsT pings;
+  sss.add(pings,200,400);
+  std::cout<<"translated partial\n";
+  temp=pings;
+  std::cout<<"translated back\n";
+  // pointless illustration section done.
+  long len=0;
+  std::cout<<&sss.side[1]<<" "<<len<<"\n";
+  preprocess::SidescanSide *cs=sss.side[1].change(len);
+  std::cout<<cs<<" "<<len<<"\n";
+  while (cs){
+    cs=cs->change(len);
+    std::cout<<cs<<" "<<len<<"\n";
   }
-
+  len=0;
+  cs=sss.side[2].change(len);
+  while (cs)cs=cs->change(len);
+  std::cout<<cs<<" "<<len<<"\n";
+  std::cout<<sss.side[1].h<<" "<<sss.side[2].h<<" "<<sss.h<<"\n ";
   long maxIntensity=65535;
   long rowdownsample=1;
   if (argc>2) maxIntensity=atol(argv[2]);
   if (argc>3) rowdownsample=atol(argv[3]);
-  long p_nadir[port.h];
-  long s_nadir[stbd.h];
-  long artif[port.h];
-  cout<<port.h<<" "<<port.alloc<<" "<<port.w<<" "<<port.next;
-  port.slant_range(0);
-
-  //  cout<<port[port.alloc+10][0];
+  long p_nadir[sss[1].h];
+  long s_nadir[sss[2].h];
+  long artif[sss[1].h];
   // generally the minimum intensity param must be adjusted for differe bottoms and SSL or other factors
   double minintensity=10000;
-  port.removeLineArtifact(artif,minintensity,8,100,1);
-  port.findNadir(p_nadir, minintensity, 8, 80);
-  stbd.findNadir(s_nadir, minintensity, 8, 80);
-  //plot the nadir in a bright wide line
-
-  for (int i=0; i<port.h; i++){
+  //remove the annoying line in the port and set to 0
+  sss[1].removeLineArtifact(artif,minintensity,8,100,1);
+  // set the nadir arrays 
+  sss.findNadir(p_nadir,s_nadir, minintensity, 8, 80);
+  //draw the nadir line found in the pings:  
+  for (int i=0; i<sss.h; i++){
       for (int k=0; k<40; k++){
 	if (p_nadir[i]-k>0)
-	  port[i][p_nadir[i]-k]=maxIntensity;
+	  sss[1][i][p_nadir[i]-k]=maxIntensity;
 	if (s_nadir[i]-k>0)
-	stbd[i][s_nadir[i]-k]=maxIntensity;
+	  sss[2][i][s_nadir[i]-k]=maxIntensity;
       }
   }
-  port.show_waterfall(1280,512,maxIntensity, 0, -1,
+
+
+  sss[1].show_waterfall(1280,512,maxIntensity, 0, -1,
   		      "Port Before Normalization");
-  stbd.show_waterfall(1280, 512,maxIntensity, 0, -1,
+
+  sss[2].show_waterfall(1280, 512,maxIntensity, 0, -1,
   		      "Starboard Before Normalization");
  
   std::cout<<" Normalizing Now\n";
-  double roll[port.h];
+  // double roll[port.h];
+   double roll[sss[1].h];
   double nadir_angle=(22.0*M_PI/180.0);
   memset(roll, 0, sizeof(roll));
-  port.normalize(p_nadir,s_nadir, 0, nadir_angle);
-    stbd.normalize(p_nadir,s_nadir, 0, nadir_angle);
-    port.show_waterfall(1280, 512,maxIntensity, 0, -1,
+  // use a tan of incidence angle to normalize images
+  sss.normalize(p_nadir,s_nadir, 0, nadir_angle);
+  
+  sss[1].show_waterfall(1280, 512,maxIntensity, 0, -1,
 			"Port After Normalization");
-  stbd.show_waterfall(1280, 512,maxIntensity, 0, -1,
+  sss[2].show_waterfall(1280, 512,maxIntensity, 0, -1,
 			"Starboard After Normalization");
-    port.regularize(roll,p_nadir,s_nadir,0.05, .85, nadir_angle);
-    stbd.regularize(roll,p_nadir,s_nadir,0.05, .85, nadir_angle);
-    port.show_waterfall(1280, 512,maxIntensity, 0, -1,
+  
+  std::cout<<" Regularizing Now\n";
+  // set to a canonical representation with equal horizontal bin size of 5 cm
+  sss.regularize(roll,p_nadir,s_nadir,0.05, .85, nadir_angle);
+  
+sss[1].show_waterfall(1280, 512,maxIntensity, 0, -1,
 			"Port After Regularization");
-  stbd.show_waterfall(1280, 512,maxIntensity, 0, -1,
+  sss[2].show_waterfall(1280, 512,maxIntensity, 0, -1,
 			"Starboard After Regularization");
-    /*  pimg=port.make_waterfall_image(1024, maxIntensity, rowdownsample, 0, -1, 0, -1);
-    cv::imshow("After regualrixe port image", pimg);
-    simg=stbd.make_waterfall_image(1024, maxIntensity, rowdownsample, 0, -1,  0, -1);
-    cv::imshow("After regularize starboard image", simg);
-    cv::waitKey();
-    */
-
-    /*
-      for (auto pos = pings.begin(); pos != pings.end(); ) {
-      auto next = std::find_if(pos, pings.end(), [&](const xtf_sss_ping& ping) {
-            return ping.first_in_file_ && (&ping != &(*pos));
-        });
-        xtf_sss_ping::PingsT track_pings(pos, next);
-	int r = track_pings.size()/rowdownsample;
-	cv::Mat waterfall_img = dtools::make_waterfall_image(track_pings, 1024, r, maxIntensity);
-	std::cerr<<n<<"th file\n";
-	n++;
-	cv::imwrite("regularized.png",waterfall_img);
-	cv::imshow("My regularzed image", waterfall_img);
-	cv::waitKey();
-        pos = next;
-    }
-    */
     return 0;
 }
 
