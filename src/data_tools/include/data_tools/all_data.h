@@ -160,7 +160,7 @@ private:
 
 public:
 
-    StreamParser();
+    StreamParser() {}
 
     void parse_packet(const std::string& packet_load);
 
