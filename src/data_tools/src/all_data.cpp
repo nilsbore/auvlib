@@ -570,28 +570,48 @@ std_data::attitude_entry::EntriesT convert_attitudes(const all_nav_attitude::Ent
     return entries;
 }
 
-void StreamParser::parse_packet(const std::string& packet_load)
+bool StreamParser::parse_packet(const std::string& packet_load)
 {
     std::istringstream input(packet_load);
 
-    if (mbes_callback) {
-        all_mbes_ping::PingsT pings = parse_stream_impl<all_mbes_ping, all_xyz88_datagram, 88>(input);
-        if (!pings.empty()) {
-            mbes_callback(pings[0]);
-        }
-        input.clear();
-        input.seekg(0, std::ios::beg);
+    unsigned char start_id;
+    unsigned char data_type;
+
+    input.read(reinterpret_cast<char*>(&start_id), sizeof(start_id));
+    input.read(reinterpret_cast<char*>(&data_type), sizeof(data_type));
+
+    if (start_id != 2) {
+        cout << "Start id not 2: " << start_id << endl;
+        return false;
     }
 
-    if (nav_entry_callback) {
-        all_nav_entry::EntriesT entries = parse_stream_impl<all_nav_entry, all_position_datagram, 80>(input);
-        if (!entries.empty()) {
-            nav_entry_callback(entries[0]);
-        }
-        input.clear();
-        input.seekg(0, std::ios::beg);
+    if (data_type == 88 && mbes_callback) {
+        all_xyz88_datagram header;
+        input.read(reinterpret_cast<char*>(&header), sizeof(header));
+        mbes_callback(read_datagram<all_mbes_ping, all_xyz88_datagram>(input, header));
+    }
+    else if (data_type == 80 && nav_entry_callback) {
+        all_position_datagram header;
+        input.read(reinterpret_cast<char*>(&header), sizeof(header));
+        nav_entry_callback(read_datagram<all_nav_entry, all_position_datagram>(input, header));
+    }
+    else {
+        cout << "No callback for datagram: " << data_type << endl;
+        return false;
     }
 
+	unsigned char end_ident; // End identifier = ETX (Always 03h)
+	unsigned short checksum; // Check sum of data between STX and ETX
+
+    input.read(reinterpret_cast<char*>(&end_ident), sizeof(end_ident));
+    input.read(reinterpret_cast<char*>(&checksum), sizeof(checksum));
+
+    if (end_ident != 3) {
+        cout << "End id not 3: " << end_ident << endl;
+        return false;
+    }
+
+    return true;
 }
 
 } // namespace all_data

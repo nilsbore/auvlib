@@ -162,7 +162,7 @@ public:
 
     StreamParser() {}
 
-    void parse_packet(const std::string& packet_load);
+    bool parse_packet(const std::string& packet_load);
 
     void set_mbes_callback(const std::function<void(all_mbes_ping)>& callback)
     {
