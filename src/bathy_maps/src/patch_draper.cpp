@@ -91,12 +91,12 @@ void PatchDraper::handle_patches()
     Eigen::MatrixXd hits_right;
     Eigen::MatrixXd normals_left;
     Eigen::MatrixXd normals_right;
-    tie(hits_left, hits_right, normals_left, normals_right) = project();
+    tie(hits_left, hits_right, normals_left, normals_right) = project(pings[i]);
 
     // these should take care of computing bending if set
     Eigen::Vector3d origin_port;
     Eigen::Vector3d origin_stbd;
-    tie(origin_port, origin_stbd) = get_port_stbd_sensor_origins();
+    tie(origin_port, origin_stbd) = get_port_stbd_sensor_origins(pings[i]);
     Eigen::VectorXd times_left = compute_times(origin_port, hits_left);
     Eigen::VectorXd times_right = compute_times(origin_stbd, hits_right);
 

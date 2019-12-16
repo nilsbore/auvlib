@@ -21,6 +21,14 @@
 #include <data_tools/xtf_data.h>
 #include <data_tools/csv_data.h>
 
+struct ping_draping_result {
+    Eigen::VectorXd hits;
+    Eigen::VectorXi hits_inds;
+    Eigen::VectorXd intensities;
+    Eigen::VectorXd sss_depths;
+    Eigen::VectorXd sss_model;
+};
+
 struct BaseDraper {
 public:
 
@@ -64,11 +72,11 @@ protected:
 
     // NOTE: these are new style functions
 
-    std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> project();
+    std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> project(const xtf_data::xtf_sss_ping& ping);
 
     double compute_simple_sound_vel();
 
-    std::pair<Eigen::Vector3d, Eigen::Vector3d> get_port_stbd_sensor_origins();
+    std::pair<Eigen::Vector3d, Eigen::Vector3d> get_port_stbd_sensor_origins(const xtf_data::xtf_sss_ping& ping);
 
     Eigen::VectorXd compute_times(const Eigen::Vector3d& sensor_origin, const Eigen::MatrixXd& P);
 
@@ -100,6 +108,12 @@ protected:
     void add_texture_intensities(const Eigen::MatrixXd& hits, const Eigen::VectorXd& intensities);
 
 public:
+
+    std::pair<ping_draping_result, ping_draping_result> project_ping(const xtf_data::xtf_sss_ping& ping, int nbr_bins);
+    ping_draping_result project_ping_side(const xtf_data::xtf_sss_ping_side& sensor, const Eigen::MatrixXd& hits,
+                                          const Eigen::MatrixXd& hits_normals, const Eigen::Vector3d& origin,
+                                          int nbr_bins);
+
 
     void set_texture(const Eigen::MatrixXd& texture, const BoundsT& texture_bounds);
     void set_sidescan_yaw(double new_sensor_yaw) { sensor_yaw = new_sensor_yaw; }

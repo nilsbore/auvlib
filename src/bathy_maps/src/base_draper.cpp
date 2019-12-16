@@ -232,11 +232,11 @@ bool BaseDraper::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
         Eigen::MatrixXd hits_right;
         Eigen::MatrixXd normals_left;
         Eigen::MatrixXd normals_right;
-        tie(hits_left, hits_right, normals_left, normals_right) = project();
+        tie(hits_left, hits_right, normals_left, normals_right) = project(pings[i]);
 
         Eigen::Vector3d origin_port;
         Eigen::Vector3d origin_stbd;
-        tie(origin_port, origin_stbd) = get_port_stbd_sensor_origins();
+        tie(origin_port, origin_stbd) = get_port_stbd_sensor_origins(pings[i]);
         Eigen::VectorXd times_left = compute_times(origin_port, hits_left);
         Eigen::VectorXd times_right = compute_times(origin_stbd, hits_right);
 
@@ -295,23 +295,23 @@ void drape_viewer(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
     viewer.show();
 }
 
-pair<Eigen::Vector3d, Eigen::Vector3d> BaseDraper::get_port_stbd_sensor_origins()
+pair<Eigen::Vector3d, Eigen::Vector3d> BaseDraper::get_port_stbd_sensor_origins(const xtf_data::xtf_sss_ping& ping)
 {
-    Eigen::Matrix3d Ry = Eigen::AngleAxisd(pings[i].pitch_, Eigen::Vector3d::UnitY()).matrix();
-    Eigen::Matrix3d Rz = Eigen::AngleAxisd(pings[i].heading_, Eigen::Vector3d::UnitZ()).matrix();
-    Eigen::Vector3d offset_pos = pings[i].pos_ - offset;
+    Eigen::Matrix3d Ry = Eigen::AngleAxisd(ping.pitch_, Eigen::Vector3d::UnitY()).matrix();
+    Eigen::Matrix3d Rz = Eigen::AngleAxisd(ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
+    Eigen::Vector3d offset_pos = ping.pos_ - offset;
     Eigen::Vector3d origin_port = offset_pos + Rz*Ry*sensor_offset_port;
     Eigen::Vector3d origin_stbd = offset_pos + Rz*Ry*sensor_offset_stbd;
     return make_pair(origin_port, origin_stbd);
 }
 
 // New style functions follow here:
-tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> BaseDraper::project()
+tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> BaseDraper::project(const xtf_data::xtf_sss_ping& ping)
 {
-    cout << "Setting new position: " << pings[i].pos_.transpose() << endl;
+    cout << "Setting new position: " << ping.pos_.transpose() << endl;
     Eigen::Matrix3d Rcomp = Eigen::AngleAxisd(sensor_yaw, Eigen::Vector3d::UnitZ()).matrix();
-    Eigen::Matrix3d Ry = Eigen::AngleAxisd(pings[i].pitch_, Eigen::Vector3d::UnitY()).matrix();
-    Eigen::Matrix3d Rz = Eigen::AngleAxisd(pings[i].heading_, Eigen::Vector3d::UnitZ()).matrix();
+    Eigen::Matrix3d Ry = Eigen::AngleAxisd(ping.pitch_, Eigen::Vector3d::UnitY()).matrix();
+    Eigen::Matrix3d Rz = Eigen::AngleAxisd(ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
     Eigen::Matrix3d R = Rz*Ry*Rcomp;
 
     Eigen::MatrixXd hits_left;
@@ -321,7 +321,7 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> BaseDr
     Eigen::VectorXd mod_left;
     Eigen::VectorXd mod_right;
 
-    Eigen::Vector3d offset_pos = pings[i].pos_ - offset;
+    Eigen::Vector3d offset_pos = ping.pos_ - offset;
     if ((offset_pos - pos_small).norm() > tracing_map_size/4.) {
         tie(V1_small, F1_small) = mesh_map::cut_square_around_point(V1, F1, offset_pos.head<2>(), tracing_map_size);
         if (V1_small.rows() == 0) {
@@ -336,13 +336,13 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> BaseDr
     double tilt_angle;
     if (true) {
         double depth = .8*depth_mesh_underneath_vehicle(offset_pos, V1_small, F1_small); // make it slightly wider
-        double max_distance = .5*compute_simple_sound_vel()*pings[i].port.time_duration;
+        double max_distance = .5*compute_simple_sound_vel()*ping.port.time_duration;
         beam_width = acos(depth/max_distance);
         tilt_angle = beam_width/2.;
     }
     else {
-        beam_width = pings[i].port.beam_width + 0.2;
-        tilt_angle = 1.4*pings[i].port.tilt_angle;
+        beam_width = ping.port.beam_width + 0.2;
+        tilt_angle = 1.4*ping.port.tilt_angle;
     }
 
     /*
@@ -351,7 +351,7 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> BaseDr
     */
     Eigen::Vector3d origin_port;
     Eigen::Vector3d origin_stbd;
-    tie(origin_port, origin_stbd) = get_port_stbd_sensor_origins();
+    tie(origin_port, origin_stbd) = get_port_stbd_sensor_origins(ping);
 
     auto start = chrono::high_resolution_clock::now();
     //tie(hits_left, hits_right, hits_left_inds, hits_right_inds, mod_left, mod_right) = embree_compute_hits(offset_pos, R, 1.4*pings[i].port.tilt_angle, pings[i].port.beam_width + 0.2, V1_small, F1_small);
@@ -572,4 +572,59 @@ Eigen::VectorXd BaseDraper::compute_model_intensities(const Eigen::MatrixXd& hit
     }
 
     return compute_model_intensities(dists, thetas);
+}
+
+pair<ping_draping_result, ping_draping_result> BaseDraper::project_ping(const xtf_data::xtf_sss_ping& ping, int nbr_bins)
+{
+    Eigen::Vector3d pos = ping.pos_ - offset;
+
+    Eigen::MatrixXd hits_left;
+    Eigen::MatrixXd hits_right;
+    Eigen::MatrixXd normals_left;
+    Eigen::MatrixXd normals_right;
+    tie(hits_left, hits_right, normals_left, normals_right) = project(ping);
+
+    // these should take care of computing bending if set
+    // TODO: add origin to compute times
+    Eigen::Vector3d origin_port;
+    Eigen::Vector3d origin_stbd;
+    tie(origin_port, origin_stbd) = get_port_stbd_sensor_origins(ping);
+
+    ping_draping_result left = project_ping_side(ping.port, hits_left, normals_left, origin_port, nbr_bins);
+    ping_draping_result right = project_ping_side(ping.stbd, hits_right, normals_right, origin_stbd, nbr_bins);
+
+    return make_pair(left, right);
+}
+
+ping_draping_result BaseDraper::project_ping_side(const xtf_data::xtf_sss_ping_side& sensor, const Eigen::MatrixXd& hits,
+                                      const Eigen::MatrixXd& hits_normals, const Eigen::Vector3d& origin,
+                                      int nbr_bins)
+{
+    ping_draping_result res;
+    res.hits = hits;
+
+    Eigen::VectorXd times = compute_times(origin, hits);
+
+    // compute the elevation waterfall row
+    res.sss_depths = convert_to_time_bins(times, hits.col(2), sensor, nbr_bins);
+
+    // compute the intensities of the model
+    Eigen::VectorXd model_intensities = compute_model_intensities(hits, hits_normals, origin);
+    res.sss_model = convert_to_time_bins(times, model_intensities, sensor, nbr_bins);
+
+    // compute the ground truth intensities
+    res.intensities = compute_intensities(times, sensor);
+
+    // compute waterfall image inds of hits
+    res.hits_inds = compute_bin_indices(times, sensor, nbr_bins);
+
+    cout << "Adding hits" << endl;
+
+    /*
+    Eigen::Matrix3d Rcomp = Eigen::AngleAxisd(sensor_yaw, Eigen::Vector3d::UnitZ()).matrix();
+    Eigen::Matrix3d Ry = Eigen::AngleAxisd(pings[i].pitch_, Eigen::Vector3d::UnitY()).matrix();
+    Eigen::Matrix3d Rz = Eigen::AngleAxisd(pings[i].heading_, Eigen::Vector3d::UnitZ()).matrix();
+    */
+
+    return res;
 }

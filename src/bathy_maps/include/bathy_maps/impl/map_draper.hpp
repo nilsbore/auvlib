@@ -78,53 +78,18 @@ bool MapDraper<MapSaver>::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
         return false;
     }
 
+    ping_draping_result left, right;
+    tie(left, right) = project_ping(pings[i], map_image_builder.get_waterfall_bins());
+
+    // add the 3d hits and waterfall images to the builder object
     Eigen::Vector3d pos = pings[i].pos_ - offset;
-
-    Eigen::MatrixXd hits_left;
-    Eigen::MatrixXd hits_right;
-    Eigen::MatrixXd normals_left;
-    Eigen::MatrixXd normals_right;
-    tie(hits_left, hits_right, normals_left, normals_right) = project();
-
-    // these should take care of computing bending if set
-    // TODO: add origin to compute times
-    Eigen::Vector3d origin_port;
-    Eigen::Vector3d origin_stbd;
-    tie(origin_port, origin_stbd) = get_port_stbd_sensor_origins();
-    Eigen::VectorXd times_left = compute_times(origin_port, hits_left);
-    Eigen::VectorXd times_right = compute_times(origin_stbd, hits_right);
-
-    // compute the elevation waterfall row
-    Eigen::VectorXd sss_depths_left = convert_to_time_bins(times_left, hits_left.col(2), pings[i].port, map_image_builder.get_waterfall_bins());
-    Eigen::VectorXd sss_depths_right = convert_to_time_bins(times_right, hits_right.col(2), pings[i].stbd, map_image_builder.get_waterfall_bins());
-
-    // compute the intensities of the model
-    Eigen::VectorXd model_intensities_left = compute_model_intensities(hits_left, normals_left, pos);
-    Eigen::VectorXd model_intensities_right = compute_model_intensities(hits_right, normals_right, pos);
-    Eigen::VectorXd sss_model_left = convert_to_time_bins(times_left, model_intensities_left, pings[i].port, map_image_builder.get_waterfall_bins());
-    Eigen::VectorXd sss_model_right = convert_to_time_bins(times_right, model_intensities_right, pings[i].stbd, map_image_builder.get_waterfall_bins());
-
-    // compute the ground truth intensities
-    Eigen::VectorXd intensities_left = compute_intensities(times_left, pings[i].port);
-    Eigen::VectorXd intensities_right = compute_intensities(times_right, pings[i].stbd);
+    Eigen::Vector3d rpy(pings[i].roll_, pings[i].pitch_, pings[i].heading_);
+    map_image_builder.add_hits(left.hits, left.hits_inds, left.intensities, left.sss_depths, left.sss_model, pings[i].port, pos, rpy, true);
+    map_image_builder.add_hits(right.hits, right.hits_inds, right.intensities, right.sss_depths, right.sss_model, pings[i].stbd, pos, rpy, false);
 
     // add intensities for visualization
-    add_texture_intensities(hits_left, intensities_left);
-    add_texture_intensities(hits_right, intensities_right);
-
-    // compute waterfall image inds of hits
-    Eigen::VectorXi hits_inds_left = compute_bin_indices(times_left, pings[i].port, map_image_builder.get_waterfall_bins());
-    Eigen::VectorXi hits_inds_right = compute_bin_indices(times_right, pings[i].stbd, map_image_builder.get_waterfall_bins());
-
-    cout << "Adding hits" << endl;
-
-    Eigen::Matrix3d Rcomp = Eigen::AngleAxisd(sensor_yaw, Eigen::Vector3d::UnitZ()).matrix();
-    Eigen::Matrix3d Ry = Eigen::AngleAxisd(pings[i].pitch_, Eigen::Vector3d::UnitY()).matrix();
-    Eigen::Matrix3d Rz = Eigen::AngleAxisd(pings[i].heading_, Eigen::Vector3d::UnitZ()).matrix();
-    Eigen::Vector3d rpy(pings[i].roll_, pings[i].pitch_, pings[i].heading_);
-    // add the 3d hits and waterfall images to the builder object
-    map_image_builder.add_hits(hits_left, hits_inds_left, intensities_left, sss_depths_left, sss_model_left, pings[i].port, pos, rpy, true);
-    map_image_builder.add_hits(hits_right, hits_inds_right, intensities_right, sss_depths_right, sss_model_right, pings[i].stbd, pos, rpy, false);
+    add_texture_intensities(left.hits, left.intensities);
+    add_texture_intensities(right.hits, right.intensities);
 
     cout << "Done adding hits, visualizing" << endl;
 
@@ -132,8 +97,11 @@ bool MapDraper<MapSaver>::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
         visualize_vehicle();
         visualize_intensities();
         //visualize_rays(hits_left, hits_right);
-        visualize_rays(origin_port, hits_left, true);
-        visualize_rays(origin_stbd, hits_right);
+        Eigen::Vector3d origin_port;
+        Eigen::Vector3d origin_stbd;
+        tie(origin_port, origin_stbd) = get_port_stbd_sensor_origins(pings[i]);
+        visualize_rays(origin_port, left.hits, true);
+        visualize_rays(origin_stbd, right.hits);
     }
 
     cout << "Done visualizing" << endl;
@@ -141,7 +109,9 @@ bool MapDraper<MapSaver>::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
     ++i;
 
     return false;
+
 }
+
 
 /*
 bool MapDraper::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
