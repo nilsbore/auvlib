@@ -23,7 +23,7 @@ PatchDraper::PatchDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
                          const xtf_sss_ping::PingsT& pings,
                          const BoundsT& bounds,
                          const csv_asvp_sound_speed::EntriesT& sound_speeds)
-    : BaseDraper(V1, F1, pings, bounds, sound_speeds), save_callback(&default_callback)
+    : ViewDraper(V1, F1, pings, bounds, sound_speeds), save_callback(&default_callback)
 {
     is_active = Eigen::VectorXi(pings.size()); is_active.setOnes();
 

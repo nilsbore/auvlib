@@ -12,10 +12,10 @@
 #ifndef PATCH_DRAPER_H
 #define PATCH_DRAPER_H
 
-#include <bathy_maps/base_draper.h>
+#include <bathy_maps/view_draper.h>
 #include <bathy_maps/patch_views.h>
 
-struct PatchDraper : public BaseDraper {
+struct PatchDraper : public ViewDraper {
 public:
 
     using BoundsT = Eigen::Matrix2d;

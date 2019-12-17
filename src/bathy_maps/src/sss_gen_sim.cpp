@@ -27,7 +27,7 @@ SSSGenSim::SSSGenSim(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
                      const BoundsT& bounds,
                      const csv_asvp_sound_speed::EntriesT& sound_speeds,
                      const Eigen::MatrixXd& height_map)
-    : BaseDraper(V1, F1, pings, bounds, sound_speeds), //bounds(bounds),
+    : ViewDraper(V1, F1, pings, bounds, sound_speeds), //bounds(bounds),
       gen_callback(&default_callback),
       height_map(height_map),
       sss_from_waterfall(false),

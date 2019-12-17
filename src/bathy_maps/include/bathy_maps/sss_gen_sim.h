@@ -12,7 +12,7 @@
 #ifndef SSS_GEN_SIM_H
 #define SSS_GEN_SIM_H
 
-#include <bathy_maps/base_draper.h>
+#include <bathy_maps/view_draper.h>
 #include <bathy_maps/patch_views.h>
 #include <bathy_maps/sss_map_image.h>
 #include <opencv2/core/core.hpp>
@@ -76,7 +76,7 @@ public:
 
 };
 
-struct SSSGenSim : public BaseDraper {
+struct SSSGenSim : public ViewDraper {
 public:
 
     using BoundsT = Eigen::Matrix2d;

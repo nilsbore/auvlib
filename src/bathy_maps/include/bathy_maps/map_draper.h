@@ -12,12 +12,12 @@
 #ifndef MAP_DRAPER_H
 #define MAP_DRAPER_H
 
-#include <bathy_maps/base_draper.h>
+#include <bathy_maps/view_draper.h>
 #include <bathy_maps/patch_views.h>
 #include <bathy_maps/sss_map_image.h>
 
 template <typename MapSaver>
-struct MapDraper : public BaseDraper {
+struct MapDraper : public ViewDraper {
 public:
 
     using BoundsT = Eigen::Matrix2d;

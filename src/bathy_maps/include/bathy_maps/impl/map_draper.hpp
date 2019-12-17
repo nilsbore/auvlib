@@ -24,7 +24,7 @@ MapDraper<MapSaver>::MapDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi&
                                const xtf_sss_ping::PingsT& pings,
                                const BoundsT& bounds,
                                const csv_asvp_sound_speed::EntriesT& sound_speeds)
-    : BaseDraper(V1, F1, pings, bounds, sound_speeds),
+    : ViewDraper(V1, F1, pings, bounds, sound_speeds),
       resolution(30./8.), save_callback(&default_callback),
       map_image_builder(bounds, 30./8., 256)
       //map_image_builder(bounds, 30./8., pings[0].port.pings.size())
