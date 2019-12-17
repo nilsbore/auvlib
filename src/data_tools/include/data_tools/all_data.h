@@ -152,6 +152,30 @@ std_data::mbes_ping::PingsT match_attitude(std_data::mbes_ping::PingsT& pings, a
 csv_data::csv_asvp_sound_speed::EntriesT convert_sound_speeds(const all_mbes_ping::PingsT& pings);
 std_data::attitude_entry::EntriesT convert_attitudes(const all_nav_attitude::EntriesT& attitudes);
 
+class StreamParser {
+private:
+
+    std::function<void(all_mbes_ping)> mbes_callback;
+    std::function<void(all_nav_entry)> nav_entry_callback;
+
+public:
+
+    StreamParser() {}
+
+    bool parse_packet(const std::string& packet_load);
+
+    void set_mbes_callback(const std::function<void(all_mbes_ping)>& callback)
+    {
+        mbes_callback = callback;
+    }
+
+    void set_nav_entry_callback(const std::function<void(all_nav_entry)>& callback)
+    {
+        nav_entry_callback = callback;
+    }
+
+};
+
 } // namespace all_data
 
 namespace std_data {
