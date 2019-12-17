@@ -22,11 +22,14 @@
 #include <data_tools/csv_data.h>
 
 struct ping_draping_result {
+    Eigen::Vector3d origin;
     Eigen::VectorXd hits;
     Eigen::VectorXi hits_inds;
     Eigen::VectorXd intensities;
     Eigen::VectorXd sss_depths;
     Eigen::VectorXd sss_model;
+
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
 struct BaseDraper {

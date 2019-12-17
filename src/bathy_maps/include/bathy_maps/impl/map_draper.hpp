@@ -97,11 +97,8 @@ bool MapDraper<MapSaver>::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
         visualize_vehicle();
         visualize_intensities();
         //visualize_rays(hits_left, hits_right);
-        Eigen::Vector3d origin_port;
-        Eigen::Vector3d origin_stbd;
-        tie(origin_port, origin_stbd) = get_port_stbd_sensor_origins(pings[i]);
-        visualize_rays(origin_port, left.hits, true);
-        visualize_rays(origin_stbd, right.hits);
+        visualize_rays(left.origin, left.hits, true);
+        visualize_rays(right.origin, right.hits);
     }
 
     cout << "Done visualizing" << endl;

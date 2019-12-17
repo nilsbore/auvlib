@@ -602,6 +602,7 @@ ping_draping_result BaseDraper::project_ping_side(const xtf_data::xtf_sss_ping_s
 {
     ping_draping_result res;
     res.hits = hits;
+    res.origin = origin;
 
     Eigen::VectorXd times = compute_times(origin, hits);
 
