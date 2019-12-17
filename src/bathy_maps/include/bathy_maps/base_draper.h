@@ -20,7 +20,7 @@
 
 struct ping_draping_result {
     Eigen::Vector3d origin;
-    Eigen::VectorXd hits;
+    Eigen::MatrixXd hits;
     Eigen::VectorXi hits_inds;
     Eigen::VectorXd intensities;
     Eigen::VectorXd sss_depths;
