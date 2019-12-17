@@ -73,6 +73,10 @@ protected:
 
     std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> project(const xtf_data::xtf_sss_ping& ping);
 
+    ping_draping_result project_ping_side(const xtf_data::xtf_sss_ping_side& sensor, const Eigen::MatrixXd& hits,
+                                          const Eigen::MatrixXd& hits_normals, const Eigen::Vector3d& origin,
+                                          int nbr_bins);
+
     double compute_simple_sound_vel();
 
     std::pair<Eigen::Vector3d, Eigen::Vector3d> get_port_stbd_sensor_origins(const xtf_data::xtf_sss_ping& ping);
@@ -97,7 +101,6 @@ protected:
     // NOTE: these are old style functions, to be deprecated
     //std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::VectorXi, Eigen::VectorXi, Eigen::Vector3d> project_sss();
     bool fast_is_mesh_underneath_vehicle(const Eigen::Vector3d& origin);
-    void add_texture_intensities(const Eigen::MatrixXd& hits, const Eigen::VectorXd& intensities);
 
 public:
 
@@ -106,11 +109,9 @@ public:
                const csv_data::csv_asvp_sound_speed::EntriesT& sound_speeds = csv_data::csv_asvp_sound_speed::EntriesT());
 
     std::pair<ping_draping_result, ping_draping_result> project_ping(const xtf_data::xtf_sss_ping& ping, int nbr_bins);
-    ping_draping_result project_ping_side(const xtf_data::xtf_sss_ping_side& sensor, const Eigen::MatrixXd& hits,
-                                          const Eigen::MatrixXd& hits_normals, const Eigen::Vector3d& origin,
-                                          int nbr_bins);
+    void add_texture_intensities(const Eigen::MatrixXd& hits, const Eigen::VectorXd& intensities);
 
-
+    Eigen::MatrixXd get_texture_image() { return texture_image; }
     void set_sidescan_yaw(double new_sensor_yaw) { sensor_yaw = new_sensor_yaw; }
     void set_sidescan_port_stbd_offsets(const Eigen::Vector3d& new_offset_port, const Eigen::Vector3d& new_offset_stbd) { sensor_offset_port = new_offset_port; sensor_offset_stbd = new_offset_stbd; }
     void set_tracing_map_size(double new_tracing_map_size) { tracing_map_size = new_tracing_map_size; }
