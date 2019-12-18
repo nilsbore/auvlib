@@ -273,6 +273,25 @@ Eigen::VectorXd BaseDraper::convert_to_time_bins(const Eigen::VectorXd& times, c
     return value_windows;
 }
 
+Eigen::VectorXd BaseDraper::convert_to_time_bins(const Eigen::VectorXd& times, const Eigen::MatrixXd& values,
+                                                 const xtf_data::xtf_sss_ping_side& ping, size_t nbr_windows)
+{
+    double ping_step = ping.time_duration / double(nbr_windows);
+    Eigen::VectorXd value_windows = Eigen::MatrixXd::Zero(nbr_windows, values.cols());
+    Eigen::ArrayXd value_counts = Eigen::ArrayXXd::Zero(nbr_windows, values.cols());
+    for (int i = 0; i < times.rows(); ++i) {
+        int index = int(times(i)/ping_step);
+        if (index < nbr_windows) {
+            value_windows.row(index) += values.row(i);
+            value_counts.row(index) += 1.;
+        }
+    }
+    value_counts += (value_counts == 0).cast<double>();
+    value_windows.array() /= value_counts;
+
+    return value_windows;
+}
+
 Eigen::VectorXd BaseDraper::compute_intensities(const Eigen::VectorXd& times, 
                                                 const xtf_data::xtf_sss_ping_side& ping)
 {
@@ -285,6 +304,24 @@ Eigen::VectorXd BaseDraper::compute_intensities(const Eigen::VectorXd& times,
             intensities(i) += double(ping.pings[ping_index])/10000.;
         }
     }
+    return intensities;
+}
+
+Eigen::VectorXd BaseDraper::compute_bin_intensities(const xtf_data::xtf_sss_ping_side& ping, int nbr_bins)
+{
+    double ping_step = double(ping.pings.size()) / double(nbr_bins);
+
+    Eigen::VectorXd intensities = Eigen::VectorXd::Zero(nbr_bins);
+    Eigen::ArrayXd counts = Eigen::ArrayXd::Zero(nbr_bins);
+    for (int i = 0; i < ping.pings.size(); ++i) {
+        int intensity_index = int(double(i)/ping_step);
+        if (intensity_index < intensities.rows()) {
+            intensities(intensity_index) += double(ping.pings[i])/10000.;
+            counts(intensity_index) += 1.;
+        }
+    }
+    counts += (counts == 0).cast<double>();
+    intensities.array() /= counts;
     return intensities;
 }
 
@@ -384,21 +421,22 @@ ping_draping_result BaseDraper::project_ping_side(const xtf_data::xtf_sss_ping_s
     ping_draping_result res;
     res.hits = hits;
     res.origin = origin;
-
-    Eigen::VectorXd times = compute_times(origin, hits);
+    res.times = compute_times(origin, hits);
 
     // compute the elevation waterfall row
-    res.sss_depths = convert_to_time_bins(times, hits.col(2), sensor, nbr_bins);
+    //res.sss_depths = convert_to_time_bins(times, hits.col(2), sensor, nbr_bins);
+    res.sss_hits = convert_to_time_bins(res.times, hits, sensor, nbr_bins);
+    res.sss_normals = convert_to_time_bins(res.times, hits_normals, sensor, nbr_bins);
 
     // compute the intensities of the model
     Eigen::VectorXd model_intensities = compute_model_intensities(hits, hits_normals, origin);
-    res.sss_model = convert_to_time_bins(times, model_intensities, sensor, nbr_bins);
+    res.sss_model = convert_to_time_bins(res.times, model_intensities, sensor, nbr_bins);
 
     // compute the ground truth intensities
-    res.intensities = compute_intensities(times, sensor);
+    res.intensities = compute_intensities(res.times, sensor);
 
     // compute waterfall image inds of hits
-    res.hits_inds = compute_bin_indices(times, sensor, nbr_bins);
+    res.hits_inds = compute_bin_indices(res.times, sensor, nbr_bins);
 
     cout << "Adding hits: " << res.hits.rows() << endl;
 

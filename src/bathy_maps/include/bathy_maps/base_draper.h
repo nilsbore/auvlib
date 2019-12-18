@@ -22,16 +22,21 @@ struct ping_draping_result {
     Eigen::Vector3d origin;
     Eigen::MatrixXd hits;
     Eigen::VectorXi hits_inds;
+    Eigen::VectorXd times;
     Eigen::VectorXd intensities;
-    Eigen::VectorXd sss_depths;
+
+    //Eigen::VectorXd sss_depths;
+    Eigen::MatrixXd sss_hits;
+    Eigen::VectorXd sss_normals;
     Eigen::VectorXd sss_model;
 
 	template <class Archive>
     void serialize( Archive & ar )
     {
         ar(CEREAL_NVP(origin), CEREAL_NVP(hits),
-           CEREAL_NVP(hits_inds), CEREAL_NVP(intensities),
-           CEREAL_NVP(sss_depths), CEREAL_NVP(sss_model));
+           CEREAL_NVP(hits_inds), CEREAL_NVP(hits_inds),
+           CEREAL_NVP(intensities), CEREAL_NVP(sss_hits),
+           CEREAL_NVP(sss_normals), CEREAL_NVP(sss_model));
     }
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -87,6 +92,8 @@ protected:
 
     Eigen::VectorXd convert_to_time_bins(const Eigen::VectorXd& times, const Eigen::VectorXd& values,
                                          const xtf_data::xtf_sss_ping_side& ping, size_t nbr_windows);
+    Eigen::VectorXd convert_to_time_bins(const Eigen::VectorXd& times, const Eigen::MatrixXd& values,
+                                         const xtf_data::xtf_sss_ping_side& ping, size_t nbr_windows);
 
     Eigen::VectorXd compute_intensities(const Eigen::VectorXd& times, 
                                         const xtf_data::xtf_sss_ping_side& ping);
@@ -110,6 +117,7 @@ public:
 
     std::pair<ping_draping_result, ping_draping_result> project_ping(const xtf_data::xtf_sss_ping& ping, int nbr_bins);
     void add_texture_intensities(const Eigen::MatrixXd& hits, const Eigen::VectorXd& intensities);
+    Eigen::VectorXd compute_bin_intensities(const xtf_data::xtf_sss_ping_side& ping, int nbr_bins);
 
     Eigen::MatrixXd get_texture_image() { return texture_image; }
     void set_sidescan_yaw(double new_sensor_yaw) { sensor_yaw = new_sensor_yaw; }

@@ -469,8 +469,8 @@ bool SSSGenSim::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
 
         waterfall_model.row(resample_window_height-waterfall_row-1) = model_windows.transpose();
 
-        Eigen::VectorXd depth_windows_left = convert_to_time_bins(times_left, hits_left.col(2), pings[i].port, nbr_windows);
-        Eigen::VectorXd depth_windows_right = convert_to_time_bins(times_right, hits_right.col(2), pings[i].stbd, nbr_windows);
+        Eigen::VectorXd depth_windows_left = convert_to_time_bins(times_left, Eigen::VectorXd(hits_left.col(2)), pings[i].port, nbr_windows);
+        Eigen::VectorXd depth_windows_right = convert_to_time_bins(times_right, Eigen::VectorXd(hits_right.col(2)), pings[i].stbd, nbr_windows);
 
         Eigen::VectorXd depth_windows(depth_windows_left.rows() + depth_windows_right.rows());
         depth_windows.tail(depth_windows_right.rows()) = depth_windows_right;

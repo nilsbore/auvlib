@@ -35,7 +35,8 @@ PYBIND11_MODULE(map_draper, m) {
         .def_readwrite("hits", &ping_draping_result::hits, "3D positions of hits, see hits_inds for corresponding sidescan index")
         .def_readwrite("hits_inds", &ping_draping_result::hits_inds, "Ping time index of the hits")
         .def_readwrite("intensities", &ping_draping_result::intensities, "Downsampledintensities from sidescan")
-        .def_readwrite("sss_depths", &ping_draping_result::sss_depths, "Depths corresponding to the ping intensities")
+        .def_readwrite("sss_hits", &ping_draping_result::sss_hits, "Depths corresponding to the ping intensities")
+        .def_readwrite("sss_normals", &ping_draping_result::sss_normals, "Normals corresponding to the ping intensities")
         .def_readwrite("sss_model", &ping_draping_result::sss_model, "Model intensities corresponding to the real intensities");
 
     py::class_<sss_map_image>(m, "sss_map_image", "Class for sidescan views of a patch from different survey lines")
@@ -69,6 +70,7 @@ PYBIND11_MODULE(map_draper, m) {
                       const BaseDraper::BoundsT&,
                       const csv_asvp_sound_speed::EntriesT&>())
         .def("project_ping", &BaseDraper::project_ping, "Project a ping onto the mesh and get intermediate draping results. Provide the desired downsampling of the ping as the second parameter")
+        .def("compute_bin_intensities", &BaseDraper::compute_bin_intensities, "Dowsample the intensities of a ping to a vector of a desired length")
         .def("add_texture_intensities", &BaseDraper::add_texture_intensities, "Add the intensities of draping result hits and intensities")
         .def("get_texture_image", &BaseDraper::get_texture_image, "Get the texture image, defined within bounds, with resolution of 1m")
         .def("set_sidescan_yaw", &BaseDraper::set_sidescan_yaw, "Set yaw correction of sidescan with respect to nav frame")

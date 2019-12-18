@@ -84,8 +84,8 @@ bool MapDraper<MapSaver>::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
     // add the 3d hits and waterfall images to the builder object
     Eigen::Vector3d pos = pings[i].pos_ - offset;
     Eigen::Vector3d rpy(pings[i].roll_, pings[i].pitch_, pings[i].heading_);
-    map_image_builder.add_hits(left.hits, left.hits_inds, left.intensities, left.sss_depths, left.sss_model, pings[i].port, pos, rpy, true);
-    map_image_builder.add_hits(right.hits, right.hits_inds, right.intensities, right.sss_depths, right.sss_model, pings[i].stbd, pos, rpy, false);
+    map_image_builder.add_hits(left.hits, left.hits_inds, left.intensities, left.sss_hits.col(2), left.sss_model, pings[i].port, pos, rpy, true);
+    map_image_builder.add_hits(right.hits, right.hits_inds, right.intensities, right.sss_hits.col(2), right.sss_model, pings[i].stbd, pos, rpy, false);
 
     // add intensities for visualization
     add_texture_intensities(left.hits, left.intensities);
