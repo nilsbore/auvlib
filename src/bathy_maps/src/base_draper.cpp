@@ -273,12 +273,12 @@ Eigen::VectorXd BaseDraper::convert_to_time_bins(const Eigen::VectorXd& times, c
     return value_windows;
 }
 
-Eigen::VectorXd BaseDraper::convert_to_time_bins(const Eigen::VectorXd& times, const Eigen::MatrixXd& values,
+Eigen::MatrixXd BaseDraper::convert_to_time_bins(const Eigen::VectorXd& times, const Eigen::MatrixXd& values,
                                                  const xtf_data::xtf_sss_ping_side& ping, size_t nbr_windows)
 {
     double ping_step = ping.time_duration / double(nbr_windows);
-    Eigen::VectorXd value_windows = Eigen::MatrixXd::Zero(nbr_windows, values.cols());
-    Eigen::ArrayXd value_counts = Eigen::ArrayXXd::Zero(nbr_windows, values.cols());
+    Eigen::MatrixXd value_windows = Eigen::MatrixXd::Zero(nbr_windows, values.cols());
+    Eigen::ArrayXXd value_counts = Eigen::ArrayXXd::Zero(nbr_windows, values.cols());
     for (int i = 0; i < times.rows(); ++i) {
         int index = int(times(i)/ping_step);
         if (index < nbr_windows) {

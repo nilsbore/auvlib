@@ -27,7 +27,7 @@ struct ping_draping_result {
 
     //Eigen::VectorXd sss_depths;
     Eigen::MatrixXd sss_hits;
-    Eigen::VectorXd sss_normals;
+    Eigen::MatrixXd sss_normals;
     Eigen::VectorXd sss_model;
 
 	template <class Archive>
@@ -92,7 +92,7 @@ protected:
 
     Eigen::VectorXd convert_to_time_bins(const Eigen::VectorXd& times, const Eigen::VectorXd& values,
                                          const xtf_data::xtf_sss_ping_side& ping, size_t nbr_windows);
-    Eigen::VectorXd convert_to_time_bins(const Eigen::VectorXd& times, const Eigen::MatrixXd& values,
+    Eigen::MatrixXd convert_to_time_bins(const Eigen::VectorXd& times, const Eigen::MatrixXd& values,
                                          const xtf_data::xtf_sss_ping_side& ping, size_t nbr_windows);
 
     Eigen::VectorXd compute_intensities(const Eigen::VectorXd& times, 
