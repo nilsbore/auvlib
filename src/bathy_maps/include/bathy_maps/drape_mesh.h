@@ -40,6 +40,10 @@ public:
         const Eigen::MatrixXd& N_source,
         const Eigen::MatrixXd& V_target,
         const Eigen::MatrixXi& F_target);
+
+    double depth_mesh_underneath_vehicle(const Eigen::Vector3d& origin,
+                                         const Eigen::MatrixXd& V_target,
+                                         const Eigen::MatrixXi& F_target);
 };
 
 std::pair<Eigen::MatrixXd, Eigen::MatrixXd> compute_sss_dirs(const Eigen::Matrix3d& R, double tilt_angle, double beam_width, int nbr_lines);

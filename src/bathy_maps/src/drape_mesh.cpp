@@ -61,6 +61,23 @@ Eigen::MatrixXd BathyTracer::ray_mesh_intersection(
     return R;
 }
 
+double BathyTracer::depth_mesh_underneath_vehicle(const Eigen::Vector3d& origin,
+                                                  const Eigen::MatrixXd& V_target,
+                                                  const Eigen::MatrixXi& F_target)
+{
+    if (first_V != V_target.row(0).transpose() ||
+        first_F != F_target.row(0).transpose()) {
+        embree.init(V_target.template cast<float>(),F_target.template cast<int>());
+        first_V = V_target.row(0).transpose();
+        first_F = F_target.row(0).transpose();
+    }
+
+    // Shoot ray
+    igl::Hit hit;
+    bool did_hit = embree.intersectBeam(origin.cast<float>(), Eigen::Vector3f(0., 0., -1.), hit);
+    return did_hit? origin(2) - V_target(F_target(hit.id, 0), 2) : 0.;
+}
+
 tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi> BathyTracer::compute_hits(const Eigen::Vector3d& origin_port, const Eigen::Vector3d& origin_stbd, const Eigen::Matrix3d& R, double tilt_angle, double beam_width, const Eigen::MatrixXd& V, const Eigen::MatrixXi& F)
 {
     auto start = chrono::high_resolution_clock::now();
