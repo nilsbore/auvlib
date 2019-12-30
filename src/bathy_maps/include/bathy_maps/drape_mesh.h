@@ -15,6 +15,32 @@
 #include <Eigen/Dense>
 #include <data_tools/xtf_data.h>
 #include <data_tools/csv_data.h>
+#include <igl/embree/EmbreeIntersector.h>
+
+class BathyTracer
+{
+private:
+
+    igl::embree::EmbreeIntersector embree;
+    Eigen::Vector3d first_V;
+    Eigen::Vector3i first_F;
+
+public:
+
+    BathyTracer()
+    {
+        first_V.setZero();
+        first_F.setZero();
+    }
+
+    std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi> compute_hits(const Eigen::Vector3d& origin_port, const Eigen::Vector3d& origin_stbd, const Eigen::Matrix3d& R, double tilt_angle, double beam_width, const Eigen::MatrixXd& V, const Eigen::MatrixXi& F);
+
+    Eigen::MatrixXd ray_mesh_intersection(
+        const Eigen::MatrixXd& V_source,
+        const Eigen::MatrixXd& N_source,
+        const Eigen::MatrixXd& V_target,
+        const Eigen::MatrixXi& F_target);
+};
 
 std::pair<Eigen::MatrixXd, Eigen::MatrixXd> compute_sss_dirs(const Eigen::Matrix3d& R, double tilt_angle, double beam_width, int nbr_lines);
 

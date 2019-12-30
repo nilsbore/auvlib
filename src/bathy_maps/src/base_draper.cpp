@@ -12,7 +12,6 @@
 #include <bathy_maps/base_draper.h>
 
 #include <igl/per_face_normals.h>
-#include <bathy_maps/drape_mesh.h>
 #include <bathy_maps/mesh_map.h>
 #include <chrono>
 
@@ -166,8 +165,6 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> BaseDr
     Eigen::MatrixXd hits_right;
     Eigen::VectorXi hits_left_inds;
     Eigen::VectorXi hits_right_inds;
-    Eigen::VectorXd mod_left;
-    Eigen::VectorXd mod_right;
 
     Eigen::Vector3d offset_pos = ping.pos_ - offset;
     if ((offset_pos - pos_small).norm() > tracing_map_size/4.) {
@@ -203,7 +200,7 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> BaseDr
 
     auto start = chrono::high_resolution_clock::now();
     //tie(hits_left, hits_right, hits_left_inds, hits_right_inds, mod_left, mod_right) = embree_compute_hits(offset_pos, R, 1.4*pings[i].port.tilt_angle, pings[i].port.beam_width + 0.2, V1_small, F1_small);
-    tie(hits_left, hits_right, hits_left_inds, hits_right_inds, mod_left, mod_right) = embree_compute_hits(origin_port, origin_stbd, R, tilt_angle, beam_width, V1_small, F1_small);
+    tie(hits_left, hits_right, hits_left_inds, hits_right_inds) = tracer.compute_hits(origin_port, origin_stbd, R, tilt_angle, beam_width, V1_small, F1_small);
     auto stop = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
     cout << "embree_compute_hits time: " << duration.count() << " microseconds" << endl;

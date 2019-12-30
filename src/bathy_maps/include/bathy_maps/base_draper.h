@@ -17,6 +17,7 @@
 
 #include <data_tools/xtf_data.h>
 #include <data_tools/csv_data.h>
+#include <bathy_maps/drape_mesh.h>
 
 struct ping_draping_result {
     Eigen::Vector3d origin;
@@ -61,6 +62,8 @@ protected:
 
     BoundsT bounds;
     Eigen::MatrixXd texture_image; // used for displaying texture and checking coverage
+
+    BathyTracer tracer;
 
     //Eigen::VectorXd hit_sums; 
     //Eigen::VectorXi hit_counts;
