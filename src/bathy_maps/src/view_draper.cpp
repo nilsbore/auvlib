@@ -10,7 +10,7 @@ ViewDraper::ViewDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
                        const xtf_sss_ping::PingsT& pings,
                        const BoundsT& bounds,
                        const csv_asvp_sound_speed::EntriesT& sound_speeds)
-    : BaseDraper(V1, F1, bounds, sound_speeds), pings(pings), i(0)
+    : BaseDraper(V1, F1, bounds, sound_speeds), pings(pings), i(0), nbr_time_bins(256)
 {
     V = V1;
     F = F1;
@@ -135,30 +135,25 @@ bool ViewDraper::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
     glEnable(GL_CULL_FACE);
 
     if (viewer.core().is_animating && i < pings.size()) {
-        //project_sss();
-        Eigen::MatrixXd hits_left;
-        Eigen::MatrixXd hits_right;
-        Eigen::MatrixXd normals_left;
-        Eigen::MatrixXd normals_right;
-        tie(hits_left, hits_right, normals_left, normals_right) = project(pings[i]);
+        ping_draping_result left, right;
+        tie(left, right) = project_ping(pings[i], nbr_time_bins);
 
-        Eigen::Vector3d origin_port;
-        Eigen::Vector3d origin_stbd;
-        tie(origin_port, origin_stbd) = get_port_stbd_sensor_origins(pings[i]);
+        add_texture_intensities(left.hits_points, left.hits_intensities);
+        add_texture_intensities(right.hits_points, right.hits_intensities);
 
-        Eigen::VectorXd left_times = compute_times(origin_port, hits_left);
-        Eigen::VectorXd left_intensities = compute_intensities(left_times, pings[i].port);
-        Eigen::VectorXd right_times = compute_times(origin_stbd, hits_right);
-        Eigen::VectorXd right_intensities = compute_intensities(right_times, pings[i].stbd);
-        add_texture_intensities(hits_left, left_intensities);
-        add_texture_intensities(hits_right, right_intensities);
+        if (save_callback) {
+            save_callback(left, right);
+        }
 
         if (i % 10 == 0) {
+            Eigen::Vector3d origin_port;
+            Eigen::Vector3d origin_stbd;
+            tie(origin_port, origin_stbd) = get_port_stbd_sensor_origins(pings[i]);
+
             visualize_vehicle();
             visualize_intensities();
-            //visualize_rays(hits_left, hits_right);
-            visualize_rays(origin_port, hits_left, true);
-            visualize_rays(origin_stbd, hits_right);
+            visualize_rays(origin_port, left.hits_points, true);
+            visualize_rays(origin_stbd, right.hits_points);
         }
         ++i;
     }

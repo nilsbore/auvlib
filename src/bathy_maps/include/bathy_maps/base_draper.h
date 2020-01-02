@@ -79,7 +79,7 @@ protected:
     Eigen::Vector3d sensor_offset_port;
     Eigen::Vector3d sensor_offset_stbd;
     bool ray_tracing_enabled; // is snell ray tracing enabled?
-    double tracing_map_size;
+    double tracing_map_size; // TODO: remove this as it is no longer needed
     double intensity_multiplier;
     std::default_random_engine generator; // hopefully not same seed every time
 

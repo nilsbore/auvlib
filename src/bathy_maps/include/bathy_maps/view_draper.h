@@ -15,6 +15,9 @@ protected:
     igl::opengl::glfw::Viewer viewer; // ligigl viewer object
     xtf_data::xtf_sss_ping::PingsT pings; // sidescan pings used for draping
     int i; // timestep counter, one step per ping
+    int nbr_time_bins;
+    
+    std::function<void(ping_draping_result, ping_draping_result)> save_callback;
 
     Eigen::MatrixXd texture_image; // used for displaying texture and checking coverage
 
@@ -37,6 +40,7 @@ protected:
 
 public:
 
+    void set_callback(const std::function<void(ping_draping_result, ping_draping_result)>& callback, int nbr_bins) { save_callback = callback; nbr_time_bins = nbr_bins; }
     Eigen::MatrixXd get_texture_image() { return texture_image; }
     void add_texture_intensities(const Eigen::MatrixXd& hits, const Eigen::VectorXd& intensities);
     void set_vehicle_mesh(const Eigen::MatrixXd& new_V2, const Eigen::MatrixXi& new_F2, const Eigen::MatrixXd& new_C2);
