@@ -32,6 +32,7 @@ ViewDraper::ViewDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
 
     viewer.data().point_size = 10;
     viewer.data().line_width = 1;
+    viewer.data().show_lines = false;
 
     viewer.callback_pre_draw = std::bind(&ViewDraper::callback_pre_draw, this, std::placeholders::_1);
 
@@ -145,8 +146,16 @@ bool ViewDraper::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
         Eigen::Vector3d origin_stbd;
         tie(origin_port, origin_stbd) = get_port_stbd_sensor_origins(pings[i]);
 
+        Eigen::VectorXd left_times = compute_times(origin_port, hits_left);
+        Eigen::VectorXd left_intensities = compute_intensities(left_times, pings[i].port);
+        Eigen::VectorXd right_times = compute_times(origin_stbd, hits_right);
+        Eigen::VectorXd right_intensities = compute_intensities(right_times, pings[i].stbd);
+        add_texture_intensities(hits_left, left_intensities);
+        add_texture_intensities(hits_right, right_intensities);
+
         if (i % 10 == 0) {
             visualize_vehicle();
+            visualize_intensities();
             //visualize_rays(hits_left, hits_right);
             visualize_rays(origin_port, hits_left, true);
             visualize_rays(origin_stbd, hits_right);
