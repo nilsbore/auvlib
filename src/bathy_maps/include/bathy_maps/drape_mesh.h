@@ -33,7 +33,7 @@ public:
         first_F.setZero();
     }
 
-    std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi> compute_hits(const Eigen::Vector3d& origin_port, const Eigen::Vector3d& origin_stbd, const Eigen::Matrix3d& R, double tilt_angle, double beam_width, const Eigen::MatrixXd& V, const Eigen::MatrixXi& F);
+    std::tuple<Eigen::MatrixXd, Eigen::MatrixXi> compute_hits(const Eigen::Vector3d& sensor_origin, const Eigen::MatrixXd& dirs, const Eigen::MatrixXd& V, const Eigen::MatrixXi& F);
 
     Eigen::MatrixXd ray_mesh_intersection(
         const Eigen::MatrixXd& V_source,

@@ -184,7 +184,12 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> BaseDr
 
     auto start = chrono::high_resolution_clock::now();
     //tie(hits_left, hits_right, hits_left_inds, hits_right_inds, mod_left, mod_right) = embree_compute_hits(offset_pos, R, 1.4*pings[i].port.tilt_angle, pings[i].port.beam_width + 0.2, V1_small, F1_small);
-    tie(hits_left, hits_right, hits_left_inds, hits_right_inds) = tracer.compute_hits(origin_port, origin_stbd, R, tilt_angle, beam_width, V1, F1);
+    
+    Eigen::MatrixXd dirs_left;
+    Eigen::MatrixXd dirs_right;
+    tie(dirs_left, dirs_right) = compute_sss_dirs(R, tilt_angle, beam_width, 500);
+    tie(hits_left, hits_left_inds) = tracer.compute_hits(origin_port, dirs_left, V1, F1);
+    tie(hits_right, hits_right_inds) = tracer.compute_hits(origin_stbd, dirs_right, V1, F1);
     auto stop = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
     cout << "embree_compute_hits full time: " << duration.count() << " microseconds" << endl;

@@ -78,78 +78,52 @@ double BathyTracer::depth_mesh_underneath_vehicle(const Eigen::Vector3d& origin,
     return did_hit? origin(2) - V_target(F_target(hit.id, 0), 2) : 0.;
 }
 
-tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi> BathyTracer::compute_hits(const Eigen::Vector3d& origin_port, const Eigen::Vector3d& origin_stbd, const Eigen::Matrix3d& R, double tilt_angle, double beam_width, const Eigen::MatrixXd& V, const Eigen::MatrixXi& F)
+tuple<Eigen::MatrixXd, Eigen::MatrixXi> BathyTracer::compute_hits(const Eigen::Vector3d& sensor_origin, const Eigen::MatrixXd& dirs, const Eigen::MatrixXd& V, const Eigen::MatrixXi& F)
 {
     auto start = chrono::high_resolution_clock::now();
     igl::Hit hit;
-    Eigen::MatrixXd dirs_left;
-    Eigen::MatrixXd dirs_right;
-    //tie(dirs_left, dirs_right) = compute_sss_dirs(R, tilt_angle, beam_width, 220);
-    tie(dirs_left, dirs_right) = compute_sss_dirs(R, tilt_angle, beam_width, 500);
     auto stop = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
     cout << "compute_sss_dirs time: " << duration.count() << " microseconds" << endl;
 
     start = chrono::high_resolution_clock::now();
-    Eigen::MatrixXd hits_left(dirs_left.rows(), 3);
-    Eigen::MatrixXd hits_right(dirs_right.rows(), 3);
-    Eigen::VectorXi hits_left_inds(dirs_left.rows());
-    Eigen::VectorXi hits_right_inds(dirs_right.rows());
+    Eigen::MatrixXd hits(dirs.rows(), 3);
+    Eigen::VectorXi hits_inds(dirs.rows());
 
-    int nbr_lines = dirs_left.rows() + dirs_right.rows();
-    Eigen::MatrixXd dirs = Eigen::MatrixXd(nbr_lines, dirs_left.cols());
-    dirs << dirs_left, dirs_right;
+    int nbr_lines = dirs.rows();
     Eigen::MatrixXd P = Eigen::MatrixXd(nbr_lines, 3);
 
     // TODO: we can easily split origin into origin_port and origin_stbd
-    P.topRows(dirs_left.rows()).rowwise() = origin_port.transpose();
-    P.bottomRows(dirs_right.rows()).rowwise() = origin_stbd.transpose();
-    Eigen::MatrixXd hits = ray_mesh_intersection(P, dirs, V, F);
+    P.rowwise() = sensor_origin.transpose();
+    Eigen::MatrixXd hits_info = ray_mesh_intersection(P, dirs, V, F);
     stop = chrono::high_resolution_clock::now();
     duration = chrono::duration_cast<chrono::microseconds>(stop - start);
     cout << "line_mesh_intersection time: " << duration.count() << " microseconds" << endl;
 
     start = chrono::high_resolution_clock::now();
-    Eigen::MatrixXd global_hits = igl::barycentric_to_global(V, F, hits);
+    Eigen::MatrixXd global_hits = igl::barycentric_to_global(V, F, hits_info);
     stop = chrono::high_resolution_clock::now();
     duration = chrono::duration_cast<chrono::microseconds>(stop - start);
     cout << "barycentric_to_global time: " << duration.count() << " microseconds" << endl;
 
     start = chrono::high_resolution_clock::now();
     int hit_count = 0;
-    for (int i = 0; i < dirs_left.rows(); ++i) {
-        int hit = hits(i, 0);
+    for (int i = 0; i < dirs.rows(); ++i) {
+        int hit = hits_info(i, 0);
         if (hit > 0) {
             int vind = F(hit, 0);
-            hits_left_inds(hit_count) = hit;
-            hits_left.row(hit_count) = global_hits.row(i);
+            hits_inds(hit_count) = hit;
+            hits.row(hit_count) = global_hits.row(i);
             ++hit_count;
         }
     }
-    hits_left.conservativeResize(hit_count, 3);
-    hits_left_inds.conservativeResize(hit_count);
+    hits.conservativeResize(hit_count, 3);
+    hits_inds.conservativeResize(hit_count);
     stop = chrono::high_resolution_clock::now();
     duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-    cout << "hits_left loop time: " << duration.count() << " microseconds" << endl;
+    cout << "hits loop time: " << duration.count() << " microseconds" << endl;
 
-    start = chrono::high_resolution_clock::now();
-    hit_count = 0;
-    for (int i = 0; i < dirs_right.rows(); ++i) {
-        int hit = hits(dirs_left.rows() + i, 0);
-        if (hit > 0) {
-            int vind = F(hit, 0);
-            hits_right_inds(hit_count) = hit;
-            hits_right.row(hit_count) = global_hits.row(dirs_left.rows() + i);
-            ++hit_count;
-        }
-    }
-    hits_right.conservativeResize(hit_count, 3);
-    hits_right_inds.conservativeResize(hit_count);
-    stop = chrono::high_resolution_clock::now();
-    duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-    cout << "hits_right loop time: " << duration.count() << " microseconds" << endl;
-
-    return make_tuple(hits_left, hits_right, hits_left_inds, hits_right_inds);
+    return make_tuple(hits, hits_inds);
 }
 
 bool is_mesh_underneath_vehicle(const Eigen::Vector3d& origin, const Eigen::MatrixXd& V, const Eigen::MatrixXi& F)
