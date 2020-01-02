@@ -91,12 +91,12 @@ protected:
                                           const Eigen::MatrixXd& hits_normals, const Eigen::Vector3d& origin,
                                           int nbr_bins);
 
-    double compute_simple_sound_vel();
-
-    std::pair<Eigen::Vector3d, Eigen::Vector3d> get_port_stbd_sensor_origins(const xtf_data::xtf_sss_ping& ping);
-
+    //double compute_simple_sound_vel();
+    std::pair<Eigen::VectorXd, Eigen::VectorXd> get_sound_vels_below(const Eigen::Vector3d& sensor_origin);
+    Eigen::VectorXd compute_refraction_times(const Eigen::Vector3d& sensor_origin, const Eigen::MatrixXd& P);
     Eigen::VectorXd compute_times(const Eigen::Vector3d& sensor_origin, const Eigen::MatrixXd& P);
 
+    std::pair<Eigen::Vector3d, Eigen::Vector3d> get_port_stbd_sensor_origins(const xtf_data::xtf_sss_ping& ping);
     Eigen::VectorXi compute_bin_indices(const Eigen::VectorXd& times, const xtf_data::xtf_sss_ping_side& ping, size_t nbr_windows);
 
     Eigen::VectorXd convert_to_time_bins(const Eigen::VectorXd& times, const Eigen::VectorXd& values,

@@ -13,6 +13,7 @@
 
 #include <igl/per_face_normals.h>
 #include <bathy_maps/mesh_map.h>
+#include <sonar_tracing/snell_ray_tracing.h>
 #include <chrono>
 
 using namespace std;
@@ -159,7 +160,9 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> BaseDr
         if (depth == 0.) {
             return make_tuple(hits_left, hits_right, normals_left, normals_right);
         }
-        double max_distance = .5*compute_simple_sound_vel()*ping.port.time_duration;
+        Eigen::VectorXd speeds, depths;
+        tie(speeds, depths) = get_sound_vels_below(offset_pos);
+        double max_distance = .5*speeds.mean()*ping.port.time_duration;
         beam_width = acos(depth/max_distance);
         tilt_angle = beam_width/2.;
         auto stop = chrono::high_resolution_clock::now();
@@ -208,17 +211,76 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> BaseDr
     return make_tuple(hits_left, hits_right, normals_left, normals_right);
 }
 
+/*
 double BaseDraper::compute_simple_sound_vel()
 {
     double sound_vel = sound_speeds[0].vels.head(sound_speeds[0].vels.rows()-1).mean();
     return sound_vel;
 }
+*/
+
+pair<Eigen::VectorXd, Eigen::VectorXd> BaseDraper::get_sound_vels_below(const Eigen::Vector3d& sensor_origin)
+{
+    int i;
+    int nbr_speeds = sound_speeds[0].dbars.rows();
+    for (i = 0; i < nbr_speeds; ++i) {
+        if (-sound_speeds[0].dbars[i] < sensor_origin(2)) {
+            cout << "Breaking at " << -sound_speeds[0].dbars[i] << ", which is below " << sensor_origin(2) << endl;
+            break;
+        }
+    }
+
+    if (i >= nbr_speeds) {
+        return make_pair(sound_speeds[0].vels.tail(1), (sensor_origin(2)-1.)*Eigen::VectorXd::Ones(1));
+    }
+
+    return make_pair(sound_speeds[0].vels.tail(nbr_speeds-i), -sound_speeds[0].dbars.tail(nbr_speeds-i));
+}
+
+// both for this one and the next one, it would make sense
+// to filter the sound vels to get just the ones beneath the vehicle!
+// maybe we can adapt the above function to return the ones below
+// and use that for both of the other ones
 
 Eigen::VectorXd BaseDraper::compute_times(const Eigen::Vector3d& sensor_origin, const Eigen::MatrixXd& P)
 {
     //Eigen::Vector3d pos = pings[i].pos_ - offset;
-    double sound_vel = compute_simple_sound_vel();
-    Eigen::VectorXd times = 2.*(P.rowwise() - sensor_origin.transpose()).rowwise().norm()/sound_vel;
+    Eigen::VectorXd speeds, depths;
+    tie(speeds, depths) = get_sound_vels_below(sensor_origin);
+    //double sound_vel = compute_simple_sound_vel();
+    Eigen::VectorXd times = 2.*(P.rowwise() - sensor_origin.transpose()).rowwise().norm()/speeds.mean();
+    return times;
+}
+
+Eigen::VectorXd BaseDraper::compute_refraction_times(const Eigen::Vector3d& sensor_origin, const Eigen::MatrixXd& P)
+{
+    static bool is_left = true;
+
+    /*
+    Eigen::VectorXd layer_depths = -sound_speeds[0].dbars.segment(1, sound_speeds[0].dbars.rows()-2);
+    Eigen::VectorXd layer_speeds = sound_speeds[0].vels.head(sound_speeds[0].vels.rows()-1);
+    */
+    Eigen::VectorXd layer_speeds, layer_depths;
+    tie(layer_speeds, layer_depths) = get_sound_vels_below(sensor_origin);
+    layer_depths.array() -= sensor_origin(2); // refraction assumes sensor z=0
+
+    cout << "Number of depths: " << layer_depths.rows() << ", number of speeds: " << layer_speeds.rows() << endl;
+
+    Eigen::VectorXd x = (P.leftCols<2>().rowwise() - sensor_origin.head<2>().transpose()).rowwise().norm();
+    Eigen::MatrixXd end_points(x.rows(), 2);
+    end_points.col(0) = x;
+    end_points.col(1) = P.col(2).array() - sensor_origin(2); // refraction assumes sensor z=0
+
+    Eigen::MatrixXd layer_widths;
+    Eigen::VectorXd times;
+    tie(times, layer_widths) = trace_multiple_layers(layer_depths, layer_speeds, end_points);
+    times.array() *= 2.; // back and forth
+    cout << "Got final times: " << times.transpose() << endl;
+
+    visualize_rays(end_points, layer_depths, layer_widths, -25., false, is_left);
+
+    is_left = !is_left;
+
     return times;
 }
 
@@ -425,7 +487,13 @@ ping_draping_result BaseDraper::project_ping_side(const xtf_data::xtf_sss_ping_s
     ping_draping_result res;
     res.hits_points = hits;
     res.sensor_origin = origin;
-    res.hits_times = compute_times(origin, hits);
+
+    if (ray_tracing_enabled) {
+        res.hits_times = compute_refraction_times(origin, hits);
+    }
+    else {
+        res.hits_times = compute_times(origin, hits);
+    }
 
     // compute the elevation waterfall row
     //res.sss_depths = convert_to_time_bins(times, hits.col(2), sensor, nbr_bins);

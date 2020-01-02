@@ -136,7 +136,7 @@ target_link_libraries(sss_map_image eigen_cereal xtf_data ${OpenCV_LIBS})
 
 target_link_libraries(sss_meas_data eigen_cereal xtf_data ${OpenCV_LIBS})
 
-target_link_libraries(base_draper drape_mesh xtf_data patch_views mesh_map ${OpenCV_LIBS} -lpthread)
+target_link_libraries(base_draper drape_mesh snell_ray_tracing xtf_data patch_views mesh_map ${OpenCV_LIBS} -lpthread)
 
 target_link_libraries(view_draper base_draper drape_mesh xtf_data patch_views mesh_map ${OpenCV_LIBS} ${GLFW3_LIBRARY} auvlib_glad -lpthread)
 
