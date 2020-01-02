@@ -16,6 +16,8 @@ protected:
     xtf_data::xtf_sss_ping::PingsT pings; // sidescan pings used for draping
     int i; // timestep counter, one step per ping
 
+    Eigen::MatrixXd texture_image; // used for displaying texture and checking coverage
+
     Eigen::MatrixXd V2; // vehicle mesh faces
     Eigen::MatrixXi F2; // vehicle mesh vertices
     Eigen::MatrixXd V; // combined bathy+vehicle, vis mesh vertices
@@ -31,8 +33,12 @@ protected:
 
     void set_texture(const Eigen::MatrixXd& texture, const BoundsT& texture_bounds);
 
+    bool fast_is_mesh_underneath_vehicle(const Eigen::Vector3d& origin);
+
 public:
 
+    Eigen::MatrixXd get_texture_image() { return texture_image; }
+    void add_texture_intensities(const Eigen::MatrixXd& hits, const Eigen::VectorXd& intensities);
     void set_vehicle_mesh(const Eigen::MatrixXd& new_V2, const Eigen::MatrixXi& new_F2, const Eigen::MatrixXd& new_C2);
 
     ViewDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,

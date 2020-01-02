@@ -20,24 +20,28 @@
 #include <bathy_maps/drape_mesh.h>
 
 struct ping_draping_result {
-    Eigen::Vector3d origin;
-    Eigen::MatrixXd hits;
-    Eigen::VectorXi hits_inds;
-    Eigen::VectorXd times;
-    Eigen::VectorXd intensities;
 
-    //Eigen::VectorXd sss_depths;
-    Eigen::MatrixXd sss_hits;
-    Eigen::MatrixXd sss_normals;
-    Eigen::VectorXd sss_model;
+    // origin of the sensor in the world
+    Eigen::Vector3d sensor_origin;
+
+    // unorganized point cloud data
+    Eigen::MatrixXd hits_points;
+    Eigen::VectorXi hits_inds;
+    Eigen::VectorXd hits_times;
+    Eigen::VectorXd hits_intensities;
+
+    // data where each index corresponds to a ping time bin
+    Eigen::MatrixXd time_bin_points;
+    Eigen::MatrixXd time_bin_normals;
+    Eigen::VectorXd time_bin_model_intensities;
 
 	template <class Archive>
     void serialize( Archive & ar )
     {
-        ar(CEREAL_NVP(origin), CEREAL_NVP(hits),
-           CEREAL_NVP(hits_inds), CEREAL_NVP(hits_inds),
-           CEREAL_NVP(intensities), CEREAL_NVP(sss_hits),
-           CEREAL_NVP(sss_normals), CEREAL_NVP(sss_model));
+        ar(CEREAL_NVP(sensor_origin), CEREAL_NVP(hits_points),
+           CEREAL_NVP(hits_inds), CEREAL_NVP(hits_times),
+           CEREAL_NVP(hits_intensities), CEREAL_NVP(time_bin_points),
+           CEREAL_NVP(time_bin_normals), CEREAL_NVP(time_bin_model_intensities));
     }
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -52,16 +56,18 @@ protected:
 
     Eigen::MatrixXd V1; // bathymetry mesh faces
     Eigen::MatrixXi F1; // bathymetry mesh vertices
+    Eigen::MatrixXd N1; // bathymetry mesh normals
     Eigen::Vector3d offset; // offset of mesh wrt world coordinates
 
+    /*
     // smaller local versions used for ray tracing
     Eigen::MatrixXd V1_small; // bathymetry mesh faces
     Eigen::MatrixXi F1_small; // bathymetry mesh vertices
     Eigen::MatrixXd N_small; // normals of V1_small, F1_small
     Eigen::Vector3d pos_small; // the pos of the local small grid
+    */
 
     BoundsT bounds;
-    Eigen::MatrixXd texture_image; // used for displaying texture and checking coverage
 
     BathyTracer tracer;
 
@@ -110,7 +116,6 @@ protected:
 
     // NOTE: these are old style functions, to be deprecated
     //std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::VectorXi, Eigen::VectorXi, Eigen::Vector3d> project_sss();
-    bool fast_is_mesh_underneath_vehicle(const Eigen::Vector3d& origin);
 
 public:
 
@@ -119,10 +124,8 @@ public:
                const csv_data::csv_asvp_sound_speed::EntriesT& sound_speeds = csv_data::csv_asvp_sound_speed::EntriesT());
 
     std::pair<ping_draping_result, ping_draping_result> project_ping(const xtf_data::xtf_sss_ping& ping, int nbr_bins);
-    void add_texture_intensities(const Eigen::MatrixXd& hits, const Eigen::VectorXd& intensities);
     Eigen::VectorXd compute_bin_intensities(const xtf_data::xtf_sss_ping_side& ping, int nbr_bins);
 
-    Eigen::MatrixXd get_texture_image() { return texture_image; }
     void set_sidescan_yaw(double new_sensor_yaw) { sensor_yaw = new_sensor_yaw; }
     void set_sidescan_port_stbd_offsets(const Eigen::Vector3d& new_offset_port, const Eigen::Vector3d& new_offset_stbd) { sensor_offset_port = new_offset_port; sensor_offset_stbd = new_offset_stbd; }
     void set_tracing_map_size(double new_tracing_map_size) { tracing_map_size = new_tracing_map_size; }

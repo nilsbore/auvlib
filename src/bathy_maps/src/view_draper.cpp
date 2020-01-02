@@ -40,8 +40,44 @@ ViewDraper::ViewDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
     //viewer.launch();
     viewer.core().background_color << 1., 1., 1., 1.; // white background
 
+    // resolution of 1m
+    int rows = int(bounds(1, 1)-bounds(0, 1));
+    int cols = int(bounds(1, 0)-bounds(0, 0));
+    texture_image = Eigen::MatrixXd::Zero(rows, cols);
+    cout << "Texture image rows: " << rows << ", cols: " << cols << endl;
+    for (int j = 0; j < V1.rows(); ++j) {
+        //int y = rows-int(V1(j, 1))-1;
+        int y = int(V1(j, 1));
+        int x = int(V1(j, 0));
+        if (x >= 0 && x < cols && y >= 0 && y < rows && V1(j, 2) != 0.) {
+            texture_image(y, x) = 1.; //V1(j, 0)/(bounds(1, 0)-bounds(0, 0));
+        }
+    }
+
     //Eigen::Matrix2d mesh_bounds; mesh_bounds << 0., 0., bounds(1, 0)-bounds(0, 0), bounds(1, 1)-bounds(0, 1);
     set_texture(texture_image, bounds);
+}
+
+bool ViewDraper::fast_is_mesh_underneath_vehicle(const Eigen::Vector3d& origin)
+{
+    //int y = texture_image.rows()-int(origin(1))-1;
+    int y = int(origin(1));
+    int x = int(origin(0));
+    if (x >= 0 && x < texture_image.cols() && y >= 0 && y < texture_image.rows()) {
+        return texture_image(y, x) != 0.;
+    }
+    return false;
+}
+
+void ViewDraper::add_texture_intensities(const Eigen::MatrixXd& hits, const Eigen::VectorXd& intensities)
+{
+    for (int j = 0; j < hits.rows(); ++j) {
+        int y = int(hits(j, 1));
+        int x = int(hits(j, 0));
+        if (intensities(j) != 0 && x >= 0 && x < texture_image.cols() && y >= 0 && y < texture_image.rows()) {
+            texture_image(y, x) = intensity_multiplier*std::max(intensities(j), 0.01);
+        }
+    }
 }
 
 void ViewDraper::set_texture(const Eigen::MatrixXd& texture, const BoundsT& texture_bounds)
@@ -108,8 +144,6 @@ bool ViewDraper::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
         Eigen::Vector3d origin_port;
         Eigen::Vector3d origin_stbd;
         tie(origin_port, origin_stbd) = get_port_stbd_sensor_origins(pings[i]);
-        Eigen::VectorXd times_left = compute_times(origin_port, hits_left);
-        Eigen::VectorXd times_right = compute_times(origin_stbd, hits_right);
 
         if (i % 10 == 0) {
             visualize_vehicle();
@@ -160,20 +194,6 @@ void ViewDraper::visualize_rays(const Eigen::Vector3d& sensor_origin, const Eige
     }
 }
 
-/*
-void BaseDraper::visualize_rays(const Eigen::MatrixXd& hits_left, const Eigen::MatrixXd& hits_right)
-{
-    Eigen::MatrixXi E;
-    Eigen::MatrixXd P(hits_left.rows(), 3);
-    P.rowwise() = (pings[i].pos_ - offset).transpose();
-    viewer.data().set_edges(P, E, Eigen::RowVector3d(1., 0., 0.));
-    viewer.data().add_edges(P, hits_left, Eigen::RowVector3d(1., 0., 0.));
-    P = Eigen::MatrixXd(hits_right.rows(), 3);
-    P.rowwise() = (pings[i].pos_ - offset).transpose();
-    viewer.data().add_edges(P, hits_right, Eigen::RowVector3d(0., 1., 0.));
-}
-*/
-
 tuple<Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXd> get_vehicle_mesh()
 {
     Eigen::MatrixXd Vb;
@@ -199,28 +219,10 @@ void ViewDraper::visualize_vehicle()
     Eigen::Matrix3d Rz = Eigen::AngleAxisd(pings[i].heading_, Eigen::Vector3d::UnitZ()).matrix();
     Eigen::Matrix3d R = Rz*Ry*Rcomp;
 
-    if (true) {//V1_small.rows() == 0) {
-        V.bottomRows(V2.rows()) = V2;
-        V.bottomRows(V2.rows()) *= R.transpose();
-        V.bottomRows(V2.rows()).array().rowwise() += (pings[i].pos_ - offset).transpose().array();
-        viewer.data().set_vertices(V);
-    }
-    else {
-        Eigen::MatrixXd V_new(V1_small.rows()+V2.rows(), V1_small.cols());
-        V_new.topRows(V1_small.rows()) = V1_small;
-        V_new.bottomRows(V2.rows()) = V2;
-        V_new.bottomRows(V2.rows()) *= R.transpose();
-        V_new.bottomRows(V2.rows()).array().rowwise() += (pings[i].pos_ - offset).transpose().array();
-        Eigen::MatrixXi F_new(F1_small.rows()+F2.rows(), F1_small.cols());
-        F_new.topRows(F1_small.rows()) = F1_small;
-        F_new.bottomRows(F2.rows()) = F2.array() + V1_small.rows();
-        Eigen::MatrixXd C_new(V_new.rows(), V_new.cols());
-        C_new.topRows(V1_small.rows()) = color_jet_from_mesh(V1_small);
-        C_new.bottomRows(V2.rows()).rowwise() = Eigen::RowVector3d(1., 1., 0.);
-        viewer.data().clear();
-        viewer.data().set_mesh(V_new, F_new);
-        viewer.data().set_colors(C_new);
-    }
+    V.bottomRows(V2.rows()) = V2;
+    V.bottomRows(V2.rows()) *= R.transpose();
+    V.bottomRows(V2.rows()).array().rowwise() += (pings[i].pos_ - offset).transpose().array();
+    viewer.data().set_vertices(V);
 }
 
 void ViewDraper::visualize_intensities()

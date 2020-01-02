@@ -31,13 +31,13 @@ PYBIND11_MODULE(map_draper, m) {
     m.doc() = "Functions for draping a mesh with sidescan data"; // optional module docstring
     py::class_<ping_draping_result>(m, "ping_draping_result", "Class for representing the intermediate result from draping on sidescan ping side")
         .def(py::init<>())
-        .def_readwrite("origin", &ping_draping_result::origin, "Origin of sensor when capturing ping")
-        .def_readwrite("hits", &ping_draping_result::hits, "3D positions of hits, see hits_inds for corresponding sidescan index")
+        .def_readwrite("sensor_origin", &ping_draping_result::sensor_origin, "Origin of sensor when capturing ping")
+        .def_readwrite("hits_points", &ping_draping_result::hits_points, "3D positions of hits, see hits_inds for corresponding sidescan index")
         .def_readwrite("hits_inds", &ping_draping_result::hits_inds, "Ping time index of the hits")
-        .def_readwrite("intensities", &ping_draping_result::intensities, "Downsampledintensities from sidescan")
-        .def_readwrite("sss_hits", &ping_draping_result::sss_hits, "Depths corresponding to the ping intensities")
-        .def_readwrite("sss_normals", &ping_draping_result::sss_normals, "Normals corresponding to the ping intensities")
-        .def_readwrite("sss_model", &ping_draping_result::sss_model, "Model intensities corresponding to the real intensities");
+        .def_readwrite("hits_intensities", &ping_draping_result::hits_intensities, "Downsampledintensities from sidescan")
+        .def_readwrite("time_bin_points", &ping_draping_result::time_bin_points, "Depths corresponding to the ping intensities")
+        .def_readwrite("time_bin_normals", &ping_draping_result::time_bin_normals, "Normals corresponding to the ping intensities")
+        .def_readwrite("time_bin_model_intensities", &ping_draping_result::time_bin_model_intensities, "Model intensities corresponding to the real intensities");
 
     py::class_<sss_map_image>(m, "sss_map_image", "Class for sidescan views of a patch from different survey lines")
         .def(py::init<>())
@@ -71,8 +71,6 @@ PYBIND11_MODULE(map_draper, m) {
                       const csv_asvp_sound_speed::EntriesT&>())
         .def("project_ping", &BaseDraper::project_ping, "Project a ping onto the mesh and get intermediate draping results. Provide the desired downsampling of the ping as the second parameter")
         .def("compute_bin_intensities", &BaseDraper::compute_bin_intensities, "Dowsample the intensities of a ping to a vector of a desired length")
-        .def("add_texture_intensities", &BaseDraper::add_texture_intensities, "Add the intensities of draping result hits and intensities")
-        .def("get_texture_image", &BaseDraper::get_texture_image, "Get the texture image, defined within bounds, with resolution of 1m")
         .def("set_sidescan_yaw", &BaseDraper::set_sidescan_yaw, "Set yaw correction of sidescan with respect to nav frame")
         .def("set_sidescan_port_stbd_offsets", &BaseDraper::set_sidescan_port_stbd_offsets, "Set offsets of sidescan port and stbd sides with respect to nav frame")
         .def("set_tracing_map_size", &BaseDraper::set_tracing_map_size, "Set size of slice of map where we do ray tracing. Smaller makes it faster but you might cut off valid sidescan angles")

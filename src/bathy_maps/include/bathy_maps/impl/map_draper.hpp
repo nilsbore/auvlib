@@ -84,12 +84,14 @@ bool MapDraper<MapSaver>::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
     // add the 3d hits and waterfall images to the builder object
     Eigen::Vector3d pos = pings[i].pos_ - offset;
     Eigen::Vector3d rpy(pings[i].roll_, pings[i].pitch_, pings[i].heading_);
-    map_image_builder.add_hits(left.hits, left.hits_inds, left.intensities, left.sss_hits.col(2), left.sss_model, pings[i].port, pos, rpy, true);
-    map_image_builder.add_hits(right.hits, right.hits_inds, right.intensities, right.sss_hits.col(2), right.sss_model, pings[i].stbd, pos, rpy, false);
+    map_image_builder.add_hits(left.hits_points, left.hits_inds, left.hits_intensities, left.time_bin_points.col(2),
+                               left.time_bin_model_intensities, pings[i].port, pos, rpy, true);
+    map_image_builder.add_hits(right.hits_points, right.hits_inds, right.hits_intensities, right.time_bin_points.col(2),
+                               right.time_bin_model_intensities, pings[i].stbd, pos, rpy, false);
 
     // add intensities for visualization
-    add_texture_intensities(left.hits, left.intensities);
-    add_texture_intensities(right.hits, right.intensities);
+    add_texture_intensities(left.hits_points, left.hits_intensities);
+    add_texture_intensities(right.hits_points, right.hits_intensities);
 
     cout << "Done adding hits, visualizing" << endl;
 
@@ -97,8 +99,8 @@ bool MapDraper<MapSaver>::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
         visualize_vehicle();
         visualize_intensities();
         //visualize_rays(hits_left, hits_right);
-        visualize_rays(left.origin, left.hits, true);
-        visualize_rays(right.origin, right.hits);
+        visualize_rays(left.sensor_origin, left.hits_points, true);
+        visualize_rays(right.sensor_origin, right.hits_points);
     }
 
     cout << "Done visualizing" << endl;

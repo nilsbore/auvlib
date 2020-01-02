@@ -39,6 +39,8 @@ PYBIND11_MODULE(patch_draper, m) {
         .def(py::init<const Eigen::MatrixXd&, const Eigen::MatrixXi&,
                       const xtf_sss_ping::PingsT&, const ViewDraper::BoundsT&,
                       const csv_asvp_sound_speed::EntriesT&>())
+        .def("add_texture_intensities", &ViewDraper::add_texture_intensities, "Add the intensities of draping result hits and intensities")
+        .def("get_texture_image", &ViewDraper::get_texture_image, "Get the texture image, defined within bounds, with resolution of 1m")
         .def("set_sidescan_yaw", &ViewDraper::set_sidescan_yaw, "Set yaw correction of sidescan with respect to nav frame")
         .def("set_sidescan_port_stbd_offsets", &ViewDraper::set_sidescan_port_stbd_offsets, "Set offsets of sidescan port and stbd sides with respect to nav frame")
         .def("set_tracing_map_size", &ViewDraper::set_tracing_map_size, "Set size of slice of map where we do ray tracing. Smaller makes it faster but you might cut off valid sidescan angles")
