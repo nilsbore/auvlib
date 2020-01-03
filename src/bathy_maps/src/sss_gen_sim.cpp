@@ -19,11 +19,10 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 using namespace std;
-using namespace xtf_data;
 using namespace csv_data;
 
 SSSGenSim::SSSGenSim(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
-                     const xtf_sss_ping::PingsT& pings,
+                     const std_data::sss_ping::PingsT& pings,
                      const BoundsT& bounds,
                      const csv_asvp_sound_speed::EntriesT& sound_speeds,
                      const Eigen::MatrixXd& height_map)

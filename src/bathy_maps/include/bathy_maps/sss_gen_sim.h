@@ -146,7 +146,7 @@ public:
     //void set_resolution(double new_resolution);
 
     SSSGenSim(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
-              const xtf_data::xtf_sss_ping::PingsT& pings,
+              const std_data::sss_ping::PingsT& pings,
               const BoundsT& bounds,
               const csv_data::csv_asvp_sound_speed::EntriesT& sound_speeds,
               const Eigen::MatrixXd& height_map);

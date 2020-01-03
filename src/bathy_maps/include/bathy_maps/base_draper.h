@@ -85,12 +85,12 @@ protected:
 
     // NOTE: these are new style functions
     std::pair<Eigen::MatrixXd, Eigen::MatrixXd> compute_sss_dirs(const Eigen::Matrix3d& R, double tilt_angle, double beam_width, int nbr_lines);
-    std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> project(const xtf_data::xtf_sss_ping& ping);
-    std::tuple<Eigen::MatrixXd, Eigen::MatrixXd> trace_side(const xtf_data::xtf_sss_ping_side& ping,
+    std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> project(const std_data::sss_ping& ping);
+    std::tuple<Eigen::MatrixXd, Eigen::MatrixXd> trace_side(const std_data::sss_ping_side& ping,
                                                             const Eigen::Vector3d& sensor_origin,
                                                             const Eigen::MatrixXd& dirs);
 
-    ping_draping_result project_ping_side(const xtf_data::xtf_sss_ping_side& sensor, const Eigen::MatrixXd& hits,
+    ping_draping_result project_ping_side(const std_data::sss_ping_side& sensor, const Eigen::MatrixXd& hits,
                                           const Eigen::MatrixXd& hits_normals, const Eigen::Vector3d& origin,
                                           int nbr_bins);
 
@@ -99,16 +99,16 @@ protected:
     Eigen::VectorXd compute_refraction_times(const Eigen::Vector3d& sensor_origin, const Eigen::MatrixXd& P);
     Eigen::VectorXd compute_times(const Eigen::Vector3d& sensor_origin, const Eigen::MatrixXd& P);
 
-    std::pair<Eigen::Vector3d, Eigen::Vector3d> get_port_stbd_sensor_origins(const xtf_data::xtf_sss_ping& ping);
-    Eigen::VectorXi compute_bin_indices(const Eigen::VectorXd& times, const xtf_data::xtf_sss_ping_side& ping, size_t nbr_windows);
+    std::pair<Eigen::Vector3d, Eigen::Vector3d> get_port_stbd_sensor_origins(const std_data::sss_ping& ping);
+    Eigen::VectorXi compute_bin_indices(const Eigen::VectorXd& times, const std_data::sss_ping_side& ping, size_t nbr_windows);
 
     Eigen::VectorXd convert_to_time_bins(const Eigen::VectorXd& times, const Eigen::VectorXd& values,
-                                         const xtf_data::xtf_sss_ping_side& ping, size_t nbr_windows);
+                                         const std_data::sss_ping_side& ping, size_t nbr_windows);
     Eigen::MatrixXd convert_to_time_bins(const Eigen::VectorXd& times, const Eigen::MatrixXd& values,
-                                         const xtf_data::xtf_sss_ping_side& ping, size_t nbr_windows);
+                                         const std_data::sss_ping_side& ping, size_t nbr_windows);
 
     Eigen::VectorXd compute_intensities(const Eigen::VectorXd& times, 
-                                        const xtf_data::xtf_sss_ping_side& ping);
+                                        const std_data::sss_ping_side& ping);
 
     Eigen::VectorXd compute_lambert_intensities(const Eigen::MatrixXd& hits, const Eigen::MatrixXd& normals,
                                                 const Eigen::Vector3d& origin);
@@ -126,8 +126,8 @@ public:
                const BoundsT& bounds,
                const csv_data::csv_asvp_sound_speed::EntriesT& sound_speeds = csv_data::csv_asvp_sound_speed::EntriesT());
 
-    std::pair<ping_draping_result, ping_draping_result> project_ping(const xtf_data::xtf_sss_ping& ping, int nbr_bins);
-    Eigen::VectorXd compute_bin_intensities(const xtf_data::xtf_sss_ping_side& ping, int nbr_bins);
+    std::pair<ping_draping_result, ping_draping_result> project_ping(const std_data::sss_ping& ping, int nbr_bins);
+    Eigen::VectorXd compute_bin_intensities(const std_data::sss_ping_side& ping, int nbr_bins);
 
     void set_sidescan_yaw(double new_sensor_yaw) { sensor_yaw = new_sensor_yaw; }
     void set_sidescan_port_stbd_offsets(const Eigen::Vector3d& new_offset_port, const Eigen::Vector3d& new_offset_stbd) { sensor_offset_port = new_offset_port; sensor_offset_stbd = new_offset_stbd; }

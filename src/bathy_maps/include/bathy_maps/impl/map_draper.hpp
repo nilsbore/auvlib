@@ -16,12 +16,11 @@
 //#include <bathy_maps/drape_mesh.h>
 
 using namespace std;
-using namespace xtf_data;
 using namespace csv_data;
 
 template <typename MapSaver>
 MapDraper<MapSaver>::MapDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
-                               const xtf_sss_ping::PingsT& pings,
+                               const std_data::sss_ping::PingsT& pings,
                                const BoundsT& bounds,
                                const csv_asvp_sound_speed::EntriesT& sound_speeds)
     : ViewDraper(V1, F1, pings, bounds, sound_speeds),

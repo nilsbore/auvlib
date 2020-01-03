@@ -39,7 +39,7 @@ void BaseDraper::set_ray_tracing_enabled(bool enabled)
     ray_tracing_enabled = enabled;
 }
 
-pair<Eigen::Vector3d, Eigen::Vector3d> BaseDraper::get_port_stbd_sensor_origins(const xtf_data::xtf_sss_ping& ping)
+pair<Eigen::Vector3d, Eigen::Vector3d> BaseDraper::get_port_stbd_sensor_origins(const std_data::sss_ping& ping)
 {
     Eigen::Matrix3d Ry = Eigen::AngleAxisd(ping.pitch_, Eigen::Vector3d::UnitY()).matrix();
     Eigen::Matrix3d Rz = Eigen::AngleAxisd(ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
@@ -72,7 +72,7 @@ pair<Eigen::MatrixXd, Eigen::MatrixXd> BaseDraper::compute_sss_dirs(const Eigen:
     return make_pair(dirs_left, dirs_right);
 }
 
-tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> BaseDraper::project(const xtf_data::xtf_sss_ping& ping)
+tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> BaseDraper::project(const std_data::sss_ping& ping)
 {
     cout << "Setting new position: " << ping.pos_.transpose() << endl;
     Eigen::Matrix3d Rcomp = Eigen::AngleAxisd(sensor_yaw, Eigen::Vector3d::UnitZ()).matrix();
@@ -116,7 +116,7 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> BaseDr
 }
 
 // New style functions follow here:
-tuple<Eigen::MatrixXd, Eigen::MatrixXd> BaseDraper::trace_side(const xtf_data::xtf_sss_ping_side& ping,
+tuple<Eigen::MatrixXd, Eigen::MatrixXd> BaseDraper::trace_side(const std_data::sss_ping_side& ping,
                                                                const Eigen::Vector3d& sensor_origin,
                                                                const Eigen::MatrixXd& dirs)
 {
@@ -210,7 +210,7 @@ Eigen::VectorXd BaseDraper::compute_refraction_times(const Eigen::Vector3d& sens
     return times;
 }
 
-Eigen::VectorXi BaseDraper::compute_bin_indices(const Eigen::VectorXd& times, const xtf_data::xtf_sss_ping_side& ping, size_t nbr_windows)
+Eigen::VectorXi BaseDraper::compute_bin_indices(const Eigen::VectorXd& times, const std_data::sss_ping_side& ping, size_t nbr_windows)
 {
     Eigen::VectorXi bin_inds = Eigen::VectorXi::Zero(times.rows());
 
@@ -229,7 +229,7 @@ Eigen::VectorXi BaseDraper::compute_bin_indices(const Eigen::VectorXd& times, co
 }
 
 Eigen::VectorXd BaseDraper::convert_to_time_bins(const Eigen::VectorXd& times, const Eigen::VectorXd& values,
-                                                 const xtf_data::xtf_sss_ping_side& ping, size_t nbr_windows)
+                                                 const std_data::sss_ping_side& ping, size_t nbr_windows)
 {
     double ping_step = ping.time_duration / double(nbr_windows);
     Eigen::VectorXd value_windows = Eigen::VectorXd::Zero(nbr_windows);
@@ -248,7 +248,7 @@ Eigen::VectorXd BaseDraper::convert_to_time_bins(const Eigen::VectorXd& times, c
 }
 
 Eigen::MatrixXd BaseDraper::convert_to_time_bins(const Eigen::VectorXd& times, const Eigen::MatrixXd& values,
-                                                 const xtf_data::xtf_sss_ping_side& ping, size_t nbr_windows)
+                                                 const std_data::sss_ping_side& ping, size_t nbr_windows)
 {
     double ping_step = ping.time_duration / double(nbr_windows);
     Eigen::MatrixXd value_windows = Eigen::MatrixXd::Zero(nbr_windows, values.cols());
@@ -267,7 +267,7 @@ Eigen::MatrixXd BaseDraper::convert_to_time_bins(const Eigen::VectorXd& times, c
 }
 
 Eigen::VectorXd BaseDraper::compute_intensities(const Eigen::VectorXd& times, 
-                                                const xtf_data::xtf_sss_ping_side& ping)
+                                                const std_data::sss_ping_side& ping)
 {
     double ping_step = ping.time_duration / double(ping.pings.size());
 
@@ -281,7 +281,7 @@ Eigen::VectorXd BaseDraper::compute_intensities(const Eigen::VectorXd& times,
     return intensities;
 }
 
-Eigen::VectorXd BaseDraper::compute_bin_intensities(const xtf_data::xtf_sss_ping_side& ping, int nbr_bins)
+Eigen::VectorXd BaseDraper::compute_bin_intensities(const std_data::sss_ping_side& ping, int nbr_bins)
 {
     auto start = chrono::high_resolution_clock::now();
     double ping_step = double(ping.pings.size()) / double(nbr_bins);
@@ -370,7 +370,7 @@ Eigen::VectorXd BaseDraper::compute_model_intensities(const Eigen::MatrixXd& hit
     return compute_model_intensities(dists, thetas);
 }
 
-pair<ping_draping_result, ping_draping_result> BaseDraper::project_ping(const xtf_data::xtf_sss_ping& ping, int nbr_bins)
+pair<ping_draping_result, ping_draping_result> BaseDraper::project_ping(const std_data::sss_ping& ping, int nbr_bins)
 {
     Eigen::MatrixXd hits_left;
     Eigen::MatrixXd hits_right;
@@ -406,7 +406,7 @@ pair<ping_draping_result, ping_draping_result> BaseDraper::project_ping(const xt
     return make_pair(left, right);
 }
 
-ping_draping_result BaseDraper::project_ping_side(const xtf_data::xtf_sss_ping_side& sensor, const Eigen::MatrixXd& hits,
+ping_draping_result BaseDraper::project_ping_side(const std_data::sss_ping_side& sensor, const Eigen::MatrixXd& hits,
                                                   const Eigen::MatrixXd& hits_normals, const Eigen::Vector3d& origin,
                                                   int nbr_bins)
 {

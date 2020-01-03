@@ -34,12 +34,12 @@ public:
     void set_patch_callback(const std::function<void(sss_patch_views)>& callback) { save_callback = callback; }
 
     PatchDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
-                const xtf_data::xtf_sss_ping::PingsT& pings,
+                const std_data::sss_ping::PingsT& pings,
                 const BoundsT& bounds,
                 const csv_data::csv_asvp_sound_speed::EntriesT& sound_speeds);
 
     void handle_patches();
-    bool point_in_view(const xtf_data::xtf_sss_ping& ping, const Eigen::Vector3d& point, double sensor_yaw);
+    bool point_in_view(const std_data::sss_ping& ping, const Eigen::Vector3d& point, double sensor_yaw);
     bool callback_mouse_down(igl::opengl::glfw::Viewer& viewer, int, int);
     bool callback_key_pressed(igl::opengl::glfw::Viewer& viewer, unsigned int key, int mods);
     bool callback_pre_draw(igl::opengl::glfw::Viewer& viewer);
@@ -47,7 +47,7 @@ public:
 };
 
 sss_patch_views::ViewsT drape_patches(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
-                                      const PatchDraper::BoundsT& bounds, const xtf_data::xtf_sss_ping::PingsT& pings,
+                                      const PatchDraper::BoundsT& bounds, const std_data::sss_ping::PingsT& pings,
                                       const csv_data::csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw,
                                       const std::function<void(sss_patch_views)>& save_callback = &PatchDraper::default_callback);
 

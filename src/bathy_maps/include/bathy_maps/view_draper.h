@@ -13,7 +13,7 @@ public:
 protected:
 
     igl::opengl::glfw::Viewer viewer; // ligigl viewer object
-    xtf_data::xtf_sss_ping::PingsT pings; // sidescan pings used for draping
+    std_data::sss_ping::PingsT pings; // sidescan pings used for draping
     int i; // timestep counter, one step per ping
     int nbr_time_bins;
     
@@ -46,7 +46,7 @@ public:
     void set_vehicle_mesh(const Eigen::MatrixXd& new_V2, const Eigen::MatrixXi& new_F2, const Eigen::MatrixXd& new_C2);
 
     ViewDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
-               const xtf_data::xtf_sss_ping::PingsT& pings,
+               const std_data::sss_ping::PingsT& pings,
                const BoundsT& bounds,
                const csv_data::csv_asvp_sound_speed::EntriesT& sound_speeds = csv_data::csv_asvp_sound_speed::EntriesT());
 
@@ -57,7 +57,7 @@ public:
 std::tuple<Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXd> get_vehicle_mesh();
 Eigen::MatrixXd color_jet_from_mesh(const Eigen::MatrixXd& V);
 void drape_viewer(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
-                  const ViewDraper::BoundsT& bounds, const xtf_data::xtf_sss_ping::PingsT& pings,
+                  const ViewDraper::BoundsT& bounds, const std_data::sss_ping::PingsT& pings,
                   const csv_data::csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw);
 
 #endif // VIEW_DRAPER_H
