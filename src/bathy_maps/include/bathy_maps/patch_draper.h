@@ -12,10 +12,10 @@
 #ifndef PATCH_DRAPER_H
 #define PATCH_DRAPER_H
 
-#include <bathy_maps/base_draper.h>
+#include <bathy_maps/view_draper.h>
 #include <bathy_maps/patch_views.h>
 
-struct PatchDraper : public BaseDraper {
+struct PatchDraper : public ViewDraper {
 public:
 
     using BoundsT = Eigen::Matrix2d;
@@ -39,6 +39,7 @@ public:
                 const csv_data::csv_asvp_sound_speed::EntriesT& sound_speeds);
 
     void handle_patches();
+    bool point_in_view(const xtf_data::xtf_sss_ping& ping, const Eigen::Vector3d& point, double sensor_yaw);
     bool callback_mouse_down(igl::opengl::glfw::Viewer& viewer, int, int);
     bool callback_key_pressed(igl::opengl::glfw::Viewer& viewer, unsigned int key, int mods);
     bool callback_pre_draw(igl::opengl::glfw::Viewer& viewer);

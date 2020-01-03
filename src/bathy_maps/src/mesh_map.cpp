@@ -138,6 +138,7 @@ void show_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F)
 
     viewer.data().point_size = 10;
     viewer.data().line_width = 1;
+    viewer.data().show_lines = false;
 
     //viewer.callback_pre_draw = std::bind(&IglVisCallback::callback_pre_draw, this, std::placeholders::_1);
     //viewer.callback_key_pressed = std::bind(&IglVisCallback::callback_key_pressed, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
@@ -234,6 +235,7 @@ void show_textured_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
 
     viewer.data().point_size = 10;
     viewer.data().line_width = 1;
+    viewer.data().show_lines = false;
 
     //viewer.callback_pre_draw = std::bind(&IglVisCallback::callback_pre_draw, this, std::placeholders::_1);
     //viewer.callback_key_pressed = std::bind(&IglVisCallback::callback_key_pressed, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
