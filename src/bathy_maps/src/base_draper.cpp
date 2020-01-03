@@ -31,79 +31,8 @@ BaseDraper::BaseDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
     offset = Eigen::Vector3d(bounds(0, 0), bounds(0, 1), 0.);
     sensor_offset_port = Eigen::Vector3d::Zero();
     sensor_offset_stbd = Eigen::Vector3d::Zero();
-
-    //pos_small = -1000.*Eigen::Vector3d::Ones(); // should be outside area
-    
     igl::per_face_normals(V1, F1, N1); // compute normals for mesh 
-
 }
-
-/*
-tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::VectorXi, Eigen::VectorXi, Eigen::Vector3d> BaseDraper::project_sss()
-{
-
-    cout << "Setting new position: " << pings[i].pos_.transpose() << endl;
-    //viewer.data().compute_normals();
-    Eigen::Matrix3d Rcomp = Eigen::AngleAxisd(sensor_yaw, Eigen::Vector3d::UnitZ()).matrix();
-    Eigen::Matrix3d Ry = Eigen::AngleAxisd(pings[i].pitch_, Eigen::Vector3d::UnitY()).matrix();
-    Eigen::Matrix3d Rz = Eigen::AngleAxisd(pings[i].heading_, Eigen::Vector3d::UnitZ()).matrix();
-    Eigen::Matrix3d R = Rz*Ry*Rcomp;
-
-    Eigen::MatrixXd hits_left;
-    Eigen::MatrixXd hits_right;
-    Eigen::VectorXi hits_left_inds;
-    Eigen::VectorXi hits_right_inds;
-    Eigen::VectorXd mod_left;
-    Eigen::VectorXd mod_right;
-    //tie(hits_left, hits_right, hits_left_inds, hits_right_inds) = compute_hits(pings[i].pos_ - offset, R, pings[i].port.tilt_angle, pings[i].port.beam_width, V1, F1);
-    auto start = chrono::high_resolution_clock::now();
-    tie(hits_left, hits_right, hits_left_inds, hits_right_inds, mod_left, mod_right) = embree_compute_hits(pings[i].pos_ - offset, R, 1.4*pings[i].port.tilt_angle, pings[i].port.beam_width + 0.2, V1, F1);
-    auto stop = chrono::high_resolution_clock::now();
-    auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-    cout << "embree_compute_hits time: " << duration.count() << " microseconds" << endl;
-
-    start = chrono::high_resolution_clock::now();
-    Eigen::MatrixXd hits_left_intensities;
-    Eigen::VectorXi hits_left_pings_indices;
-    tie(hits_left_intensities, hits_left_pings_indices) = correlate_hits(hits_left, hits_left_inds, mod_left, pings[i].port, pings[i].pos_ - offset, pings[i].sound_vel_, F1, sound_speeds, ray_tracing_enabled, C, hit_sums, hit_counts, true);
-    stop = chrono::high_resolution_clock::now();
-    duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-    cout << "left correlate_hits time: " << duration.count() << " microseconds" << endl;
-
-    start = chrono::high_resolution_clock::now();
-    Eigen::MatrixXd hits_right_intensities;
-    Eigen::VectorXi hits_right_pings_indices;
-    tie(hits_right_intensities, hits_right_pings_indices)= correlate_hits(hits_right, hits_right_inds, mod_right, pings[i].stbd, pings[i].pos_ - offset, pings[i].sound_vel_, F1, sound_speeds, ray_tracing_enabled, C, hit_sums, hit_counts, false);
-    stop = chrono::high_resolution_clock::now();
-    duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-    cout << "right correlate_hits time: " << duration.count() << " microseconds" << endl;
-
-    if (i % 10 == 0) {
-        start = chrono::high_resolution_clock::now();
-        if (V2.rows() > 0) {
-            V.bottomRows(V2.rows()) = V2;
-            V.bottomRows(V2.rows()) *= R.transpose();
-            V.bottomRows(V2.rows()).array().rowwise() += (pings[i].pos_ - offset).transpose().array();
-            viewer.data().set_vertices(V);
-        }
-
-        Eigen::MatrixXi E;
-        Eigen::MatrixXd P(hits_left.rows(), 3);
-        P.rowwise() = (pings[i].pos_ - offset).transpose();
-        viewer.data().set_edges(P, E, Eigen::RowVector3d(1., 0., 0.));
-        viewer.data().add_edges(P, hits_left, Eigen::RowVector3d(1., 0., 0.));
-        P = Eigen::MatrixXd(hits_right.rows(), 3);
-        P.rowwise() = (pings[i].pos_ - offset).transpose();
-        viewer.data().add_edges(P, hits_right, Eigen::RowVector3d(0., 1., 0.));
-        viewer.data().set_colors(C);
-        stop = chrono::high_resolution_clock::now();
-        duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-        cout << "vis time: " << duration.count() << " microseconds" << endl;
-    }
-
-    return make_tuple(hits_left_intensities, hits_right_intensities, hits_left_pings_indices, hits_right_pings_indices, pings[i].pos_ - offset);
-}
-*/
 
 void BaseDraper::set_ray_tracing_enabled(bool enabled)
 {
@@ -120,7 +49,6 @@ pair<Eigen::Vector3d, Eigen::Vector3d> BaseDraper::get_port_stbd_sensor_origins(
     return make_pair(origin_port, origin_stbd);
 }
 
-// New style functions follow here:
 tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> BaseDraper::project(const xtf_data::xtf_sss_ping& ping)
 {
     cout << "Setting new position: " << ping.pos_.transpose() << endl;
@@ -128,92 +56,64 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> BaseDr
     Eigen::Matrix3d Ry = Eigen::AngleAxisd(ping.pitch_, Eigen::Vector3d::UnitY()).matrix();
     Eigen::Matrix3d Rz = Eigen::AngleAxisd(ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
     Eigen::Matrix3d R = Rz*Ry*Rcomp;
+    Eigen::Vector3d offset_pos = ping.pos_ - offset;
 
     Eigen::MatrixXd hits_left;
-    Eigen::MatrixXd hits_right;
-    Eigen::VectorXi hits_left_inds;
-    Eigen::VectorXi hits_right_inds;
     Eigen::MatrixXd normals_left;
+    Eigen::MatrixXd hits_right;
     Eigen::MatrixXd normals_right;
 
-    Eigen::Vector3d offset_pos = ping.pos_ - offset;
-    // TODO: remove this
-    /*
-    if ((offset_pos - pos_small).norm() > tracing_map_size/4.) {
-        tie(V1_small, F1_small) = mesh_map::cut_square_around_point(V1, F1, offset_pos.head<2>(), tracing_map_size);
-        if (V1_small.rows() == 0) {
-            V1_small = V1;
-            F1_small = F1;
-        }
-        igl::per_face_normals(V1_small, F1_small, N_small); // TODO: compute N_small together with F1_small
-        pos_small = offset_pos;
+    // all of this is for adaptively determining the beam_width and tilt_angle for a certain depth
+    auto start = chrono::high_resolution_clock::now();
+    double depth = .8*tracer.depth_mesh_underneath_vehicle(offset_pos, V1, F1); // make it slightly wider
+    if (depth == 0.) {
+        return make_tuple(hits_left, hits_right, normals_left, normals_right);
     }
-    */
+    Eigen::VectorXd speeds, depths;
+    tie(speeds, depths) = get_sound_vels_below(offset_pos);
+    double max_distance = .5*speeds.mean()*ping.port.time_duration;
+    double beam_width = acos(depth/max_distance);
+    double tilt_angle = beam_width/2.;
+    auto stop = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
+    cout << "depth_mesh_underneath_vehicle time: " << duration.count() << " microseconds" << endl;
 
-    double beam_width;
-    double tilt_angle;
-    if (true) {
-        auto start = chrono::high_resolution_clock::now();
-        //double depth = .8*depth_mesh_underneath_vehicle(offset_pos, V1_small, F1_small); // make it slightly wider
-        //double depth = .8*tracer.depth_mesh_underneath_vehicle(offset_pos, V1_small, F1_small); // make it slightly wider
-        double depth = .8*tracer.depth_mesh_underneath_vehicle(offset_pos, V1, F1); // make it slightly wider
-        if (depth == 0.) {
-            return make_tuple(hits_left, hits_right, normals_left, normals_right);
-        }
-        Eigen::VectorXd speeds, depths;
-        tie(speeds, depths) = get_sound_vels_below(offset_pos);
-        double max_distance = .5*speeds.mean()*ping.port.time_duration;
-        beam_width = acos(depth/max_distance);
-        tilt_angle = beam_width/2.;
-        auto stop = chrono::high_resolution_clock::now();
-        auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-        cout << "depth_mesh_underneath_vehicle time: " << duration.count() << " microseconds" << endl;
-    }
-    else {
-        beam_width = ping.port.beam_width + 0.2;
-        tilt_angle = 1.4*ping.port.tilt_angle;
-    }
-
-    /*
-    Eigen::Vector3d origin_port = offset_pos + Rz*Ry*sensor_offset_port;
-    Eigen::Vector3d origin_stbd = offset_pos + Rz*Ry*sensor_offset_stbd;
-    */
     Eigen::Vector3d origin_port;
     Eigen::Vector3d origin_stbd;
     tie(origin_port, origin_stbd) = get_port_stbd_sensor_origins(ping);
 
-    auto start = chrono::high_resolution_clock::now();
-    //tie(hits_left, hits_right, hits_left_inds, hits_right_inds, mod_left, mod_right) = embree_compute_hits(offset_pos, R, 1.4*pings[i].port.tilt_angle, pings[i].port.beam_width + 0.2, V1_small, F1_small);
-    
     Eigen::MatrixXd dirs_left;
     Eigen::MatrixXd dirs_right;
     tie(dirs_left, dirs_right) = compute_sss_dirs(R, tilt_angle, beam_width, 500);
-    tie(hits_left, hits_left_inds) = tracer.compute_hits(origin_port, dirs_left, V1, F1);
-    tie(hits_right, hits_right_inds) = tracer.compute_hits(origin_stbd, dirs_right, V1, F1);
+
+    tie(hits_left, normals_left) = trace_side(ping.port, origin_port, dirs_left);
+    tie(hits_right, normals_right) = trace_side(ping.stbd, origin_stbd, dirs_right);
+
+    return make_tuple(hits_left, hits_right, normals_left, normals_right);
+}
+
+// New style functions follow here:
+tuple<Eigen::MatrixXd, Eigen::MatrixXd> BaseDraper::trace_side(const xtf_data::xtf_sss_ping_side& ping,
+                                                               const Eigen::Vector3d& sensor_origin,
+                                                               const Eigen::MatrixXd& dirs)
+{
+    Eigen::MatrixXd hits;
+    Eigen::VectorXi hits_inds;
+    Eigen::MatrixXd normals;
+
+    auto start = chrono::high_resolution_clock::now();
+    
+    tie(hits, hits_inds) = tracer.compute_hits(sensor_origin, dirs, V1, F1);
     auto stop = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
     cout << "embree_compute_hits full time: " << duration.count() << " microseconds" << endl;
     
-    /*
-    start = chrono::high_resolution_clock::now();
-    tie(hits_left, hits_right, hits_left_inds, hits_right_inds) = tracer.compute_hits(origin_port, origin_stbd, R, tilt_angle, beam_width, V1_small, F1_small);
-    stop = chrono::high_resolution_clock::now();
-    duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-    cout << "embree_compute_hits smaller time: " << duration.count() << " microseconds" << endl;
-    */
-
-    normals_left.resize(hits_left.rows(), 3);
-    normals_right.resize(hits_right.rows(), 3);
-
-    for (int j = 0; j < hits_left.rows(); ++j) {
-        normals_left.row(j) = N1.row(hits_left_inds(j));
+    normals.resize(hits.rows(), 3);
+    for (int j = 0; j < hits.rows(); ++j) {
+        normals.row(j) = N1.row(hits_inds(j));
     }
 
-    for (int j = 0; j < hits_right.rows(); ++j) {
-        normals_right.row(j) = N1.row(hits_right_inds(j));
-    }
-
-    return make_tuple(hits_left, hits_right, normals_left, normals_right);
+    return make_tuple(hits, normals);
 }
 
 /*
@@ -242,14 +142,12 @@ pair<Eigen::VectorXd, Eigen::VectorXd> BaseDraper::get_sound_vels_below(const Ei
     return make_pair(sound_speeds[0].vels.tail(nbr_speeds-i), -sound_speeds[0].dbars.tail(nbr_speeds-i));
 }
 
-// both for this one and the next one, it would make sense
-// to filter the sound vels to get just the ones beneath the vehicle!
-// maybe we can adapt the above function to return the ones below
-// and use that for both of the other ones
-
 Eigen::VectorXd BaseDraper::compute_times(const Eigen::Vector3d& sensor_origin, const Eigen::MatrixXd& P)
 {
-    //Eigen::Vector3d pos = pings[i].pos_ - offset;
+    if (ray_tracing_enabled) {
+        return compute_refraction_times(sensor_origin, P);
+    }
+
     Eigen::VectorXd speeds, depths;
     tie(speeds, depths) = get_sound_vels_below(sensor_origin);
     //double sound_vel = compute_simple_sound_vel();
@@ -486,22 +384,16 @@ pair<ping_draping_result, ping_draping_result> BaseDraper::project_ping(const xt
 }
 
 ping_draping_result BaseDraper::project_ping_side(const xtf_data::xtf_sss_ping_side& sensor, const Eigen::MatrixXd& hits,
-                                      const Eigen::MatrixXd& hits_normals, const Eigen::Vector3d& origin,
-                                      int nbr_bins)
+                                                  const Eigen::MatrixXd& hits_normals, const Eigen::Vector3d& origin,
+                                                  int nbr_bins)
 {
     ping_draping_result res;
     res.hits_points = hits;
     res.sensor_origin = origin;
 
-    if (ray_tracing_enabled) {
-        res.hits_times = compute_refraction_times(origin, hits);
-    }
-    else {
-        res.hits_times = compute_times(origin, hits);
-    }
+    res.hits_times = compute_times(origin, hits);
 
     // compute the elevation waterfall row
-    //res.sss_depths = convert_to_time_bins(times, hits.col(2), sensor, nbr_bins);
     res.time_bin_points = convert_to_time_bins(res.hits_times, hits, sensor, nbr_bins);
     res.time_bin_normals = convert_to_time_bins(res.hits_times, hits_normals, sensor, nbr_bins);
 
@@ -516,12 +408,6 @@ ping_draping_result BaseDraper::project_ping_side(const xtf_data::xtf_sss_ping_s
     res.hits_inds = compute_bin_indices(res.hits_times, sensor, nbr_bins);
 
     cout << "Adding hits: " << res.hits_points.rows() << endl;
-
-    /*
-    Eigen::Matrix3d Rcomp = Eigen::AngleAxisd(sensor_yaw, Eigen::Vector3d::UnitZ()).matrix();
-    Eigen::Matrix3d Ry = Eigen::AngleAxisd(pings[i].pitch_, Eigen::Vector3d::UnitY()).matrix();
-    Eigen::Matrix3d Rz = Eigen::AngleAxisd(pings[i].heading_, Eigen::Vector3d::UnitZ()).matrix();
-    */
 
     return res;
 }

@@ -86,6 +86,9 @@ protected:
     // NOTE: these are new style functions
 
     std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> project(const xtf_data::xtf_sss_ping& ping);
+    std::tuple<Eigen::MatrixXd, Eigen::MatrixXd> trace_side(const xtf_data::xtf_sss_ping_side& ping,
+                                                            const Eigen::Vector3d& sensor_origin,
+                                                            const Eigen::MatrixXd& dirs);
 
     ping_draping_result project_ping_side(const xtf_data::xtf_sss_ping_side& sensor, const Eigen::MatrixXd& hits,
                                           const Eigen::MatrixXd& hits_normals, const Eigen::Vector3d& origin,
