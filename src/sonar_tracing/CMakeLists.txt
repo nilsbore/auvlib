@@ -14,6 +14,9 @@ project(sonar_tracing)
 #  CMAKE_ARGS -DEMBREE_ISPC_SUPPORT=OFF
 #)
 
+include_directories(${LIBIGL_INCLUDE_DIR})
+include_directories(${EMBREE_INCLUDE_DIRS})
+
 if(NOT MSVC AND AUVLIB_WITH_CERES)
   find_package(Ceres REQUIRED)
   include_directories(${CERES_INCLUDE_DIRS})
@@ -28,10 +31,17 @@ add_executable(test_ray_tracing src/test_ray_tracing.cpp)
 # Add some libraries
 add_library(snell_ray_tracing src/snell_ray_tracing.cpp)
 
+add_library(bathy_tracer src/bathy_tracer.cpp)
+
 # Define headers for this library. PUBLIC headers are used for
 # compiling the library, and will be added to consumers' build
 # paths.
 target_include_directories(snell_ray_tracing PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+    PRIVATE src)
+
+target_include_directories(bathy_tracer PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
@@ -44,7 +54,7 @@ target_link_libraries(snell_ray_tracing std_data ${CERES_LIBRARIES} ${OpenCV_LIB
 target_link_libraries(test_ray_tracing snell_ray_tracing ${CERES_LIBRARIES} ${OpenCV_LIBS} -lpthread cxxopts)
 
 # 'make install' to the correct locations (provided by GNUInstallDirs).
-install(TARGETS snell_ray_tracing EXPORT SonarTracingConfig
+install(TARGETS snell_ray_tracing bathy_tracer EXPORT SonarTracingConfig
     ARCHIVE  DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR})  # This is for Windows
@@ -56,4 +66,4 @@ install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(EXPORT SonarTracingConfig DESTINATION share/SonarTracing/cmake)
 
 # This makes the project importable from the build directory
-export(TARGETS snell_ray_tracing FILE SonarTracingConfig.cmake)
+export(TARGETS snell_ray_tracing bathy_tracer FILE SonarTracingConfig.cmake)
