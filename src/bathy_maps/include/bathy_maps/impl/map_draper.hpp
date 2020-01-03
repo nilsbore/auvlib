@@ -84,11 +84,17 @@ bool MapDraper<MapSaver>::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
     // add the 3d hits and waterfall images to the builder object
     Eigen::Vector3d pos = pings[i].pos_ - offset;
     Eigen::Vector3d rpy(pings[i].roll_, pings[i].pitch_, pings[i].heading_);
-    map_image_builder.add_hits(left.hits_points, left.hits_inds, left.hits_intensities, left.time_bin_points.col(2),
-                               left.time_bin_model_intensities, pings[i].port, pos, rpy, true);
-    map_image_builder.add_hits(right.hits_points, right.hits_inds, right.hits_intensities, right.time_bin_points.col(2),
-                               right.time_bin_model_intensities, pings[i].stbd, pos, rpy, false);
 
+    // we need these checks since time_bin_points.col(2) might not exist
+    if (left.hits_points.rows() > 0) {
+        map_image_builder.add_hits(left.hits_points, left.hits_inds, left.hits_intensities, left.time_bin_points.col(2),
+                                   left.time_bin_model_intensities, pings[i].port, pos, rpy, true);
+    }
+    if (right.hits_points.rows() > 0) {
+        map_image_builder.add_hits(right.hits_points, right.hits_inds, right.hits_intensities, right.time_bin_points.col(2),
+                                   right.time_bin_model_intensities, pings[i].stbd, pos, rpy, false);
+    }
+    
     // add intensities for visualization
     add_texture_intensities(left.hits_points, left.hits_intensities);
     add_texture_intensities(right.hits_points, right.hits_intensities);
