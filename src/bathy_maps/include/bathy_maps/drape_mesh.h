@@ -15,36 +15,6 @@
 #include <Eigen/Dense>
 #include <data_tools/xtf_data.h>
 #include <data_tools/csv_data.h>
-#include <igl/embree/EmbreeIntersector.h>
-
-class BathyTracer
-{
-private:
-
-    igl::embree::EmbreeIntersector embree;
-    Eigen::Vector3d first_V;
-    Eigen::Vector3i first_F;
-
-public:
-
-    BathyTracer()
-    {
-        first_V.setZero();
-        first_F.setZero();
-    }
-
-    std::tuple<Eigen::MatrixXd, Eigen::MatrixXi> compute_hits(const Eigen::Vector3d& sensor_origin, const Eigen::MatrixXd& dirs, const Eigen::MatrixXd& V, const Eigen::MatrixXi& F);
-
-    Eigen::MatrixXd ray_mesh_intersection(
-        const Eigen::MatrixXd& V_source,
-        const Eigen::MatrixXd& N_source,
-        const Eigen::MatrixXd& V_target,
-        const Eigen::MatrixXi& F_target);
-
-    double depth_mesh_underneath_vehicle(const Eigen::Vector3d& origin,
-                                         const Eigen::MatrixXd& V_target,
-                                         const Eigen::MatrixXi& F_target);
-};
 
 std::pair<Eigen::MatrixXd, Eigen::MatrixXd> compute_sss_dirs(const Eigen::Matrix3d& R, double tilt_angle, double beam_width, int nbr_lines);
 
@@ -67,8 +37,6 @@ std::pair<Eigen::MatrixXd, Eigen::VectorXi> correlate_hits(const Eigen::MatrixXd
                                             Eigen::VectorXi& hit_counts,
                                             bool is_left = false);
 */
-
-bool point_in_view(const xtf_data::xtf_sss_ping& ping, const Eigen::Vector3d& point, double sensor_yaw);
 
 bool is_mesh_underneath_vehicle(const Eigen::Vector3d& origin, const Eigen::MatrixXd& V, const Eigen::MatrixXi& F);
 double depth_mesh_underneath_vehicle(const Eigen::Vector3d& origin, const Eigen::MatrixXd& V, const Eigen::MatrixXi& F);

@@ -17,7 +17,7 @@
 
 #include <data_tools/xtf_data.h>
 #include <data_tools/csv_data.h>
-#include <bathy_maps/drape_mesh.h>
+#include <sonar_tracing/bathy_tracer.h>
 
 struct ping_draping_result {
 
@@ -84,7 +84,7 @@ protected:
     std::default_random_engine generator; // hopefully not same seed every time
 
     // NOTE: these are new style functions
-
+    std::pair<Eigen::MatrixXd, Eigen::MatrixXd> compute_sss_dirs(const Eigen::Matrix3d& R, double tilt_angle, double beam_width, int nbr_lines);
     std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> project(const xtf_data::xtf_sss_ping& ping);
     std::tuple<Eigen::MatrixXd, Eigen::MatrixXd> trace_side(const xtf_data::xtf_sss_ping_side& ping,
                                                             const Eigen::Vector3d& sensor_origin,

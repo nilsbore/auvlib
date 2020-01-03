@@ -13,7 +13,7 @@
 
 #include <igl/readSTL.h>
 #include <igl/unproject_onto_mesh.h>
-#include <bathy_maps/drape_mesh.h>
+//#include <bathy_maps/drape_mesh.h>
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>

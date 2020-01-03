@@ -13,7 +13,7 @@
 
 #include <igl/readSTL.h>
 #include <igl/unproject_onto_mesh.h>
-#include <bathy_maps/drape_mesh.h>
+//#include <bathy_maps/drape_mesh.h>
 
 using namespace std;
 using namespace xtf_data;

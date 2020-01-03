@@ -22,110 +22,6 @@ using namespace std;
 using namespace xtf_data;
 using namespace csv_data;
 
-Eigen::MatrixXd BathyTracer::ray_mesh_intersection(
-    const Eigen::MatrixXd& V_source,
-    const Eigen::MatrixXd& N_source,
-    const Eigen::MatrixXd& V_target,
-    const Eigen::MatrixXi& F_target)
-{
-    if (first_V != V_target.row(0).transpose() ||
-        first_F != F_target.row(0).transpose()) {
-        embree.init(V_target.template cast<float>(),F_target.template cast<int>());
-        first_V = V_target.row(0).transpose();
-        first_F = F_target.row(0).transpose();
-    }
-
-    double tol = 0.00001;
-
-    // Allocate matrix for the result
-    Eigen::MatrixXd R;
-    R.resize(V_source.rows(), 3);
-
-    // Shoot rays from the source to the target
-    for (unsigned i = 0; i < V_source.rows(); ++i) {
-        igl::Hit hit;
-
-        // Shoot ray
-        Eigen::RowVector3d pos = V_source.row(i) - tol * N_source.row(i);
-        Eigen::RowVector3d dir = N_source.row(i);
-        bool did_hit = embree.intersectBeam(pos.cast<float>(), dir.cast<float>(), hit);
-
-        if (did_hit) {
-            R.row(i) << hit.id, hit.u, hit.v;
-        }
-        else {
-            R.row(i) << -1, 0, 0;
-        }
-    }
-
-    return R;
-}
-
-double BathyTracer::depth_mesh_underneath_vehicle(const Eigen::Vector3d& origin,
-                                                  const Eigen::MatrixXd& V_target,
-                                                  const Eigen::MatrixXi& F_target)
-{
-    if (first_V != V_target.row(0).transpose() ||
-        first_F != F_target.row(0).transpose()) {
-        embree.init(V_target.template cast<float>(),F_target.template cast<int>());
-        first_V = V_target.row(0).transpose();
-        first_F = F_target.row(0).transpose();
-    }
-
-    // Shoot ray
-    igl::Hit hit;
-    bool did_hit = embree.intersectBeam(origin.cast<float>(), Eigen::Vector3f(0., 0., -1.), hit);
-    return did_hit? origin(2) - V_target(F_target(hit.id, 0), 2) : 0.;
-}
-
-tuple<Eigen::MatrixXd, Eigen::MatrixXi> BathyTracer::compute_hits(const Eigen::Vector3d& sensor_origin, const Eigen::MatrixXd& dirs, const Eigen::MatrixXd& V, const Eigen::MatrixXi& F)
-{
-    auto start = chrono::high_resolution_clock::now();
-    igl::Hit hit;
-    auto stop = chrono::high_resolution_clock::now();
-    auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-    cout << "compute_sss_dirs time: " << duration.count() << " microseconds" << endl;
-
-    start = chrono::high_resolution_clock::now();
-    Eigen::MatrixXd hits(dirs.rows(), 3);
-    Eigen::VectorXi hits_inds(dirs.rows());
-
-    int nbr_lines = dirs.rows();
-    Eigen::MatrixXd P = Eigen::MatrixXd(nbr_lines, 3);
-
-    // TODO: we can easily split origin into origin_port and origin_stbd
-    P.rowwise() = sensor_origin.transpose();
-    Eigen::MatrixXd hits_info = ray_mesh_intersection(P, dirs, V, F);
-    stop = chrono::high_resolution_clock::now();
-    duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-    cout << "line_mesh_intersection time: " << duration.count() << " microseconds" << endl;
-
-    start = chrono::high_resolution_clock::now();
-    Eigen::MatrixXd global_hits = igl::barycentric_to_global(V, F, hits_info);
-    stop = chrono::high_resolution_clock::now();
-    duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-    cout << "barycentric_to_global time: " << duration.count() << " microseconds" << endl;
-
-    start = chrono::high_resolution_clock::now();
-    int hit_count = 0;
-    for (int i = 0; i < dirs.rows(); ++i) {
-        int hit = hits_info(i, 0);
-        if (hit > 0) {
-            int vind = F(hit, 0);
-            hits_inds(hit_count) = hit;
-            hits.row(hit_count) = global_hits.row(i);
-            ++hit_count;
-        }
-    }
-    hits.conservativeResize(hit_count, 3);
-    hits_inds.conservativeResize(hit_count);
-    stop = chrono::high_resolution_clock::now();
-    duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-    cout << "hits loop time: " << duration.count() << " microseconds" << endl;
-
-    return make_tuple(hits, hits_inds);
-}
-
 bool is_mesh_underneath_vehicle(const Eigen::Vector3d& origin, const Eigen::MatrixXd& V, const Eigen::MatrixXi& F)
 {
     igl::Hit hit;
@@ -138,29 +34,6 @@ double depth_mesh_underneath_vehicle(const Eigen::Vector3d& origin, const Eigen:
     igl::Hit hit;
     bool did_hit = ray_mesh_intersect(origin, Eigen::Vector3d(0., 0., -1.), V, F, hit);
     return did_hit? origin(2) - V(F(hit.id, 0), 2) : 0.;
-}
-
-pair<Eigen::MatrixXd, Eigen::MatrixXd> compute_sss_dirs(const Eigen::Matrix3d& R, double tilt_angle, double beam_width, int nbr_lines)
-{
-    const double min_theta = tilt_angle - 0.5*beam_width; // M_PI/180.*10.;
-    const double max_theta = tilt_angle + 0.5*beam_width; //M_PI/180.*60.;
-
-    double min_c = 1./cos(min_theta);
-    double max_c = 1./cos(max_theta);
-    double step = (max_c - min_c)/double(nbr_lines-1);
-
-    Eigen::MatrixXd dirs_left(nbr_lines, 3);
-    Eigen::MatrixXd dirs_right(nbr_lines, 3);
-    for (int i = 0; i < nbr_lines; ++i) {
-        double ci = min_c + double(i)*step;
-        double bi = sqrt(ci*ci-1.);
-        Eigen::Vector3d dir_left(0., bi, -1.);
-        Eigen::Vector3d dir_right(0., -bi, -1.);
-        dirs_left.row(i) = (R*dir_left).transpose();
-        dirs_right.row(i) = (R*dir_right).transpose();
-    }
-
-    return make_pair(dirs_left, dirs_right);
 }
 
 tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXi> compute_hits(const Eigen::Vector3d& origin, const Eigen::Matrix3d& R, double tilt_angle, double beam_width, const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1)
@@ -447,38 +320,3 @@ pair<Eigen::MatrixXd, Eigen::VectorXi> correlate_hits(const Eigen::MatrixXd& hit
 }
 */
 
-bool point_in_view(const xtf_sss_ping& ping, const Eigen::Vector3d& point, double sensor_yaw)
-{
-    //Eigen::Matrix3d Ry = Eigen::AngleAxisd(ping.pitch_, Eigen::Vector3d::UnitY()).matrix();
-    Eigen::Matrix3d Rcomp = Eigen::AngleAxisd(sensor_yaw, Eigen::Vector3d::UnitZ()).matrix();
-    Eigen::Matrix3d Rz = Eigen::AngleAxisd(ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
-    Eigen::Matrix3d R = Rz*Rcomp; //*Ry;
-
-    // first, let's transform the point to a coordinate system defined by the sonar
-    Eigen::Vector3d p = R.transpose()*(point - ping.pos_);
-
-    // now, let's get the yaw and pitch components
-    double yaw = atan2(p(1), p(0));
-
-    double xy_dist = fabs(p(1)); //sqrt(p(1)*p(1)+p(0)*p(0));
-    double pitch = atan(p(2)/xy_dist);
-
-    double min_pitch = -1.4*ping.port.tilt_angle - 0.5*ping.port.beam_width;
-    double max_pitch = -1.4*ping.port.tilt_angle + 0.5*ping.port.beam_width - M_PI/20.;
-
-    // check if point is in view of either of the side scans
-    //bool yaw_in_view = fabs(yaw) < M_PI/2. + M_PI/16. && fabs(yaw) > M_PI/2. - M_PI/16.;
-    bool yaw_in_view = fabs(p(0)) < 5.;
-
-    bool pitch_in_view = pitch < max_pitch && pitch > min_pitch;
-
-    cout << "Pitch: " << pitch << ", min pitch: " << min_pitch << ", max pitch: " << max_pitch << endl;
-
-    cout << "Pitch in view?: " << pitch_in_view << " and yaw in view?: " << yaw_in_view << endl;
-
-    cout << "XTF pos height: " << ping.pos_(2) << endl;
-    cout << "Clicked oint height: " << point(2) << endl;
-    cout << "Pos height: " << p(2) << endl;
-
-    return pitch_in_view && yaw_in_view;
-}

@@ -49,6 +49,29 @@ pair<Eigen::Vector3d, Eigen::Vector3d> BaseDraper::get_port_stbd_sensor_origins(
     return make_pair(origin_port, origin_stbd);
 }
 
+pair<Eigen::MatrixXd, Eigen::MatrixXd> BaseDraper::compute_sss_dirs(const Eigen::Matrix3d& R, double tilt_angle, double beam_width, int nbr_lines)
+{
+    const double min_theta = tilt_angle - 0.5*beam_width; // M_PI/180.*10.;
+    const double max_theta = tilt_angle + 0.5*beam_width; //M_PI/180.*60.;
+
+    double min_c = 1./cos(min_theta);
+    double max_c = 1./cos(max_theta);
+    double step = (max_c - min_c)/double(nbr_lines-1);
+
+    Eigen::MatrixXd dirs_left(nbr_lines, 3);
+    Eigen::MatrixXd dirs_right(nbr_lines, 3);
+    for (int i = 0; i < nbr_lines; ++i) {
+        double ci = min_c + double(i)*step;
+        double bi = sqrt(ci*ci-1.);
+        Eigen::Vector3d dir_left(0., bi, -1.);
+        Eigen::Vector3d dir_right(0., -bi, -1.);
+        dirs_left.row(i) = (R*dir_left).transpose();
+        dirs_right.row(i) = (R*dir_right).transpose();
+    }
+
+    return make_pair(dirs_left, dirs_right);
+}
+
 tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> BaseDraper::project(const xtf_data::xtf_sss_ping& ping)
 {
     cout << "Setting new position: " << ping.pos_.transpose() << endl;

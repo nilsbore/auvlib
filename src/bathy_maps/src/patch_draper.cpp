@@ -13,7 +13,7 @@
 
 #include <igl/readSTL.h>
 #include <igl/unproject_onto_mesh.h>
-#include <bathy_maps/drape_mesh.h>
+//#include <bathy_maps/drape_mesh.h>
 
 using namespace std;
 using namespace xtf_data;
@@ -57,6 +57,42 @@ void PatchDraper::handle_patches()
     patch_assembler.add_hits(hits_right_intensities, pos);
 }
 */
+
+bool PatchDraper::point_in_view(const xtf_sss_ping& ping, const Eigen::Vector3d& point, double sensor_yaw)
+{
+    //Eigen::Matrix3d Ry = Eigen::AngleAxisd(ping.pitch_, Eigen::Vector3d::UnitY()).matrix();
+    Eigen::Matrix3d Rcomp = Eigen::AngleAxisd(sensor_yaw, Eigen::Vector3d::UnitZ()).matrix();
+    Eigen::Matrix3d Rz = Eigen::AngleAxisd(ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
+    Eigen::Matrix3d R = Rz*Rcomp; //*Ry;
+
+    // first, let's transform the point to a coordinate system defined by the sonar
+    Eigen::Vector3d p = R.transpose()*(point - ping.pos_);
+
+    // now, let's get the yaw and pitch components
+    double yaw = atan2(p(1), p(0));
+
+    double xy_dist = fabs(p(1)); //sqrt(p(1)*p(1)+p(0)*p(0));
+    double pitch = atan(p(2)/xy_dist);
+
+    double min_pitch = -1.4*ping.port.tilt_angle - 0.5*ping.port.beam_width;
+    double max_pitch = -1.4*ping.port.tilt_angle + 0.5*ping.port.beam_width - M_PI/20.;
+
+    // check if point is in view of either of the side scans
+    //bool yaw_in_view = fabs(yaw) < M_PI/2. + M_PI/16. && fabs(yaw) > M_PI/2. - M_PI/16.;
+    bool yaw_in_view = fabs(p(0)) < 5.;
+
+    bool pitch_in_view = pitch < max_pitch && pitch > min_pitch;
+
+    cout << "Pitch: " << pitch << ", min pitch: " << min_pitch << ", max pitch: " << max_pitch << endl;
+
+    cout << "Pitch in view?: " << pitch_in_view << " and yaw in view?: " << yaw_in_view << endl;
+
+    cout << "XTF pos height: " << ping.pos_(2) << endl;
+    cout << "Clicked oint height: " << point(2) << endl;
+    cout << "Pos height: " << p(2) << endl;
+
+    return pitch_in_view && yaw_in_view;
+}
 
 void PatchDraper::handle_patches()
 {

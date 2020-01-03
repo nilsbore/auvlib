@@ -136,15 +136,15 @@ target_link_libraries(sss_map_image eigen_cereal xtf_data ${OpenCV_LIBS})
 
 target_link_libraries(sss_meas_data eigen_cereal xtf_data ${OpenCV_LIBS})
 
-target_link_libraries(base_draper drape_mesh snell_ray_tracing xtf_data patch_views mesh_map ${OpenCV_LIBS} -lpthread)
+target_link_libraries(base_draper bathy_tracer snell_ray_tracing xtf_data patch_views mesh_map ${OpenCV_LIBS} -lpthread)
 
-target_link_libraries(view_draper base_draper drape_mesh xtf_data patch_views mesh_map ${OpenCV_LIBS} ${GLFW3_LIBRARY} auvlib_glad -lpthread)
+target_link_libraries(view_draper base_draper xtf_data patch_views mesh_map ${OpenCV_LIBS} ${GLFW3_LIBRARY} auvlib_glad -lpthread)
 
-target_link_libraries(patch_draper drape_mesh view_draper xtf_data patch_views ${OpenCV_LIBS} ${GLFW3_LIBRARY} auvlib_glad -lpthread)
+target_link_libraries(patch_draper view_draper xtf_data patch_views ${OpenCV_LIBS} ${GLFW3_LIBRARY} auvlib_glad -lpthread)
 
-target_link_libraries(map_draper drape_mesh view_draper xtf_data sss_map_image sss_meas_data ${OpenCV_LIBS} ${GLFW3_LIBRARY} auvlib_glad -lpthread)
+target_link_libraries(map_draper view_draper xtf_data sss_map_image sss_meas_data ${OpenCV_LIBS} ${GLFW3_LIBRARY} auvlib_glad -lpthread)
 
-target_link_libraries(sss_gen_sim drape_mesh view_draper xtf_data sss_map_image ${OpenCV_LIBS} ${GLFW3_LIBRARY} auvlib_glad -lpthread ${OpenCV_LIBS})
+target_link_libraries(sss_gen_sim view_draper xtf_data sss_map_image ${OpenCV_LIBS} ${GLFW3_LIBRARY} auvlib_glad -lpthread ${OpenCV_LIBS})
 
 
 # 'make install' to the correct locations (provided by GNUInstallDirs).
