@@ -23,7 +23,7 @@ namespace py = pybind11;
 PYBIND11_MODULE(xtf_data, m) {
     m.doc() = "Basic utilities for working with the xtf file format"; // optional module docstring
 
-    py::class_<xtf_sss_ping_side>(m, "xtf_sss_ping_side", "Class for one xtf sidescan side")
+    py::class_<xtf_sss_ping_side>(m, "xtf_sss_ping_side", py::module_local(), "Class for one xtf sidescan side")
         .def(py::init<>())
         .def_readwrite("pings", &xtf_sss_ping_side::pings, "The return intensities")
         .def_readwrite("slant_range", &xtf_sss_ping_side::slant_range, "Slant range")
@@ -31,7 +31,7 @@ PYBIND11_MODULE(xtf_data, m) {
         .def_readwrite("tilt_angle", &xtf_sss_ping_side::tilt_angle, "Tilt angle")
         .def_readwrite("beam_width", &xtf_sss_ping_side::beam_width, "Beam width");
 
-    py::class_<xtf_sss_ping>(m, "xtf_sss_ping", "Class for xtf sidescan type")
+    py::class_<xtf_sss_ping>(m, "xtf_sss_ping", py::module_local(), "Class for xtf sidescan type")
         .def(py::init<>())
         .def_readwrite("time_string_", &xtf_sss_ping::time_string_, "Readable date of measurement")
         .def_readwrite("time_stamp_", &xtf_sss_ping::time_stamp_, "UNIX timestamp")

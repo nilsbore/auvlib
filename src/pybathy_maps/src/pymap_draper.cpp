@@ -19,7 +19,6 @@
 #include <pybind11/functional.h>
 
 using namespace std_data;
-using namespace xtf_data;
 using namespace csv_data;
 
 namespace py = pybind11;
@@ -81,7 +80,7 @@ PYBIND11_MODULE(map_draper, m) {
     py::class_<MapImageDraper>(m, "MapDraper", "Class for draping the whole data set of sidescan pings onto a bathymetry mesh")
         // Methods inherited from MapImageDraper:
         .def(py::init<const Eigen::MatrixXd&, const Eigen::MatrixXi&,
-                      const xtf_sss_ping::PingsT&, const MapImageDraper::BoundsT&,
+                      const std_data::sss_ping::PingsT&, const MapImageDraper::BoundsT&,
                       const csv_asvp_sound_speed::EntriesT&>())
         .def("set_sidescan_yaw", &MapImageDraper::set_sidescan_yaw, "Set yaw correction of sidescan with respect to nav frame")
         .def("set_sidescan_port_stbd_offsets", &MapImageDraper::set_sidescan_port_stbd_offsets, "Set offsets of sidescan port and stbd sides with respect to nav frame")
@@ -100,7 +99,7 @@ PYBIND11_MODULE(map_draper, m) {
     py::class_<MeasDataDraper>(m, "MeasDataDraper", "Class for draping the whole data set of sidescan pings onto a bathymetry mesh")
         // Methods inherited from MeasDataDraper:
         .def(py::init<const Eigen::MatrixXd&, const Eigen::MatrixXi&,
-                      const xtf_sss_ping::PingsT&, const MeasDataDraper::BoundsT&,
+                      const std_data::sss_ping::PingsT&, const MeasDataDraper::BoundsT&,
                       const csv_asvp_sound_speed::EntriesT&>())
         .def("set_sidescan_yaw", &MeasDataDraper::set_sidescan_yaw, "Set yaw correction of sidescan with respect to nav frame")
         .def("set_sidescan_port_stbd_offsets", &MeasDataDraper::set_sidescan_port_stbd_offsets, "Set offsets of sidescan port and stbd sides with respect to nav frame")
@@ -116,7 +115,7 @@ PYBIND11_MODULE(map_draper, m) {
         .def("set_close_when_done", &MeasDataDraper::set_close_when_done, "Set if the draper should close when done draping")
         .def("get_images", &MeasDataDraper::get_images, "Get all the sss_map_image::ImagesT that have been gathered so far");
 
-    m.def("drape_maps", &drape_maps, "Overlay xtf_sss_ping::PingsT sidescan data on a mesh and get sss_map_image::ViewsT");
+    m.def("drape_maps", &drape_maps, "Overlay sss_ping::PingsT sidescan data on a mesh and get sss_map_image::ViewsT");
     m.def("color_jet_from_mesh", &color_jet_from_mesh, "Get a jet color scheme from a vertex matrix");
     m.def("get_vehicle_mesh", &get_vehicle_mesh, "Get vertices, faces, and colors for vehicle");
     m.def("convert_maps_to_patches", &convert_maps_to_patches, "Convert sss_map_image::ImagesT to sss_patch_views::ViewsT");

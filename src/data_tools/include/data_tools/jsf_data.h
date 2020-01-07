@@ -13,7 +13,7 @@
 #define JSF_DATA_H
 
 #include <data_tools/std_data.h>
-#include <data_tools/xtf_data.h>
+//#include <data_tools/xtf_data.h>
 #include <libjsf/jsf.h>
 #include <Eigen/Dense>
 #define BOOST_NO_CXX11_SCOPED_ENUMS
@@ -104,7 +104,7 @@ struct jsf_dvl_ping
 cv::Mat make_waterfall_image(const jsf_sss_ping::PingsT& pings);
 void show_waterfall_image(const jsf_sss_ping::PingsT& pings);
 jsf_sss_ping::PingsT filter_frequency(const jsf_sss_ping::PingsT& pings, int desired_freq);
-xtf_data::xtf_sss_ping::PingsT convert_to_xtf_pings(const jsf_sss_ping::PingsT& pings);
+std_data::sss_ping::PingsT convert_to_xtf_pings(const jsf_sss_ping::PingsT& pings);
 
 
 } // namespace jsf_data

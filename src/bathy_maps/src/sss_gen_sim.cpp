@@ -19,11 +19,10 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 using namespace std;
-using namespace xtf_data;
 using namespace csv_data;
 
 SSSGenSim::SSSGenSim(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
-                     const xtf_sss_ping::PingsT& pings,
+                     const std_data::sss_ping::PingsT& pings,
                      const BoundsT& bounds,
                      const csv_asvp_sound_speed::EntriesT& sound_speeds,
                      const Eigen::MatrixXd& height_map)
@@ -289,14 +288,6 @@ void SSSGenSim::construct_model_waterfall(const Eigen::MatrixXd& hits_left, cons
         }
     }
 }
-
-// actually we do not need this, already have it from waterfall??????
-/*
-Eigen::MatrixXd draw_gt_waterfall(const xtf_data::xtf_sss_ping& pings)
-{
-
-}
-*/
 
 // NOTE: sss_ping_duration should be the same as for the pings
 Eigen::MatrixXd SSSGenSim::draw_sim_waterfall(const Eigen::MatrixXd& incidence_image)

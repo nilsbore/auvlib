@@ -16,11 +16,10 @@
 //#include <bathy_maps/drape_mesh.h>
 
 using namespace std;
-using namespace xtf_data;
 using namespace csv_data;
 
 PatchDraper::PatchDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
-                         const xtf_sss_ping::PingsT& pings,
+                         const std_data::sss_ping::PingsT& pings,
                          const BoundsT& bounds,
                          const csv_asvp_sound_speed::EntriesT& sound_speeds)
     : ViewDraper(V1, F1, pings, bounds, sound_speeds), save_callback(&default_callback)
@@ -58,7 +57,7 @@ void PatchDraper::handle_patches()
 }
 */
 
-bool PatchDraper::point_in_view(const xtf_sss_ping& ping, const Eigen::Vector3d& point, double sensor_yaw)
+bool PatchDraper::point_in_view(const std_data::sss_ping& ping, const Eigen::Vector3d& point, double sensor_yaw)
 {
     //Eigen::Matrix3d Ry = Eigen::AngleAxisd(ping.pitch_, Eigen::Vector3d::UnitY()).matrix();
     Eigen::Matrix3d Rcomp = Eigen::AngleAxisd(sensor_yaw, Eigen::Vector3d::UnitZ()).matrix();
@@ -218,7 +217,7 @@ sss_patch_views::ViewsT PatchDraper::get_patch_views()
 }
 
 sss_patch_views::ViewsT drape_patches(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
-                                      const PatchDraper::BoundsT& bounds, const xtf_sss_ping::PingsT& pings,
+                                      const PatchDraper::BoundsT& bounds, const std_data::sss_ping::PingsT& pings,
                                       const csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw,
                                       const std::function<void(sss_patch_views)>& save_callback)
 {

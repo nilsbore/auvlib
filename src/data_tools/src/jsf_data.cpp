@@ -324,13 +324,13 @@ jsf_dvl_ping read_datagram<jsf_dvl_ping, jsf_dvl_msg_header>(std::ifstream& inpu
 
 }
 
-xtf_data::xtf_sss_ping::PingsT convert_to_xtf_pings(const jsf_sss_ping::PingsT& pings)
+std_data::sss_ping::PingsT convert_to_xtf_pings(const jsf_sss_ping::PingsT& pings)
 {
-    xtf_data::xtf_sss_ping::PingsT converted;
+    std_data::sss_ping::PingsT converted;
     converted.reserve(pings.size());
 
     for (const jsf_sss_ping& ping : pings) {
-        xtf_data::xtf_sss_ping cping;
+        std_data::sss_ping cping;
         cping.time_stamp_ = ping.time_stamp_;
         cping.time_string_ = ping.time_string_;
         cping.first_in_file_ = ping.first_in_file_;

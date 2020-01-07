@@ -3,11 +3,10 @@
 #include <igl/readSTL.h>
 
 using namespace std;
-using namespace xtf_data;
 using namespace csv_data;
 
 ViewDraper::ViewDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
-                       const xtf_sss_ping::PingsT& pings,
+                       const std_data::sss_ping::PingsT& pings,
                        const BoundsT& bounds,
                        const csv_asvp_sound_speed::EntriesT& sound_speeds)
     : BaseDraper(V1, F1, bounds, sound_speeds), pings(pings), i(0), nbr_time_bins(256)
@@ -169,7 +168,7 @@ Eigen::MatrixXd color_jet_from_mesh(const Eigen::MatrixXd& V)
 }
 
 void drape_viewer(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
-                  const ViewDraper::BoundsT& bounds, const xtf_sss_ping::PingsT& pings,
+                  const ViewDraper::BoundsT& bounds, const std_data::sss_ping::PingsT& pings,
                   const csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw)
 {
     Eigen::MatrixXd Vb;

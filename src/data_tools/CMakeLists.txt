@@ -121,7 +121,7 @@ target_link_libraries(benchmark PUBLIC eigen_cereal std_data ${OpenCV_LIBS})
 
 target_link_libraries(navi_data PUBLIC eigen_cereal data_transforms) # ${PCL_LIBRARIES})
 
-target_link_libraries(csv_data PUBLIC std_data navi_data xtf_data)
+target_link_libraries(csv_data PUBLIC std_data navi_data)
 
 if(AUVLIB_WITH_GSF)
   target_link_libraries(gsf_data PUBLIC gsf std_data navi_data lat_long_utm csv_data)

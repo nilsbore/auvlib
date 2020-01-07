@@ -16,8 +16,7 @@
 #include <eigen_cereal/eigen_cereal.h>
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/vector.hpp>
-
-#include <data_tools/xtf_data.h>
+#include <data_tools/std_data.h>
 
 struct sss_meas_data {
 
@@ -80,7 +79,7 @@ public:
     void add_hits(const Eigen::MatrixXd& hits, const Eigen::VectorXi& hits_inds,
                   const Eigen::VectorXd& intensities,
                   const Eigen::VectorXd& sss_depths, const Eigen::VectorXd& sss_model,
-                  const xtf_data::xtf_sss_ping_side& ping, const Eigen::Vector3d& pos,
+                  const std_data::sss_ping_side& ping, const Eigen::Vector3d& pos,
                   const Eigen::Vector3d& rpy, bool is_left); // used
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
