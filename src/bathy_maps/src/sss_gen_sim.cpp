@@ -289,14 +289,6 @@ void SSSGenSim::construct_model_waterfall(const Eigen::MatrixXd& hits_left, cons
     }
 }
 
-// actually we do not need this, already have it from waterfall??????
-/*
-Eigen::MatrixXd draw_gt_waterfall(const xtf_data::xtf_sss_ping& pings)
-{
-
-}
-*/
-
 // NOTE: sss_ping_duration should be the same as for the pings
 Eigen::MatrixXd SSSGenSim::draw_sim_waterfall(const Eigen::MatrixXd& incidence_image)
 {

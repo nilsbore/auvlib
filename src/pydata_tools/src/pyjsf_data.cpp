@@ -51,7 +51,7 @@ PYBIND11_MODULE(jsf_data, m) {
     m.def("make_waterfall_image", &make_waterfall_image, "Create a cv2 waterfall image from jsf_sss_ping::PingsT");
     m.def("show_waterfall_image", &show_waterfall_image, "Show a waterfall image created from jsf_sss_ping::PingsT");
     m.def("filter_frequency", &filter_frequency, "Filter to keep only jsf_sss_ping::PingsT with certain frequency");
-    m.def("convert_to_xtf_pings", &convert_to_xtf_pings, "Convert jsf_sss_ping::PingsT to xtf_data::xtf_sss_ping::PingsT");
+    m.def("convert_to_xtf_pings", &convert_to_xtf_pings, "Convert jsf_sss_ping::PingsT to std_data::sss_ping::PingsT");
 
     // from http://alexsm.com/pybind11-buffer-protocol-opencv-to-numpy/
     pybind11::class_<cv::Mat>(m, "Image", pybind11::buffer_protocol())

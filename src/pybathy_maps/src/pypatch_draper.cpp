@@ -18,7 +18,6 @@
 #include <pybind11/functional.h>
 
 using namespace std_data;
-using namespace xtf_data;
 using namespace csv_data;
 
 namespace py = pybind11;
@@ -37,7 +36,7 @@ PYBIND11_MODULE(patch_draper, m) {
 
     py::class_<ViewDraper>(m, "ViewDraper", "Base class for draping sidescan pings onto a bathymetry mesh")
         .def(py::init<const Eigen::MatrixXd&, const Eigen::MatrixXi&,
-                      const xtf_sss_ping::PingsT&, const ViewDraper::BoundsT&,
+                      const std_data::sss_ping::PingsT&, const ViewDraper::BoundsT&,
                       const csv_asvp_sound_speed::EntriesT&>())
         .def("add_texture_intensities", &ViewDraper::add_texture_intensities, "Add the intensities of draping result hits and intensities")
         .def("get_texture_image", &ViewDraper::get_texture_image, "Get the texture image, defined within bounds, with resolution of 1m")
@@ -52,7 +51,7 @@ PYBIND11_MODULE(patch_draper, m) {
     py::class_<PatchDraper>(m, "PatchDraper", "Base class for draping sidescan pings onto a particular point of a bathymetry mesh")
         // Methods inherited from draping_generator:
         .def(py::init<const Eigen::MatrixXd&, const Eigen::MatrixXi&,
-                      const xtf_sss_ping::PingsT&, const PatchDraper::BoundsT&,
+                      const std_data::sss_ping::PingsT&, const PatchDraper::BoundsT&,
                       const csv_asvp_sound_speed::EntriesT&>())
         .def("set_sidescan_yaw", &PatchDraper::set_sidescan_yaw, "Set yaw correction of sidescan with respect to nav frame")
         .def("set_sidescan_port_stbd_offsets", &PatchDraper::set_sidescan_port_stbd_offsets, "Set offsets of sidescan port and stbd sides with respect to nav frame")
@@ -64,9 +63,9 @@ PYBIND11_MODULE(patch_draper, m) {
         .def("set_patch_callback", &PatchDraper::set_patch_callback, "Set the function to be called when all views of a patch have been assembled")
         .def("get_patch_views", &PatchDraper::get_patch_views, "Get all the sss_patch_views::PatchesT that have been gathered so far");
 
-    m.def("drape_patches", &drape_patches, "Overlay xtf_sss_ping::PingsT sidescan data on a mesh and get sss_patch_views::ViewsT");
+    m.def("drape_patches", &drape_patches, "Overlay std_data::sss_ping::PingsT sidescan data on a mesh and get sss_patch_views::ViewsT");
     m.def("color_jet_from_mesh", &color_jet_from_mesh, "Get a jet color scheme from a vertex matrix");
     m.def("get_vehicle_mesh", &get_vehicle_mesh, "Get vertices, faces, and colors for vehicle");
-    m.def("drape_viewer", &drape_viewer, "Overlay xtf_sss_ping::PingsT sidescan data on a mesh and get sss_patch_views::ViewsT");
+    m.def("drape_viewer", &drape_viewer, "Overlay std_data::sss_ping::PingsT sidescan data on a mesh and get sss_patch_views::ViewsT");
     m.def("write_data", &write_data_from_str<sss_patch_views::ViewsT>, "Write sss_patch_views::ViewsT to .cereal file");
 }
