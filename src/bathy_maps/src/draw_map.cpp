@@ -183,7 +183,7 @@ void BathyMapImage::draw_indices(mbes_ping::PingsT& pings, int skip_indices)
     }
 }
 
-void BathyMapImage::draw_pose(const Eigen::Vector3d& pos, double heading)
+void BathyMapImage::draw_pose(const Eigen::Vector3d& pos, double heading, const cv::Scalar& color)
 {
     double len = 30.;
     double res, minx, miny, x0, y0;
@@ -191,7 +191,17 @@ void BathyMapImage::draw_pose(const Eigen::Vector3d& pos, double heading)
 
     cv::Point pt1(x0+res*(pos[0]-minx), bathy_map.rows-y0-res*(pos[1]-miny)-1);
     cv::Point pt2(pt1.x + int(len*cos(heading)), pt1.y - int(len*sin(heading)));
-    draw_arrowed_line(bathy_map, pt1, pt2, cv::Scalar(0, 0 , 255), 2, 8, 0, 0.1);
+    draw_arrowed_line(bathy_map, pt1, pt2, color, 2, 8, 0, 0.1);
+}
+
+void BathyMapImage::draw_red_pose(const Eigen::Vector3d& pos, double heading)
+{
+    draw_pose(pos, heading, cv::Scalar(0, 0, 255));
+}
+
+void BathyMapImage::draw_blue_pose(const Eigen::Vector3d& pos, double heading)
+{
+    draw_pose(pos, heading, cv::Scalar(255, 0, 0));
 }
 
 void BathyMapImage::draw_height_map(const Eigen::MatrixXd& height_map)
