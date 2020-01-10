@@ -4,6 +4,8 @@
 
 using namespace std;
 
+const bool DEBUG_OUTPUT = false;
+
 Eigen::MatrixXd BathyTracer::ray_mesh_intersection(
     const Eigen::MatrixXd& V_source,
     const Eigen::MatrixXd& N_source,
@@ -66,7 +68,7 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXi> BathyTracer::compute_hits(const Eigen::V
     igl::Hit hit;
     auto stop = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-    cout << "compute_sss_dirs time: " << duration.count() << " microseconds" << endl;
+    if (DEBUG_OUTPUT) cout << "compute_sss_dirs time: " << duration.count() << " microseconds" << endl;
 
     start = chrono::high_resolution_clock::now();
     Eigen::MatrixXd hits(dirs.rows(), 3);
@@ -80,13 +82,13 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXi> BathyTracer::compute_hits(const Eigen::V
     Eigen::MatrixXd hits_info = ray_mesh_intersection(P, dirs, V, F);
     stop = chrono::high_resolution_clock::now();
     duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-    cout << "line_mesh_intersection time: " << duration.count() << " microseconds" << endl;
+    if (DEBUG_OUTPUT) cout << "line_mesh_intersection time: " << duration.count() << " microseconds" << endl;
 
     start = chrono::high_resolution_clock::now();
     Eigen::MatrixXd global_hits = igl::barycentric_to_global(V, F, hits_info);
     stop = chrono::high_resolution_clock::now();
     duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-    cout << "barycentric_to_global time: " << duration.count() << " microseconds" << endl;
+    if (DEBUG_OUTPUT) cout << "barycentric_to_global time: " << duration.count() << " microseconds" << endl;
 
     start = chrono::high_resolution_clock::now();
     int hit_count = 0;
@@ -103,7 +105,7 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXi> BathyTracer::compute_hits(const Eigen::V
     hits_inds.conservativeResize(hit_count);
     stop = chrono::high_resolution_clock::now();
     duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-    cout << "hits loop time: " << duration.count() << " microseconds" << endl;
+    if (DEBUG_OUTPUT) cout << "hits loop time: " << duration.count() << " microseconds" << endl;
 
     return make_tuple(hits, hits_inds);
 }
