@@ -74,7 +74,7 @@ pair<Eigen::MatrixXd, Eigen::MatrixXd> BaseDraper::compute_sss_dirs(const Eigen:
 
 tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> BaseDraper::project(const std_data::sss_ping& ping)
 {
-    cout << "Setting new position: " << ping.pos_.transpose() << endl;
+    if (DEBUG_OUTPUT) cout << "Setting new position: " << ping.pos_.transpose() << endl;
     Eigen::Matrix3d Rcomp = Eigen::AngleAxisd(sensor_yaw, Eigen::Vector3d::UnitZ()).matrix();
     Eigen::Matrix3d Ry = Eigen::AngleAxisd(ping.pitch_, Eigen::Vector3d::UnitY()).matrix();
     Eigen::Matrix3d Rz = Eigen::AngleAxisd(ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
@@ -99,7 +99,7 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> BaseDr
     double tilt_angle = beam_width/2.;
     auto stop = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-    cout << "depth_mesh_underneath_vehicle time: " << duration.count() << " microseconds" << endl;
+    if (DEBUG_OUTPUT) cout << "depth_mesh_underneath_vehicle time: " << duration.count() << " microseconds" << endl;
 
     Eigen::Vector3d origin_port;
     Eigen::Vector3d origin_stbd;
@@ -129,7 +129,7 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd> BaseDraper::trace_side(const std_data::s
     tie(hits, hits_inds) = tracer.compute_hits(sensor_origin, dirs, V1, F1);
     auto stop = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-    cout << "embree_compute_hits full time: " << duration.count() << " microseconds" << endl;
+    if (DEBUG_OUTPUT) cout << "embree_compute_hits full time: " << duration.count() << " microseconds" << endl;
     
     normals.resize(hits.rows(), 3);
     for (int j = 0; j < hits.rows(); ++j) {
@@ -153,7 +153,7 @@ pair<Eigen::VectorXd, Eigen::VectorXd> BaseDraper::get_sound_vels_below(const Ei
     int nbr_speeds = sound_speeds[0].dbars.rows();
     for (i = 0; i < nbr_speeds; ++i) {
         if (-sound_speeds[0].dbars[i] < sensor_origin(2)) {
-            cout << "Breaking at " << -sound_speeds[0].dbars[i] << ", which is below " << sensor_origin(2) << endl;
+            if (DEBUG_OUTPUT) cout << "Breaking at " << -sound_speeds[0].dbars[i] << ", which is below " << sensor_origin(2) << endl;
             break;
         }
     }
@@ -190,7 +190,7 @@ Eigen::VectorXd BaseDraper::compute_refraction_times(const Eigen::Vector3d& sens
     tie(layer_speeds, layer_depths) = get_sound_vels_below(sensor_origin);
     layer_depths.array() -= sensor_origin(2); // refraction assumes sensor z=0
 
-    cout << "Number of depths: " << layer_depths.rows() << ", number of speeds: " << layer_speeds.rows() << endl;
+    if (DEBUG_OUTPUT) cout << "Number of depths: " << layer_depths.rows() << ", number of speeds: " << layer_speeds.rows() << endl;
 
     Eigen::VectorXd x = (P.leftCols<2>().rowwise() - sensor_origin.head<2>().transpose()).rowwise().norm();
     Eigen::MatrixXd end_points(x.rows(), 2);
@@ -201,7 +201,7 @@ Eigen::VectorXd BaseDraper::compute_refraction_times(const Eigen::Vector3d& sens
     Eigen::VectorXd times;
     tie(times, layer_widths) = trace_multiple_layers(layer_depths, layer_speeds, end_points);
     times.array() *= 2.; // back and forth
-    cout << "Got final times: " << times.transpose() << endl;
+    if (DEBUG_OUTPUT) cout << "Got final times: " << times.transpose() << endl;
 
     visualize_rays(end_points, layer_depths, layer_widths, -25., false, is_left);
 
@@ -299,7 +299,7 @@ Eigen::VectorXd BaseDraper::compute_bin_intensities(const std_data::sss_ping_sid
     intensities.array() /= counts;
     auto stop = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-    cout << "compute_bin_intensities time: " << duration.count() << " microseconds" << endl;
+    if (DEBUG_OUTPUT) cout << "compute_bin_intensities time: " << duration.count() << " microseconds" << endl;
     return intensities;
 }
 
@@ -380,7 +380,7 @@ pair<ping_draping_result, ping_draping_result> BaseDraper::project_ping(const st
     tie(hits_left, hits_right, normals_left, normals_right) = project(ping);
     auto stop = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-    cout << "project time: " << duration.count() << " microseconds" << endl;
+    if (DEBUG_OUTPUT) cout << "project time: " << duration.count() << " microseconds" << endl;
 
     start = chrono::high_resolution_clock::now();
     // these should take care of computing bending if set
@@ -390,18 +390,18 @@ pair<ping_draping_result, ping_draping_result> BaseDraper::project_ping(const st
     tie(origin_port, origin_stbd) = get_port_stbd_sensor_origins(ping);
     stop = chrono::high_resolution_clock::now();
     duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-    cout << "get_port_stbd_sensor_origins time: " << duration.count() << " microseconds" << endl;
+    if (DEBUG_OUTPUT) cout << "get_port_stbd_sensor_origins time: " << duration.count() << " microseconds" << endl;
 
     start = chrono::high_resolution_clock::now();
     ping_draping_result left = project_ping_side(ping.port, hits_left, normals_left, origin_port, nbr_bins);
     stop = chrono::high_resolution_clock::now();
     duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-    cout << "project_ping_side left time: " << duration.count() << " microseconds" << endl;
+    if (DEBUG_OUTPUT) cout << "project_ping_side left time: " << duration.count() << " microseconds" << endl;
     start = chrono::high_resolution_clock::now();
     ping_draping_result right = project_ping_side(ping.stbd, hits_right, normals_right, origin_stbd, nbr_bins);
     stop = chrono::high_resolution_clock::now();
     duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-    cout << "project_ping_side right time: " << duration.count() << " microseconds" << endl;
+    if (DEBUG_OUTPUT) cout << "project_ping_side right time: " << duration.count() << " microseconds" << endl;
 
     return make_pair(left, right);
 }
@@ -430,7 +430,7 @@ ping_draping_result BaseDraper::project_ping_side(const std_data::sss_ping_side&
     // compute waterfall image inds of hits
     res.hits_inds = compute_bin_indices(res.hits_times, sensor, nbr_bins);
 
-    cout << "Adding hits: " << res.hits_points.rows() << endl;
+    if (DEBUG_OUTPUT) cout << "Adding hits: " << res.hits_points.rows() << endl;
 
     return res;
 }
