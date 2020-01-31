@@ -100,7 +100,11 @@ int main(int argc, char *argv[]) {
 
    //strupr(argv[1]);
 
+#ifdef _MSC_VER
+   infl = open(argv[1], O_RDONLY | O_BINARY, 0000200);
+#else
    infl = open(argv[1], O_RDONLY, 0000200);
+#endif
    if (infl <= 0) {
       printf("Error: Can't open %s for reading!\n", argv[1]);
       goto ERROR_OUT;
