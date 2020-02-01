@@ -385,7 +385,11 @@ xtf_sss_ping::PingsT parse_file(const boost::filesystem::path& file)
          return pings;
    }
 
+#ifdef _MSC_VER
+   int infl = open(file.string().c_str(), O_RDONLY | O_BINARY, 0000200);
+#else
    int infl = open(file.string().c_str(), O_RDONLY, 0000200);
+#endif
    if (infl <= 0) {
        cout << "Error: Can't open " << file.string() << " for reading!" << endl;
        return pings;
