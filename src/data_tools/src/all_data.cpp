@@ -253,7 +253,7 @@ all_mbes_ping read_datagram<all_mbes_ping, all_xyz88_datagram>(std::istream& inp
 	for (int i = 0; i < header.nbr_beams; ++i) {
 		input.read(reinterpret_cast<char*>(&ping), sizeof(ping));
         //if (short(le16toh(ping.rt_cleaning_info)) < 0) { // (ping.detection_info & mask[5]) != 0) {
-        if (ping.rt_cleaning_info < 0 || (ping.detection_info & mask[0]) != 0 || ping.depth > 40.) {
+        if (ping.rt_cleaning_info < 0 || (ping.detection_info & mask[0]) != 0 /*|| ping.depth > 40.*/) {
             continue;
         }
 		pings.push_back(ping);
