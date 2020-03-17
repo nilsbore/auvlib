@@ -22,7 +22,7 @@ using namespace all_data;
 namespace py = pybind11;
 
 PYBIND11_MODULE(all_data, m) {
-    m.doc() = "Basic utilities for working with the .all file format"; // optional module docstring
+    //m.doc() = "Basic utilities for working with the .all file format"; // optional module docstring
 
     py::class_<all_mbes_ping>(m, "all_mbes_ping", "Class for the all multibeam type")
         .def(py::init<>())
