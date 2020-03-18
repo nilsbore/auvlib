@@ -12,14 +12,40 @@
 #ifndef BASE_DRAPER_H
 #define BASE_DRAPER_H
 
-#include <igl/opengl/glfw/Viewer.h>
-#include <igl/opengl/gl.h>
-
 #include <Eigen/Dense>
 #include <random>
 
 #include <data_tools/xtf_data.h>
 #include <data_tools/csv_data.h>
+#include <sonar_tracing/bathy_tracer.h>
+
+struct ping_draping_result {
+
+    // origin of the sensor in the world
+    Eigen::Vector3d sensor_origin;
+
+    // unorganized point cloud data
+    Eigen::MatrixXd hits_points;
+    Eigen::VectorXi hits_inds;
+    Eigen::VectorXd hits_times;
+    Eigen::VectorXd hits_intensities;
+
+    // data where each index corresponds to a ping time bin
+    Eigen::MatrixXd time_bin_points;
+    Eigen::MatrixXd time_bin_normals;
+    Eigen::VectorXd time_bin_model_intensities;
+
+	template <class Archive>
+    void serialize( Archive & ar )
+    {
+        ar(CEREAL_NVP(sensor_origin), CEREAL_NVP(hits_points),
+           CEREAL_NVP(hits_inds), CEREAL_NVP(hits_times),
+           CEREAL_NVP(hits_intensities), CEREAL_NVP(time_bin_points),
+           CEREAL_NVP(time_bin_normals), CEREAL_NVP(time_bin_model_intensities));
+    }
+
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+};
 
 struct BaseDraper {
 public:
@@ -28,27 +54,22 @@ public:
 
 protected:
 
-    igl::opengl::glfw::Viewer viewer; // ligigl viewer object
-    xtf_data::xtf_sss_ping::PingsT pings; // sidescan pings used for draping
-    int i; // timestep counter, one step per ping
-
     Eigen::MatrixXd V1; // bathymetry mesh faces
     Eigen::MatrixXi F1; // bathymetry mesh vertices
-    Eigen::MatrixXd V2; // vehicle mesh faces
-    Eigen::MatrixXi F2; // vehicle mesh vertices
-    Eigen::MatrixXd V; // combined, vis mesh vertices
-    Eigen::MatrixXi F; // combined, vis mesh faces
-    Eigen::MatrixXd C; // combined, vis mesh colors
+    Eigen::MatrixXd N1; // bathymetry mesh normals
     Eigen::Vector3d offset; // offset of mesh wrt world coordinates
 
+    /*
     // smaller local versions used for ray tracing
     Eigen::MatrixXd V1_small; // bathymetry mesh faces
     Eigen::MatrixXi F1_small; // bathymetry mesh vertices
     Eigen::MatrixXd N_small; // normals of V1_small, F1_small
     Eigen::Vector3d pos_small; // the pos of the local small grid
+    */
 
     BoundsT bounds;
-    Eigen::MatrixXd texture_image; // used for displaying texture and checking coverage
+
+    BathyTracer tracer;
 
     //Eigen::VectorXd hit_sums; 
     //Eigen::VectorXi hit_counts;
@@ -58,34 +79,36 @@ protected:
     Eigen::Vector3d sensor_offset_port;
     Eigen::Vector3d sensor_offset_stbd;
     bool ray_tracing_enabled; // is snell ray tracing enabled?
-    double tracing_map_size;
+    double tracing_map_size; // TODO: remove this as it is no longer needed
     double intensity_multiplier;
     std::default_random_engine generator; // hopefully not same seed every time
 
     // NOTE: these are new style functions
+    std::pair<Eigen::MatrixXd, Eigen::MatrixXd> compute_sss_dirs(const Eigen::Matrix3d& R, double tilt_angle, double beam_width, int nbr_lines);
+    std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> project(const std_data::sss_ping& ping);
+    std::tuple<Eigen::MatrixXd, Eigen::MatrixXd> trace_side(const std_data::sss_ping_side& ping,
+                                                            const Eigen::Vector3d& sensor_origin,
+                                                            const Eigen::MatrixXd& dirs);
 
-    std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> project();
+    ping_draping_result project_ping_side(const std_data::sss_ping_side& sensor, const Eigen::MatrixXd& hits,
+                                          const Eigen::MatrixXd& hits_normals, const Eigen::Vector3d& origin,
+                                          int nbr_bins);
 
-    double compute_simple_sound_vel();
-
-    std::pair<Eigen::Vector3d, Eigen::Vector3d> get_port_stbd_sensor_origins();
-
+    //double compute_simple_sound_vel();
+    std::pair<Eigen::VectorXd, Eigen::VectorXd> get_sound_vels_below(const Eigen::Vector3d& sensor_origin);
+    Eigen::VectorXd compute_refraction_times(const Eigen::Vector3d& sensor_origin, const Eigen::MatrixXd& P);
     Eigen::VectorXd compute_times(const Eigen::Vector3d& sensor_origin, const Eigen::MatrixXd& P);
 
-    Eigen::VectorXi compute_bin_indices(const Eigen::VectorXd& times, const xtf_data::xtf_sss_ping_side& ping, size_t nbr_windows);
+    std::pair<Eigen::Vector3d, Eigen::Vector3d> get_port_stbd_sensor_origins(const std_data::sss_ping& ping);
+    Eigen::VectorXi compute_bin_indices(const Eigen::VectorXd& times, const std_data::sss_ping_side& ping, size_t nbr_windows);
 
     Eigen::VectorXd convert_to_time_bins(const Eigen::VectorXd& times, const Eigen::VectorXd& values,
-                                         const xtf_data::xtf_sss_ping_side& ping, size_t nbr_windows);
+                                         const std_data::sss_ping_side& ping, size_t nbr_windows);
+    Eigen::MatrixXd convert_to_time_bins(const Eigen::VectorXd& times, const Eigen::MatrixXd& values,
+                                         const std_data::sss_ping_side& ping, size_t nbr_windows);
 
     Eigen::VectorXd compute_intensities(const Eigen::VectorXd& times, 
-                                        const xtf_data::xtf_sss_ping_side& ping);
-
-    //void visualize_rays(const Eigen::MatrixXd& hits_left, const Eigen::MatrixXd& hits_right);
-    void visualize_rays(const Eigen::Vector3d& sensor_origin, const Eigen::MatrixXd& hits, bool clear=false);
-
-    void visualize_vehicle();
-
-    void visualize_intensities();
+                                        const std_data::sss_ping_side& ping);
 
     Eigen::VectorXd compute_lambert_intensities(const Eigen::MatrixXd& hits, const Eigen::MatrixXd& normals,
                                                 const Eigen::Vector3d& origin);
@@ -96,32 +119,23 @@ protected:
 
     // NOTE: these are old style functions, to be deprecated
     //std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::VectorXi, Eigen::VectorXi, Eigen::Vector3d> project_sss();
-    bool fast_is_mesh_underneath_vehicle(const Eigen::Vector3d& origin);
-    void add_texture_intensities(const Eigen::MatrixXd& hits, const Eigen::VectorXd& intensities);
 
 public:
 
-    void set_texture(const Eigen::MatrixXd& texture, const BoundsT& texture_bounds);
+    BaseDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
+               const BoundsT& bounds,
+               const csv_data::csv_asvp_sound_speed::EntriesT& sound_speeds = csv_data::csv_asvp_sound_speed::EntriesT());
+
+    std::pair<ping_draping_result, ping_draping_result> project_ping(const std_data::sss_ping& ping, int nbr_bins);
+    Eigen::VectorXd compute_bin_intensities(const std_data::sss_ping_side& ping, int nbr_bins);
+
     void set_sidescan_yaw(double new_sensor_yaw) { sensor_yaw = new_sensor_yaw; }
     void set_sidescan_port_stbd_offsets(const Eigen::Vector3d& new_offset_port, const Eigen::Vector3d& new_offset_stbd) { sensor_offset_port = new_offset_port; sensor_offset_stbd = new_offset_stbd; }
     void set_tracing_map_size(double new_tracing_map_size) { tracing_map_size = new_tracing_map_size; }
     void set_intensity_multiplier(double new_intensity_multiplier) { intensity_multiplier = new_intensity_multiplier; }
     void set_ray_tracing_enabled(bool enabled);
-    void set_vehicle_mesh(const Eigen::MatrixXd& new_V2, const Eigen::MatrixXi& new_F2, const Eigen::MatrixXd& new_C2);
 
-    BaseDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
-               const xtf_data::xtf_sss_ping::PingsT& pings,
-               const BoundsT& bounds,
-               const csv_data::csv_asvp_sound_speed::EntriesT& sound_speeds = csv_data::csv_asvp_sound_speed::EntriesT());
-
-    void show();
-    bool callback_pre_draw(igl::opengl::glfw::Viewer& viewer);
 };
 
-std::tuple<Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXd> get_vehicle_mesh();
-Eigen::MatrixXd color_jet_from_mesh(const Eigen::MatrixXd& V);
-void drape_viewer(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
-                  const BaseDraper::BoundsT& bounds, const xtf_data::xtf_sss_ping::PingsT& pings,
-                  const csv_data::csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw);
 
 #endif // BASE_DRAPER_H

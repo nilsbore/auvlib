@@ -18,7 +18,6 @@
 #include <pybind11/functional.h>
 
 using namespace std_data;
-using namespace xtf_data;
 using namespace csv_data;
 
 namespace py = pybind11;
@@ -29,7 +28,7 @@ PYBIND11_MODULE(sss_gen_sim, m) {
     py::class_<SSSGenSim>(m, "SSSGenSim", "Class for simulating sidescan pings from a bathymetry mesh")
         // Methods inherited from BaseDraper:
         .def(py::init<const Eigen::MatrixXd&, const Eigen::MatrixXi&,
-                      const xtf_sss_ping::PingsT&, const SSSGenSim::BoundsT&,
+                      const std_data::sss_ping::PingsT&, const SSSGenSim::BoundsT&,
                       const csv_asvp_sound_speed::EntriesT&, const Eigen::MatrixXd&>())
         .def("set_sidescan_yaw", &SSSGenSim::set_sidescan_yaw, "Set yaw correction of sidescan with respect to nav frame")
         .def("set_sidescan_port_stbd_offsets", &SSSGenSim::set_sidescan_port_stbd_offsets, "Set offsets of sidescan port and stbd sides with respect to nav frame")

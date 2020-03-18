@@ -15,7 +15,6 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 using namespace std;
-using namespace xtf_data;
 
 sss_meas_data_builder::sss_meas_data_builder(const sss_meas_data::BoundsT& bounds, double resolution, int nbr_pings) : 
     waterfall_width(2*nbr_pings), waterfall_counter(0)
@@ -101,7 +100,7 @@ sss_meas_data sss_meas_data_builder::finish()
 void sss_meas_data_builder::add_hits(const Eigen::MatrixXd& hits, const Eigen::VectorXi& hits_inds,
                                      const Eigen::VectorXd& intensities,
                                      const Eigen::VectorXd& sss_depths, const Eigen::VectorXd& sss_model,
-                                     const xtf_sss_ping_side& ping, const Eigen::Vector3d& current_pos,
+                                     const std_data::sss_ping_side& ping, const Eigen::Vector3d& current_pos,
                                      const Eigen::Vector3d& current_rpy, bool is_left)
 {
     if (!is_left) {

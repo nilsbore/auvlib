@@ -14,6 +14,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>
 #include <pybind11/stl.h>
+#include <pybind11/functional.h>
 
 using namespace std_data;
 using namespace all_data;
@@ -101,8 +102,15 @@ PYBIND11_MODULE(all_data, m) {
     m.def("write_data", &write_data_from_str<all_nav_attitude::EntriesT>, "Write all_nav_attitude::EntriesT to .cereal file");
     m.def("write_data", &write_data_from_str<all_echosounder_depth::EntriesT>, "Write all_echosounder_depth::EntriesT to .cereal file");
     //m.def("convert_matched_entries", (all_mbes_ping::PingsT (*)(all_mbes_ping::PingsT&, all_nav_entry::EntriesT&) ) &convert_matched_entries, "Matches xtf_sss_ping::PingsT and csv_nav_entry::EntriesT and assign pos data to pings");
-    m.def("convert_matched_entries", &convert_matched_entries, "Matches xtf_sss_ping::PingsT and csv_nav_entry::EntriesT and assign pos data to pings");
+    m.def("convert_matched_entries", &convert_matched_entries, "Matches all_mbes_ping::PingsT and all_nav_entry::EntriesT and assign pos data to pings");
     m.def("match_attitude", &match_attitude, "Match mbes_ping::PingsT and all_nav_attitude::EntriesT and assign attitude data to pings");
     m.def("convert_sound_speeds", &convert_sound_speeds, "Convert all_mbes_ping::PingsT to csv_asvp_sound_speed::EntriesT");
     m.def("convert_attitudes", &convert_attitudes, "Convert all_nav_attitude::EntriesT to std_data::attitude_entry::EntriesT");
+
+    py::class_<StreamParser>(m, "StreamParser", "Class for parsing all data directly from a network stream")
+        // Methods inherited from MapImageDraper:
+        .def(py::init<>())
+        .def("parse_packet", &StreamParser::parse_packet, "Parse a string containing the packet load, and call the set callbacks with the corresponding data types")
+        .def("set_mbes_callback", &StreamParser::set_mbes_callback, "Callback to call when encountering all_mbes_ping packets")
+        .def("set_nav_entry_callback", &StreamParser::set_nav_entry_callback, "Callback to call when encountering all_nav_entry packets");
 }

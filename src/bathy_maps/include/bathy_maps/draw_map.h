@@ -39,12 +39,16 @@ public:
     void draw_back_scatter_map(std_data::mbes_ping::PingsT& pings);
     void draw_targets(const TargetsT& targets, const cv::Scalar& color);
     void draw_indices(std_data::mbes_ping::PingsT& pings, int skip_indices=500);
+    void draw_pose(const Eigen::Vector3d& pos, double heading, const cv::Scalar& color);
+    void draw_red_pose(const Eigen::Vector3d& pos, double heading);
+    void draw_blue_pose(const Eigen::Vector3d& pos, double heading);
 
     void rotate_crop_image(const Eigen::Vector3d& first_pos, const Eigen::Vector3d& last_pos, double result_width);
     void write_image(const boost::filesystem::path& path);
     void write_image_from_str(const std::string& path);
     cv::Mat make_image() { return bathy_map.clone(); }
     void show();
+    void blip();
 };
 
 #endif // DRAW_MAP_H

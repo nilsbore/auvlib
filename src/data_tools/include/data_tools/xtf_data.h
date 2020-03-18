@@ -21,48 +21,36 @@
 
 namespace xtf_data {
 
-struct xtf_sss_ping_side
-{
-    std::vector<int> pings;
-    double slant_range;
-    double time_duration;
-    double tilt_angle;
-    double beam_width;
+// the xtf pings and std pings are the same
+using xtf_sss_ping_side = std_data::sss_ping_side;
+using xtf_sss_ping = std_data::sss_ping;
+
+/*
+struct xtf_sss_ping_side : public std_data::sss_ping_side {
 
 	template <class Archive>
     void serialize( Archive & ar )
     {
-        ar(CEREAL_NVP(pings), CEREAL_NVP(slant_range), CEREAL_NVP(time_duration), CEREAL_NVP(tilt_angle), CEREAL_NVP(beam_width));
+        ar(cereal::base_class<std_data::sss_ping_side>( this ));
     }
+
 };
+*/
 
-struct xtf_sss_ping
-{
-    using PingsT = std::vector<xtf_sss_ping, Eigen::aligned_allocator<xtf_sss_ping> >;
+/*
+struct xtf_sss_ping : public std_data::sss_ping {
 
-    std::string time_string_; // readable time stamp string
-    long long time_stamp_; // posix time stamp
-
-    xtf_sss_ping_side port;
-    xtf_sss_ping_side stbd;
-    bool first_in_file_;
-    double heading_;
-    double pitch_;
-    double roll_;
-    double lat_;
-    double long_;
-    double sound_vel_;
-    Eigen::Vector3d pos_; // NOTE: this comes from associating ping with nav data
+    //using PingsT = std::vector<xtf_sss_ping, Eigen::aligned_allocator<xtf_sss_ping> >;
 
 	template <class Archive>
     void serialize( Archive & ar )
     {
-        ar(CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_), CEREAL_NVP(port), CEREAL_NVP(stbd), CEREAL_NVP(first_in_file_), CEREAL_NVP(heading_),
-           CEREAL_NVP(pitch_), CEREAL_NVP(roll_), CEREAL_NVP(lat_), CEREAL_NVP(long_), CEREAL_NVP(sound_vel_), CEREAL_NVP(pos_));
+        ar(cereal::base_class<std_data::sss_ping>( this ));
     }
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
+*/
 
 cv::Mat make_waterfall_image(const xtf_sss_ping::PingsT& pings);
 Eigen::MatrixXd make_eigen_waterfall_image(const xtf_sss_ping::PingsT& pings);

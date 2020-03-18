@@ -10,7 +10,7 @@
  */
 
 #include <data_tools/csv_data.h>
-#include <data_tools/xtf_data.h>
+//#include <data_tools/xtf_data.h>
 
 #define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/date_time.hpp>
@@ -28,23 +28,22 @@ inline std::basic_istream<Char, Traits>& skip(std::basic_istream<Char, Traits>& 
 namespace csv_data {
 
 using namespace std_data;
-using namespace xtf_data;
 
-xtf_sss_ping::PingsT convert_matched_entries_pitch(xtf_sss_ping::PingsT& pings, csv_nav_entry::EntriesT& entries)
+std_data::sss_ping::PingsT convert_matched_entries_pitch(std_data::sss_ping::PingsT& pings, csv_nav_entry::EntriesT& entries)
 {
-    xtf_sss_ping::PingsT new_pings;
+    std_data::sss_ping::PingsT new_pings;
 
     std::stable_sort(entries.begin(), entries.end(), [](const csv_nav_entry& entry1, const csv_nav_entry& entry2) {
         return entry1.time_stamp_ < entry2.time_stamp_;
     });
 
     auto pos = entries.begin();
-    for (xtf_sss_ping& ping : pings) {
+    for (std_data::sss_ping& ping : pings) {
         pos = std::find_if(pos, entries.end(), [&](const csv_nav_entry& entry) {
             return entry.time_stamp_ > ping.time_stamp_;
         });
 
-        xtf_sss_ping new_ping = ping;
+        std_data::sss_ping new_ping = ping;
         if (pos == entries.end()) {
             new_ping.pitch_ = entries.back().pitch_;
         }
@@ -65,15 +64,15 @@ xtf_sss_ping::PingsT convert_matched_entries_pitch(xtf_sss_ping::PingsT& pings, 
     return new_pings;
 }
 
-xtf_sss_ping::PingsT convert_matched_entries(xtf_sss_ping::PingsT& pings, csv_nav_entry::EntriesT& entries)
+std_data::sss_ping::PingsT convert_matched_entries(std_data::sss_ping::PingsT& pings, csv_nav_entry::EntriesT& entries)
 {
-    xtf_sss_ping::PingsT new_pings;
+    std_data::sss_ping::PingsT new_pings;
 
     std::stable_sort(entries.begin(), entries.end(), [](const csv_nav_entry& entry1, const csv_nav_entry& entry2) {
         return entry1.time_stamp_ < entry2.time_stamp_;
     });
 
-    std::stable_sort(pings.begin(), pings.end(), [](const xtf_sss_ping& ping1, const xtf_sss_ping& ping2) {
+    std::stable_sort(pings.begin(), pings.end(), [](const std_data::sss_ping& ping1, const std_data::sss_ping& ping2) {
         return ping1.time_stamp_ < ping2.time_stamp_;
     });
 
@@ -81,12 +80,12 @@ xtf_sss_ping::PingsT convert_matched_entries(xtf_sss_ping::PingsT& pings, csv_na
     int bcount = 0;
     int ecount = 0;
     int mcount = 0;
-    for (xtf_sss_ping& ping : pings) {
+    for (std_data::sss_ping& ping : pings) {
         pos = std::find_if(pos, entries.end(), [&](const csv_nav_entry& entry) {
             return entry.time_stamp_ > ping.time_stamp_;
         });
 
-        xtf_sss_ping new_ping = ping;
+        std_data::sss_ping new_ping = ping;
         if (pos == entries.end()) {
             new_ping.roll_ = entries.back().roll_;
             new_ping.pitch_ = entries.back().pitch_;
@@ -264,8 +263,12 @@ csv_asvp_sound_speed::EntriesT parse_file(const boost::filesystem::path& file)
             continue;
         }
         istringstream iss(line);
-
 		iss >> dbar >> vel;
+
+        if (counter >= entry.dbars.rows()) {
+            entry.dbars.conservativeResize(counter+1000);
+            entry.vels.conservativeResize(counter+1000);
+        }
         entry.dbars(counter) = dbar;
         entry.vels(counter) = vel;
         ++counter;

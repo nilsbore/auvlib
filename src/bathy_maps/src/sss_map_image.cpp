@@ -15,7 +15,6 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 using namespace std;
-using namespace xtf_data;
 
 sss_map_image_builder::sss_map_image_builder(const sss_map_image::BoundsT& bounds, double resolution, int nbr_pings) : 
     bounds(bounds), resolution(resolution), waterfall_width(2*nbr_pings), waterfall_counter(0)
@@ -102,7 +101,7 @@ sss_map_image sss_map_image_builder::finish()
 }
 
 void sss_map_image_builder::add_waterfall_images(const Eigen::MatrixXd& hits, const Eigen::VectorXi& hits_inds,
-                                                 const xtf_sss_ping_side& ping, const Eigen::Vector3d& pos, bool is_left)
+                                                 const std_data::sss_ping_side& ping, const Eigen::Vector3d& pos, bool is_left)
 {
     if (waterfall_counter >= sss_waterfall_image.rows()) {
         sss_waterfall_image.conservativeResize(sss_waterfall_image.rows()+1000, sss_waterfall_image.cols());
@@ -140,7 +139,7 @@ void sss_map_image_builder::add_waterfall_images(const Eigen::MatrixXd& hits, co
 }
 
 void sss_map_image_builder::add_hits(const Eigen::MatrixXd& hits, const Eigen::VectorXi& hits_inds,
-                                     const xtf_sss_ping_side& ping, const Eigen::Vector3d& pos, bool is_left)
+                                     const std_data::sss_ping_side& ping, const Eigen::Vector3d& pos, bool is_left)
 {
     if (hits.rows() == 0) {
         return;
@@ -176,7 +175,7 @@ void sss_map_image_builder::add_hits(const Eigen::MatrixXd& hits, const Eigen::V
 void sss_map_image_builder::add_hits(const Eigen::MatrixXd& hits, const Eigen::VectorXi& hits_inds,
                                      const Eigen::VectorXd& intensities,
                                      const Eigen::VectorXd& sss_depths, const Eigen::VectorXd& sss_model,
-                                     const xtf_sss_ping_side& ping, const Eigen::Vector3d& pos,
+                                     const std_data::sss_ping_side& ping, const Eigen::Vector3d& pos,
                                      const Eigen::Vector3d& rpy, bool is_left)
 {
     /*

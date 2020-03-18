@@ -52,12 +52,12 @@ set_target_properties(pydraw_map PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
                                             OUTPUT_NAME "draw_map"
                                             SUFFIX "${PYTHON_MODULE_EXTENSION}")
 
-target_link_libraries(pypatch_draper PRIVATE patch_draper base_draper igl::embree ${OpenCV_LIBS} ${BOOST_LIBRARIES} igl::core igl::opengl_glfw -lpthread pybind11::module)
+target_link_libraries(pypatch_draper PRIVATE patch_draper view_draper base_draper igl::embree ${OpenCV_LIBS} ${BOOST_LIBRARIES} igl::core igl::opengl_glfw -lpthread pybind11::module)
 set_target_properties(pypatch_draper PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
                                                   OUTPUT_NAME "patch_draper"
                                                   SUFFIX "${PYTHON_MODULE_EXTENSION}")
 
-target_link_libraries(pymap_draper PRIVATE map_draper base_draper sss_meas_data igl::embree ${OpenCV_LIBS} ${BOOST_LIBRARIES} igl::core igl::opengl_glfw -lpthread pybind11::module)
+target_link_libraries(pymap_draper PRIVATE map_draper view_draper base_draper sss_meas_data igl::embree ${OpenCV_LIBS} ${BOOST_LIBRARIES} igl::core igl::opengl_glfw -lpthread pybind11::module)
 set_target_properties(pymap_draper PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
                                                   OUTPUT_NAME "map_draper"
                                                   SUFFIX "${PYTHON_MODULE_EXTENSION}")

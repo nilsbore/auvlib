@@ -18,7 +18,6 @@
 #include <pybind11/functional.h>
 
 using namespace std_data;
-using namespace xtf_data;
 using namespace csv_data;
 
 namespace py = pybind11;
@@ -35,20 +34,24 @@ PYBIND11_MODULE(patch_draper, m) {
         .def_readwrite("patch_view_dirs", &sss_patch_views::patch_view_dirs, "Directions of views (yaw)")
         .def_static("read_data", &read_data_from_str<sss_patch_views::ViewsT>, "Read sss_patch_views::ViewsT from .cereal file");
 
-    py::class_<BaseDraper>(m, "BaseDraper", "Base class for draping sidescan pings onto a bathymetry mesh")
+    py::class_<ViewDraper>(m, "ViewDraper", "Base class for draping sidescan pings onto a bathymetry mesh")
         .def(py::init<const Eigen::MatrixXd&, const Eigen::MatrixXi&,
-                      const xtf_sss_ping::PingsT&, const BaseDraper::BoundsT&,
+                      const std_data::sss_ping::PingsT&, const ViewDraper::BoundsT&,
                       const csv_asvp_sound_speed::EntriesT&>())
-        .def("set_sidescan_yaw", &BaseDraper::set_sidescan_yaw, "Set yaw correction of sidescan with respect to nav frame")
-        .def("set_sidescan_port_stbd_offsets", &BaseDraper::set_sidescan_port_stbd_offsets, "Set offsets of sidescan port and stbd sides with respect to nav frame")
-        .def("set_ray_tracing_enabled", &BaseDraper::set_ray_tracing_enabled, "Set if ray tracing through water layers should be enabled. Takes more time but is recommended if there are large speed differences")
-        .def("set_vehicle_mesh", &BaseDraper::set_vehicle_mesh, "Provide the viewer with a vehicle model, purely for visualization")
-        .def("show", &BaseDraper::show, "Start the draping, and show the visualizer");
+        .def("add_texture_intensities", &ViewDraper::add_texture_intensities, "Add the intensities of draping result hits and intensities")
+        .def("get_texture_image", &ViewDraper::get_texture_image, "Get the texture image, defined within bounds, with resolution of 1m")
+        .def("set_sidescan_yaw", &ViewDraper::set_sidescan_yaw, "Set yaw correction of sidescan with respect to nav frame")
+        .def("set_sidescan_port_stbd_offsets", &ViewDraper::set_sidescan_port_stbd_offsets, "Set offsets of sidescan port and stbd sides with respect to nav frame")
+        .def("set_tracing_map_size", &ViewDraper::set_tracing_map_size, "Set size of slice of map where we do ray tracing. Smaller makes it faster but you might cut off valid sidescan angles")
+        .def("set_intensity_multiplier", &ViewDraper::set_intensity_multiplier, "Set a value to multiply the sidescan intensity with when displaying on top of mesh")
+        .def("set_ray_tracing_enabled", &ViewDraper::set_ray_tracing_enabled, "Set if ray tracing through water layers should be enabled. Takes more time but is recommended if there are large speed differences")
+        .def("set_vehicle_mesh", &ViewDraper::set_vehicle_mesh, "Provide the viewer with a vehicle model, purely for visualization")
+        .def("show", &ViewDraper::show, "Start the draping, and show the visualizer");
 
     py::class_<PatchDraper>(m, "PatchDraper", "Base class for draping sidescan pings onto a particular point of a bathymetry mesh")
         // Methods inherited from draping_generator:
         .def(py::init<const Eigen::MatrixXd&, const Eigen::MatrixXi&,
-                      const xtf_sss_ping::PingsT&, const PatchDraper::BoundsT&,
+                      const std_data::sss_ping::PingsT&, const PatchDraper::BoundsT&,
                       const csv_asvp_sound_speed::EntriesT&>())
         .def("set_sidescan_yaw", &PatchDraper::set_sidescan_yaw, "Set yaw correction of sidescan with respect to nav frame")
         .def("set_sidescan_port_stbd_offsets", &PatchDraper::set_sidescan_port_stbd_offsets, "Set offsets of sidescan port and stbd sides with respect to nav frame")
@@ -60,9 +63,9 @@ PYBIND11_MODULE(patch_draper, m) {
         .def("set_patch_callback", &PatchDraper::set_patch_callback, "Set the function to be called when all views of a patch have been assembled")
         .def("get_patch_views", &PatchDraper::get_patch_views, "Get all the sss_patch_views::PatchesT that have been gathered so far");
 
-    m.def("drape_patches", &drape_patches, "Overlay xtf_sss_ping::PingsT sidescan data on a mesh and get sss_patch_views::ViewsT");
+    m.def("drape_patches", &drape_patches, "Overlay std_data::sss_ping::PingsT sidescan data on a mesh and get sss_patch_views::ViewsT");
     m.def("color_jet_from_mesh", &color_jet_from_mesh, "Get a jet color scheme from a vertex matrix");
     m.def("get_vehicle_mesh", &get_vehicle_mesh, "Get vertices, faces, and colors for vehicle");
-    m.def("drape_viewer", &drape_viewer, "Overlay xtf_sss_ping::PingsT sidescan data on a mesh and get sss_patch_views::ViewsT");
+    m.def("drape_viewer", &drape_viewer, "Overlay std_data::sss_ping::PingsT sidescan data on a mesh and get sss_patch_views::ViewsT");
     m.def("write_data", &write_data_from_str<sss_patch_views::ViewsT>, "Write sss_patch_views::ViewsT to .cereal file");
 }

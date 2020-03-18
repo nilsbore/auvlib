@@ -13,21 +13,20 @@
 
 #include <igl/readSTL.h>
 #include <igl/unproject_onto_mesh.h>
-#include <bathy_maps/drape_mesh.h>
+//#include <bathy_maps/drape_mesh.h>
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
 using namespace std;
-using namespace xtf_data;
 using namespace csv_data;
 
 SSSGenSim::SSSGenSim(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
-                     const xtf_sss_ping::PingsT& pings,
+                     const std_data::sss_ping::PingsT& pings,
                      const BoundsT& bounds,
                      const csv_asvp_sound_speed::EntriesT& sound_speeds,
                      const Eigen::MatrixXd& height_map)
-    : BaseDraper(V1, F1, pings, bounds, sound_speeds), //bounds(bounds),
+    : ViewDraper(V1, F1, pings, bounds, sound_speeds), //bounds(bounds),
       gen_callback(&default_callback),
       height_map(height_map),
       sss_from_waterfall(false),
@@ -290,14 +289,6 @@ void SSSGenSim::construct_model_waterfall(const Eigen::MatrixXd& hits_left, cons
     }
 }
 
-// actually we do not need this, already have it from waterfall??????
-/*
-Eigen::MatrixXd draw_gt_waterfall(const xtf_data::xtf_sss_ping& pings)
-{
-
-}
-*/
-
 // NOTE: sss_ping_duration should be the same as for the pings
 Eigen::MatrixXd SSSGenSim::draw_sim_waterfall(const Eigen::MatrixXd& incidence_image)
 {
@@ -435,12 +426,12 @@ bool SSSGenSim::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
     Eigen::MatrixXd hits_right;
     Eigen::MatrixXd normals_left;
     Eigen::MatrixXd normals_right;
-    tie(hits_left, hits_right, normals_left, normals_right) = project();
+    tie(hits_left, hits_right, normals_left, normals_right) = project(pings[i]);
 
     // compute travel times
     Eigen::Vector3d origin_port;
     Eigen::Vector3d origin_stbd;
-    tie(origin_port, origin_stbd) = get_port_stbd_sensor_origins();
+    tie(origin_port, origin_stbd) = get_port_stbd_sensor_origins(pings[i]);
     Eigen::VectorXd times_left = compute_times(origin_port, hits_left);
     Eigen::VectorXd times_right = compute_times(origin_stbd, hits_right);
 
@@ -469,8 +460,8 @@ bool SSSGenSim::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
 
         waterfall_model.row(resample_window_height-waterfall_row-1) = model_windows.transpose();
 
-        Eigen::VectorXd depth_windows_left = convert_to_time_bins(times_left, hits_left.col(2), pings[i].port, nbr_windows);
-        Eigen::VectorXd depth_windows_right = convert_to_time_bins(times_right, hits_right.col(2), pings[i].stbd, nbr_windows);
+        Eigen::VectorXd depth_windows_left = convert_to_time_bins(times_left, Eigen::VectorXd(hits_left.col(2)), pings[i].port, nbr_windows);
+        Eigen::VectorXd depth_windows_right = convert_to_time_bins(times_right, Eigen::VectorXd(hits_right.col(2)), pings[i].stbd, nbr_windows);
 
         Eigen::VectorXd depth_windows(depth_windows_left.rows() + depth_windows_right.rows());
         depth_windows.tail(depth_windows_right.rows()) = depth_windows_right;

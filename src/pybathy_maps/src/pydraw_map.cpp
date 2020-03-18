@@ -31,8 +31,11 @@ PYBIND11_MODULE(draw_map, m) {
         .def("draw_indices", &BathyMapImage::draw_indices, "Draw indices of the pings within the map, from mbes_ping::PingsT")
         .def("draw_back_scatter_map", &BathyMapImage::draw_back_scatter_map, "Draw back scatter map from mbes_ping::PingsT")
         .def("draw_targets", &BathyMapImage::draw_targets, "Draw point targets from dict of points")
+        .def("draw_blue_pose", &BathyMapImage::draw_blue_pose, "Draw pose with a heading on top of map")
+        .def("draw_red_pose", &BathyMapImage::draw_red_pose, "Draw pose with a heading on top of map")
         .def("rotate_crop_image", &BathyMapImage::rotate_crop_image, "Rotate and crop the image from a start and an end point, and a width in between")
         .def("show", &BathyMapImage::show, "Show the drawn bathy map")
+        .def("blip", &BathyMapImage::blip, "Blip the drawn bathy map")
         .def("make_image", &BathyMapImage::make_image, "Get the drawn image")
         .def("write_image", &BathyMapImage::write_image_from_str, "Save image to file");
 

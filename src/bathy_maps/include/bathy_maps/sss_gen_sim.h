@@ -12,7 +12,7 @@
 #ifndef SSS_GEN_SIM_H
 #define SSS_GEN_SIM_H
 
-#include <bathy_maps/base_draper.h>
+#include <bathy_maps/view_draper.h>
 #include <bathy_maps/patch_views.h>
 #include <bathy_maps/sss_map_image.h>
 #include <opencv2/core/core.hpp>
@@ -76,7 +76,7 @@ public:
 
 };
 
-struct SSSGenSim : public BaseDraper {
+struct SSSGenSim : public ViewDraper {
 public:
 
     using BoundsT = Eigen::Matrix2d;
@@ -112,8 +112,6 @@ protected:
 
     void generate_sss_window();
     //Eigen::VectorXd compute_times(const Eigen::MatrixXd& P);
-    //Eigen::VectorXd compute_time_windows(const Eigen::VectorXd& times, const Eigen::VectorXd& intensities, const xtf_data::xtf_sss_ping_side& ping);
-    //Eigen::VectorXd compute_depth_windows(const Eigen::VectorXd& times, const Eigen::MatrixXd& hits, const xtf_data::xtf_sss_ping_side& ping);
     //Eigen::VectorXd compute_model_intensities(const Eigen::MatrixXd& hits, const Eigen::MatrixXd& normals,
     //                                          const Eigen::Vector3d& origin);
     //void visualize_rays(const Eigen::MatrixXd& hits_left, const Eigen::MatrixXd& hits_right);
@@ -146,7 +144,7 @@ public:
     //void set_resolution(double new_resolution);
 
     SSSGenSim(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
-              const xtf_data::xtf_sss_ping::PingsT& pings,
+              const std_data::sss_ping::PingsT& pings,
               const BoundsT& bounds,
               const csv_data::csv_asvp_sound_speed::EntriesT& sound_speeds,
               const Eigen::MatrixXd& height_map);
@@ -154,12 +152,5 @@ public:
     bool callback_key_pressed(igl::opengl::glfw::Viewer& viewer, unsigned int key, int mods);
     bool callback_pre_draw(igl::opengl::glfw::Viewer& viewer);
 };
-
-/*
-sss_map_image::ImagesT drape_maps(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
-                                  const SSSGenSim::BoundsT& bounds, const xtf_data::xtf_sss_ping::PingsT& pings,
-                                  const csv_data::csv_asvp_sound_speed::EntriesT& sound_speeds, double sensor_yaw,
-                                  double resolution, const std::function<Eigen::MatrixXd(const Eigen::MatrixXd&)>& gen_callback);
-*/
 
 #endif // SSS_GEN_SIM_H
