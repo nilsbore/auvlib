@@ -210,8 +210,8 @@ xtf_sss_ping process_side_scan_ping(XTFPINGHEADER *PingHeader, XTFFILEHEADER *XT
       //cout << "Channel name: " << ChannelName << endl;
       cout << "Bytes per sample: " << int(BytesPerSample) << endl;
       cout << "Samples per chan: " << int(SamplesPerChan) << endl;
-      cout << "Ground range: " << int(ChanHeader->GroundRange) << endl; // seems to always be 0
-      cout << "Slant range: " << int(ChanHeader->SlantRange) << endl;
+      cout << "Ground range: " << float(ChanHeader->GroundRange) << endl; // seems to always be 0
+      cout << "Slant range: " << float(ChanHeader->SlantRange) << endl;
       cout << "Time duration: " << ChanHeader->TimeDuration << endl;
       cout << "SecondsPerPing: " << ChanHeader->SecondsPerPing << endl; // seems to always be 0
       cout << "GAIN Code: " << ChanHeader->GainCode << endl;

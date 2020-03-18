@@ -20,7 +20,7 @@ using namespace xtf_data;
 
 int main(int argc, char** argv)
 {
-    boost::filesystem::path folder("/home/nbore/Data/KTH_GBG_PING/Ping_Unprocessed/2-Raw_Data/SSS/xtf");
+    boost::filesystem::path folder(argv[1]);
     xtf_sss_ping::PingsT pings = parse_folder<xtf_sss_ping>(folder);
     
     for (auto pos = pings.begin(); pos != pings.end(); ) {
