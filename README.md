@@ -21,7 +21,7 @@ on how to install and use the latest release.
 auvlib has been tested on Ubuntu 16.04 and 18.04.
 On Ubuntu 16.04 and 18.04, use the following command to install all dependencies:
 ```
-sudo apt-get install libcereal-dev libglfw3-dev libtinyxml2-dev libboost-all-dev libopencv-dev xorg-dev libopencv-imgproc-dev
+sudo apt-get install libcereal-dev libglfw3-dev libtinyxml2-dev libboost-all-dev libopencv-dev xorg-dev libopencv-imgcodecs-dev
 ```
 ## Building
 
