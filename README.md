@@ -47,6 +47,7 @@ You should now have a compiled version of auvlib in the folder
 `/path/to/auvlib/install`. When done, please execute
 ```
 export PYTHONPATH=$PYTHONPATH:/path/to/auvlib/install/lib
+export PATH=$PATH:/path/to/auvlib/install/share
 ```
 in any terminal where you want to use the python 2.7 version of
 the library, or add this line to your `~/.bashrc`.
