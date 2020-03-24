@@ -21,7 +21,7 @@ on how to install and use the latest release.
 auvlib has been tested on Ubuntu 16.04 and 18.04.
 On Ubuntu 16.04 and 18.04, use the following command to install all dependencies:
 ```
-sudo apt-get install libcereal-dev libglfw3-dev libtinyxml2-dev libboost-all-dev libopencv-dev xorg-dev
+sudo apt-get install libcereal-dev libglfw3-dev libtinyxml2-dev libboost-all-dev libopencv-dev xorg-dev libopencv-imgcodecs-dev
 ```
 ## Building
 
@@ -47,6 +47,7 @@ You should now have a compiled version of auvlib in the folder
 `/path/to/auvlib/install`. When done, please execute
 ```
 export PYTHONPATH=$PYTHONPATH:/path/to/auvlib/install/lib
+export PATH=$PATH:/path/to/auvlib/install/share
 ```
 in any terminal where you want to use the python 2.7 version of
 the library, or add this line to your `~/.bashrc`.
