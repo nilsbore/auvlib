@@ -192,10 +192,14 @@ typedef int                 BOOL;
 
 typedef unsigned char	    BYTE;
 typedef unsigned short      WORD;
-//typedef unsigned long       DWORD;
-typedef unsigned int        DWORD;
+#ifdef _MSC_VER
+  typedef unsigned long       DWORD;
+  typedef signed long         LONG;
+#else
+  typedef unsigned int        DWORD;
+  typedef int                 LONG;
+#endif
 typedef unsigned int	    UINT;
-typedef int                 LONG;
 
 #ifdef _MSC_VER
   #define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop) )

@@ -50,6 +50,26 @@ std::tuple<uint8_t, uint8_t, uint8_t> jet(double x)
     return std::make_tuple(uint8_t(255.*r), uint8_t(255.*g), uint8_t(255.*b));
 }
 
+// OpenCV 2.4.9 which is the default on Ubuntu 18.04 and earlier versions
+// do not have the arrowedLine function
+void draw_arrowed_line(cv::Mat& img, cv::Point pt1, cv::Point pt2, const cv::Scalar& color,
+                       int thickness, int line_type, int shift, double tipLength)
+{
+    const double tipSize = norm(pt1-pt2)*tipLength; // Factor to normalize the size of the tip depending on the length of the arrow
+
+    cv::line(img, pt1, pt2, color, thickness, line_type, shift);
+
+    const double angle = atan2( (double) pt1.y - pt2.y, (double) pt1.x - pt2.x );
+
+    cv::Point p(cvRound(pt2.x + tipSize * cos(angle + CV_PI / 4)),
+    cvRound(pt2.y + tipSize * sin(angle + CV_PI / 4)));
+    cv::line(img, p, pt2, color, thickness, line_type, shift);
+
+    p.x = cvRound(pt2.x + tipSize * cos(angle - CV_PI / 4));
+    p.y = cvRound(pt2.y + tipSize * sin(angle - CV_PI / 4));
+    cv::line(img, p, pt2, color, thickness, line_type, shift);
+}
+
 BathyMapImage::BathyMapImage(const mbes_ping::PingsT& pings, int rows, int cols) : rows(rows), cols(cols)
 {
     auto xcomp = [](const mbes_ping& p1, const mbes_ping& p2) {
@@ -161,6 +181,27 @@ void BathyMapImage::draw_indices(mbes_ping::PingsT& pings, int skip_indices)
         }
         ++counter;
     }
+}
+
+void BathyMapImage::draw_pose(const Eigen::Vector3d& pos, double heading, const cv::Scalar& color)
+{
+    double len = 30.;
+    double res, minx, miny, x0, y0;
+    res = params[0]; minx = params[1]; miny = params[2]; x0 = params[3]; y0 = params[4];
+
+    cv::Point pt1(x0+res*(pos[0]-minx), bathy_map.rows-y0-res*(pos[1]-miny)-1);
+    cv::Point pt2(pt1.x + int(len*cos(heading)), pt1.y - int(len*sin(heading)));
+    draw_arrowed_line(bathy_map, pt1, pt2, color, 2, 8, 0, 0.1);
+}
+
+void BathyMapImage::draw_red_pose(const Eigen::Vector3d& pos, double heading)
+{
+    draw_pose(pos, heading, cv::Scalar(0, 0, 255));
+}
+
+void BathyMapImage::draw_blue_pose(const Eigen::Vector3d& pos, double heading)
+{
+    draw_pose(pos, heading, cv::Scalar(255, 0, 0));
 }
 
 void BathyMapImage::draw_height_map(const Eigen::MatrixXd& height_map)
@@ -321,4 +362,10 @@ void BathyMapImage::show()
 {
     cv::imshow("Bathy image", bathy_map);
     cv::waitKey();
+}
+
+void BathyMapImage::blip()
+{
+    cv::imshow("Bathy image", bathy_map);
+    cv::waitKey(1);
 }
