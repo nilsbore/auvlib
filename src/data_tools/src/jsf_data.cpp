@@ -154,6 +154,8 @@ vector<ReturnType, Eigen::aligned_allocator<ReturnType> > parse_file_impl(const 
     }
     while (!input.eof()) {
         jsf_msg_header jsf_hdr;
+        int16_t prot_ver = jsf_hdr.prot_ver;
+        // cout << "in while Protocol Version: "  << prot_ver << endl;
         input.read(reinterpret_cast<char*>(&jsf_hdr),sizeof(jsf_hdr));
         if (jsf_hdr.start_marker != SONAR_MESSAGE_HEADER_START) {
             cout << "Invalid file format! start marker: " << jsf_hdr.start_marker << endl;
@@ -189,7 +191,11 @@ jsf_sss_ping read_datagram<jsf_sss_ping, jsf_sonar_data_msg_header>(std::ifstrea
     ping.rpy = Eigen::Vector3d(jsf_sonar_data_hdr.roll, jsf_sonar_data_hdr.pitch, jsf_sonar_data_hdr.compass_heading);
     ping.rpy.head<2>() = M_PI/32768.*ping.rpy.head<2>();
     ping.rpy[2] = .5*M_PI - M_PI/180.*0.01*ping.rpy[2];
-
+    double interval = jsf_sonar_data_hdr.spl_intvl_in_ns*0.000000001;
+    ping.sample_interval = interval;
+    // cout << "samples interval in s: " << ping.sample_interval << endl;
+    // cout << "Num of samples in this pocket: "<< jsf_sonar_data_hdr.spls_num_in_pkt << endl;
+    if (ping.sound_vel>0) cout << "Sound velocity: " << ping.sound_vel << endl;
     // NOTE: this is only valid if coord_units == 2
     ping.lat_ = 0.0001/60.*double(jsf_sonar_data_hdr.y_coord);
     ping.long_ = 0.0001/60.*double(jsf_sonar_data_hdr.x_coord);
@@ -200,13 +206,14 @@ jsf_sss_ping read_datagram<jsf_sss_ping, jsf_sonar_data_msg_header>(std::ifstrea
     ping.utm_zone = utm_zone;
     ping.pos_ = Eigen::Vector3d(easting, northing, -0.001*jsf_sonar_data_hdr.depth_in_mm);
     ping_side = process_side_scan_ping_side(input, jsf_hdr, jsf_sonar_data_hdr);
-
+    // cout << "Protocol Version: " << std::hex << jsf_hdr.prot_ver << endl;
     //cout << "Coord units: " << jsf_sonar_data_hdr.coord_units << endl;
-
+    // cout << "Starting depth: " << jsf_sonar_data_hdr.starting_depth << "depth in mm: " << jsf_sonar_data_hdr.depth_in_mm << endl;
     const boost::posix_time::ptime epoch = boost::posix_time::time_from_string("1970-01-01 00:00:00.000");
     boost::posix_time::ptime data_time;
 
     if (jsf_hdr.prot_ver >= 8) {
+
         data_time = epoch + boost::posix_time::seconds(jsf_sonar_data_hdr.ping_time_in_sec) + boost::posix_time::milliseconds(jsf_sonar_data_hdr.today_in_ms%1000);
     }
     else {
