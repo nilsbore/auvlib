@@ -57,11 +57,12 @@ struct jsf_sss_ping
     double sound_vel;
     uint16_t frequency;
     Eigen::Vector3d pos_;
+    double sample_interval;
 
 	template <class Archive>
     void serialize( Archive & ar )
     {
-        ar(CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_), CEREAL_NVP(port), CEREAL_NVP(stbd), CEREAL_NVP(first_in_file_), CEREAL_NVP(rpy), CEREAL_NVP(lat_), CEREAL_NVP(long_), CEREAL_NVP(utm_zone), CEREAL_NVP(sound_vel), CEREAL_NVP(frequency), CEREAL_NVP(pos_));
+        ar(CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_), CEREAL_NVP(port), CEREAL_NVP(stbd), CEREAL_NVP(first_in_file_), CEREAL_NVP(rpy), CEREAL_NVP(lat_), CEREAL_NVP(long_), CEREAL_NVP(utm_zone), CEREAL_NVP(sound_vel), CEREAL_NVP(frequency), CEREAL_NVP(pos_), CEREAL_NVP(sample_interval));
     }
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
