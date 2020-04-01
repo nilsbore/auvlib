@@ -20,27 +20,27 @@ using namespace std;
 using namespace jsf_data;
 using namespace std_data;
 
-void test_parse_sss(const boost::filesystem::path& path)
+jsf_sss_ping::PingsT test_parse_sss(const boost::filesystem::path& path)
 {
     jsf_sss_ping::PingsT pings = parse_file<jsf_sss_ping>(path);
     int rows = pings.size();
     int cols = pings[0].port.pings.size() + pings[0].stbd.pings.size();
 
     for (const jsf_data::jsf_sss_ping& ping : pings) {
-        cout << "Ping duration:" << ping.port.time_duration << endl;
-        cout << "Ping pos: " << ping.pos_.transpose() << endl;
-        cout << "Ping rpy: " << ping.rpy.transpose() << endl;
+        // cout << "Ping duration:" << ping.port.time_duration << endl;
+        // cout << "Ping pos: " << ping.pos_.transpose() << endl;
+        // cout << "Ping rpy: " << ping.rpy.transpose() << endl;
     }
 
-    jsf_sss_ping::PingsT filtered_pings = filter_frequency(pings, 21269);
+    // jsf_sss_ping::PingsT filtered_pings = filter_frequency(pings, 21269);
  
     printf("rows num: %d\n", rows);
     printf("cols num: %d\n", cols);
-    show_waterfall_image(filtered_pings);
-
+    // show_waterfall_image(filtered_pings);
+    return pings;
 }
 
-void test_parse_dvl(const boost::filesystem::path& path)
+jsf_dvl_ping::PingsT test_parse_dvl(const boost::filesystem::path& path)
 {
     jsf_dvl_ping::PingsT pings = parse_file<jsf_dvl_ping>(path);
     cout << "Number of dvl pings: " << pings.size() << endl;
@@ -58,15 +58,47 @@ void test_parse_dvl(const boost::filesystem::path& path)
     if (!pings.empty()) {
         cout << "Sound velocity from the first dvl data: " << pings[0].sound_vel_ << " m/s" << endl;
     }
+    return pings;
+}
+
+
+void test_match_sound_vel(const boost::filesystem::path& path){
+    jsf_sss_ping::PingsT sss_pings = parse_file<jsf_sss_ping>(path);
+    jsf_dvl_ping::PingsT dvl_pings = parse_file<jsf_dvl_ping>(path);
+
+
+    sss_pings = match_sound_vel(sss_pings, dvl_pings);
+
+    for (auto i : sss_pings) {
+        // if (i.sound_vel==1477)
+        cout << "Sound velocity from the sss data at time_stamp: " << i.time_string_ << ", "<< i.sound_vel << " m/s" << endl;
+    }
+    for (auto i : dvl_pings) {
+        // if (i.sound_vel_==1477)
+    cout << "Sound velocity from the dvl data at time_stamp: " << i.time_string_ << ", "<<i.sound_vel_ << " m/s" << endl;
+    }
+    cout << "slant range: " << sss_pings[0].slant_ << endl;
+
 }
 
 int main(int argc, char** argv){
     int rtn=0;
     boost::filesystem::path path(argv[1]);
 
-    test_parse_dvl(path);
+    jsf_dvl_ping::PingsT dvl_pings = test_parse_dvl(path);
 
-    test_parse_sss(path);
+    jsf_sss_ping::PingsT sss_pings = test_parse_sss(path);
 
+    double time = sss_pings[0].sample_interval * sss_pings[0].port.pings.size();
+    double sound_vel = dvl_pings[0].sound_vel_;
+    double slant_range = sound_vel * time/2;
+    cout << "time: " << time << endl;
+    cout << "slant range: " << slant_range << endl;
+    cout << "port time duration: " << sss_pings[0].port.time_duration << endl;
+    cout << "stbd time duration: " << sss_pings[0].stbd.time_duration << endl;
+    cout << "port.pings.size(): "<< sss_pings[0].port.pings.size()<<endl;
+    cout << "dvl depth: " << dvl_pings[0].depth_ << endl;
+    
+    test_match_sound_vel(path);
     return rtn;
 }
