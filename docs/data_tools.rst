@@ -38,3 +38,5 @@ bathymetric map as an image.
    csv_data
 
    xyz_data
+
+   jsf_data
