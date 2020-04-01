@@ -22,6 +22,7 @@
 #include <cereal/types/array.hpp>
 #include <cereal/types/map.hpp>
 #include <cereal/types/tuple.hpp>
+#include <cereal/types/unordered_map.hpp>
 
 #define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>

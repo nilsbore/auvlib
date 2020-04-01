@@ -26,7 +26,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <bitset>
 #include <data_tools/lat_long_utm.h>
-# define _ENABLE_EXTENDED_ALIGNED_STORAGE
+
 # define SONAR_MESSAGE_HEADER_START 0X1601
 # define SONAR_DATA_TYPE 0X0050
 # define DVL_DATA_TYPE 0X0820
