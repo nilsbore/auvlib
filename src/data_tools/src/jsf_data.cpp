@@ -68,7 +68,7 @@ cv::Mat make_waterfall_image(const jsf_sss_ping::PingsT& pings)
     }
     cv::Mat resized_swath_img;//dst image
     cv::resize(swath_img, resized_swath_img, cv::Size(512, rows));//resize image
-    
+
     return resized_swath_img;
 }
 
@@ -199,6 +199,10 @@ jsf_sss_ping read_datagram<jsf_sss_ping, jsf_sonar_data_msg_header>(std::ifstrea
     // NOTE: this is only valid if coord_units == 2
     ping.lat_ = 0.0001/60.*double(jsf_sonar_data_hdr.y_coord);
     ping.long_ = 0.0001/60.*double(jsf_sonar_data_hdr.x_coord);
+
+    ping.altitude_ = 0.001*double(jsf_sonar_data_hdr.al_in_mm);
+    // cout << "altitude in m: " << ping.altitude_ << endl;
+
     double easting, northing;
     string utm_zone;
     tie(northing, easting, utm_zone) = lat_long_utm::lat_long_to_UTM(ping.lat_, ping.long_);
@@ -206,9 +210,76 @@ jsf_sss_ping read_datagram<jsf_sss_ping, jsf_sonar_data_msg_header>(std::ifstrea
     ping.utm_zone = utm_zone;
     ping.pos_ = Eigen::Vector3d(easting, northing, -0.001*jsf_sonar_data_hdr.depth_in_mm);
     ping_side = process_side_scan_ping_side(input, jsf_hdr, jsf_sonar_data_hdr);
+
+
+ // initialize the flag
+    ping.flag_["latlon_XY"] = false; // bit 0
+    ping.flag_["course"] = false; // bit 1
+
+    ping.flag_["speed"] = false; // bit 2
+    ping.flag_["heading"] = false; // bit 3
+    ping.flag_["pressure"] = false; // bit 4
+    ping.flag_["pitchroll"] = false; // bit 5
+    ping.flag_["altitude"] = false; // bit 6
+    //  bit 7 reserved
+    ping.flag_["water_temp"] = false; // bit 8
+    ping.flag_["depth"] = false; // bit 9
+    ping.flag_["annotation"] = false; // bit 10
+    ping.flag_["cable_counter"] = false; // bit 11
+    ping.flag_["kp"] = false; // bit 12
+    ping.flag_["position_interpolated"] = false; // bit 13
+    ping.flag_["sound_vel"] = false; // bit 14
+
+    // bit 0
+    if (jsf_sonar_data_hdr.val_flag & 0x01) ping.flag_["latlon_XY"] = true;
+     
+    // bit 1
+    if (jsf_sonar_data_hdr.val_flag & 0x02) ping.flag_["course"] = true;
+    
+
+    // bit 2
+    if (jsf_sonar_data_hdr.val_flag & 0x04) ping.flag_["speed"] = true;
+
+    // bit 3
+    if (jsf_sonar_data_hdr.val_flag & 0x08) ping.flag_["heading"] = true;
+    
+    // bit 4
+    if (jsf_sonar_data_hdr.val_flag & 0x10) ping.flag_["pressure"] = true;
+
+    // bit 5
+    if (jsf_sonar_data_hdr.val_flag & 0x20) ping.flag_["pitchroll"] = true;
+    
+    // bit 6
+    if (jsf_sonar_data_hdr.val_flag & 0x40) ping.flag_["altitude"] = true;
+    
+    // bit 7
+    // if (jsf_sonar_data_hdr.val_flag & 0x80) ping.flag_["pitch"] = true;
+    
+    // bit 8
+    if (jsf_sonar_data_hdr.val_flag & 0x100) ping.flag_["water_temp"] = true;
+    
+    // bit 9
+    if (jsf_sonar_data_hdr.val_flag & 0x200) ping.flag_["depth"] = true;
+
+    // bit 10
+    if (jsf_sonar_data_hdr.val_flag & 0x400) ping.flag_["annotation"] = true;
+
+    // bit 11
+    if (jsf_sonar_data_hdr.val_flag & 0x800) ping.flag_["cable_counter"] = true;
+
+    // bit 12
+    if (jsf_sonar_data_hdr.val_flag & 0x1000) ping.flag_["kp"] = true; 
+  
+    // bit 13
+    if (jsf_sonar_data_hdr.val_flag & 0x2000) ping.flag_["position_interpolated"] = true; 
+  
+    // bit 14
+    if (jsf_sonar_data_hdr.val_flag & 0x4000) ping.flag_["sound_vel"] = true; 
+
+
     // cout << "Protocol Version: " << std::hex << jsf_hdr.prot_ver << endl;
     //cout << "Coord units: " << jsf_sonar_data_hdr.coord_units << endl;
-    // cout << "Starting depth: " << jsf_sonar_data_hdr.starting_depth << "depth in mm: " << jsf_sonar_data_hdr.depth_in_mm << endl;
+    // cout << "Starting depth: " << jsf_sonar_data_hdr.starting_depth << "depth in m: " << 0.001*jsf_sonar_data_hdr.depth_in_mm << endl;
     const boost::posix_time::ptime epoch = boost::posix_time::time_from_string("1970-01-01 00:00:00.000");
     boost::posix_time::ptime data_time;
 
@@ -369,6 +440,25 @@ std_data::sss_ping::PingsT convert_to_xtf_pings(const jsf_sss_ping::PingsT& ping
     return converted;
 }
 
+
+jsf_sss_ping::PingsT match_sound_vel(jsf_sss_ping::PingsT& sss_pings, jsf_dvl_ping::PingsT& dvl_pings)
+{
+    std::stable_sort(dvl_pings.begin(), dvl_pings.end(), [](const jsf_dvl_ping& dvl_ping1, const jsf_dvl_ping& dvl_ping2) {
+        return dvl_ping1.time_stamp_ < dvl_ping2.time_stamp_;
+    });
+    std::stable_sort(sss_pings.begin(), sss_pings.end(), [](const jsf_sss_ping& sss_ping1, const jsf_sss_ping& sss_ping2) {
+        return sss_ping1.time_stamp_ < sss_ping2.time_stamp_;
+    });
+    auto pos = dvl_pings.begin();
+    for (jsf_sss_ping& sss_ping: sss_pings){
+        pos = std::find_if(pos, dvl_pings.end(),[&](const jsf_dvl_ping& dvl_ping){
+            return dvl_ping.time_stamp_ > sss_ping.time_stamp_;
+        });
+        sss_ping.sound_vel = pos->sound_vel_;
+        sss_ping.slant_ = sss_ping.sound_vel * sss_ping.sample_interval* sss_ping.port.pings.size()/2;
+    }
+    return sss_pings;
+}
 
 } // namespace jsf_data
 

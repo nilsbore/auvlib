@@ -44,6 +44,10 @@ PYBIND11_MODULE(jsf_data, m) {
         .def_readwrite("frequency", &jsf_sss_ping::frequency, "Frequency of sampling")
         .def_readwrite("pos_", &jsf_sss_ping::pos_, "Position in ENU coordinates")
         .def_readwrite("sample_interval_", &jsf_sss_ping::sample_interval, "Sample interval in s")
+        .def_readwrite("flag_", &jsf_sss_ping::flag_, "Flag indicates which values are valid")
+        .def_readwrite("altitude_", &jsf_sss_ping::altitude_, "Altitude")
+        .def_readwrite("slant_", &jsf_sss_ping::slant_, "Max Slant Range")
+
         .def_static("parse_file", &parse_file_from_str<jsf_sss_ping>, "Parse jsf_sss_ping from .jsf file")
         .def_static("parse_folder", &parse_folder_from_str<jsf_sss_ping>, "Parse jsf_sss_ping from folder of .jsf files")
         .def_static("read_data", &read_data_from_str<jsf_sss_ping::PingsT>, "Read jsf_sss_ping::PingsT from .cereal file");
@@ -76,6 +80,8 @@ PYBIND11_MODULE(jsf_data, m) {
     m.def("show_waterfall_image", &show_waterfall_image, "Show a waterfall image created from jsf_sss_ping::PingsT");
     m.def("filter_frequency", &filter_frequency, "Filter to keep only jsf_sss_ping::PingsT with certain frequency");
     m.def("convert_to_xtf_pings", &convert_to_xtf_pings, "Convert jsf_sss_ping::PingsT to std_data::sss_ping::PingsT");
+    m.def("match_sound_vel", &match_sound_vel, "Match sound velocity and slant range from jsf_dvl_ping::PingsT to jsf_sss_ping::PingsT");
+
 
     // from http://alexsm.com/pybind11-buffer-protocol-opencv-to-numpy/
     pybind11::class_<cv::Mat>(m, "Image", pybind11::buffer_protocol())

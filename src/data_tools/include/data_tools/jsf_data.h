@@ -58,11 +58,14 @@ struct jsf_sss_ping
     uint16_t frequency;
     Eigen::Vector3d pos_;
     double sample_interval;
+    std::unordered_map<std::string,bool> flag_; // flag indicates which values are valid
+    double altitude_;
+    double slant_; 
 
 	template <class Archive>
     void serialize( Archive & ar )
     {
-        ar(CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_), CEREAL_NVP(port), CEREAL_NVP(stbd), CEREAL_NVP(first_in_file_), CEREAL_NVP(rpy), CEREAL_NVP(lat_), CEREAL_NVP(long_), CEREAL_NVP(utm_zone), CEREAL_NVP(sound_vel), CEREAL_NVP(frequency), CEREAL_NVP(pos_), CEREAL_NVP(sample_interval));
+        ar(CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_), CEREAL_NVP(port), CEREAL_NVP(stbd), CEREAL_NVP(first_in_file_), CEREAL_NVP(rpy), CEREAL_NVP(lat_), CEREAL_NVP(long_), CEREAL_NVP(utm_zone), CEREAL_NVP(sound_vel), CEREAL_NVP(frequency), CEREAL_NVP(pos_), CEREAL_NVP(sample_interval), CEREAL_NVP(flag_), CEREAL_NVP(altitude_), CEREAL_NVP(slant_));
     }
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
@@ -106,6 +109,7 @@ cv::Mat make_waterfall_image(const jsf_sss_ping::PingsT& pings);
 void show_waterfall_image(const jsf_sss_ping::PingsT& pings);
 jsf_sss_ping::PingsT filter_frequency(const jsf_sss_ping::PingsT& pings, int desired_freq);
 std_data::sss_ping::PingsT convert_to_xtf_pings(const jsf_sss_ping::PingsT& pings);
+jsf_sss_ping::PingsT match_sound_vel(jsf_sss_ping::PingsT& sss_pings, jsf_dvl_ping::PingsT& dvl_pings);
 
 
 } // namespace jsf_data
