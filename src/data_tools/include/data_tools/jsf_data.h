@@ -65,7 +65,7 @@ struct jsf_sss_ping
 	template <class Archive>
     void serialize( Archive & ar )
     {
-        ar(CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_), CEREAL_NVP(port), CEREAL_NVP(stbd), CEREAL_NVP(first_in_file_), CEREAL_NVP(rpy), CEREAL_NVP(lat_), CEREAL_NVP(long_), CEREAL_NVP(utm_zone), CEREAL_NVP(sound_vel), CEREAL_NVP(frequency), CEREAL_NVP(pos_), CEREAL_NVP(sample_interval), CEREAL_NVP(flag_), CEREAL_NVP(altitude_), CEREAL_NVP(slant_));
+        ar(CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_), CEREAL_NVP(port), CEREAL_NVP(stbd), CEREAL_NVP(first_in_file_), CEREAL_NVP(rpy), CEREAL_NVP(lat_), CEREAL_NVP(long_), CEREAL_NVP(utm_zone), CEREAL_NVP(sound_vel), CEREAL_NVP(frequency), CEREAL_NVP(pos_), CEREAL_NVP(sample_interval),  CEREAL_NVP(altitude_), CEREAL_NVP(slant_));
     }
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
