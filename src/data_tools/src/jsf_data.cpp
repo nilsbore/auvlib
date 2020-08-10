@@ -443,12 +443,14 @@ std_data::sss_ping::PingsT convert_to_xtf_pings(const jsf_sss_ping::PingsT& ping
 
 jsf_sss_ping::PingsT match_sound_vel(jsf_sss_ping::PingsT& sss_pings, jsf_dvl_ping::PingsT& dvl_pings)
 {
+    /*
     std::stable_sort(dvl_pings.begin(), dvl_pings.end(), [](const jsf_dvl_ping& dvl_ping1, const jsf_dvl_ping& dvl_ping2) {
         return dvl_ping1.time_stamp_ < dvl_ping2.time_stamp_;
     });
     std::stable_sort(sss_pings.begin(), sss_pings.end(), [](const jsf_sss_ping& sss_ping1, const jsf_sss_ping& sss_ping2) {
         return sss_ping1.time_stamp_ < sss_ping2.time_stamp_;
     });
+    */
     auto pos = dvl_pings.begin();
     for (jsf_sss_ping& sss_ping: sss_pings){
         pos = std::find_if(pos, dvl_pings.end(),[&](const jsf_dvl_ping& dvl_ping){
