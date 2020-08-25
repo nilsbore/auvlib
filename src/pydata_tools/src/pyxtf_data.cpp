@@ -44,6 +44,7 @@ PYBIND11_MODULE(xtf_data, m) {
         .def_readwrite("lat_", &xtf_sss_ping::lat_, "Latitude")
         .def_readwrite("long_", &xtf_sss_ping::long_, "Longitude")
         .def_readwrite("sound_vel_", &xtf_sss_ping::sound_vel_, "Sound speed in m/s")
+        .def_readwrite("altitude_", &xtf_sss_ping::altitude_, "Sensor primary altitude in m")
         .def_readwrite("pos_", &xtf_sss_ping::pos_, "Position in ENU coordinates")
         .def_static("parse_file", &parse_file_from_str<xtf_sss_ping>, "Parse xtf_sss_ping from .xtf file")
         .def_static("parse_folder", &parse_folder_from_str<xtf_sss_ping>, "Parse xtf_sss_ping from folder of .xtf files")
