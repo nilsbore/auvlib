@@ -21,6 +21,8 @@
 
 struct ping_draping_result {
 
+    using ResultsT = std::vector<ping_draping_result, Eigen::aligned_allocator<ping_draping_result> >;
+
     // origin of the sensor in the world
     Eigen::Vector3d sensor_origin;
 
