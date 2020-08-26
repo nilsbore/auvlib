@@ -40,6 +40,8 @@ of the bathymetric map.
 
    mesh_map
 
+   base_draper
+
    patch_draper
 
    map_draper
