@@ -82,6 +82,7 @@ PYBIND11_MODULE(std_data, m) {
         .def_readwrite("lat_", &std_data::sss_ping::lat_, "Latitude")
         .def_readwrite("long_", &std_data::sss_ping::long_, "Longitude")
         .def_readwrite("sound_vel_", &std_data::sss_ping::sound_vel_, "Sound speed in m/s")
+        .def_readwrite("altitude_", &std_data::sss_ping::altitude_, "Sensor primary altitude in m")
         .def_readwrite("pos_", &std_data::sss_ping::pos_, "Position in ENU coordinates")
         .def_static("read_data", &read_data_from_str<std_data::sss_ping::PingsT>, "Read sss_ping::PingsT from .cereal file");
 
