@@ -40,6 +40,7 @@ protected:
 
 public:
 
+    void set_rgb_texture(const Eigen::MatrixXd& R, const Eigen::MatrixXd& G, const Eigen::MatrixXd& B, const BoundsT& texture_bounds);
     void set_callback(const std::function<void(ping_draping_result, ping_draping_result)>& callback, int nbr_bins) { save_callback = callback; nbr_time_bins = nbr_bins; }
     Eigen::MatrixXd get_texture_image() { return texture_image; }
     void add_texture_intensities(const Eigen::MatrixXd& hits, const Eigen::VectorXd& intensities);
