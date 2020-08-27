@@ -99,6 +99,25 @@ void ViewDraper::set_texture(const Eigen::MatrixXd& texture, const BoundsT& text
     viewer.data().set_texture(R, G, B);
 }
 
+void ViewDraper::set_rgb_texture(const Eigen::MatrixXd& R, const Eigen::MatrixXd& G, const Eigen::MatrixXd& B, const BoundsT& texture_bounds)
+{
+    Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> R8 = (255.*R.transpose().transpose()).cast<uint8_t>();
+    Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> G8 = (255.*G.transpose().transpose()).cast<uint8_t>();
+    Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> B8 = (255.*B.transpose().transpose()).cast<uint8_t>();
+
+    // TODO: fix, this assumes that we are always starting at (0, 0)
+    Eigen::MatrixXd UV = V.leftCols<2>().rowwise() - texture_bounds.row(0);
+    //UV.col(0).array() -= bounds(0, 0);
+    UV.col(0).array() /= texture_bounds(1, 0) - texture_bounds(0, 0);
+    //UV.col(1).array() -= bounds(0, 1);
+    UV.col(1).array() /= texture_bounds(1, 1) - texture_bounds(0, 1);
+
+    viewer.data().set_uv(UV);
+    viewer.data().show_texture = true;
+    // Use the image as a texture
+    viewer.data().set_texture(R8, G8, B8);
+}
+
 void ViewDraper::set_vehicle_mesh(const Eigen::MatrixXd& new_V2, const Eigen::MatrixXi& new_F2, const Eigen::MatrixXd& new_C2)
 {
     V2 = new_V2;

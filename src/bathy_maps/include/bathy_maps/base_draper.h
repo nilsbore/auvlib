@@ -19,7 +19,13 @@
 #include <data_tools/csv_data.h>
 #include <sonar_tracing/bathy_tracer.h>
 
+struct ping_draping_result;
+
+using sss_draping_result = std::pair<ping_draping_result, ping_draping_result>;
+
 struct ping_draping_result {
+
+    using ResultsT = std::vector<sss_draping_result, Eigen::aligned_allocator<sss_draping_result> >;
 
     // origin of the sensor in the world
     Eigen::Vector3d sensor_origin;
@@ -126,8 +132,7 @@ public:
                const BoundsT& bounds,
                const csv_data::csv_asvp_sound_speed::EntriesT& sound_speeds = csv_data::csv_asvp_sound_speed::EntriesT());
 
-    std::pair<ping_draping_result, ping_draping_result> project_ping(const std_data::sss_ping& ping, int nbr_bins);
-    Eigen::VectorXd compute_bin_intensities(const std_data::sss_ping_side& ping, int nbr_bins);
+    sss_draping_result project_ping(const std_data::sss_ping& ping, int nbr_bins);
 
     void set_sidescan_yaw(double new_sensor_yaw) { sensor_yaw = new_sensor_yaw; }
     void set_sidescan_port_stbd_offsets(const Eigen::Vector3d& new_offset_port, const Eigen::Vector3d& new_offset_stbd) { sensor_offset_port = new_offset_port; sensor_offset_stbd = new_offset_stbd; }
@@ -137,5 +142,6 @@ public:
 
 };
 
+Eigen::VectorXd compute_bin_intensities(const std_data::sss_ping_side& ping, int nbr_bins);
 
 #endif // BASE_DRAPER_H
