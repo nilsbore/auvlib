@@ -13,8 +13,9 @@ def display_draping(args):
     waterfall_bins = args.waterfall_bins
     nbr_pings = args.nbr_pings
     
-    xtf_pings = xtf_data.xtf_sss_ping.read_data(args.xtf_file)
+    xtf_pings = xtf_data.xtf_sss_ping.read_data(args.xtf_file) # read sss
 
+    # images for displaying results
     meas_im = np.zeros((nbr_pings, 2*waterfall_bins))
     model_im = np.zeros((nbr_pings, 2*waterfall_bins))
     normals_im = np.zeros((nbr_pings, 2*waterfall_bins, 3))
@@ -27,6 +28,7 @@ def display_draping(args):
     cv2.resizeWindow('Meas image', 256, 1000)
     cv2.resizeWindow('Normal image', 256, 1000)
 
+    # read the results, e.g. produced by save_draping_result.py
     draping_results = base_draper.ping_draping_result.read_data(args.input)
 
     for (i, ping), (left, right) in zip(enumerate(xtf_pings[:nbr_pings]), draping_results[:nbr_pings]):

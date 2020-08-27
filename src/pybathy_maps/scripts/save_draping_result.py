@@ -19,22 +19,24 @@ def run_draping(args):
     cloud = xyz_data.cloud.parse_file(args.xyz_file)
     height_map, bounds = mesh_map.height_map_from_dtm_cloud(cloud, mesh_res)
 
-    if os.path.exists("mesh.npz"):
+    if os.path.exists("mesh.npz"): # use cached mesh if it exists
         data = np.load("mesh.npz")
         V, F, bounds = data['V'], data['F'], data['bounds']
     else:
         V, F, bounds = mesh_map.mesh_from_dtm_cloud(cloud, mesh_res)
         np.savez("mesh.npz", V=V, F=F, bounds=bounds)
 
-    xtf_pings = xtf_data.xtf_sss_ping.read_data(args.xtf_file)
+    xtf_pings = xtf_data.xtf_sss_ping.read_data(args.xtf_file) # read sss
     xtf_pings = xtf_data.correct_sensor_offset(xtf_pings, sensor_offset)
 
     sound_speeds = csv_data.csv_asvp_sound_speed.parse_file(args.asvp_file)
 
+    # initialize a draper object that will accept sidescan pings
     draper = base_draper.BaseDraper(V, F, bounds, sound_speeds)
     draper.set_sidescan_yaw(sensor_yaw)
     draper.set_ray_tracing_enabled(False)
 
+    # images for displaying results
     meas_im = np.zeros((2000, 2*waterfall_bins))
     model_im = np.zeros((2000, 2*waterfall_bins))
     normals_im = np.zeros((2000, 2*waterfall_bins, 3))
@@ -47,14 +49,16 @@ def run_draping(args):
     cv2.resizeWindow('Meas image', 256, 1000)
     cv2.resizeWindow('Normal image', 256, 1000)
 
-    d = draw_map.BathyMapImage(height_map, bounds) # create a bathymetry height map
+    # create a bathymetry height map for showing vehicle position
+    d = draw_map.BathyMapImage(height_map, bounds)
 
-    draping_results = []
-
-    xtf_pings = xtf_pings[:2000]
+    draping_results = [] # results list
 
     for i, ping in enumerate(xtf_pings):
-        left, right = draper.project_ping(ping, waterfall_bins)
+        left, right = draper.project_ping(ping, waterfall_bins) # project
+        draping_results.append((left, right)) # store result
+
+        # the rest is basically just for visualizing the images
         model = np.concatenate([np.flip(left.time_bin_model_intensities), right.time_bin_model_intensities])
         normals = np.concatenate([np.flip(left.time_bin_normals, axis=0), right.time_bin_normals], axis=0)
         meas = np.concatenate([np.flip(base_draper.compute_bin_intensities(ping.port, waterfall_bins)),
@@ -76,9 +80,7 @@ def run_draping(args):
             cv2.imshow("Normal image", normals_im)
             cv2.waitKey(1)
 
-        draping_results.append((left, right))
-
-    base_draper.write_data(draping_results, args.output)
+    base_draper.write_data(draping_results, args.output) # save results
 
 if __name__ == '__main__':
 
