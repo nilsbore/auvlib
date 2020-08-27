@@ -32,7 +32,8 @@ PYBIND11_MODULE(base_draper, m) {
         .def_readwrite("hits_intensities", &ping_draping_result::hits_intensities, "Downsampledintensities from sidescan")
         .def_readwrite("time_bin_points", &ping_draping_result::time_bin_points, "Depths corresponding to the ping intensities")
         .def_readwrite("time_bin_normals", &ping_draping_result::time_bin_normals, "Normals corresponding to the ping intensities")
-        .def_readwrite("time_bin_model_intensities", &ping_draping_result::time_bin_model_intensities, "Model intensities corresponding to the real intensities");
+        .def_readwrite("time_bin_model_intensities", &ping_draping_result::time_bin_model_intensities, "Model intensities corresponding to the real intensities")
+        .def_static("read_data", &read_data_from_str<ping_draping_result::ResultsT>, "Read ping_draping_result::ResultsT from .cereal file");
 
     py::class_<BaseDraper>(m, "BaseDraper", "Class for draping the whole data set of sidescan pings onto a bathymetry mesh")
         // Methods inherited from BaseDraper:
@@ -40,7 +41,6 @@ PYBIND11_MODULE(base_draper, m) {
                       const BaseDraper::BoundsT&,
                       const csv_asvp_sound_speed::EntriesT&>())
         .def("project_ping", &BaseDraper::project_ping, "Project a ping onto the mesh and get intermediate draping results. Provide the desired downsampling of the ping as the second parameter")
-        .def("compute_bin_intensities", &BaseDraper::compute_bin_intensities, "Dowsample the intensities of a ping to a vector of a desired length")
         .def("set_sidescan_yaw", &BaseDraper::set_sidescan_yaw, "Set yaw correction of sidescan with respect to nav frame")
         .def("set_sidescan_port_stbd_offsets", &BaseDraper::set_sidescan_port_stbd_offsets, "Set offsets of sidescan port and stbd sides with respect to nav frame")
         .def("set_tracing_map_size", &BaseDraper::set_tracing_map_size, "Set size of slice of map where we do ray tracing. Smaller makes it faster but you might cut off valid sidescan angles")
@@ -51,7 +51,6 @@ PYBIND11_MODULE(base_draper, m) {
         .def(py::init<const Eigen::MatrixXd&, const Eigen::MatrixXi&,
                       const std_data::sss_ping::PingsT&, const ViewDraper::BoundsT&,
                       const csv_asvp_sound_speed::EntriesT&>())
-        .def("compute_bin_intensities", &ViewDraper::compute_bin_intensities, "Dowsample the intensities of a ping to a vector of a desired length")
         .def("add_texture_intensities", &ViewDraper::add_texture_intensities, "Add the intensities of draping result hits and intensities")
         .def("set_rgb_texture", &ViewDraper::set_rgb_texture, "Set a new texture to color the mesh, each RGB channel provided separately")
         .def("get_texture_image", &ViewDraper::get_texture_image, "Get the texture image, defined within bounds, with resolution of 1m")
@@ -64,9 +63,11 @@ PYBIND11_MODULE(base_draper, m) {
         .def("set_callback", &ViewDraper::set_callback, "Set the function to be called when one ping has been draped")
         .def("show", &ViewDraper::show, "Start the draping, and show the visualizer");
 
+    m.def("compute_bin_intensities", &compute_bin_intensities, "Dowsample the intensities of a ping to a vector of a desired length");
     m.def("color_jet_from_mesh", &color_jet_from_mesh, "Get a jet color scheme from a vertex matrix");
     m.def("get_vehicle_mesh", &get_vehicle_mesh, "Get vertices, faces, and colors for vehicle");
     m.def("write_data", &write_data_from_str<ping_draping_result::ResultsT>, "Write ping_draping_result::ResultsT to .cereal file");
     m.def("write_data", &write_data_from_str<ping_draping_result>, "Write ping_draping_result to .cereal file");
+    //m.def("write_data", &write_data_from_str<sss_draping_result>, "Write sss_draping_result to .cereal file");
     m.def("drape_viewer", &drape_viewer, "Draping only for visualization, with no data being produced");
 }
