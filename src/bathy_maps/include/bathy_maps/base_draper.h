@@ -133,6 +133,8 @@ public:
                const csv_data::csv_asvp_sound_speed::EntriesT& sound_speeds = csv_data::csv_asvp_sound_speed::EntriesT());
 
     sss_draping_result project_ping(const std_data::sss_ping& ping, int nbr_bins);
+    Eigen::MatrixXd project_mbes(const Eigen::Vector3d& pos, const Eigen::Matrix3d& R, int nbr_beams, double beam_width);
+    double project_altimeter(const Eigen::Vector3d& pos);
 
     void set_sidescan_yaw(double new_sensor_yaw) { sensor_yaw = new_sensor_yaw; }
     void set_sidescan_port_stbd_offsets(const Eigen::Vector3d& new_offset_port, const Eigen::Vector3d& new_offset_stbd) { sensor_offset_port = new_offset_port; sensor_offset_stbd = new_offset_stbd; }

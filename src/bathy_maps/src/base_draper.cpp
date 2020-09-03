@@ -348,6 +348,27 @@ Eigen::VectorXd BaseDraper::compute_model_intensities(const Eigen::MatrixXd& hit
     return compute_model_intensities(dists, thetas);
 }
 
+double BaseDraper::project_altimeter(const Eigen::Vector3d& pos)
+{
+    return tracer.depth_mesh_underneath_vehicle(pos - offset, V1, F1);
+}
+
+Eigen::MatrixXd BaseDraper::project_mbes(const Eigen::Vector3d& pos, const Eigen::Matrix3d& R, int nbr_beams, double beam_width)
+{
+    Eigen::MatrixXd hits;
+    Eigen::VectorXi hits_inds;
+    Eigen::MatrixXd dirs(nbr_beams, 3);
+    for (int i = 0; i < nbr_beams; ++i) {
+        double angle = double(nbr_beams/2-i-1)/double(nbr_beams)*beam_width;
+        dirs.row(i) = Eigen::RowVector3d(0., sin(angle), -cos(angle));
+        //dirs.row(i) = Eigen::RowVector3d(0., 0., -1.);
+    }
+    dirs = dirs*R.transpose();
+    tie(hits, hits_inds) = tracer.compute_hits(pos - offset, dirs, V1, F1);
+    hits.array().rowwise() += offset.array().transpose();
+    return hits;
+}
+
 sss_draping_result BaseDraper::project_ping(const std_data::sss_ping& ping, int nbr_bins)
 {
     Eigen::MatrixXd hits_left;
