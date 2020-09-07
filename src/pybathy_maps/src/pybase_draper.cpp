@@ -41,6 +41,8 @@ PYBIND11_MODULE(base_draper, m) {
                       const BaseDraper::BoundsT&,
                       const csv_asvp_sound_speed::EntriesT&>())
         .def("project_ping", &BaseDraper::project_ping, "Project a ping onto the mesh and get intermediate draping results. Provide the desired downsampling of the ping as the second parameter")
+        .def("project_mbes", &BaseDraper::project_mbes, "Project multibeam ping onto mesh, given vertices V, faces F, bounds, position, rotation matrix, number beams and opening angle, returns matrix of points")
+        .def("project_altimeter", &BaseDraper::project_altimeter, "Project single altimeter beam straight down, returns depth")
         .def("set_sidescan_yaw", &BaseDraper::set_sidescan_yaw, "Set yaw correction of sidescan with respect to nav frame")
         .def("set_sidescan_port_stbd_offsets", &BaseDraper::set_sidescan_port_stbd_offsets, "Set offsets of sidescan port and stbd sides with respect to nav frame")
         .def("set_tracing_map_size", &BaseDraper::set_tracing_map_size, "Set size of slice of map where we do ray tracing. Smaller makes it faster but you might cut off valid sidescan angles")
