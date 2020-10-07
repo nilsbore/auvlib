@@ -281,28 +281,6 @@ Eigen::VectorXd BaseDraper::compute_intensities(const Eigen::VectorXd& times,
     return intensities;
 }
 
-Eigen::VectorXd BaseDraper::compute_bin_intensities(const std_data::sss_ping_side& ping, int nbr_bins)
-{
-    auto start = chrono::high_resolution_clock::now();
-    double ping_step = double(ping.pings.size()) / double(nbr_bins);
-
-    Eigen::VectorXd intensities = Eigen::VectorXd::Zero(nbr_bins);
-    Eigen::ArrayXd counts = Eigen::ArrayXd::Zero(nbr_bins);
-    for (int i = 0; i < ping.pings.size(); ++i) {
-        int intensity_index = int(double(i)/ping_step);
-        if (intensity_index < intensities.rows()) {
-            intensities(intensity_index) += double(ping.pings[i])/10000.;
-            counts(intensity_index) += 1.;
-        }
-    }
-    counts += (counts == 0).cast<double>();
-    intensities.array() /= counts;
-    auto stop = chrono::high_resolution_clock::now();
-    auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-    if (DEBUG_OUTPUT) cout << "compute_bin_intensities time: " << duration.count() << " microseconds" << endl;
-    return intensities;
-}
-
 Eigen::VectorXd BaseDraper::compute_lambert_intensities(const Eigen::MatrixXd& hits, const Eigen::MatrixXd& normals,
                                                         const Eigen::Vector3d& origin)
 {
@@ -370,7 +348,28 @@ Eigen::VectorXd BaseDraper::compute_model_intensities(const Eigen::MatrixXd& hit
     return compute_model_intensities(dists, thetas);
 }
 
-pair<ping_draping_result, ping_draping_result> BaseDraper::project_ping(const std_data::sss_ping& ping, int nbr_bins)
+double BaseDraper::project_altimeter(const Eigen::Vector3d& pos)
+{
+    return tracer.depth_mesh_underneath_vehicle(pos - offset, V1, F1);
+}
+
+Eigen::MatrixXd BaseDraper::project_mbes(const Eigen::Vector3d& pos, const Eigen::Matrix3d& R, int nbr_beams, double beam_width)
+{
+    Eigen::MatrixXd hits;
+    Eigen::VectorXi hits_inds;
+    Eigen::MatrixXd dirs(nbr_beams, 3);
+    for (int i = 0; i < nbr_beams; ++i) {
+        double angle = double(nbr_beams/2-i-1)/double(nbr_beams)*beam_width;
+        dirs.row(i) = Eigen::RowVector3d(0., sin(angle), -cos(angle));
+        //dirs.row(i) = Eigen::RowVector3d(0., 0., -1.);
+    }
+    dirs = dirs*R.transpose();
+    tie(hits, hits_inds) = tracer.compute_hits(pos - offset, dirs, V1, F1);
+    hits.array().rowwise() += offset.array().transpose();
+    return hits;
+}
+
+sss_draping_result BaseDraper::project_ping(const std_data::sss_ping& ping, int nbr_bins)
 {
     Eigen::MatrixXd hits_left;
     Eigen::MatrixXd hits_right;
@@ -433,4 +432,26 @@ ping_draping_result BaseDraper::project_ping_side(const std_data::sss_ping_side&
     if (DEBUG_OUTPUT) cout << "Adding hits: " << res.hits_points.rows() << endl;
 
     return res;
+}
+
+Eigen::VectorXd compute_bin_intensities(const std_data::sss_ping_side& ping, int nbr_bins)
+{
+    auto start = chrono::high_resolution_clock::now();
+    double ping_step = double(ping.pings.size()) / double(nbr_bins);
+
+    Eigen::VectorXd intensities = Eigen::VectorXd::Zero(nbr_bins);
+    Eigen::ArrayXd counts = Eigen::ArrayXd::Zero(nbr_bins);
+    for (int i = 0; i < ping.pings.size(); ++i) {
+        int intensity_index = int(double(i)/ping_step);
+        if (intensity_index < intensities.rows()) {
+            intensities(intensity_index) += double(ping.pings[i])/10000.;
+            counts(intensity_index) += 1.;
+        }
+    }
+    counts += (counts == 0).cast<double>();
+    intensities.array() /= counts;
+    auto stop = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
+    if (DEBUG_OUTPUT) cout << "compute_bin_intensities time: " << duration.count() << " microseconds" << endl;
+    return intensities;
 }

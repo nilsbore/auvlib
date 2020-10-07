@@ -125,6 +125,8 @@ xtf_sss_ping process_side_scan_ping(XTFPINGHEADER *PingHeader, XTFFILEHEADER *XT
    ping.pos_ = Eigen::Vector3d(easting, northing, -PingHeader->SensorDepth);
    ping.heading_ = M_PI/180.*PingHeader->SensorHeading;
    ping.heading_ = 0.5*M_PI-ping.heading_; // TODO: need to keep this for old data
+   ping.roll_ = M_PI/180.*PingHeader->SensorRoll;
+   ping.pitch_ =  M_PI/180.*PingHeader->SensorPitch;
    ping.sound_vel_ = PingHeader->SoundVelocity;
    ping.altitude_ =  PingHeader->SensorPrimaryAltitude;
 
