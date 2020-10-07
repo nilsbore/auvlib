@@ -205,6 +205,8 @@ xtf_sss_ping process_side_scan_ping(XTFPINGHEADER *PingHeader, XTFFILEHEADER *XT
       }
       ping_channel->time_duration = ChanHeader->TimeDuration;
       ping_channel->slant_range = ChanHeader->SlantRange;
+      ping_channel->gain_code = ChanHeader->GainCode;
+      ping_channel->initial_gain_code = ChanHeader->InitialGainCode;
 
       // Do whatever processing on the sidescan imagery here.
       //cout << "Processing a side scan ping!!" << endl;

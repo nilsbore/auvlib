@@ -75,11 +75,14 @@ struct sss_ping_side
     double time_duration;
     double tilt_angle;
     double beam_width;
+    uint16_t initial_gain_code;
+    uint16_t gain_code;
 
 	template <class Archive>
     void serialize( Archive & ar )
     {
-        ar(CEREAL_NVP(pings), CEREAL_NVP(slant_range), CEREAL_NVP(time_duration), CEREAL_NVP(tilt_angle), CEREAL_NVP(beam_width));
+        ar(CEREAL_NVP(pings), CEREAL_NVP(slant_range), CEREAL_NVP(time_duration), CEREAL_NVP(tilt_angle),
+           CEREAL_NVP(beam_width), CEREAL_NVP(initial_gain_code), CEREAL_NVP(gain_code));
     }
 };
 
