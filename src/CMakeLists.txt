@@ -40,7 +40,7 @@ option(LIBIGL_WITH_VIEWER            "Use OpenGL viewer"  ON)
 option(LIBIGL_WITH_XML               "Use XML"            ON)
 #option(LIBIGL_EXPORT_TARGETS         "Export libigl CMake targets" ON)
 
-find_package(OpenCV REQUIRED core highgui imgproc)
+find_package(OpenCV REQUIRED core highgui imgproc imgcodecs)
 find_package(OpenGL REQUIRED)
 if (AUVLIB_USE_LIBIGL_TINYXML)
   set(TinyXML2_LIBRARIES tinyxml2)

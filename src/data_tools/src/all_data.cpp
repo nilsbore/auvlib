@@ -175,12 +175,14 @@ vector<ReturnType, Eigen::aligned_allocator<ReturnType> > parse_stream_impl(istr
 		}
 	}
 
-    /*
+    /**/
     for (int i = 0; i < 255; ++i) {
-        cout << std::dec << "Got " << counters[i] << " of type " << i << std::hex <<" with hex 0x"<< i << std::dec << endl;
+        if (counters[i] != 0){
+            cout << std::dec << "Got " << counters[i] << " of type " << i << std::hex <<" with hex 0x"<< i << std::dec << endl;
+    
+        }
     }
-	cout << "Got " << pos_counter << " position entries" << endl;
-    */
+    
 
     if (!returns.empty()) {
         returns[0].first_in_file_ = true;
@@ -348,6 +350,66 @@ all_echosounder_depth read_datagram<all_echosounder_depth, all_echosounder_depth
     entry.depth_ = 100.*double(header.echo_depth); // Height in cm
 	
     return entry;
+}
+
+template <>
+all_sound_speed_profile read_datagram<all_sound_speed_profile, all_sound_speed_profile_datagram>(std::istream& input, const all_sound_speed_profile_datagram& header)
+{
+	
+    all_sound_speed_profile entry;
+    entry.id_ = header.profile_count;
+    tie(entry.time_stamp_, entry.time_string_) = parse_all_time(header.date , header.time);
+    all_sound_speed_profile_datagram_repeat one_element;
+    for (int i = 0; i < header.nbr_entries; ++i) {
+        input.read(reinterpret_cast<char*>(&one_element), sizeof(one_element));
+        entry.depth_.push_back(one_element.depth);
+        entry.sound_speed_.push_back(one_element.sound_speed);
+    }
+	unsigned char spare; // Spare (always 0)
+	input.read(reinterpret_cast<char*>(&spare), sizeof(spare));
+    return entry;
+}
+
+template <>
+all_raw_range_and_beam_angle read_datagram<all_raw_range_and_beam_angle, all_raw_range_and_beam_angle_datagram>(std::istream& input, const all_raw_range_and_beam_angle_datagram& header)
+{
+    all_raw_range_and_beam_angle raw;
+	raw.id_ = header.ping_count;
+    tie(raw.time_stamp_, raw.time_string_) = parse_all_time(header.date , header.time);
+    raw.sound_vel_ = header.sound_vel;
+    raw.D_scale_ = header.D_scale;
+	// vector<all_raw_range_and_beam_angle_datagram_repeat_received> beams;
+	// all_raw_range_and_beam_angle_datagram_repeat_transmit transmit_tep;
+    //for (int i = 0; i < header.transmit_sector_nbr; ++i) {
+	//	input.read(reinterpret_cast<char*>(&transmit_tep), sizeof(transmit_tep));
+    //}
+    
+    
+    all_raw_range_and_beam_angle_datagram_repeat_received beam;
+	for (int i = 0; i < header.received_beam_nbr; ++i) {
+		input.read(reinterpret_cast<char*>(&beam), sizeof(beam));
+        
+        
+        // received_beam tep;
+        // tep.beam_pointing_angle_ = beam.beam_pointing_angle;
+        // tep.transmit_sector_number_ = beam.transmit_sector_number;
+        // tep.detection_info_ = beam.detection_info;
+        // tep.quality_factor_ = beam.quality_factor;
+        // tep.D_corr_ = beam.D_corr;
+        // tep.two_way_tranvel_time_ = beam.two_way_tranvel_time;
+        // tep.reflectivity_ = beam.reflectivity;
+
+        Vector7d tep;
+        tep << (double)beam.beam_pointing_angle, (double)beam.transmit_sector_number, (double)beam.detection_info, 
+                (double)beam.quality_factor, (double)beam.D_corr, (double)beam.two_way_tranvel_time, 
+                (double)beam.reflectivity;
+		raw.received_beam_.push_back(tep);
+	}
+    
+    unsigned char spare; // Spare (always 0)
+	input.read(reinterpret_cast<char*>(&spare), sizeof(spare));
+
+	return raw;
 }
 
 mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_entry::EntriesT& entries)
@@ -648,6 +710,18 @@ template <>
 all_echosounder_depth::EntriesT parse_file<all_echosounder_depth>(const boost::filesystem::path& file)
 {
     return parse_file_impl<all_echosounder_depth, all_echosounder_depth_datagram, 69>(file);
+}
+
+template <>
+all_sound_speed_profile::EntriesT parse_file<all_sound_speed_profile>(const boost::filesystem::path& file)
+{
+    return parse_file_impl<all_sound_speed_profile, all_sound_speed_profile_datagram, 85>(file);
+}
+
+template <>
+all_raw_range_and_beam_angle::EntriesT parse_file<all_raw_range_and_beam_angle>(const boost::filesystem::path& file)
+{
+    return parse_file_impl<all_raw_range_and_beam_angle, all_raw_range_and_beam_angle_datagram, 78>(file);
 }
 
 } // namespace std_data

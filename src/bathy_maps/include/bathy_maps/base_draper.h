@@ -60,8 +60,8 @@ public:
 
 protected:
 
-    Eigen::MatrixXd V1; // bathymetry mesh faces
-    Eigen::MatrixXi F1; // bathymetry mesh vertices
+    Eigen::MatrixXd V1; // bathymetry mesh vertices
+    Eigen::MatrixXi F1; // bathymetry mesh faces
     Eigen::MatrixXd N1; // bathymetry mesh normals
     Eigen::Vector3d offset; // offset of mesh wrt world coordinates
 
