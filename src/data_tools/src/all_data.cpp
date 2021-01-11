@@ -175,14 +175,13 @@ vector<ReturnType, Eigen::aligned_allocator<ReturnType> > parse_stream_impl(istr
 		}
 	}
 
-    /**/
+    /*
     for (int i = 0; i < 255; ++i) {
         if (counters[i] != 0){
             cout << std::dec << "Got " << counters[i] << " of type " << i << std::hex <<" with hex 0x"<< i << std::dec << endl;
-    
         }
     }
-    
+    */
 
     if (!returns.empty()) {
         returns[0].first_in_file_ = true;
@@ -378,11 +377,10 @@ all_raw_range_and_beam_angle read_datagram<all_raw_range_and_beam_angle, all_raw
     tie(raw.time_stamp_, raw.time_string_) = parse_all_time(header.date , header.time);
     raw.sound_vel_ = header.sound_vel;
     raw.D_scale_ = header.D_scale;
-	// vector<all_raw_range_and_beam_angle_datagram_repeat_received> beams;
-	// all_raw_range_and_beam_angle_datagram_repeat_transmit transmit_tep;
-    //for (int i = 0; i < header.transmit_sector_nbr; ++i) {
-	//	input.read(reinterpret_cast<char*>(&transmit_tep), sizeof(transmit_tep));
-    //}
+	all_raw_range_and_beam_angle_datagram_repeat_transmit transmit_tep;
+    for (int i = 0; i < header.transmit_sector_nbr; ++i) {
+		input.read(reinterpret_cast<char*>(&transmit_tep), sizeof(transmit_tep));
+    }
     
     
     all_raw_range_and_beam_angle_datagram_repeat_received beam;

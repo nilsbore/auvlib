@@ -203,7 +203,7 @@ PACK(struct all_raw_range_and_beam_angle_datagram {
 PACK(struct all_raw_range_and_beam_angle_datagram_repeat_transmit {
     // repeat cycle data
     short tilt_angle; // Tilt angle re TX array in 0.01 degree, range [-2900, 2900]
-	unsigned int focus_range; // 
+	unsigned short focus_range; // 
     float signal_length;
     float sector_transmit_delay;
     float centre_frequency;
