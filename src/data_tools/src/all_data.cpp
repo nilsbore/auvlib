@@ -386,21 +386,14 @@ all_raw_range_and_beam_angle read_datagram<all_raw_range_and_beam_angle, all_raw
     all_raw_range_and_beam_angle_datagram_repeat_received beam;
 	for (int i = 0; i < header.received_beam_nbr; ++i) {
 		input.read(reinterpret_cast<char*>(&beam), sizeof(beam));
-        
-        
-        // received_beam tep;
-        // tep.beam_pointing_angle_ = beam.beam_pointing_angle;
-        // tep.transmit_sector_number_ = beam.transmit_sector_number;
-        // tep.detection_info_ = beam.detection_info;
-        // tep.quality_factor_ = beam.quality_factor;
-        // tep.D_corr_ = beam.D_corr;
-        // tep.two_way_tranvel_time_ = beam.two_way_tranvel_time;
-        // tep.reflectivity_ = beam.reflectivity;
-
-        Vector7d tep;
-        tep << (double)beam.beam_pointing_angle, (double)beam.transmit_sector_number, (double)beam.detection_info, 
-                (double)beam.quality_factor, (double)beam.D_corr, (double)beam.two_way_tranvel_time, 
-                (double)beam.reflectivity;
+        received_beam tep;
+        tep.beam_pointing_angle_ = beam.beam_pointing_angle;
+        tep.transmit_sector_number_ = beam.transmit_sector_number;
+        tep.detection_info_ = beam.detection_info;
+        tep.quality_factor_ = beam.quality_factor;
+        tep.D_corr_ = beam.D_corr;
+        tep.two_way_tranvel_time_ = beam.two_way_tranvel_time;
+        tep.reflectivity_ = beam.reflectivity;
 		raw.received_beam_.push_back(tep);
 	}
     

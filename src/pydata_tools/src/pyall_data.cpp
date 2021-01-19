@@ -107,6 +107,16 @@ PYBIND11_MODULE(all_data, m) {
         .def_static("parse_folder", &parse_folder_from_str<all_sound_speed_profile>, "Parse all_sound_speed_profile from folder of .all files")
         .def_static("read_data", &read_data_from_str<all_sound_speed_profile::EntriesT>, "Read all_sound_speed_profile::EntriesT from .cereal file");
 
+    py::class_<received_beam>(m, "received_beam", "Class for one received ping of raw range and angle 78 data")
+        .def(py::init<>())
+        .def_readwrite("beam_pointing_angle_", &received_beam::beam_pointing_angle_, "Beam pointing angle re RX array in 0.01 degree")
+        .def_readwrite("transmit_sector_number_", &received_beam::transmit_sector_number_, "Transmit sector number")
+        .def_readwrite("detection_info_", &received_beam::detection_info_, "Detection info")
+        .def_readwrite("quality_factor_", &received_beam::quality_factor_, "Detection window length in samples")
+        .def_readwrite("D_corr_", &received_beam::D_corr_, "D corr ")
+        .def_readwrite("two_way_tranvel_time_", &received_beam::two_way_tranvel_time_, "Two way travel time in s")
+        .def_readwrite("reflectivity_", &received_beam::reflectivity_, "Reflectivity (BS) in 0.1 dB resolution");
+
     py::class_<all_raw_range_and_beam_angle>(m, "all_raw_range_and_beam_angle", "Class for the all raw range and angle")
         .def(py::init<>())
         .def_readwrite("id_", &all_raw_range_and_beam_angle::id_, "Sequential ID of measurement")

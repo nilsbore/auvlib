@@ -167,24 +167,23 @@ struct all_sound_speed_profile {
 
 };
 
-// struct received_beam{
-    // float beam_pointing_angle_;             // beam pointing angle re RX array in 0.01 degree, range ~[-11000, 11000]
-    // unsigned char transmit_sector_number_;
-    // unsigned char detection_info_;
-    // unsigned char quality_factor_;
-    // signed char D_corr_;
-    // double two_way_tranvel_time_;           // in s
-    // int reflectivity_;
-// 
-    // template <class Archive>
-    // void serialize( Archive & ar )
-    // {
-        // ar(CEREAL_NVP(beam_pointing_angle_), CEREAL_NVP(transmit_sector_number_), CEREAL_NVP(detection_info_),
-		//    CEREAL_NVP(quality_factor_), CEREAL_NVP(D_corr_), CEREAL_NVP(two_way_tranvel_time_), CEREAL_NVP(reflectivity_));
-    // }
-// };
+struct received_beam{
+    float beam_pointing_angle_;             // beam pointing angle re RX array in 0.01 degree, range ~[-11000, 11000]
+    unsigned char transmit_sector_number_;
+    unsigned char detection_info_;
+    unsigned char quality_factor_;
+    signed char D_corr_;
+    double two_way_tranvel_time_;           // in s
+    int reflectivity_;
 
-typedef Eigen::Matrix<double, 7, 1> Vector7d;
+    template <class Archive>
+    void serialize( Archive & ar )
+    {
+        ar(CEREAL_NVP(beam_pointing_angle_), CEREAL_NVP(transmit_sector_number_), CEREAL_NVP(detection_info_),
+		   CEREAL_NVP(quality_factor_), CEREAL_NVP(D_corr_), CEREAL_NVP(two_way_tranvel_time_), CEREAL_NVP(reflectivity_));
+    }
+};
+
 struct all_raw_range_and_beam_angle {
 
     using EntriesT = std::vector<all_raw_range_and_beam_angle, Eigen::aligned_allocator<all_raw_range_and_beam_angle> >;
@@ -194,8 +193,7 @@ struct all_raw_range_and_beam_angle {
     long long time_stamp_;              // posix time stamp
     int sound_vel_;                  // sound speed at transducer in 0.1 m/s
     unsigned int D_scale_;
-    // std::vector<received_beam> received_beam_;
-    std::vector<Vector7d, Eigen::aligned_allocator<Vector7d> > received_beam_;
+    std::vector<received_beam> received_beam_;
     bool first_in_file_;
 
 	template <class Archive>
