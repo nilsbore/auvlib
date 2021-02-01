@@ -35,6 +35,7 @@ for reading data of different types.
   * `all_echosounder_depth` - Kongsberg single echosounder depth data
   * `all_sound_speed_profile` - Sound speed profile data
   * `all_raw_range_and_beam_angle` - Raw range and beam angle data
+  * `all_installation_param` - Installation parameters
 * `xtf_data` - for reading `.xtf` sidescan files
   * `xtf_sss_ping` - xtf side scan swath data structure
 * `gsf_data` - for reading `.gsf` files containing various sensor data

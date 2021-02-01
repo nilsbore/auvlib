@@ -228,6 +228,23 @@ PACK(struct all_raw_range_and_beam_angle_datagram_repeat_received {
     unsigned char spare;
 });
 
+PACK(struct all_installation_para_datagram {
+    // common header, see all_common_header
+
+    // data description
+    unsigned short model_nbr; // EM model number (Example: EM 710 = 710)
+    unsigned int date; // Date at start of data record = year*10000 + month*100 + day (Example: Sep 26, 2005 = 20050926)
+    unsigned int time; // Time at start of data record since midnight in milliseconds (Example: 08:12:51.234 = 29570234)
+    unsigned short installation_datagram_count; // installation datagram count (0 to 65534)
+    unsigned short serial_nbr; // System serial number
+    unsigned short secondary_serial_nbr; // Secondary system serial number
+    
+    // ASCII
+    
+    // unsigned char spare; // not necessary, needed if to get even length, 
+    // end of repeat cycle, see all_common_end
+});
+
 #undef PACK
 
 #endif // ALL_H

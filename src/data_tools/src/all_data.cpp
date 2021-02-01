@@ -14,6 +14,7 @@
 #include <liball/all.h>
 //#include <endian.h>
 #include <fstream>
+#include <string>
 
 #define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/date_time.hpp>
@@ -117,7 +118,7 @@ vector<ReturnType, Eigen::aligned_allocator<ReturnType> > parse_file(const boost
 */
 
 template <typename ReturnType, typename AllHeaderType>
-ReturnType read_datagram(std::istream& input, const AllHeaderType& header)
+ReturnType read_datagram(std::istream& input, const AllHeaderType& header, int ascii_buffer_length = 0)
 {
     ReturnType rtn;
 	return rtn;
@@ -161,8 +162,8 @@ vector<ReturnType, Eigen::aligned_allocator<ReturnType> > parse_stream_impl(istr
 			AllHeaderType header;
 		    //cout << "Is a MB reading, code: " << int(data_type) << endl;
 		    input.read(reinterpret_cast<char*>(&header), sizeof(header));
-			returns.push_back(read_datagram<ReturnType, AllHeaderType>(input, header));
-		    //input.read(reinterpret_cast<char*>(&spare), sizeof(spare));
+            int ascii_length = nbr_bytes - sizeof(start_id)- sizeof(data_type) - sizeof(header) - sizeof(end_ident)- sizeof(end_ident);
+			returns.push_back(read_datagram<ReturnType, AllHeaderType>(input, header, ascii_length));
 		    input.read(reinterpret_cast<char*>(&end_ident), sizeof(end_ident));
 		    input.read(reinterpret_cast<char*>(&checksum), sizeof(checksum));
 			//cout << "End identifier: " << end_ident << endl;
@@ -235,7 +236,7 @@ pair<long long, string> parse_all_time(unsigned int date, unsigned int time)
 }
 
 template <>
-all_mbes_ping read_datagram<all_mbes_ping, all_xyz88_datagram>(std::istream& input, const all_xyz88_datagram& header)
+all_mbes_ping read_datagram<all_mbes_ping, all_xyz88_datagram>(std::istream& input, const all_xyz88_datagram& header, int ascii_buffer_length)
 {
 	//cout << "Total number of beams: " << header.nbr_beams << endl;
     //cout << "Valid number of beams: " << header.nbr_valid << endl;
@@ -272,7 +273,7 @@ all_mbes_ping read_datagram<all_mbes_ping, all_xyz88_datagram>(std::istream& inp
 }
 
 template <>
-all_nav_entry read_datagram<all_nav_entry, all_position_datagram>(std::istream& input, const all_position_datagram& header)
+all_nav_entry read_datagram<all_nav_entry, all_position_datagram>(std::istream& input, const all_position_datagram& header, int ascii_buffer_length)
 {
 	//cout << "Got a position datagram, skipping: " << int(header.nbr_bytes_input) << endl;
 
@@ -300,7 +301,7 @@ all_nav_entry read_datagram<all_nav_entry, all_position_datagram>(std::istream& 
 }
 
 template <>
-all_nav_depth read_datagram<all_nav_depth, all_depth_datagram>(std::istream& input, const all_depth_datagram& header)
+all_nav_depth read_datagram<all_nav_depth, all_depth_datagram>(std::istream& input, const all_depth_datagram& header, int ascii_buffer_length)
 {
 	all_nav_depth entry;
 	entry.id_ = header.height_count;
@@ -313,7 +314,7 @@ all_nav_depth read_datagram<all_nav_depth, all_depth_datagram>(std::istream& inp
 }
 
 template <>
-all_nav_attitude read_datagram<all_nav_attitude, all_attitude_datagram>(std::istream& input, const all_attitude_datagram& header)
+all_nav_attitude read_datagram<all_nav_attitude, all_attitude_datagram>(std::istream& input, const all_attitude_datagram& header, int ascii_buffer_length)
 {
 	all_nav_attitude entry;
 	entry.id_ = header.attitude_count;
@@ -340,7 +341,7 @@ all_nav_attitude read_datagram<all_nav_attitude, all_attitude_datagram>(std::ist
 }
 
 template <>
-all_echosounder_depth read_datagram<all_echosounder_depth, all_echosounder_depth_datagram>(std::istream& input, const all_echosounder_depth_datagram& header)
+all_echosounder_depth read_datagram<all_echosounder_depth, all_echosounder_depth_datagram>(std::istream& input, const all_echosounder_depth_datagram& header, int ascii_buffer_length)
 {
 	all_echosounder_depth entry;
 	entry.id_ = header.echo_count;
@@ -352,7 +353,7 @@ all_echosounder_depth read_datagram<all_echosounder_depth, all_echosounder_depth
 }
 
 template <>
-all_sound_speed_profile read_datagram<all_sound_speed_profile, all_sound_speed_profile_datagram>(std::istream& input, const all_sound_speed_profile_datagram& header)
+all_sound_speed_profile read_datagram<all_sound_speed_profile, all_sound_speed_profile_datagram>(std::istream& input, const all_sound_speed_profile_datagram& header, int ascii_buffer_length)
 {
 	
     all_sound_speed_profile entry;
@@ -370,7 +371,7 @@ all_sound_speed_profile read_datagram<all_sound_speed_profile, all_sound_speed_p
 }
 
 template <>
-all_raw_range_and_beam_angle read_datagram<all_raw_range_and_beam_angle, all_raw_range_and_beam_angle_datagram>(std::istream& input, const all_raw_range_and_beam_angle_datagram& header)
+all_raw_range_and_beam_angle read_datagram<all_raw_range_and_beam_angle, all_raw_range_and_beam_angle_datagram>(std::istream& input, const all_raw_range_and_beam_angle_datagram& header, int ascii_buffer_length)
 {
     all_raw_range_and_beam_angle raw;
 	raw.id_ = header.ping_count;
@@ -402,6 +403,29 @@ all_raw_range_and_beam_angle read_datagram<all_raw_range_and_beam_angle, all_raw
 
 	return raw;
 }
+
+template <>
+all_installation_param read_datagram<all_installation_param, all_installation_para_datagram>(std::istream& input, const all_installation_para_datagram& header, int ascii_buffer_length)
+{
+    all_installation_param param;
+	param.id_ = header.installation_datagram_count;
+    tie(param.time_stamp_, param.time_string_) = parse_all_time(header.date , header.time);
+    param.system_serial_number_ = header.serial_nbr;
+    param.secondary_system_serial_number_ = header.secondary_serial_nbr;
+    char * buffer = new char [ascii_buffer_length];
+    input.read (buffer, ascii_buffer_length);
+    stringstream str(buffer); 
+    string x;
+    while (getline(str, x, ',')) { 
+        size_t split_pos = x.find("=");
+        string key = x.substr(0, split_pos);
+        string value = x.substr(split_pos + 1);
+        param.param_[key] = value;
+        // cout<< x <<", " << key <<", " << value << endl;
+    } 
+	return param;
+}
+
 
 mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_entry::EntriesT& entries)
 {
@@ -713,6 +737,13 @@ template <>
 all_raw_range_and_beam_angle::EntriesT parse_file<all_raw_range_and_beam_angle>(const boost::filesystem::path& file)
 {
     return parse_file_impl<all_raw_range_and_beam_angle, all_raw_range_and_beam_angle_datagram, 78>(file);
+}
+
+template <>
+all_installation_param::EntriesT parse_file<all_installation_param>(const boost::filesystem::path& file)
+{   
+    // actually there will be only one all_installation_param, so return size should be one
+    return parse_file_impl<all_installation_param, all_installation_para_datagram, 73>(file);
 }
 
 } // namespace std_data

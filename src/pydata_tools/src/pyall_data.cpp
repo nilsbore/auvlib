@@ -130,6 +130,18 @@ PYBIND11_MODULE(all_data, m) {
         .def_static("parse_folder", &parse_folder_from_str<all_raw_range_and_beam_angle>, "Parse all_raw_range_and_beam_angle from folder of .all files")
         .def_static("read_data", &read_data_from_str<all_raw_range_and_beam_angle::EntriesT>, "Read all_raw_range_and_beam_angle::EntriesT from .cereal file");
 
+    py::class_<all_installation_param>(m, "all_installation_param", "Class for the installation parameters")
+        .def(py::init<>())
+        .def_readwrite("id_", &all_installation_param::id_, "Sequential ID of measurement")
+        .def_readwrite("time_string_", &all_installation_param::time_string_, "Readable date of measurement")
+        .def_readwrite("time_stamp_", &all_installation_param::time_stamp_, "UNIX timestamp")
+        .def_readwrite("system_serial_number_", &all_installation_param::system_serial_number_, "System serial number")
+        .def_readwrite("secondary_system_serial_number_", &all_installation_param::secondary_system_serial_number_, "Secondary system serial number")
+        .def_readwrite("param_", &all_installation_param::param_, "Dict of ascii parameters")
+        .def_readwrite("first_in_file_", &all_installation_param::first_in_file_, "Is first measurement in file?")
+        .def_static("parse_file", &parse_file_from_str<all_installation_param>, "Parse all_installation_param from .all file")
+        .def_static("parse_folder", &parse_folder_from_str<all_installation_param>, "Parse all_installation_param from folder of .all files")
+        .def_static("read_data", &read_data_from_str<all_installation_param::EntriesT>, "Read all_installation_param::EntriesT from .cereal file");
 
     m.def("write_data", &write_data_from_str<all_mbes_ping::PingsT>, "Write all_mbes_ping::PingsT to .cereal file");
     m.def("write_data", &write_data_from_str<all_nav_entry::EntriesT>, "Write all_nav_entry::EntriesT to .cereal file");

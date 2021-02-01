@@ -204,6 +204,26 @@ struct all_raw_range_and_beam_angle {
     }
 };
 
+struct all_installation_param {
+
+    using EntriesT = std::vector<all_installation_param, Eigen::aligned_allocator<all_installation_param> >;
+
+    unsigned int id_;
+    std::string time_string_;           // readable time stamp string
+    long long time_stamp_;              // posix time stamp
+    unsigned int system_serial_number_;
+    unsigned int secondary_system_serial_number_;
+    std::unordered_map<std::string, std::string> param_;
+    bool first_in_file_;
+
+	template <class Archive>
+    void serialize( Archive & ar )
+    {
+        ar(CEREAL_NVP(id_), CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_), CEREAL_NVP(system_serial_number_), 
+        CEREAL_NVP(secondary_system_serial_number_), CEREAL_NVP(param_), CEREAL_NVP(first_in_file_));
+    }
+};
+
 std_data::mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_entry::EntriesT& entries);
 std_data::mbes_ping::PingsT match_attitude(std_data::mbes_ping::PingsT& pings, all_nav_attitude::EntriesT& entries);
 csv_data::csv_asvp_sound_speed::EntriesT convert_sound_speeds(const all_mbes_ping::PingsT& pings);
@@ -260,6 +280,10 @@ all_data::all_sound_speed_profile::EntriesT parse_file(const boost::filesystem::
 
 template <>
 all_data::all_raw_range_and_beam_angle::EntriesT parse_file(const boost::filesystem::path& file);
+
+// actually there will be only one all_installation_param, so return size should be one
+template <>
+all_data::all_installation_param::EntriesT parse_file(const boost::filesystem::path& file);
 
 }
 
