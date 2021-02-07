@@ -19,6 +19,8 @@
 #include <igl/slice_mask.h>
 #include <igl/cumsum.h>
 #include <igl/ray_mesh_intersect.h>
+#include <igl/embree/EmbreeIntersector.h>
+#include <igl/barycentric_to_global.h>
 
 //#include <igl/copyleft/cgal/intersect_with_half_space.h>
 
@@ -479,11 +481,87 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXi, BoundsT> mesh_from_dtm_cloud(const vecto
     return make_tuple(V, F, bounds);
 }
 
+Eigen::VectorXd depths_at_points(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& origins)
+{
+    igl::embree::EmbreeIntersector embree;
+    embree.init(V.template cast<float>(), F.template cast<int>());
+
+    double tol = 0.00001;
+
+    // Allocate matrix for the result
+    Eigen::MatrixXd R;
+    R.resize(origins.rows(), 3);
+
+    // Shoot rays from the source to the target
+    for (unsigned i = 0; i < origins.rows(); ++i) {
+        igl::Hit hit;
+
+        // Shoot ray
+        Eigen::RowVector3d dir(0., 0., -1.);
+        Eigen::RowVector3d pos = origins.row(i) - tol * dir;
+        bool did_hit = embree.intersectBeam(pos.cast<float>(), dir.cast<float>(), hit);
+
+        if (did_hit) {
+            R.row(i) << hit.id, hit.u, hit.v;
+        }
+        else {
+            R.row(i) << -1, 0, 0;
+        }
+    }
+
+    Eigen::MatrixXd global_hits = igl::barycentric_to_global(V, F, R);
+
+    return global_hits.col(2);
+}
+
+Eigen::MatrixXd normals_at_points(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& origins)
+{
+    igl::embree::EmbreeIntersector embree;
+    embree.init(V.template cast<float>(), F.template cast<int>());
+
+    double tol = 0.00001;
+
+    // Allocate matrix for the result
+    Eigen::MatrixXd origin_normals;
+    origin_normals.resize(origins.rows(), 3);
+
+    // Shoot rays from the source to the target
+    for (unsigned i = 0; i < origins.rows(); ++i) {
+        igl::Hit hit;
+
+        // Shoot ray
+        Eigen::RowVector3d dir(0., 0., -1.);
+        Eigen::RowVector3d pos = origins.row(i) - tol * dir;
+        bool did_hit = embree.intersectBeam(pos.cast<float>(), dir.cast<float>(), hit);
+
+        if (did_hit) {
+            origin_normals.row(i) = N.row(F(hit.id,0))*(1-hit.u-hit.v)+N.row(F(hit.id,1))*hit.u+N.row(F(hit.id,2))*hit.v;
+        }
+        else {
+            origin_normals.row(i) << 0, 0, -1;
+        }
+    }
+
+    return origin_normals;
+}
+
 double depth_at_point(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::Vector3d& origin)
 {
     igl::Hit hit;
     bool did_hit = ray_mesh_intersect(origin, Eigen::Vector3d(0., 0., -1.), V, F, hit);
     return did_hit? origin(2) - V(F(hit.id, 0), 2) : 0.;
+}
+
+Eigen::Vector3d normal_at_point(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::Vector3d& origin)
+{
+    igl::Hit hit;
+    // pos = V.row(F(hit.id,0))*(1-u-v)+V.row(F(hit.id,1))*u+V.row(F(hit.id,2))*v;
+    bool did_hit = ray_mesh_intersect(origin, Eigen::Vector3d(0., 0., -1.), V, F, hit);
+    if (!did_hit) {
+        return Eigen::Vector3d(0., 0., -1.);
+    }
+    Eigen::RowVector3d normal = N.row(F(hit.id,0))*(1-hit.u-hit.v)+N.row(F(hit.id,1))*hit.u+N.row(F(hit.id,2))*hit.v;
+    return normal.transpose();
 }
 
 Eigen::MatrixXd compute_normals(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F)
@@ -528,7 +606,7 @@ Eigen::MatrixXd shade_image_from_normals(const Eigen::MatrixXd& N, const BoundsT
     return shade_image;
 }
 
-Eigen::MatrixXd normals_at_points(const Eigen::MatrixXd& points, const Eigen::MatrixXd& N, const BoundsT& bounds, double res)
+Eigen::MatrixXd normals_at_grid_points(const Eigen::MatrixXd& points, const Eigen::MatrixXd& N, const BoundsT& bounds, double res)
 {
     int cols = std::ceil((bounds(1, 0) - bounds(0, 0)) / res); // min/max should be in the center
     int rows = std::ceil((bounds(1, 1) - bounds(0, 1)) / res);

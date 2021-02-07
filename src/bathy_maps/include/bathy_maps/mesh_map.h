@@ -44,11 +44,15 @@ namespace mesh_map {
     std::pair<Eigen::MatrixXd, Eigen::MatrixXi> cut_square_around_point(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
                                                                         const Eigen::Vector2d& p, double side);
 
+    // N should be the vertex normals, e.g. from compute_normals
+    Eigen::Vector3d normal_at_point(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::Vector3d& origin);
     double depth_at_point(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::Vector3d& origin);
+    Eigen::VectorXd depths_at_points(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& origins);
+    Eigen::MatrixXd normals_at_points(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& N, const Eigen::MatrixXd& origins);
     std::tuple<Eigen::MatrixXd, Eigen::MatrixXi, Eigen::MatrixXd, BoundsT> mesh_and_normals_from_pings(const std_data::mbes_ping::PingsT& pings, double res);
     Eigen::MatrixXd shade_image_from_normals(const Eigen::MatrixXd& N, const BoundsT& bounds, double res, const Eigen::Vector3d& light_dir);
     Eigen::MatrixXd compute_normals(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F);
-    Eigen::MatrixXd normals_at_points(const Eigen::MatrixXd& points, const Eigen::MatrixXd& N, const BoundsT& bounds, double res);
+    Eigen::MatrixXd normals_at_grid_points(const Eigen::MatrixXd& points, const Eigen::MatrixXd& N, const BoundsT& bounds, double res);
 
     void write_dae_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const boost::filesystem::path& filename);
     void write_dae_mesh_from_str(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const std::string& filename);
