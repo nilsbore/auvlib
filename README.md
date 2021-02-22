@@ -1,6 +1,5 @@
 # auvlib
-
-[![Build Status](https://travis-ci.org/nilsbore/auvlib.svg?branch=master)](https://travis-ci.org/nilsbore/auvlib)
+[![Build Status](https://api.travis-ci.com/nilsbore/auvlib.svg?branch=master)](https://travis-ci.com/github/nilsbore/auvlib)
 [![Build status](https://ci.appveyor.com/api/projects/status/kcfxp0jlpwqxt2fs/branch/master?svg=true)](https://ci.appveyor.com/project/nilsbore/auvlib/branch/master)
 [![license](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
