@@ -96,11 +96,60 @@ PYBIND11_MODULE(all_data, m) {
         .def_static("parse_folder", &parse_folder_from_str<all_echosounder_depth>, "Parse all_echosounder_depth from folder of .all files")
         .def_static("read_data", &read_data_from_str<all_echosounder_depth::EntriesT>, "Read all_echosounder_depth::EntriesT from .cereal file");
 
+    py::class_<all_sound_speed_profile>(m, "all_sound_speed_profile", "Class for the all sound speed profile table 43")
+        .def(py::init<>())
+        .def_readwrite("id_", &all_sound_speed_profile::id_, "Sequential ID of measurement")
+        .def_readwrite("time_string_", &all_sound_speed_profile::time_string_, "Readable date of measurement")
+        .def_readwrite("time_stamp_", &all_sound_speed_profile::time_stamp_, "UNIX timestamp")
+        .def_readwrite("depth_", &all_sound_speed_profile::depth_, "Depth")
+        .def_readwrite("sound_speed_", &all_sound_speed_profile::sound_speed_, "Sound speed in dm/s")
+        .def_static("parse_file", &parse_file_from_str<all_sound_speed_profile>, "Parse all_sound_speed_profile from .all file")
+        .def_static("parse_folder", &parse_folder_from_str<all_sound_speed_profile>, "Parse all_sound_speed_profile from folder of .all files")
+        .def_static("read_data", &read_data_from_str<all_sound_speed_profile::EntriesT>, "Read all_sound_speed_profile::EntriesT from .cereal file");
+
+    py::class_<received_beam>(m, "received_beam", "Class for one received ping of raw range and angle 78 data")
+        .def(py::init<>())
+        .def_readwrite("beam_pointing_angle_", &received_beam::beam_pointing_angle_, "Beam pointing angle re RX array in 0.01 degree")
+        .def_readwrite("transmit_sector_number_", &received_beam::transmit_sector_number_, "Transmit sector number")
+        .def_readwrite("detection_info_", &received_beam::detection_info_, "Detection info")
+        .def_readwrite("quality_factor_", &received_beam::quality_factor_, "Detection window length in samples")
+        .def_readwrite("D_corr_", &received_beam::D_corr_, "D corr ")
+        .def_readwrite("two_way_tranvel_time_", &received_beam::two_way_tranvel_time_, "Two way travel time in s")
+        .def_readwrite("reflectivity_", &received_beam::reflectivity_, "Reflectivity (BS) in 0.1 dB resolution");
+
+    py::class_<all_raw_range_and_beam_angle>(m, "all_raw_range_and_beam_angle", "Class for the all raw range and angle")
+        .def(py::init<>())
+        .def_readwrite("id_", &all_raw_range_and_beam_angle::id_, "Sequential ID of measurement")
+        .def_readwrite("time_string_", &all_raw_range_and_beam_angle::time_string_, "Readable date of measurement")
+        .def_readwrite("time_stamp_", &all_raw_range_and_beam_angle::time_stamp_, "UNIX timestamp")
+        .def_readwrite("sound_vel_", &all_raw_range_and_beam_angle::sound_vel_, "Sound velocity")
+        .def_readwrite("D_scale_", &all_raw_range_and_beam_angle::D_scale_, "D scale used for Doppler effect correction")
+        .def_readwrite("received_beam_", &all_raw_range_and_beam_angle::received_beam_, "Return raw range and angle")
+        .def_readwrite("first_in_file_", &all_raw_range_and_beam_angle::first_in_file_, "Is first measurement in file?")
+        .def_static("parse_file", &parse_file_from_str<all_raw_range_and_beam_angle>, "Parse all_raw_range_and_beam_angle from .all file")
+        .def_static("parse_folder", &parse_folder_from_str<all_raw_range_and_beam_angle>, "Parse all_raw_range_and_beam_angle from folder of .all files")
+        .def_static("read_data", &read_data_from_str<all_raw_range_and_beam_angle::EntriesT>, "Read all_raw_range_and_beam_angle::EntriesT from .cereal file");
+
+    py::class_<all_installation_param>(m, "all_installation_param", "Class for the installation parameters")
+        .def(py::init<>())
+        .def_readwrite("id_", &all_installation_param::id_, "Sequential ID of measurement")
+        .def_readwrite("time_string_", &all_installation_param::time_string_, "Readable date of measurement")
+        .def_readwrite("time_stamp_", &all_installation_param::time_stamp_, "UNIX timestamp")
+        .def_readwrite("system_serial_number_", &all_installation_param::system_serial_number_, "System serial number")
+        .def_readwrite("secondary_system_serial_number_", &all_installation_param::secondary_system_serial_number_, "Secondary system serial number")
+        .def_readwrite("param_", &all_installation_param::param_, "Dict of ascii parameters")
+        .def_readwrite("first_in_file_", &all_installation_param::first_in_file_, "Is first measurement in file?")
+        .def_static("parse_file", &parse_file_from_str<all_installation_param>, "Parse all_installation_param from .all file")
+        .def_static("parse_folder", &parse_folder_from_str<all_installation_param>, "Parse all_installation_param from folder of .all files")
+        .def_static("read_data", &read_data_from_str<all_installation_param::EntriesT>, "Read all_installation_param::EntriesT from .cereal file");
+
     m.def("write_data", &write_data_from_str<all_mbes_ping::PingsT>, "Write all_mbes_ping::PingsT to .cereal file");
     m.def("write_data", &write_data_from_str<all_nav_entry::EntriesT>, "Write all_nav_entry::EntriesT to .cereal file");
     m.def("write_data", &write_data_from_str<all_nav_depth::EntriesT>, "Write all_nav_depth::EntriesT to .cereal file");
     m.def("write_data", &write_data_from_str<all_nav_attitude::EntriesT>, "Write all_nav_attitude::EntriesT to .cereal file");
     m.def("write_data", &write_data_from_str<all_echosounder_depth::EntriesT>, "Write all_echosounder_depth::EntriesT to .cereal file");
+    m.def("write_data", &write_data_from_str<all_sound_speed_profile::EntriesT>, "Write all_sound_speed_profile::EntriesT to .cereal file");
+    m.def("write_data", &write_data_from_str<all_raw_range_and_beam_angle::EntriesT>, "Write all_raw_range_and_beam_angle::EntriesT to .cereal file");
     //m.def("convert_matched_entries", (all_mbes_ping::PingsT (*)(all_mbes_ping::PingsT&, all_nav_entry::EntriesT&) ) &convert_matched_entries, "Matches xtf_sss_ping::PingsT and csv_nav_entry::EntriesT and assign pos data to pings");
     m.def("convert_matched_entries", &convert_matched_entries, "Matches all_mbes_ping::PingsT and all_nav_entry::EntriesT and assign pos data to pings");
     m.def("match_attitude", &match_attitude, "Match mbes_ping::PingsT and all_nav_attitude::EntriesT and assign attitude data to pings");

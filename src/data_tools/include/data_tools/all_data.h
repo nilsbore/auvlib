@@ -147,6 +147,83 @@ struct all_echosounder_depth {
 
 };
 
+struct all_sound_speed_profile {
+
+    using EntriesT = std::vector<all_sound_speed_profile, Eigen::aligned_allocator<all_sound_speed_profile> >;
+
+    unsigned int id_;
+    std::string time_string_;           // readable time stamp string
+    long long time_stamp_;              // posix time stamp
+    std::vector<double> depth_;      // time in second since record start
+    std::vector<double> sound_speed_;   // sound speed in dm/s corresponding to duration_
+    bool first_in_file_;
+
+	template <class Archive>
+    void serialize( Archive & ar )
+    {
+        ar(CEREAL_NVP(id_), CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_),
+		   CEREAL_NVP(depth_), CEREAL_NVP(sound_speed_), CEREAL_NVP(first_in_file_));
+    }
+
+};
+
+struct received_beam{
+    float beam_pointing_angle_;             // beam pointing angle re RX array in 0.01 degree, range ~[-11000, 11000]
+    unsigned char transmit_sector_number_;
+    unsigned char detection_info_;
+    unsigned char quality_factor_;
+    signed char D_corr_;
+    double two_way_tranvel_time_;           // in s
+    int reflectivity_;
+
+    template <class Archive>
+    void serialize( Archive & ar )
+    {
+        ar(CEREAL_NVP(beam_pointing_angle_), CEREAL_NVP(transmit_sector_number_), CEREAL_NVP(detection_info_),
+		   CEREAL_NVP(quality_factor_), CEREAL_NVP(D_corr_), CEREAL_NVP(two_way_tranvel_time_), CEREAL_NVP(reflectivity_));
+    }
+};
+
+struct all_raw_range_and_beam_angle {
+
+    using EntriesT = std::vector<all_raw_range_and_beam_angle, Eigen::aligned_allocator<all_raw_range_and_beam_angle> >;
+
+    unsigned int id_;
+    std::string time_string_;           // readable time stamp string
+    long long time_stamp_;              // posix time stamp
+    int sound_vel_;                  // sound speed at transducer in 0.1 m/s
+    unsigned int D_scale_;
+    std::vector<received_beam> received_beam_;
+    bool first_in_file_;
+
+	template <class Archive>
+    void serialize( Archive & ar )
+    {
+        ar(CEREAL_NVP(id_), CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_),
+		   CEREAL_NVP(sound_vel_), CEREAL_NVP(D_scale_), CEREAL_NVP(received_beam_), CEREAL_NVP(first_in_file_));
+    }
+};
+
+struct all_installation_param {
+
+    using EntriesT = std::vector<all_installation_param, Eigen::aligned_allocator<all_installation_param> >;
+
+    unsigned int id_;
+    std::string time_string_;           // readable time stamp string
+    long long time_stamp_;              // posix time stamp
+    unsigned int system_serial_number_;
+    unsigned int secondary_system_serial_number_;
+    std::unordered_map<std::string, std::string> param_;
+    bool first_in_file_;
+
+	template <class Archive>
+    void serialize( Archive & ar )
+    {
+        ar(CEREAL_NVP(id_), CEREAL_NVP(time_string_), CEREAL_NVP(time_stamp_), CEREAL_NVP(system_serial_number_), 
+        CEREAL_NVP(secondary_system_serial_number_), CEREAL_NVP(param_), CEREAL_NVP(first_in_file_));
+    }
+};
+
 std_data::mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_entry::EntriesT& entries);
 std_data::mbes_ping::PingsT match_attitude(std_data::mbes_ping::PingsT& pings, all_nav_attitude::EntriesT& entries);
 csv_data::csv_asvp_sound_speed::EntriesT convert_sound_speeds(const all_mbes_ping::PingsT& pings);
@@ -197,6 +274,16 @@ all_data::all_nav_attitude::EntriesT parse_file(const boost::filesystem::path& f
 
 template <>
 all_data::all_echosounder_depth::EntriesT parse_file(const boost::filesystem::path& file);
+
+template <>
+all_data::all_sound_speed_profile::EntriesT parse_file(const boost::filesystem::path& file);
+
+template <>
+all_data::all_raw_range_and_beam_angle::EntriesT parse_file(const boost::filesystem::path& file);
+
+// actually there will be only one all_installation_param, so return size should be one
+template <>
+all_data::all_installation_param::EntriesT parse_file(const boost::filesystem::path& file);
 
 }
 
