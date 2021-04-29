@@ -130,6 +130,8 @@ For more complete documentation on C++ library usage, see [the overview document
 * [@dawierha](https://github.com/dawierha)
 * [@ignaciotb](https://github.com/ignaciotb)
 * [@xyp8023](https://github.com/xyp8023)
+* [@iyuner](https://github.com/iyuner)
+* [@MaxLarsson2](https://github.com/MaxLarsson2)
 
 ## Acknowledgements
 
