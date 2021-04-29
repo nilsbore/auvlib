@@ -418,6 +418,9 @@ all_installation_param read_datagram<all_installation_param, all_installation_pa
     string x;
     while (getline(str, x, ',')) { 
         size_t split_pos = x.find("=");
+        if (split_pos == std::string::npos) {
+            continue;
+        }
         string key = x.substr(0, split_pos);
         string value = x.substr(split_pos + 1);
         param.param_[key] = value;
