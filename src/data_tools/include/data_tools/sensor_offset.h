@@ -25,6 +25,7 @@ namespace sensor_offset {
 
     std::map<std::string, pos_offset> parse_offset_file(const std::string& file);
 
+    pos_offset parse_offset_for_one_sensor(std::ifstream& input);
 }
 
 #endif

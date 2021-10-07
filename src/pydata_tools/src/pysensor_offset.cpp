@@ -25,8 +25,8 @@ PYBIND11_MODULE(sensor_offset, m) {
     py::class_<pos_offset>(m, "pos_offset", "Class for positional sensor offset")
         .def(py::init<>())
         .def_readwrite("x", &pos_offset::x, "Positional offset in X-axis")
-        .def_readwrite("y", &pos_offset::x, "Positional offset in Y-axis")
-        .def_readwrite("z", &pos_offset::x, "Positional offset in Z-axis");
+        .def_readwrite("y", &pos_offset::y, "Positional offset in Y-axis")
+        .def_readwrite("z", &pos_offset::z, "Positional offset in Z-axis");
 
     m.def("parse_offset_file", &parse_offset_file, "Parse sensor offset file. Note that the following sign convention is assumed: +x=forward, +y=starboard, +z=down");
 }
