@@ -28,6 +28,8 @@ add_library(all_data src/all_data.cpp)
 
 add_library(xyz_data src/xyz_data.cpp)
 
+add_library(sensor_offset src/sensor_offset.cpp)
+
 add_executable(test_xtf src/test_xtf.cpp)
 
 add_executable(test_all src/test_all.cpp)
@@ -100,6 +102,11 @@ target_include_directories(xyz_data PUBLIC
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
 
+target_include_directories(sensor_offset PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+    PRIVATE src)
+
 if(MSVC)
   set(EXTRA_BOOST_LIBS "")
 else()
@@ -136,7 +143,8 @@ target_link_libraries(all_data navi_data lat_long_utm csv_data ${OpenCV_LIBS})
 
 target_link_libraries(xyz_data std_data ${EXTRA_BOOST_LIBS})
 
-set(AUVLIB_DATA_TOOLS_LIBS data_transforms submaps std_data benchmark navi_data csv_data xtf_data jsf_data all_data xyz_data lat_long_utm)
+set(AUVLIB_DATA_TOOLS_LIBS data_transforms submaps std_data benchmark navi_data csv_data xtf_data
+    jsf_data all_data xyz_data lat_long_utm sensor_offset)
 
 if(AUVLIB_WITH_GSF)
   set(AUVLIB_DATA_TOOLS_LIBS ${AUVLIB_DATA_TOOLS_LIBS} gsf_data)
