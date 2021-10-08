@@ -35,13 +35,16 @@ namespace sensor_offset {
         string line;
         map<string, pos_offset> offset_map;
         // regex variables for string matching
-        regex sensor_name("\\[\\w+\\]");
         cmatch match;
         while (getline(input, line)) {
             boost::algorithm::trim(line);
-            if (regex_match(line.c_str(), match, sensor_name)) {
-                offset_map[line] = parse_offset_for_one_sensor(input);
-                cout << "matched sensor name: " << match.str() << "\n";
+            if (regex_match(line.c_str(), match, regex_sensor_name)) {
+                auto sensor_name = match[1].str();
+                // ignore the [Version] tag
+                if (sensor_name == "Version") {
+                    continue;
+                }
+                offset_map[sensor_name] = parse_offset_for_one_sensor(input);
             }
         }
         input.close();
@@ -49,9 +52,28 @@ namespace sensor_offset {
         return offset_map;
     }
 
-    //TODO: finish parsing the file
     pos_offset parse_offset_for_one_sensor(ifstream& input) {
-        pos_offset offset = {1., 2., 3.};
+        string line;
+        cmatch match;
+        pos_offset offset;
+
+        while (getline(input, line)) {
+            boost::algorithm::trim(line);
+            auto line_c_str = line.c_str();
+            if (regex_match(line_c_str, match, regex_xpos)) {
+                offset.x = stof(match[1]);
+            } else if (regex_match(line_c_str, match, regex_ypos)) {
+                offset.y = stof(match[1]);
+            } else if (regex_match(line_c_str, match, regex_zpos)) {
+                offset.z = stof(match[1]);
+            }
+
+            // Return if the next token is [ (indicates a new sensor)
+            auto next = input.peek();
+            if (next == '[') {
+                break;
+            }
+        }
         return offset;
     }
 }

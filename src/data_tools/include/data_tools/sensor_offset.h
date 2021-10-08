@@ -14,8 +14,14 @@
 
 #include <map>
 #include <string>
+#include <regex>
 
 namespace sensor_offset {
+
+    static inline std::regex regex_sensor_name("\\[(\.+)\\]");
+    static inline std::regex regex_xpos("x = ([-]?\\d*\\.\\d*)");
+    static inline std::regex regex_ypos("y = ([-]?\\d*\\.\\d*)");
+    static inline std::regex regex_zpos("z = ([-]?\\d*\\.\\d*)");
 
     struct pos_offset {
         float x;
