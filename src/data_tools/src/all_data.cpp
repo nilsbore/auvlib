@@ -509,16 +509,8 @@ mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_
     return new_pings;
 }
 
-mbes_ping::PingsT match_attitude(mbes_ping::PingsT& pings, all_nav_attitude::EntriesT& entries)
+vector<unfolded_attitude> convert_attitude_timestamps(all_nav_attitude::EntriesT& entries)
 {
-    struct unfolded_attitude {
-        long long time_stamp_; // posix time stamp
-        double roll;
-        double pitch;
-        double heading;
-        double heave;
-    };
-
     vector<unfolded_attitude> attitudes;
     unfolded_attitude attitude;
     for (const all_nav_attitude& entry : entries) {
@@ -531,10 +523,16 @@ mbes_ping::PingsT match_attitude(mbes_ping::PingsT& pings, all_nav_attitude::Ent
             attitudes.push_back(attitude);
         }
     }
+    return attitudes;
+}
 
+mbes_ping::PingsT match_attitude(mbes_ping::PingsT& pings, all_nav_attitude::EntriesT& entries)
+{
+
+    vector<unfolded_attitude> attitudes = convert_attitude_timestamps(entries);
     mbes_ping::PingsT new_pings = pings;
 
-    std::stable_sort(entries.begin(), entries.end(), [](const all_nav_attitude& entry1, const all_nav_attitude& entry2) {
+    std::stable_sort(attitudes.begin(), attitudes.end(), [](const unfolded_attitude& entry1, const unfolded_attitude& entry2) {
         return entry1.time_stamp_ < entry2.time_stamp_;
     });
 
