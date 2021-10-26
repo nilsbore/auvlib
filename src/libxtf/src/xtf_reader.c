@@ -225,90 +225,64 @@ void ProcessXTFHeader(int infl, XTFFILEHEADER *XTFFileHeader, unsigned char* buf
 unsigned int ReadXTFFormatFileData(int infl, unsigned char *buffer) {
 /*****************************************************************************/
 // This function will read data from an XTF file and return buffer with
-// a ping of sonar data in it.  This function is limited to pings with a byte
+// a ping of sonar data in it.  This function is NOT limited to pings with a byte
 // count of less than 64K.
 // Returns the number of bytes in *buffer*.  These bytes will be a 
 // Sonar data packet.  The calling program can use this data (which will
 // be side scan and/or subbottom data) for anything.
-
+//JF:
+// Max buffer should be 268K (268435456) and the now we can read records of that size too.
+  // return will be number of bytes to shift the buffer or OxFFFF if done.
+  // unrecognized records will be read but return (shift) will be 0 
    XTFPINGHEADER *PacketHeader;
    unsigned char *SrcPtr = buffer;
-   unsigned long BytesScanned=0L;
-   long AmountRemaining;
    long AmountNeeded;
    long RecordLength;
-   long AmountRead, tmp, len;
+   long AmountRead,len;
 
       // Read in 64 bytes just to get going
    if ((AmountRead = read(infl, SrcPtr, 64)) != 64) {
-      printf("\nCan't read 64 bytes\n");
+      //printf("\nCan't read 64 bytes\n");
       return 0xFFFF;
    }
-
-   AmountRemaining = AmountRead;
-
-   while (((long)BytesScanned < AmountRead) && AmountRemaining) {
-
-      PacketHeader = (XTFPINGHEADER *) SrcPtr;
-
-      RecordLength = PacketHeader->NumBytesThisRecord;
-
-      switch (PacketHeader->HeaderType) {
-
-         case XTF_HEADER_SONAR        :
-         case XTF_HEADER_BATHY        :
-         case XTF_HEADER_ATTITUDE     :
-         case XTF_HEADER_NOTES        :
-         case XTF_HEADER_ELAC         :
-         case XTF_HEADER_RAW_SERIAL   :
-         case XTF_HEADER_EMBED_HEAD   :
-         case XTF_HEADER_HIDDEN_SONAR :
-         case XTF_HEADER_ECHOSTRENGTH :
-
-               // Make sure enough data sits in memory to have
-               // a complete packet
-            AmountRemaining = AmountRead - BytesScanned;
-            if (AmountRemaining && AmountRemaining < RecordLength) {
-               AmountNeeded = RecordLength - AmountRemaining;
-               AmountRead  += (len=read(infl, buffer+(WORD)AmountRead, (WORD)AmountNeeded));
-               if (len != AmountNeeded) return 0;
-               AmountRemaining = AmountRead - BytesScanned;
-            }
-
-            SrcPtr       += RecordLength;
-            BytesScanned += RecordLength;
-            AmountRemaining = AmountRead - BytesScanned;
-
-            break;
-      
-
-         default : // Unrecognized header type.  Skip past it.
-
-            printf("\nUnknown data packet: 0x%X\n", (int) (PacketHeader->HeaderType));
-
-            AmountRemaining = AmountRead - BytesScanned;
-
-               // Make sure enough data sits in memory to have
-               // a complete note record block
-            if (AmountRemaining < RecordLength) {
-               AmountNeeded    = RecordLength - AmountRemaining;
-               tmp = AmountRead;
-               AmountRead     += read(infl, buffer+(WORD)AmountRead, (WORD)AmountNeeded);
-               AmountRemaining = AmountRead - BytesScanned;
-            }
-
-            if (AmountRemaining >= RecordLength) {
-               memcpy(SrcPtr, SrcPtr+(WORD)RecordLength, (WORD)(AmountRemaining - RecordLength));
-               AmountRead -= RecordLength;
-               tmp = AmountRead;
-               AmountRead += (len = read(infl, buffer+(WORD)AmountRead, (WORD)RecordLength));
-               if (len != RecordLength) return 0;
-               AmountRemaining = AmountRead - BytesScanned;
-            }
-            break;
-      }
+   printf("Amount Read %d",AmountRead);
+   PacketHeader = (XTFPINGHEADER *) SrcPtr;
+   RecordLength = PacketHeader->NumBytesThisRecord;
+   if (RecordLength> 268435456) {
+     printf("Oh No! Record Length too large for buffer"); 
+     return 0xFFFF;
    }
-
+   SrcPtr += AmountRead;  
+   AmountNeeded = RecordLength - AmountRead;
+   while (AmountNeeded > 64000) {
+     len=read(infl, SrcPtr, (WORD)64000);
+     if (len != 64000) return 0;
+     AmountRead+=len;
+     SrcPtr+= len;  
+     AmountNeeded = RecordLength - AmountRead;
+   }
+   if (AmountNeeded>0){
+     len=read(infl, SrcPtr, (WORD)AmountNeeded);
+     if (len != 64000) return 0;
+     AmountRead+=len;
+     SrcPtr+= len;  
+     AmountNeeded = RecordLength - AmountRead;
+   }    
+   switch (PacketHeader->HeaderType) {
+   case XTF_HEADER_SONAR        :
+   case XTF_HEADER_BATHY        :
+   case XTF_HEADER_ATTITUDE     :
+   case XTF_HEADER_NOTES        :
+   case XTF_HEADER_ELAC         :
+   case XTF_HEADER_RAW_SERIAL   :
+   case XTF_HEADER_EMBED_HEAD   :
+   case XTF_HEADER_HIDDEN_SONAR :
+   case XTF_HEADER_ECHOSTRENGTH :
+     break;  
+   default : // Unrecognized header type.  Skip past it.
+     return (WORD)0;
+     break;
+   }
    return (WORD)AmountRead;
 }
 
