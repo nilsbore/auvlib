@@ -424,13 +424,14 @@ all_installation_param read_datagram<all_installation_param, all_installation_pa
         string key = x.substr(0, split_pos);
         string value = x.substr(split_pos + 1);
         param.param_[key] = value;
+
         // cout<< x <<", " << key <<", " << value << endl;
     } 
 	return param;
 }
 
 
-mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_entry::EntriesT& entries)
+mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_entry::EntriesT& entries, float roll)
 {
     mbes_ping::PingsT new_pings;
     new_pings.reserve(pings.size());
@@ -455,52 +456,40 @@ mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_
         new_ping.heading_ = ping.heading_;
         new_ping.pitch_ = 0.;
         new_ping.roll_ = 0.;
-        if (pos == entries.end()) {
+        if (pos == entries.end() || pos == entries.begin()) {
             double easting, northing;
             string utm_zone;
-            tie(northing, easting, utm_zone) = lat_long_utm::lat_long_to_UTM(entries.back().lat_, entries.back().long_);
+            tie(northing, easting, utm_zone) = lat_long_utm::lat_long_to_UTM(pos->lat_, pos->long_);
             new_ping.pos_ = Eigen::Vector3d(easting, northing, -ping.transducer_depth_);
             //new_ping.pos_ = Eigen::Vector3d(easting, northing, -entries.back().depth_);
         }
         else {
-            if (pos == entries.begin()) {
-                double easting, northing;
-                string utm_zone;
-                tie(northing, easting, utm_zone) = lat_long_utm::lat_long_to_UTM(pos->lat_, pos->long_);
-                new_ping.pos_ = Eigen::Vector3d(easting, northing, -ping.transducer_depth_);
-                //new_ping.pos_ = Eigen::Vector3d(easting, northing, -pos->depth_);
-            }
-            else {
-                all_nav_entry& previous = *(pos - 1);
-                double ratio = double(ping.time_stamp_ - previous.time_stamp_)/double(pos->time_stamp_ - previous.time_stamp_);
-                double lat = previous.lat_ + ratio*(pos->lat_ - previous.lat_);
-                double lon = previous.long_ + ratio*(pos->long_ - previous.long_);
-                double depth = previous.depth_ + ratio*(pos->depth_ - previous.depth_);
-                double easting, northing;
-                string utm_zone;
-                tie(northing, easting, utm_zone) = lat_long_utm::lat_long_to_UTM(lat, lon);
-                new_ping.pos_ = Eigen::Vector3d(easting, northing, -ping.transducer_depth_);
-                //cout << "Filtered depth: " << depth << ", transducer depth: " << ping.transducer_depth_ << endl;
-                //new_ping.pos_ = Eigen::Vector3d(easting, northing, -depth);
-            }
+            all_nav_entry& previous = *(pos - 1);
+            double ratio = double(ping.time_stamp_ - previous.time_stamp_)/double(pos->time_stamp_ - previous.time_stamp_);
+            double lat = previous.lat_ + ratio*(pos->lat_ - previous.lat_);
+            double lon = previous.long_ + ratio*(pos->long_ - previous.long_);
+            double depth = previous.depth_ + ratio*(pos->depth_ - previous.depth_);
+            double easting, northing;
+            string utm_zone;
+            tie(northing, easting, utm_zone) = lat_long_utm::lat_long_to_UTM(lat, lon);
+            new_ping.pos_ = Eigen::Vector3d(easting, northing, -ping.transducer_depth_);
+            //cout << "Filtered depth: " << depth << ", transducer depth: " << ping.transducer_depth_ << endl;
+            //new_ping.pos_ = Eigen::Vector3d(easting, northing, -depth);
         }
 
         new_ping.beams.reserve(ping.beams.size());
         new_ping.back_scatter.reserve(ping.beams.size());
-        int i = 0;
-        //cout << "Ping heading: " << new_ping.heading_ << endl;
-        for (const Eigen::Vector3d& beam : ping.beams) {
-            /*if (beam(2) > -5. || beam(2) < -25.) {
-                ++i;
-                continue;
-            }*/
-            Eigen::Matrix3d Rz = Eigen::AngleAxisd(new_ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
+        Eigen::Matrix3d Rz = Eigen::AngleAxisd(new_ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
 
-            // it seems it has already been compensated for pitch, roll
-            new_ping.beams.push_back(new_ping.pos_ + Rz*beam);
-            //new_ping.beams.push_back(new_ping.pos_ + beam);
+        int i = 0;
+        double step_roll = 2.*roll/ping.beams.size();
+        double current_roll = -roll;
+        for (const Eigen::Vector3d& beam : ping.beams) {
+            Eigen::Matrix3d Rx = Eigen::AngleAxisd(M_PI/180*current_roll, Eigen::Vector3d::UnitX()).matrix();
+            new_ping.beams.push_back(new_ping.pos_ + Rz*Rx*beam);
             new_ping.back_scatter.push_back(ping.reflectivities[i]);
             ++i;
+            current_roll += step_roll;
         }
 
         new_pings.push_back(new_ping);
