@@ -12,6 +12,7 @@
 #include <data_tools/sensor_offset.h>
 
 #include <pybind11/pybind11.h>
+#include <pybind11/eigen.h>
 #include <pybind11/stl.h>
 #include <pybind11/functional.h>
 
@@ -22,11 +23,18 @@ namespace py = pybind11;
 PYBIND11_MODULE(sensor_offset, m) {
     m.doc() = "Module for parsing sensor offset files, e.g. arms.init file from Kongsberg Hugin AUV";
 
-    py::class_<pos_offset>(m, "pos_offset", "Class for positional sensor offset")
-        .def(py::init<>())
-        .def_readwrite("x", &pos_offset::x, "Positional offset in X-axis")
-        .def_readwrite("y", &pos_offset::y, "Positional offset in Y-axis")
-        .def_readwrite("z", &pos_offset::z, "Positional offset in Z-axis");
+    // Global sensor offset variables
+    m.attr("MBES_RX") = &MBES_RX; //multibeam receiver head offset
+    m.attr("MBES_TX") = &MBES_TX; //multibeam transmitter head offset
+    m.attr("SSS_PORT") = &SSS_PORT; //sidescan port side offset
+    m.attr("SSS_STBD") = &SSS_STBD; //sidescan starboard side offset
 
     m.def("parse_offset_file", &parse_offset_file, "Parse sensor offset file. Note that the following sign convention is assumed: +x=forward, +y=starboard, +z=down");
+    m.def("set_sensor_offset_variables_from_file", &set_sensor_offset_variables_from_file,
+            py::arg("file"),
+            py::arg("mbes_tx_name")="EMSonarHeadTX",
+            py::arg("mbes_rx_name")="EMSonarHeadRX",
+            py::arg("sss_port_name")="Edge tech-SSS-Port",
+            py::arg("sss_stbd_name")="Edge tech-SSS-STB",
+            "Set MBES_RX, MBES_TX, SSS_PORT, SSS_STBD using the provided file and sensor names. Default sensor names are those of RAN");
 }

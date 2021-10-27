@@ -22,7 +22,22 @@
 using namespace std;
 
 namespace sensor_offset {
-    map<string, pos_offset> parse_offset_file(const string& file) {
+    void set_sensor_offset_variables_from_file(const std::string& file, const std::string& mbes_tx_name,
+            const std::string& mbes_rx_name, const std::string& sss_port_name, const std::string& sss_stbd_name) {
+        auto offset_map = parse_offset_file(file);
+        MBES_TX = offset_map[mbes_tx_name];
+        MBES_RX = offset_map[mbes_rx_name];
+        SSS_PORT = offset_map[sss_port_name];
+        SSS_STBD = offset_map[sss_stbd_name];
+
+        cout << "New sensor offset: " << endl;
+        cout << "MBES_TX: (" << MBES_TX[0] << ", " << MBES_TX[1] << ", " << MBES_TX[2] << ")" << endl;
+        cout << "MBES_RX: (" << MBES_RX[0] << ", " << MBES_RX[1] << ", " << MBES_RX[2] << ")" << endl;
+        cout << "SSS_PORT: (" << SSS_PORT[0] << ", " << SSS_PORT[1] << ", " << SSS_PORT[2] << ")" << endl;
+        cout << "SSS_STBD: (" << SSS_STBD[0] << ", " << SSS_STBD[1] << ", " << SSS_STBD[2] << ")" << endl;
+    }
+
+    map<string, Eigen::Vector3d> parse_offset_file(const string& file) {
 
         ifstream input;
         input.open(file, ifstream::in);
@@ -33,7 +48,7 @@ namespace sensor_offset {
         }
 
         string line;
-        map<string, pos_offset> offset_map;
+        map<string, Eigen::Vector3d> offset_map;
         // regex variables for string matching
         cmatch match;
         while (getline(input, line)) {
@@ -52,20 +67,20 @@ namespace sensor_offset {
         return offset_map;
     }
 
-    pos_offset parse_offset_for_one_sensor(ifstream& input) {
+    Eigen::Vector3d parse_offset_for_one_sensor(ifstream& input) {
         string line;
         cmatch match;
-        pos_offset offset;
+        Eigen::Vector3d offset;
 
         while (getline(input, line)) {
             boost::algorithm::trim(line);
             auto line_c_str = line.c_str();
             if (regex_match(line_c_str, match, regex_xpos)) {
-                offset.x = stof(match[1]);
+                offset[0] = stof(match[1]);
             } else if (regex_match(line_c_str, match, regex_ypos)) {
-                offset.y = stof(match[1]);
+                offset[1] = stof(match[1]);
             } else if (regex_match(line_c_str, match, regex_zpos)) {
-                offset.z = stof(match[1]);
+                offset[2] = stof(match[1]);
             }
 
             // Return if the next token is [ (indicates a new sensor)
