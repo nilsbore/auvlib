@@ -10,6 +10,7 @@
  */
 
 #include <bathy_maps/base_draper.h>
+#include <data_tools/sensor_offset.h>
 
 #include <igl/per_face_normals.h>
 #include <bathy_maps/mesh_map.h>
@@ -29,8 +30,11 @@ BaseDraper::BaseDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
       tracing_map_size(200.), intensity_multiplier(1.)
 {
     offset = Eigen::Vector3d(bounds(0, 0), bounds(0, 1), 0.);
-    sensor_offset_port = Eigen::Vector3d::Zero();
-    sensor_offset_stbd = Eigen::Vector3d::Zero();
+    // The sensor offsets can be set by using the set_sensor_offset_variables_from_file function
+    // from the library data_tools/sensor_offset
+    // They can also be set manually
+    sensor_offset_port = sensor_offset::SSS_PORT - sensor_offset::MBES_TX;
+    sensor_offset_stbd = sensor_offset::SSS_STBD - sensor_offset::MBES_TX;
     igl::per_face_normals(V1, F1, N1); // compute normals for mesh 
 }
 
