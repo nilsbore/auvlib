@@ -4,6 +4,7 @@ import numpy as np
 from scipy.spatial import KDTree
 from auvlib.bathy_maps.map_draper import sss_meas_data
 import json
+from collections import OrderedDict
 
 
 class SSS_correspondence():
@@ -90,6 +91,7 @@ class SSS_correspondence():
                 f'Valid index range: (0, {self.num_data_files - 1})')
 
         target_filename = self.data_files[idx]
+        # overlapping_filepaths = [target_filename]
         overlapping_filepaths = self.get_overlapping_filepaths(target_filename)
         fig = SSS_Plot(target_filename, overlapping_filepaths, figsize=figsize)
         plt.show()
@@ -105,13 +107,16 @@ class SSS_Plot():
         self.filepath = filepath
         self.filepath_to_filename = lambda filepath: os.path.basename(
             os.path.normpath(filepath))
+
         self.data = self._load_data(self.filepath)
+        self.target_pos = None
+        self.fig, self.plot = self.plot_data_and_register_callback(figsize)
 
         self.overlapping_filepaths = overlapping_filepaths
+        self.num_overlapping_data = len(self.overlapping_filepaths)
         self.overlapping_data = self._load_overlapping_data_into_dict()
-
-        self.target_pos = None
-        self.fig = self.plot_data(figsize)
+        self.overlapping_fig, self.overlapping_plots = self.plot_overlapping_data(
+            figsize)
 
     def _load_data(self, filepath):
         data = sss_meas_data.read_single(filepath)
@@ -119,6 +124,7 @@ class SSS_Plot():
         pos_shape = pos.shape[:-1]
         pos_kdtree = KDTree(pos.reshape(-1, 3))
         return {
+            'filename': self.filepath_to_filename(filepath),
             'waterfall_image': data.sss_waterfall_image,
             'pos': pos,
             'pos_shape': pos_shape,
@@ -126,7 +132,7 @@ class SSS_Plot():
         }
 
     def _load_overlapping_data_into_dict(self):
-        data_dict = {}
+        data_dict = OrderedDict()
         for filepath in self.overlapping_filepaths:
             data_dict[filepath] = self._load_data(filepath)
         return data_dict
@@ -138,33 +144,71 @@ class SSS_Plot():
         ],
                         axis=-1)
 
-    def plot_data(self, figsize):
-        fig = plt.figure(figsize=(figsize))
-        plt.title(self.filepath_to_filename(self.filepath))
+    def plot_data_and_register_callback(self, figsize):
+        fig, ax = plt.subplots(1, figsize=(figsize))
+        plot = self._plot_data(self.data, ax)
         cid = fig.canvas.mpl_connect('button_press_event', self.onclick)
-        plt.imshow(self.data['waterfall_image'])
-        return fig
+        return fig, plot
+
+    def _plot_data(self, data, ax):
+        ax.set_title(data['filename'], wrap=True)
+        ax.imshow(data['waterfall_image'])
+        highlight, = ax.plot([], [], 'o', color='red', ms=5)
+        return {'ax': ax, 'highlight': highlight}
+
+    def plot_overlapping_data(self, figsize):
+        overlapping_plots = OrderedDict()
+        fig, axes = plt.subplots(
+            1,
+            self.num_overlapping_data,
+            figsize=(figsize[0], self.num_overlapping_data * figsize[1]))
+        if not isinstance(axes, np.ndarray):
+            axes = np.array(axes)
+        for i, (filepath, data) in enumerate(self.overlapping_data.items()):
+            overlapping_plots[filepath] = self._plot_data(data, axes[i])
+        return fig, overlapping_plots
 
     #TODO: separate click from drag and zoom events
     def onclick(self, event):
         try:
             coord = (int(event.ydata), int(event.xdata))
+            self._update_highlight(self.plot['highlight'], coord)
         except TypeError as e:
             return
         self.target_pos = self.data['pos'][coord]
+        print('------------------------------------------')
         print(f'Clicked pixel: {coord}, target coordinate: {self.target_pos}')
-        if not all(self.target_pos == 0):
+        if all(self.target_pos == 0):
+            self._clear_all_highlights()
+        else:
             self.find_corr_pixels(self.target_pos)
 
-    #TODO: highlight corresponding pixels in plots
     def find_corr_pixels(self, target_pos):
         for filepath, data in self.overlapping_data.items():
             dd, ii = data['pos_kdtree'].query(target_pos)
-            if dd < self.neighbour_thresh:
+            if dd > self.neighbour_thresh:
+                self._update_highlight(
+                    self.overlapping_plots[filepath]['highlight'])
                 continue
             corr_pixel = np.unravel_index(ii, data['pos_shape'])
             corr_pos = data['pos'][corr_pixel]
             print(
                 f'Corr pixel: {corr_pixel} in {self.filepath_to_filename(filepath)}\n'
-                f'\ttarget pos: {target_pos}, corr_pos: {corr_pos} distance = {dd}\n'
+                f'target pos: {target_pos}, corr_pos: {corr_pos} distance = {dd}'
             )
+            self._update_highlight(
+                self.overlapping_plots[filepath]['highlight'], corr_pixel)
+
+    def _clear_all_highlights(self):
+        for plot in self.overlapping_plots.values():
+            self._update_highlight(plot['highlight'])
+
+    def _update_highlight(self, highlight, pixel=([], [])):
+        highlight.set_data(pixel[1], pixel[0])
+        highlight.figure.canvas.draw_idle()
+
+
+def test(idx=0):
+    folder = '~/Documents/local-corr/data/210209/pp/ETPro/ssh/9-0169to0182/draping-res-no-offset/'
+    obj = SSS_correspondence(folder)
+    obj.plot_sss_waterfall_image(idx)
