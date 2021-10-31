@@ -330,6 +330,7 @@ all_nav_attitude read_datagram<all_nav_attitude, all_attitude_datagram>(std::ist
         sample.pitch = M_PI/180.*0.01*double(meas.pitch);
         sample.roll = M_PI/180.*0.01*double(meas.roll);
         sample.heading = M_PI/180.*0.01*double(meas.heading);
+        //sample.heading = 0.5*M_PI-sample.heading; // this basically converts to yaw, should have that as marker instead
         sample.heave = 0.01*double(meas.heave);
         entry.samples.push_back(sample);
 	}
@@ -495,6 +496,94 @@ mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_
         new_pings.push_back(new_ping);
     }
 
+    return new_pings;
+}
+
+mbes_ping::PingsT convert_matched_nav_and_attitude_entries(all_mbes_ping::PingsT& pings, all_nav_entry::EntriesT& nav_entries, all_nav_attitude::EntriesT& attitude_entries)
+{
+
+    mbes_ping::PingsT new_pings;
+    new_pings.reserve(pings.size());
+    vector<unfolded_attitude> attitudes = convert_attitude_timestamps(attitude_entries);
+
+    // sort everything according to their timestamps
+    std::stable_sort(attitudes.begin(), attitudes.end(), [](const unfolded_attitude& entry1, const unfolded_attitude& entry2) {
+        return entry1.time_stamp_ < entry2.time_stamp_;
+    });
+    std::stable_sort(nav_entries.begin(), nav_entries.end(), [](const all_nav_entry& entry1, const all_nav_entry& entry2) {
+        return entry1.time_stamp_ < entry2.time_stamp_;
+    });
+    std::stable_sort(pings.begin(), pings.end(), [](const all_mbes_ping& ping1, const all_mbes_ping& ping2) {
+        return ping1.time_stamp_ < ping2.time_stamp_;
+    });
+
+    auto nav_entry = nav_entries.begin();
+    auto attitude_entry = attitudes.begin();
+
+    for (all_mbes_ping& ping : pings) {
+        mbes_ping new_ping;
+        new_ping.time_stamp_ = ping.time_stamp_;
+        new_ping.time_string_ = ping.time_string_;
+        new_ping.first_in_file_ = ping.first_in_file_;
+        new_ping.heading_ = ping.heading_;
+        new_ping.pitch_ = 0.;
+        new_ping.roll_ = 0.;
+
+        // find the first nav_entry whose timestamp is after the ping
+        nav_entry = std::find_if(nav_entry, nav_entries.end(), [&](const all_nav_entry& entry) {
+            return entry.time_stamp_ > ping.time_stamp_;
+        });
+        // ping position = nav_entry's position
+        if (nav_entry == nav_entries.end() || nav_entry == nav_entries.begin()) {
+            double easting, northing;
+            string utm_zone;
+            tie(northing, easting, utm_zone) = lat_long_utm::lat_long_to_UTM(nav_entry->lat_, nav_entry->long_);
+            new_ping.pos_ = Eigen::Vector3d(easting, northing, -ping.transducer_depth_);
+        } else {
+            all_nav_entry& previous = *(nav_entry - 1);
+            double ratio = double(ping.time_stamp_ - previous.time_stamp_)/double(nav_entry->time_stamp_ - previous.time_stamp_);
+            double lat = previous.lat_ + ratio*(nav_entry->lat_ - previous.lat_);
+            double lon = previous.long_ + ratio*(nav_entry->long_ - previous.long_);
+            double depth = previous.depth_ + ratio*(nav_entry->depth_ - previous.depth_);
+            double easting, northing;
+            string utm_zone;
+            tie(northing, easting, utm_zone) = lat_long_utm::lat_long_to_UTM(lat, lon);
+            new_ping.pos_ = Eigen::Vector3d(easting, northing, -ping.transducer_depth_);
+        }
+
+        // find the first attitude_entry whose timestamp is after the ping
+        attitude_entry = std::find_if(attitude_entry, attitudes.end(), [&](const unfolded_attitude& entry) {
+            return entry.time_stamp_ > ping.time_stamp_;
+        });
+        if (attitude_entry == attitudes.begin() || attitude_entry == attitudes.end()) {
+            new_ping.pitch_ = attitude_entry->pitch;
+            new_ping.roll_ = attitude_entry->roll;
+            new_ping.heading_ = attitude_entry->heading;
+        } else {
+            unfolded_attitude& previous = *(attitude_entry - 1);
+            double ratio = double(new_ping.time_stamp_ - previous.time_stamp_)/double(attitude_entry->time_stamp_ - previous.time_stamp_);
+            new_ping.pitch_ = previous.pitch + ratio*(attitude_entry->pitch - previous.pitch);
+            new_ping.roll_ = previous.roll + ratio*(attitude_entry->roll - previous.roll);
+            new_ping.heading_ = previous.heading + ratio*(attitude_entry->heading - previous.heading);
+        }
+
+        new_ping.beams.reserve(ping.beams.size());
+        new_ping.back_scatter.reserve(ping.beams.size());
+
+        Eigen::Matrix3d Rz = Eigen::AngleAxisd(new_ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
+        Eigen::Matrix3d Ry = Eigen::AngleAxisd(new_ping.pitch_, Eigen::Vector3d::UnitY()).matrix();
+        Eigen::Matrix3d Rx = Eigen::AngleAxisd(new_ping.roll_, Eigen::Vector3d::UnitX()).matrix();
+        Eigen::Matrix3d R = Rz * Ry * Rx;
+
+        int i = 0;
+        for (Eigen::Vector3d& beam : ping.beams) {
+            //beam += Eigen::Vector3d(-1.086, -0.001, -0.414);
+            new_ping.beams.push_back(new_ping.pos_ + R*beam);
+            new_ping.back_scatter.push_back(ping.reflectivities[i]);
+            ++i;
+        }
+        new_pings.push_back(new_ping);
+    }
     return new_pings;
 }
 
