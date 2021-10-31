@@ -22,8 +22,9 @@ template <typename MapSaver>
 MapDraper<MapSaver>::MapDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
                                const std_data::sss_ping::PingsT& pings,
                                const BoundsT& bounds,
-                               const csv_asvp_sound_speed::EntriesT& sound_speeds)
-    : ViewDraper(V1, F1, pings, bounds, sound_speeds),
+                               const csv_asvp_sound_speed::EntriesT& sound_speeds,
+                               const sensor_offset::SonarOffset& sonar_offset)
+    : ViewDraper(V1, F1, pings, bounds, sound_speeds, sonar_offset),
       resolution(30./8.), save_callback(&default_callback),
       map_image_builder(bounds, 30./8., 256)
       //map_image_builder(bounds, 30./8., pings[0].port.pings.size())

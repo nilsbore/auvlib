@@ -22,19 +22,15 @@
 using namespace std;
 
 namespace sensor_offset {
-    void set_sensor_offset_variables_from_file(const std::string& file, const std::string& mbes_tx_name,
+    SonarOffset get_sonar_offset_from_file(const std::string& file, const std::string& mbes_tx_name,
             const std::string& mbes_rx_name, const std::string& sss_port_name, const std::string& sss_stbd_name) {
         auto offset_map = parse_offset_file(file);
-        MBES_TX = offset_map[mbes_tx_name];
-        MBES_RX = offset_map[mbes_rx_name];
-        SSS_PORT = offset_map[sss_port_name];
-        SSS_STBD = offset_map[sss_stbd_name];
-
-        cout << "New sensor offset: " << endl;
-        cout << "MBES_TX: (" << MBES_TX[0] << ", " << MBES_TX[1] << ", " << MBES_TX[2] << ")" << endl;
-        cout << "MBES_RX: (" << MBES_RX[0] << ", " << MBES_RX[1] << ", " << MBES_RX[2] << ")" << endl;
-        cout << "SSS_PORT: (" << SSS_PORT[0] << ", " << SSS_PORT[1] << ", " << SSS_PORT[2] << ")" << endl;
-        cout << "SSS_STBD: (" << SSS_STBD[0] << ", " << SSS_STBD[1] << ", " << SSS_STBD[2] << ")" << endl;
+        SonarOffset offset;
+        offset.mbes_tx = offset_map[mbes_tx_name];
+        offset.mbes_rx = offset_map[mbes_rx_name];
+        offset.sss_port = offset_map[sss_port_name];
+        offset.sss_stbd = offset_map[sss_stbd_name];
+        return offset;
     }
 
     map<string, Eigen::Vector3d> parse_offset_file(const string& file) {

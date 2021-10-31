@@ -10,7 +10,6 @@
  */
 
 #include <bathy_maps/base_draper.h>
-#include <data_tools/sensor_offset.h>
 
 #include <igl/per_face_normals.h>
 #include <bathy_maps/mesh_map.h>
@@ -23,18 +22,22 @@ using namespace csv_data;
 
 BaseDraper::BaseDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
                        const BoundsT& bounds,
-                       const csv_asvp_sound_speed::EntriesT& sound_speeds)
+                       const csv_asvp_sound_speed::EntriesT& sound_speeds,
+                       const sensor_offset::SonarOffset& sonar_offset)
     : V1(V1), F1(F1),
       sound_speeds(sound_speeds), bounds(bounds),
+      sonar_offset(sonar_offset),
       sensor_yaw(0.), ray_tracing_enabled(false),
       tracing_map_size(200.), intensity_multiplier(1.)
 {
     offset = Eigen::Vector3d(bounds(0, 0), bounds(0, 1), 0.);
-    // The sensor offsets can be set by using the set_sensor_offset_variables_from_file function
-    // from the library data_tools/sensor_offset
-    // They can also be set manually
-    sensor_offset_port = sensor_offset::SSS_PORT - sensor_offset::MBES_TX;
-    sensor_offset_stbd = sensor_offset::SSS_STBD - sensor_offset::MBES_TX;
+
+    // N.B. default sonar_offset sets all offsets to 0
+    // the SonarOffset variable can be obtained by the function
+    // get_sonar_offset_from_file in data_tools.sensor_offset
+    sensor_offset_port = sonar_offset.sss_port - sonar_offset.mbes_tx;
+    sensor_offset_stbd = sonar_offset.sss_stbd - sonar_offset.mbes_tx;
+
     igl::per_face_normals(V1, F1, N1); // compute normals for mesh 
 }
 

@@ -18,6 +18,7 @@
 #include <data_tools/xtf_data.h>
 #include <data_tools/csv_data.h>
 #include <sonar_tracing/bathy_tracer.h>
+#include <data_tools/sensor_offset.h>
 
 struct ping_draping_result;
 
@@ -64,6 +65,7 @@ protected:
     Eigen::MatrixXi F1; // bathymetry mesh faces
     Eigen::MatrixXd N1; // bathymetry mesh normals
     Eigen::Vector3d offset; // offset of mesh wrt world coordinates
+    sensor_offset::SonarOffset sonar_offset; //offsets for multibeam and sidescan sonar fed in as input to the draper
 
     /*
     // smaller local versions used for ray tracing
@@ -82,8 +84,8 @@ protected:
     //Eigen::MatrixXd N_faces; // the normals of F1, V1, i.e. the bathymetry mesh
     csv_data::csv_asvp_sound_speed::EntriesT sound_speeds;
     double sensor_yaw;
-    Eigen::Vector3d sensor_offset_port;
-    Eigen::Vector3d sensor_offset_stbd;
+    Eigen::Vector3d sensor_offset_port; // = sss_port - mbes_tx
+    Eigen::Vector3d sensor_offset_stbd; // = sss_stbd - mbes_tx
     bool ray_tracing_enabled; // is snell ray tracing enabled?
     double tracing_map_size; // TODO: remove this as it is no longer needed
     double intensity_multiplier;
@@ -130,7 +132,8 @@ public:
 
     BaseDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
                const BoundsT& bounds,
-               const csv_data::csv_asvp_sound_speed::EntriesT& sound_speeds = csv_data::csv_asvp_sound_speed::EntriesT());
+               const csv_data::csv_asvp_sound_speed::EntriesT& sound_speeds = csv_data::csv_asvp_sound_speed::EntriesT(),
+               const sensor_offset::SonarOffset& sonar_offset = sensor_offset::SonarOffset());
 
     sss_draping_result project_ping(const std_data::sss_ping& ping, int nbr_bins);
     Eigen::MatrixXd project_mbes(const Eigen::Vector3d& pos, const Eigen::Matrix3d& R, int nbr_beams, double beam_width);
@@ -142,6 +145,9 @@ public:
     void set_intensity_multiplier(double new_intensity_multiplier) { intensity_multiplier = new_intensity_multiplier; }
     void set_ray_tracing_enabled(bool enabled);
 
+    const sensor_offset::SonarOffset& get_sensor_offset() const {return sonar_offset;}
+    const Eigen::Vector3d& get_sensor_offset_port() const {return sensor_offset_port;}
+    const Eigen::Vector3d& get_sensor_offset_stbd() const {return sensor_offset_stbd;}
 };
 
 Eigen::VectorXd compute_bin_intensities(const std_data::sss_ping_side& ping, int nbr_bins);

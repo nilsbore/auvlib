@@ -8,8 +8,9 @@ using namespace csv_data;
 ViewDraper::ViewDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
                        const std_data::sss_ping::PingsT& pings,
                        const BoundsT& bounds,
-                       const csv_asvp_sound_speed::EntriesT& sound_speeds)
-    : BaseDraper(V1, F1, bounds, sound_speeds), pings(pings), i(0), nbr_time_bins(256)
+                       const csv_asvp_sound_speed::EntriesT& sound_speeds,
+                       const sensor_offset::SonarOffset& sonar_offset)
+    : BaseDraper(V1, F1, bounds, sound_speeds, sonar_offset), pings(pings), i(0), nbr_time_bins(256)
 {
     V = V1;
     F = F1;

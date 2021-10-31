@@ -39,7 +39,8 @@ PYBIND11_MODULE(base_draper, m) {
         // Methods inherited from BaseDraper:
         .def(py::init<const Eigen::MatrixXd&, const Eigen::MatrixXi&,
                       const BaseDraper::BoundsT&,
-                      const csv_asvp_sound_speed::EntriesT&>())
+                      const csv_asvp_sound_speed::EntriesT&,
+                      const sensor_offset::SonarOffset&>())
         .def("project_ping", &BaseDraper::project_ping, "Project a ping onto the mesh and get intermediate draping results. Provide the desired downsampling of the ping as the second parameter")
         .def("project_mbes", &BaseDraper::project_mbes, "Project multibeam ping onto mesh, given vertices V, faces F, bounds, position, rotation matrix, number beams and opening angle, returns matrix of points")
         .def("project_altimeter", &BaseDraper::project_altimeter, "Project single altimeter beam straight down, returns depth")
@@ -47,12 +48,17 @@ PYBIND11_MODULE(base_draper, m) {
         .def("set_sidescan_port_stbd_offsets", &BaseDraper::set_sidescan_port_stbd_offsets, "Set offsets of sidescan port and stbd sides with respect to nav frame")
         .def("set_tracing_map_size", &BaseDraper::set_tracing_map_size, "Set size of slice of map where we do ray tracing. Smaller makes it faster but you might cut off valid sidescan angles")
         .def("set_intensity_multiplier", &BaseDraper::set_intensity_multiplier, "Set a value to multiply the sidescan intensity with when displaying on top of mesh")
-        .def("set_ray_tracing_enabled", &BaseDraper::set_ray_tracing_enabled, "Set if ray tracing through water layers should be enabled. Takes more time but is recommended if there are large speed differences");
+        .def("set_ray_tracing_enabled", &BaseDraper::set_ray_tracing_enabled, "Set if ray tracing through water layers should be enabled. Takes more time but is recommended if there are large speed differences")
+        //Methods for accessing sensor offsets used by the draper
+        .def("get_sensor_offset", &BaseDraper::get_sensor_offset, "Get offsets for multibeam and sidescan sonar fed in as input to the draper")
+        .def("get_sensor_offset_port", &BaseDraper::get_sensor_offset_port, "Get offset of sidescan sonar port side relative to the multibeam transmitter head, i.e. sensor_offset_port = (sensor_offset.sss_port - sensor_offset.mbes_tx)")
+        .def("get_sensor_offset_stbd", &BaseDraper::get_sensor_offset_stbd, "Get offset of sidescan sonar starboard side relative to the multibeam transmitter head, i.e. sensor_offset_stbd = (sensor_offset.sss_stbd - sensor_offset.mbes_tx)");
 
     py::class_<ViewDraper>(m, "ViewDraper", "Base class for draping sidescan pings onto a bathymetry mesh")
         .def(py::init<const Eigen::MatrixXd&, const Eigen::MatrixXi&,
                       const std_data::sss_ping::PingsT&, const ViewDraper::BoundsT&,
-                      const csv_asvp_sound_speed::EntriesT&>())
+                      const csv_asvp_sound_speed::EntriesT&,
+                      const sensor_offset::SonarOffset&>())
         .def("add_texture_intensities", &ViewDraper::add_texture_intensities, "Add the intensities of draping result hits and intensities")
         .def("set_rgb_texture", &ViewDraper::set_rgb_texture, "Set a new texture to color the mesh, each RGB channel provided separately")
         .def("get_texture_image", &ViewDraper::get_texture_image, "Get the texture image, defined within bounds, with resolution of 1m")

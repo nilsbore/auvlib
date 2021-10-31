@@ -18,12 +18,12 @@
 #include <regex>
 
 namespace sensor_offset {
-
-    // Sensor offset global variables
-    inline Eigen::Vector3d MBES_TX = Eigen::Vector3d(0., 0., 0.);
-    inline Eigen::Vector3d MBES_RX = Eigen::Vector3d(0., 0., 0.);
-    inline Eigen::Vector3d SSS_PORT = Eigen::Vector3d(0., 0., 0.);
-    inline Eigen::Vector3d SSS_STBD = Eigen::Vector3d(0., 0., 0.);
+    struct SonarOffset {
+        Eigen::Vector3d mbes_tx; //Multibeam transmitter head
+        Eigen::Vector3d mbes_rx; //Multibeam receiver head
+        Eigen::Vector3d sss_port; //Sidescan port offset
+        Eigen::Vector3d sss_stbd; //Sidescan starboard offset
+    };
 
     // Regex expressions for parsing sensor offset file
     static inline std::regex regex_sensor_name("\\[(\.+)\\]");
@@ -32,13 +32,12 @@ namespace sensor_offset {
     static inline std::regex regex_zpos("z = ([-]?\\d*\\.\\d*)");
 
     // default sensor arguments are those of RAN
-    void set_sensor_offset_variables_from_file(const std::string& file,
+    SonarOffset get_sonar_offset_from_file(const std::string& file,
             const std::string& mbes_tx_name = "EMSonarHeadTX",
             const std::string& mbes_rx_name ="EMSonarHeadRX",
             const std::string& sss_port_name = "Edge tech-SSS-Port",
             const std::string& sss_stbd_name = "Edge tech-SSS-STB");
     std::map<std::string, Eigen::Vector3d> parse_offset_file(const std::string& file);
-
     Eigen::Vector3d parse_offset_for_one_sensor(std::ifstream& input);
 }
 
