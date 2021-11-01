@@ -110,13 +110,12 @@ class SSS_Plot():
 
         self.data = self._load_data(self.filepath)
         self.target_pos = None
-        self.fig, self.plot = self.plot_data_and_register_callback(figsize)
+        self.plot = self.plot_data_and_register_callback(figsize)
 
         self.overlapping_filepaths = overlapping_filepaths
         self.num_overlapping_data = len(self.overlapping_filepaths)
         self.overlapping_data = self._load_overlapping_data_into_dict()
-        self.overlapping_fig, self.overlapping_plots = self.plot_overlapping_data(
-            figsize)
+        self.overlapping_plots = self.plot_overlapping_data(figsize)
 
     def _load_data(self, filepath):
         data = sss_meas_data.read_single(filepath)
@@ -148,7 +147,7 @@ class SSS_Plot():
         fig, ax = plt.subplots(1, figsize=(figsize))
         plot = self._plot_data(self.data, ax)
         cid = fig.canvas.mpl_connect('button_press_event', self.onclick)
-        return fig, plot
+        return plot
 
     def _plot_data(self, data, ax):
         ax.set_title(data['filename'], wrap=True)
@@ -158,15 +157,10 @@ class SSS_Plot():
 
     def plot_overlapping_data(self, figsize):
         overlapping_plots = OrderedDict()
-        fig, axes = plt.subplots(
-            1,
-            self.num_overlapping_data,
-            figsize=(figsize[0], self.num_overlapping_data * figsize[1]))
-        if not isinstance(axes, np.ndarray):
-            axes = np.array(axes)
         for i, (filepath, data) in enumerate(self.overlapping_data.items()):
-            overlapping_plots[filepath] = self._plot_data(data, axes[i])
-        return fig, overlapping_plots
+            fig, ax = plt.subplots(1, figsize=figsize)
+            overlapping_plots[filepath] = self._plot_data(data, ax)
+        return overlapping_plots
 
     #TODO: separate click from drag and zoom events
     def onclick(self, event):
