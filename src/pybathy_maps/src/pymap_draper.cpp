@@ -59,7 +59,8 @@ PYBIND11_MODULE(map_draper, m) {
         .def(py::init<const Eigen::MatrixXd&, const Eigen::MatrixXi&,
                       const std_data::sss_ping::PingsT&, const MapImageDraper::BoundsT&,
                       const csv_asvp_sound_speed::EntriesT&,
-                      const sensor_offset::SonarOffset&>())
+                      const sensor_offset::SonarOffset&,
+                      const int>())
         .def("set_sidescan_yaw", &MapImageDraper::set_sidescan_yaw, "Set yaw correction of sidescan with respect to nav frame")
         .def("set_sidescan_port_stbd_offsets", &MapImageDraper::set_sidescan_port_stbd_offsets, "Set offsets of sidescan port and stbd sides with respect to nav frame")
         .def("set_tracing_map_size", &MapImageDraper::set_tracing_map_size, "Set size of slice of map where we do ray tracing. Smaller makes it faster but you might cut off valid sidescan angles")
@@ -79,7 +80,8 @@ PYBIND11_MODULE(map_draper, m) {
         .def(py::init<const Eigen::MatrixXd&, const Eigen::MatrixXi&,
                       const std_data::sss_ping::PingsT&, const MeasDataDraper::BoundsT&,
                       const csv_asvp_sound_speed::EntriesT&,
-                      const sensor_offset::SonarOffset&>())
+                      const sensor_offset::SonarOffset&,
+                      const int>())
         .def("set_sidescan_yaw", &MeasDataDraper::set_sidescan_yaw, "Set yaw correction of sidescan with respect to nav frame")
         .def("set_sidescan_port_stbd_offsets", &MeasDataDraper::set_sidescan_port_stbd_offsets, "Set offsets of sidescan port and stbd sides with respect to nav frame")
         .def("set_tracing_map_size", &MeasDataDraper::set_tracing_map_size, "Set size of slice of map where we do ray tracing. Smaller makes it faster but you might cut off valid sidescan angles")

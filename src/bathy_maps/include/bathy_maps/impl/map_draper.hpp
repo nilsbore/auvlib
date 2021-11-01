@@ -23,10 +23,11 @@ MapDraper<MapSaver>::MapDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi&
                                const std_data::sss_ping::PingsT& pings,
                                const BoundsT& bounds,
                                const csv_asvp_sound_speed::EntriesT& sound_speeds,
-                               const sensor_offset::SonarOffset& sonar_offset)
+                               const sensor_offset::SonarOffset& sonar_offset,
+                               const int nbr_pings)
     : ViewDraper(V1, F1, pings, bounds, sound_speeds, sonar_offset),
       resolution(30./8.), save_callback(&default_callback),
-      map_image_builder(bounds, 30./8., 256)
+      map_image_builder(bounds, 30./8., nbr_pings)
       //map_image_builder(bounds, 30./8., pings[0].port.pings.size())
 {
     viewer.callback_pre_draw = std::bind(&MapDraper::callback_pre_draw, this, std::placeholders::_1);
@@ -35,6 +36,7 @@ MapDraper<MapSaver>::MapDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi&
     //draping_vis_texture = Eigen::MatrixXd::Zero(rows, cols);
     store_map_images = true;
     close_when_done = true;
+    this->nbr_pings = nbr_pings;
 }
 
 template <typename MapSaver>
@@ -68,7 +70,7 @@ bool MapDraper<MapSaver>::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
             map_images.push_back(map_image);
         }
         //map_image_builder = sss_map_image_builder(bounds, resolution, pings[i].port.pings.size());
-        map_image_builder = MapSaver(bounds, resolution, 256);
+        map_image_builder = MapSaver(bounds, resolution, nbr_pings);
     }
 
     if (i >= pings.size()) {
@@ -152,7 +154,7 @@ void MapDraper<MapSaver>::set_resolution(double new_resolution)
 { 
     resolution = new_resolution;
     //map_image_builder = sss_map_image_builder(bounds, resolution, pings[i].port.pings.size());
-    map_image_builder = MapSaver(bounds, resolution, 256);
+    map_image_builder = MapSaver(bounds, resolution, nbr_pings);
     //int rows, cols;
     //tie(rows, cols) = map_image_builder.get_map_image_shape();
     //draping_vis_texture = Eigen::MatrixXd::Zero(rows, cols);

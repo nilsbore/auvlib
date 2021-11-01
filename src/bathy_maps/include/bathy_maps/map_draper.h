@@ -26,6 +26,7 @@ public:
 protected:
 
     double resolution;
+    int nbr_pings;
     std::function<void(MapType)> save_callback;
     typename MapType::ImagesT map_images;
     //sss_map_image_builder map_image_builder;
@@ -46,7 +47,8 @@ public:
               const std_data::sss_ping::PingsT& pings,
               const BoundsT& bounds,
               const csv_data::csv_asvp_sound_speed::EntriesT& sound_speeds,
-              const sensor_offset::SonarOffset& sonar_offset = sensor_offset::SonarOffset());
+              const sensor_offset::SonarOffset& sonar_offset = sensor_offset::SonarOffset(),
+              const int nbr_pings = 256);
 
     bool callback_pre_draw(igl::opengl::glfw::Viewer& viewer);
     typename MapType::ImagesT get_images();
