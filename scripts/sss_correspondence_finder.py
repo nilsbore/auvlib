@@ -200,9 +200,3 @@ class SSS_Plot():
     def _update_highlight(self, highlight, pixel=([], [])):
         highlight.set_data(pixel[1], pixel[0])
         highlight.figure.canvas.draw_idle()
-
-
-def test(idx=0):
-    folder = '~/Documents/local-corr/data/210209/pp/ETPro/ssh/9-0169to0182/draping-res-no-offset/'
-    obj = SSS_correspondence(folder)
-    obj.plot_sss_waterfall_image(idx)
