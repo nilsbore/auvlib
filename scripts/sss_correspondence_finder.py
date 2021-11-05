@@ -85,7 +85,10 @@ class SSS_correspondence():
               f'Overlapping files: {overlapping_filepaths}')
         return overlapping_filepaths
 
-    def plot_sss_waterfall_image(self, idx, figsize=(5, 10)):
+    def plot_sss_waterfall_image(self,
+                                 idx,
+                                 figsize=(5, 10),
+                                 normalize_image=True):
         if not 0 <= idx < self.num_data_files:
             raise ValueError(
                 f'Valid index range: (0, {self.num_data_files - 1})')
@@ -93,7 +96,10 @@ class SSS_correspondence():
         target_filename = self.data_files[idx]
         # overlapping_filepaths = [target_filename]
         overlapping_filepaths = self.get_overlapping_filepaths(target_filename)
-        fig = SSS_Plot(target_filename, overlapping_filepaths, figsize=figsize)
+        fig = SSS_Plot(target_filename,
+                       overlapping_filepaths,
+                       figsize=figsize,
+                       normalize_image=normalize_image)
         plt.show()
 
 
@@ -102,11 +108,13 @@ class SSS_Plot():
                  filepath,
                  overlapping_filepaths,
                  figsize,
-                 neighbour_thresh=.5):
+                 neighbour_thresh=.5,
+                 normalize_image=True):
         self.neighbour_thresh = neighbour_thresh
         self.filepath = filepath
         self.filepath_to_filename = lambda filepath: os.path.basename(
             os.path.normpath(filepath))
+        self.normalize_image = normalize_image
 
         self.data = self._load_data(self.filepath)
         self.target_pos = None
@@ -151,9 +159,21 @@ class SSS_Plot():
 
     def _plot_data(self, data, ax):
         ax.set_title(data['filename'], wrap=True)
-        ax.imshow(data['waterfall_image'])
+        image = data['waterfall_image']
+        if self.normalize_image:
+            image = self._normalize_waterfall_image(image)
+        ax.imshow(image)
         highlight, = ax.plot([], [], 'o', color='red', ms=5)
         return {'ax': ax, 'highlight': highlight}
+
+    def _normalize_waterfall_image(self, waterfall_image, a_max=3):
+        waterfall_image = waterfall_image.copy()
+        col_mean = waterfall_image.mean(axis=0)
+        waterfall_image = np.divide(waterfall_image,
+                                    col_mean,
+                                    where=[col_mean != 0.])
+        clipped_image = np.clip(waterfall_image, a_min=0, a_max=a_max)
+        return clipped_image
 
     def plot_overlapping_data(self, figsize):
         overlapping_plots = OrderedDict()
