@@ -108,7 +108,7 @@ void track_error_benchmark::draw_track_img(mbes_ping::PingsT& pings, cv::Mat& im
 
     cv::Mat curve(curve_points, true);
     curve.convertTo(curve, CV_32S); //adapt type for polylines
-    cv::polylines(img, curve, false, color, 1, cv::LINE_AA);
+    cv::polylines(img, curve, false, color, 1, CV_AA);
     
     //track_img_path = "track.png";
 }
