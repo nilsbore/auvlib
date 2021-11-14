@@ -7,22 +7,24 @@ import json
 from collections import OrderedDict
 
 
-class SSS_correspondence():
+class SSSDrapingFolderParser():
+    """Parse a side-scan sonar draping results folder containing .cereal files
+    of sss_meas_data objects."""
     def __init__(self, draping_res_folder):
         self.folder = draping_res_folder
-        self.data_files = self._get_data_files_list()
+        self.data_files = self._get_data_files_dict()
         self.num_data_files = len(self.data_files)
         self.bounds_filename = 'bounds.json'
         self.bounds_dict = self._get_bounds_dict()
 
-    def _get_data_files_list(self):
-        """Return a list of .cereal file paths found under self.folder"""
-        files = []
-        for filename in os.listdir(self.folder):
+    def _get_data_files_dict(self):
+        """Return a dict of .cereal file paths found under self.folder.
+        The dictionary has key = file name, value = file path."""
+        files = OrderedDict()
+        for filename in sorted(os.listdir(self.folder)):
             if not os.path.splitext(filename)[1] == '.cereal':
                 continue
-            files.append(os.path.join(self.folder, filename))
-        files = sorted(files)
+            files[filename] = os.path.join(self.folder, filename)
         print(f'Found {len(files)} .cereal data files.\nFiles: {files}')
         return files
 
@@ -41,9 +43,9 @@ class SSS_correspondence():
         the .cereal data file under self.folder and store the dictionary
         to file"""
         bounds_dict = {}
-        for filepath in self.data_files:
+        for filename, filepath in self.data_files.items():
             meas_data = sss_meas_data.read_single(filepath)
-            bounds_dict[filepath] = {
+            bounds_dict[filename] = {
                 'x':
                 self._get_bounds_for_array(meas_data.sss_waterfall_hits_X),
                 'y':
@@ -69,9 +71,11 @@ class SSS_correspondence():
         return range2[0] <= range1[0] <= range2[1] or range1[0] <= range2[
             0] <= range1[1]
 
-    def get_overlapping_filepaths(self, target_filename):
+    def get_overlapping_filenames(self, target_filename):
+        """Return a list of file names that are potentially overlapping with
+        the given target_filename"""
         idx_bounds = self.bounds_dict[target_filename]
-        overlapping_filepaths = []
+        overlapping_filenames = []
         for filename, bounds in self.bounds_dict.items():
             if filename == target_filename:
                 continue
@@ -79,24 +83,30 @@ class SSS_correspondence():
                     self._range_overlap(bounds[axis], idx_bounds[axis])
                     for axis in bounds.keys()
             ]):
-                overlapping_filepaths.append(filename)
+                overlapping_filenames.append(filename)
         print(f'\nChosen file: {target_filename}\n'
-              f'Number of overlapping files: {len(overlapping_filepaths)}\n'
-              f'Overlapping files: {overlapping_filepaths}')
-        return overlapping_filepaths
+              f'Number of overlapping files: {len(overlapping_filenames)}\n'
+              f'Overlapping files: {overlapping_filenames}')
+        return overlapping_filenames
 
     def plot_sss_waterfall_image(self,
                                  idx,
                                  figsize=(5, 10),
                                  normalize_image=True):
+        """Plots an SSS waterfall image and the potentially overlapping SSS images.
+        Uses a SSS_Plot object to handle interactions."""
         if not 0 <= idx < self.num_data_files:
             raise ValueError(
                 f'Valid index range: (0, {self.num_data_files - 1})')
 
-        target_filename = self.data_files[idx]
+        target_filename = list(self.data_files.keys())[idx]
+        target_filepath = self.data_files[target_filename]
         # overlapping_filepaths = [target_filename]
-        overlapping_filepaths = self.get_overlapping_filepaths(target_filename)
-        fig = SSS_Plot(target_filename,
+        overlapping_filenames = self.get_overlapping_filenames(target_filename)
+        overlapping_filepaths = [
+            self.data_files[name] for name in overlapping_filenames
+        ]
+        fig = SSS_Plot(target_filepath,
                        overlapping_filepaths,
                        figsize=figsize,
                        normalize_image=normalize_image)
