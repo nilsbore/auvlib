@@ -5,6 +5,7 @@ import numpy as np
 from scipy.spatial import KDTree
 from auvlib.bathy_maps.map_draper import sss_meas_data
 import json
+import csv
 
 from sss_plot import SSSAnnotationPlot
 from utils import update_highlight
@@ -92,10 +93,10 @@ class SSSDrapingFolderParser():
               f'Overlapping files: {overlapping_filenames}')
         return overlapping_filenames
 
-    def plot_sss_waterfall_image(self,
-                                 idx,
-                                 figsize=(5, 10),
-                                 normalize_image=True):
+    def plot_sss_waterfall_image_for_annotation(self,
+                                                idx,
+                                                figsize=(5, 10),
+                                                normalize_image=True):
         """Plots an SSS waterfall image and the potentially overlapping SSS images."""
         if not 0 <= idx < self.num_data_files:
             raise ValueError(
@@ -113,4 +114,23 @@ class SSSDrapingFolderParser():
                                             figsize=figsize,
                                             normalize_image=normalize_image)
         plt.show()
+
+        self.store_annotation(target_filename, annotation_plot.annotations)
         return annotation_plot
+
+    def store_annotation(self, target_filename, annotations):
+        header = [
+            'file1_ping_nbr', 'file1_col_nbr', 'file2_ping_nbr',
+            'file2_col_nbr'
+        ]
+        for corr_filename, corrs in annotations.items():
+            annotation_filepath = os.path.join(
+                self.folder, f'{target_filename}-{corr_filename}.csv')
+            with open(annotation_filepath, 'w') as f:
+                writer = csv.writer(f)
+                writer.writerow(header)
+                for target_pixel, corr_pixel in corrs.items():
+                    writer.writerow([
+                        target_pixel[0], target_pixel[1], corr_pixel[0],
+                        corr_pixel[1]
+                    ])
