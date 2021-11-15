@@ -6,6 +6,9 @@ from auvlib.bathy_maps.map_draper import sss_meas_data
 import json
 from collections import OrderedDict
 
+from sss_plot import SSSPlotData
+from utils import update_highlight
+
 
 class SSSDrapingFolderParser():
     """Parse a side-scan sonar draping results folder containing .cereal files
@@ -122,107 +125,57 @@ class SSSAnnotationPlot():
                  normalize_image=True):
         self.neighbour_thresh = neighbour_thresh
         self.filepath = filepath
-        self.filepath_to_filename = lambda filepath: os.path.basename(
-            os.path.normpath(filepath))
         self.normalize_image = normalize_image
 
-        self.data = self._load_data(self.filepath)
+        #TODO: register callback!
+        self.data = SSSPlotData(filepath, figsize, normalize_image)
+        self.data.register_figure_callback(self.find_corr_pixels_onclick)
+
+        self.num_overlapping_data = len(overlapping_filepaths)
+        self.overlapping_data = self.plot_overlapping_data(
+            overlapping_filepaths, figsize, normalize_image)
+
         self.target_pos = None
         self.target_coord = None
         self.colors = {'target_pixel': 'red', 'annotation': 'yellow'}
-        self.plot = self.plot_data_and_register_callback(
-            self.data, figsize, self.find_corr_pixels_onclick)
 
-        self.overlapping_filepaths = overlapping_filepaths
-        self.num_overlapping_data = len(self.overlapping_filepaths)
-        self.overlapping_data = self._load_overlapping_data_into_dict()
-        self.overlapping_plots = self.plot_overlapping_data(figsize)
         self.annotations = {}
 
-    def _load_data(self, filepath):
-        data = sss_meas_data.read_single(filepath)
-        pos = self._stack_hits_xyz_to_pos(data)
-        pos_shape = pos.shape[:-1]
-        pos_kdtree = KDTree(pos.reshape(-1, 3))
-        return {
-            'filename': self.filepath_to_filename(filepath),
-            'waterfall_image': data.sss_waterfall_image,
-            'pos': pos,
-            'pos_shape': pos_shape,
-            'pos_kdtree': pos_kdtree
-        }
+    def plot_overlapping_data(self, overlapping_filepaths, figsize,
+                              normalize_image):
+        """Plot all waterfall images in overlapping_filepaths and register
+        the annotate_onclick callback to each figure.
+        Return a dictionary with key = filepath and value = SSSPlotData object"""
+        overlapping_data = OrderedDict()
+        for filepath in overlapping_filepaths:
+            data = SSSPlotData(filepath, figsize, normalize_image)
+            data.register_figure_callback(self.annotate_onclick)
+            overlapping_data[filepath] = data
+        return overlapping_data
 
-    def _load_overlapping_data_into_dict(self):
-        data_dict = OrderedDict()
-        for filepath in self.overlapping_filepaths:
-            data_dict[filepath] = self._load_data(filepath)
-        return data_dict
-
-    def _stack_hits_xyz_to_pos(self, data):
-        return np.stack([
-            data.sss_waterfall_hits_X, data.sss_waterfall_hits_Y,
-            data.sss_waterfall_hits_Z
-        ],
-                        axis=-1)
-
-    def plot_data_and_register_callback(self, data, figsize, callback):
-        fig, ax = plt.subplots(1, figsize=(figsize))
-        plot = self._plot_data(data, ax)
-        cid = fig.canvas.mpl_connect('button_press_event', callback)
-        return plot
-
-    def _plot_data(self, data, ax):
-        ax.set_title(data['filename'], wrap=True)
-        image = data['waterfall_image']
-        if self.normalize_image:
-            image = self._normalize_waterfall_image(image)
-        ax.imshow(image)
-        highlight, = ax.plot([], [],
-                             'o',
-                             color=self.colors['target_pixel'],
-                             ms=5)
-        return {'filename': data['filename'], 'ax': ax, 'highlight': highlight}
-
-    def _normalize_waterfall_image(self, waterfall_image, a_max=3):
-        waterfall_image = waterfall_image.copy()
-        col_mean = waterfall_image.mean(axis=0)
-        waterfall_image = np.divide(waterfall_image,
-                                    col_mean,
-                                    where=[col_mean != 0.])
-        clipped_image = np.clip(waterfall_image, a_min=0, a_max=a_max)
-        return clipped_image
-
-    def plot_overlapping_data(self, figsize):
-        overlapping_plots = OrderedDict()
-        for i, (filepath, data) in enumerate(self.overlapping_data.items()):
-            overlapping_plots[filepath] = self.plot_data_and_register_callback(
-                data, figsize, self.register_annotation_onclick)
-        return overlapping_plots
-
-    def register_annotation_onclick(self, event):
+    def annotate_onclick(self, event):
         try:
             coord = (int(event.ydata), int(event.xdata))
         except TypeError as e:
             return
         print('------------------------------------------')
         clicked_axis = event.inaxes
-        for k, v in self.overlapping_plots.items():
-            if v['ax'] == clicked_axis:
-                name = v['filename']
+        for k, v in self.overlapping_data.items():
+            if v.ax == clicked_axis:
+                name = v.filename
                 print(f'Clicked on plot for {name}, pixel = {coord}')
-                self._update_highlight(v['highlight'], coord,
-                                       self.colors['annotation'])
+                update_highlight(v.highlight, coord, self.colors['annotation'])
 
     #TODO: separate click from drag and zoom events
     def find_corr_pixels_onclick(self, event):
         try:
             coord = (int(event.ydata), int(event.xdata))
-            self._update_highlight(self.plot['highlight'], coord)
+            update_highlight(self.data.highlight, coord)
         except TypeError as e:
             return
         # Update target coordinates and position on mesh
         self.target_coord = coord
-        self.target_pos = self.data['pos'][coord]
+        self.target_pos = self.data.pos[coord]
         print('------------------------------------------')
         print(f'Clicked pixel: {coord}, target coordinate: {self.target_pos}')
         if all(self.target_pos == 0):
@@ -232,26 +185,19 @@ class SSSAnnotationPlot():
 
     def find_corr_pixels(self, target_pos):
         for filepath, data in self.overlapping_data.items():
-            dd, ii = data['pos_kdtree'].query(target_pos)
-            corr_pixel = np.unravel_index(ii, data['pos_shape'])
-            corr_pos = data['pos'][corr_pixel]
+            dd, ii = data.pos_kdtree.query(target_pos)
+            corr_pixel = np.unravel_index(ii, data.pos_shape)
+            corr_pos = data.pos[corr_pixel]
             if dd > self.neighbour_thresh or all(corr_pos == 0):
-                self._update_highlight(
-                    self.overlapping_plots[filepath]['highlight'])
+                update_highlight(self.overlapping_data[filepath].highlight)
                 continue
             print(
-                f'Corr pixel: {corr_pixel} in {self.filepath_to_filename(filepath)}\n'
+                f'Corr pixel: {corr_pixel} in {data.filename}\n'
                 f'target pos: {target_pos}, corr_pos: {corr_pos} distance = {dd}'
             )
-            self._update_highlight(
-                self.overlapping_plots[filepath]['highlight'], corr_pixel)
+            update_highlight(self.overlapping_data[filepath].highlight,
+                             corr_pixel)
 
     def _clear_all_highlights(self):
-        for plot in self.overlapping_plots.values():
-            self._update_highlight(plot['highlight'])
-
-    def _update_highlight(self, highlight, pixel=([], []), color=None):
-        highlight.set_data(pixel[1], pixel[0])
-        if color is not None:
-            highlight.set_color(color)
-        highlight.figure.canvas.draw_idle()
+        for plot in self.overlapping_data.values():
+            update_highlight(plot.highlight)
