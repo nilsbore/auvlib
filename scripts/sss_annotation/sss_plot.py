@@ -25,12 +25,19 @@ class SSSAnnotationPlot():
         self.num_overlapping_data = len(overlapping_filepaths)
         self.overlapping_data = self.plot_overlapping_data(
             overlapping_filepaths, figsize, normalize_image)
+        self.annotations = self._init_annotations()
 
         self.target_pos = None
-        self.target_coord = None
+        self.target_coord = None  # (ping_nbr, col_nbr)
         self.colors = {'target_pixel': 'red', 'annotation': 'yellow'}
 
-        self.annotations = {}
+    def _init_annotations(self):
+        """Returns a annotation dict with keys being corresponding filenames
+        and values being an empty dict."""
+        annotations = {}
+        for filepath, data in self.overlapping_data.items():
+            annotations[data.filename] = {}
+        return annotations
 
     def plot_overlapping_data(self, overlapping_filepaths, figsize,
                               normalize_image):
@@ -45,18 +52,29 @@ class SSSAnnotationPlot():
         return overlapping_data
 
     def annotate_onclick(self, event):
+        if self.target_coord is None:
+            return
         try:
             coord = (int(event.ydata), int(event.xdata))
         except TypeError as e:
             return
-        print('------------------------------------------')
         clicked_axis = event.inaxes
         for k, v in self.overlapping_data.items():
             if v.ax == clicked_axis:
                 name = v.filename
-                print(f'Clicked on plot for {name}, pixel = {coord}')
+                self.update_annotation(name, coord)
                 utils.update_highlight(v.highlight, coord,
                                        self.colors['annotation'])
+
+    def update_annotation(self, corr_filename, corr_pixel):
+        """Add the new annotation to the annotations field. Each annotation
+        is a dictionary entry with key=target coordinate and value=corresponding
+        pixel in the corr_filename. This ensures that each target coordinate only
+        matches to one pixel in a corr_filename"""
+        self.annotations[corr_filename][self.target_coord] = corr_pixel
+        print(
+            f'Set annotation: {self.data.filename} pixel {self.target_coord} == {corr_filename} pixel {corr_pixel}'
+        )
 
     #TODO: separate click from drag and zoom events
     def find_corr_pixels_onclick(self, event):
@@ -89,7 +107,7 @@ class SSSAnnotationPlot():
                 f'target pos: {target_pos}, corr_pos: {corr_pos} distance = {dd}'
             )
             utils.update_highlight(self.overlapping_data[filepath].highlight,
-                                   corr_pixel)
+                                   corr_pixel, self.colors['target_pixel'])
 
     def _clear_all_highlights(self):
         for plot in self.overlapping_data.values():
