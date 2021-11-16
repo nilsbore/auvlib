@@ -26,10 +26,10 @@ namespace sensor_offset {
     };
 
     // Regex expressions for parsing sensor offset file
-    static inline std::regex regex_sensor_name("\\[(\.+)\\]");
-    static inline std::regex regex_xpos("x = ([-]?\\d*\\.\\d*)");
-    static inline std::regex regex_ypos("y = ([-]?\\d*\\.\\d*)");
-    static inline std::regex regex_zpos("z = ([-]?\\d*\\.\\d*)");
+    static std::regex regex_sensor_name("\\[(\.+)\\]");
+    static std::regex regex_xpos("x = ([-]?\\d*\\.\\d*)");
+    static std::regex regex_ypos("y = ([-]?\\d*\\.\\d*)");
+    static std::regex regex_zpos("z = ([-]?\\d*\\.\\d*)");
 
     // default sensor arguments are those of RAN
     SonarOffset get_sonar_offset_from_file(const std::string& file,
