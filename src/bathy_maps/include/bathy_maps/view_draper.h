@@ -49,8 +49,7 @@ public:
     ViewDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
                const std_data::sss_ping::PingsT& pings,
                const BoundsT& bounds,
-               const csv_data::csv_asvp_sound_speed::EntriesT& sound_speeds = csv_data::csv_asvp_sound_speed::EntriesT(),
-               const sensor_offset::SonarOffset& sonar_offset = sensor_offset::SonarOffset());
+               const csv_data::csv_asvp_sound_speed::EntriesT& sound_speeds = csv_data::csv_asvp_sound_speed::EntriesT());
 
     void show();
     bool callback_pre_draw(igl::opengl::glfw::Viewer& viewer);

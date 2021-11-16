@@ -45,8 +45,7 @@ public:
     MapDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
               const std_data::sss_ping::PingsT& pings,
               const BoundsT& bounds,
-              const csv_data::csv_asvp_sound_speed::EntriesT& sound_speeds,
-              const sensor_offset::SonarOffset& sonar_offset = sensor_offset::SonarOffset());
+              const csv_data::csv_asvp_sound_speed::EntriesT& sound_speeds);
 
     bool callback_pre_draw(igl::opengl::glfw::Viewer& viewer);
     typename MapType::ImagesT get_images();
@@ -55,7 +54,6 @@ public:
 sss_map_image::ImagesT drape_maps(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
                                   const BaseDraper::BoundsT& bounds, const std_data::sss_ping::PingsT& pings,
                                   const csv_data::csv_asvp_sound_speed::EntriesT& sound_speeds,
-                                  const sensor_offset::SonarOffset& sonar_offset,
                                   double sensor_yaw,
                                   double resolution, const std::function<void(sss_map_image)>& save_callback);
 

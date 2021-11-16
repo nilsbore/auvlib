@@ -20,7 +20,6 @@ template class MapDraper<sss_meas_data_builder>;
 sss_map_image::ImagesT drape_maps(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
                                   const BaseDraper::BoundsT& bounds, const std_data::sss_ping::PingsT& pings,
                                   const csv_asvp_sound_speed::EntriesT& sound_speeds,
-                                  const sensor_offset::SonarOffset& sonar_offset,
                                   double sensor_yaw,
                                   double resolution, const std::function<void(sss_map_image)>& save_callback)
 {
@@ -31,7 +30,7 @@ sss_map_image::ImagesT drape_maps(const Eigen::MatrixXd& V, const Eigen::MatrixX
 
     Eigen::MatrixXd C_jet = color_jet_from_mesh(V);
 
-    MapDraper<sss_map_image_builder> viewer(V, F, pings, bounds, sound_speeds, sonar_offset);
+    MapDraper<sss_map_image_builder> viewer(V, F, pings, bounds, sound_speeds);
     viewer.set_sidescan_yaw(sensor_yaw);
     viewer.set_resolution(resolution);
     viewer.set_image_callback(save_callback);

@@ -84,8 +84,8 @@ protected:
     //Eigen::MatrixXd N_faces; // the normals of F1, V1, i.e. the bathymetry mesh
     csv_data::csv_asvp_sound_speed::EntriesT sound_speeds;
     double sensor_yaw;
-    Eigen::Vector3d sensor_offset_port; // = sss_port - mbes_tx
-    Eigen::Vector3d sensor_offset_stbd; // = sss_stbd - mbes_tx
+    Eigen::Vector3d sensor_offset_port;
+    Eigen::Vector3d sensor_offset_stbd;
     bool ray_tracing_enabled; // is snell ray tracing enabled?
     double tracing_map_size; // TODO: remove this as it is no longer needed
     double intensity_multiplier;
@@ -132,8 +132,7 @@ public:
 
     BaseDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
                const BoundsT& bounds,
-               const csv_data::csv_asvp_sound_speed::EntriesT& sound_speeds = csv_data::csv_asvp_sound_speed::EntriesT(),
-               const sensor_offset::SonarOffset& sonar_offset = sensor_offset::SonarOffset());
+               const csv_data::csv_asvp_sound_speed::EntriesT& sound_speeds = csv_data::csv_asvp_sound_speed::EntriesT());
 
     sss_draping_result project_ping(const std_data::sss_ping& ping, int nbr_bins);
     Eigen::MatrixXd project_mbes(const Eigen::Vector3d& pos, const Eigen::Matrix3d& R, int nbr_beams, double beam_width);
@@ -144,8 +143,9 @@ public:
     void set_tracing_map_size(double new_tracing_map_size) { tracing_map_size = new_tracing_map_size; }
     void set_intensity_multiplier(double new_intensity_multiplier) { intensity_multiplier = new_intensity_multiplier; }
     void set_ray_tracing_enabled(bool enabled);
+    void set_sonar_offset(const sensor_offset::SonarOffset& new_sonar_offset) {sonar_offset = new_sonar_offset;}
 
-    const sensor_offset::SonarOffset& get_sensor_offset() const {return sonar_offset;}
+    const sensor_offset::SonarOffset& get_sonar_offset() const {return sonar_offset;}
     const Eigen::Vector3d& get_sensor_offset_port() const {return sensor_offset_port;}
     const Eigen::Vector3d& get_sensor_offset_stbd() const {return sensor_offset_stbd;}
 };

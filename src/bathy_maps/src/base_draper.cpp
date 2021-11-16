@@ -22,11 +22,9 @@ using namespace csv_data;
 
 BaseDraper::BaseDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
                        const BoundsT& bounds,
-                       const csv_asvp_sound_speed::EntriesT& sound_speeds,
-                       const sensor_offset::SonarOffset& sonar_offset)
+                       const csv_asvp_sound_speed::EntriesT& sound_speeds)
     : V1(V1), F1(F1),
       sound_speeds(sound_speeds), bounds(bounds),
-      sonar_offset(sonar_offset),
       sensor_yaw(0.), ray_tracing_enabled(false),
       tracing_map_size(200.), intensity_multiplier(1.)
 {
