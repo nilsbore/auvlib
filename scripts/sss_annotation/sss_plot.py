@@ -1,5 +1,5 @@
 import os
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.spatial import KDTree
@@ -25,19 +25,11 @@ class SSSAnnotationPlot():
         self.num_overlapping_data = len(overlapping_filepaths)
         self.overlapping_data = self.plot_overlapping_data(
             overlapping_filepaths, figsize, normalize_image)
-        self.annotations = self._init_annotations()
+        self.annotations = defaultdict(dict)
 
         self.target_pos = None
         self.target_coord = None  # (ping_nbr, col_nbr)
         self.colors = {'target_pixel': 'red', 'annotation': 'yellow'}
-
-    def _init_annotations(self):
-        """Returns a annotation dict with keys being corresponding filenames
-        and values being an empty dict."""
-        annotations = {}
-        for filepath, data in self.overlapping_data.items():
-            annotations[data.filename] = {}
-        return annotations
 
     def plot_overlapping_data(self, overlapping_filepaths, figsize,
                               normalize_image):
@@ -68,10 +60,9 @@ class SSSAnnotationPlot():
 
     def update_annotation(self, corr_filename, corr_pixel):
         """Add the new annotation to the annotations field. Each annotation
-        is a dictionary entry with key=target coordinate and value=corresponding
-        pixel in the corr_filename. This ensures that each target coordinate only
-        matches to one pixel in a corr_filename"""
-        self.annotations[corr_filename][self.target_coord] = corr_pixel
+        is a dictionary entry with key=target coordinate and value=a dictionary
+        with k=corr_filename, v=corr_pixel"""
+        self.annotations[self.target_coord][corr_filename] = corr_pixel
         print(
             f'Set annotation: {self.data.filename} pixel {self.target_coord} == {corr_filename} pixel {corr_pixel}'
         )
@@ -86,6 +77,10 @@ class SSSAnnotationPlot():
         # Update target coordinates and position on mesh
         self.target_coord = coord
         self.target_pos = self.data.pos[coord]
+
+        #TODO: Keep the clicked position as a keypoint
+        # Should only do this after we can separate clicks from drag and zoom
+        #self.annotations[self.target_coord] = dict()
         print('------------------------------------------')
         print(f'Clicked pixel: {coord}, target coordinate: {self.target_pos}')
         if all(self.target_pos == 0):
