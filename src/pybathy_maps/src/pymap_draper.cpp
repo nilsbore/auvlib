@@ -58,8 +58,8 @@ PYBIND11_MODULE(map_draper, m) {
         // Methods inherited from MapImageDraper:
         .def(py::init<const Eigen::MatrixXd&, const Eigen::MatrixXi&,
                       const std_data::sss_ping::PingsT&, const MapImageDraper::BoundsT&,
-                      const csv_asvp_sound_speed::EntriesT&,
-                      const sensor_offset::SonarOffset&>())
+                      const csv_asvp_sound_speed::EntriesT&>())
+        .def("set_sonar_offset", &MapImageDraper::set_sonar_offset, "Set multibeam and sidescan sonar offset")
         .def("set_sidescan_yaw", &MapImageDraper::set_sidescan_yaw, "Set yaw correction of sidescan with respect to nav frame")
         .def("set_sidescan_port_stbd_offsets", &MapImageDraper::set_sidescan_port_stbd_offsets, "Set offsets of sidescan port and stbd sides with respect to nav frame")
         .def("set_tracing_map_size", &MapImageDraper::set_tracing_map_size, "Set size of slice of map where we do ray tracing. Smaller makes it faster but you might cut off valid sidescan angles")
@@ -72,14 +72,15 @@ PYBIND11_MODULE(map_draper, m) {
         .def("set_image_callback", &MapImageDraper::set_image_callback, "Set the function to be called when an entire sidescan map is done")
         .def("set_store_map_images", &MapImageDraper::set_store_map_images, "Set if the draper should save and return map images at the end")
         .def("set_close_when_done", &MapImageDraper::set_close_when_done, "Set if the draper should close when done draping")
-        .def("get_images", &MapImageDraper::get_images, "Get all the sss_map_image::ImagesT that have been gathered so far");
+        .def("get_images", &MapImageDraper::get_images, "Get all the sss_map_image::ImagesT that have been gathered so far")
+        .def("get_sonar_offset", &MapImageDraper::get_sonar_offset, "Get offsets for multibeam and sidescan sonar fed in as input to the draper");
 
     py::class_<MeasDataDraper>(m, "MeasDataDraper", "Class for draping the whole data set of sidescan pings onto a bathymetry mesh")
         // Methods inherited from MeasDataDraper:
         .def(py::init<const Eigen::MatrixXd&, const Eigen::MatrixXi&,
                       const std_data::sss_ping::PingsT&, const MeasDataDraper::BoundsT&,
-                      const csv_asvp_sound_speed::EntriesT&,
-                      const sensor_offset::SonarOffset&>())
+                      const csv_asvp_sound_speed::EntriesT&>())
+        .def("set_sonar_offset", &MeasDataDraper::set_sonar_offset, "Set multibeam and sidescan sonar offset")
         .def("set_sidescan_yaw", &MeasDataDraper::set_sidescan_yaw, "Set yaw correction of sidescan with respect to nav frame")
         .def("set_sidescan_port_stbd_offsets", &MeasDataDraper::set_sidescan_port_stbd_offsets, "Set offsets of sidescan port and stbd sides with respect to nav frame")
         .def("set_tracing_map_size", &MeasDataDraper::set_tracing_map_size, "Set size of slice of map where we do ray tracing. Smaller makes it faster but you might cut off valid sidescan angles")
@@ -92,7 +93,8 @@ PYBIND11_MODULE(map_draper, m) {
         .def("set_image_callback", &MeasDataDraper::set_image_callback, "Set the function to be called when an entire sidescan map is done")
         .def("set_store_map_images", &MeasDataDraper::set_store_map_images, "Set if the draper should save and return map images at the end")
         .def("set_close_when_done", &MeasDataDraper::set_close_when_done, "Set if the draper should close when done draping")
-        .def("get_images", &MeasDataDraper::get_images, "Get all the sss_map_image::ImagesT that have been gathered so far");
+        .def("get_images", &MeasDataDraper::get_images, "Get all the sss_map_image::ImagesT that have been gathered so far")
+        .def("get_sonar_offset", &MeasDataDraper::get_sonar_offset, "Get offsets for multibeam and sidescan sonar fed in as input to the draper");
 
     m.def("drape_maps", &drape_maps, "Overlay sss_ping::PingsT sidescan data on a mesh and get sss_map_image::ViewsT");
     m.def("color_jet_from_mesh", &color_jet_from_mesh, "Get a jet color scheme from a vertex matrix");
