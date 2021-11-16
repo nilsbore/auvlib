@@ -432,7 +432,7 @@ all_installation_param read_datagram<all_installation_param, all_installation_pa
 }
 
 
-mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_entry::EntriesT& entries, float roll)
+mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_entry::EntriesT& entries, float roll=0.)
 {
     mbes_ping::PingsT new_pings;
     new_pings.reserve(pings.size());

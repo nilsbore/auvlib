@@ -150,7 +150,8 @@ PYBIND11_MODULE(all_data, m) {
     m.def("write_data", &write_data_from_str<all_echosounder_depth::EntriesT>, "Write all_echosounder_depth::EntriesT to .cereal file");
     m.def("write_data", &write_data_from_str<all_sound_speed_profile::EntriesT>, "Write all_sound_speed_profile::EntriesT to .cereal file");
     m.def("write_data", &write_data_from_str<all_raw_range_and_beam_angle::EntriesT>, "Write all_raw_range_and_beam_angle::EntriesT to .cereal file");
-    m.def("convert_matched_entries", &convert_matched_entries, "Matches xtf_sss_ping::PingsT and csv_nav_entry::EntriesT and assign pos data to pings");
+    m.def("convert_matched_entries", &convert_matched_entries, "Matches xtf_sss_ping::PingsT and csv_nav_entry::EntriesT and assign pos data to pings",
+            py::arg("pings"), py::arg("entries"), py::arg("roll")=0.);
     m.def("convert_matched_nav_and_attitude_entries", &convert_matched_nav_and_attitude_entries, "Matches all_mbes_ping::PingsT, all_nav_entry::EntriesT and all_nav_attitude::EntriesT and assign pos data to pings");
     m.def("match_attitude", &match_attitude, "Match mbes_ping::PingsT and all_nav_attitude::EntriesT and assign attitude data to pings");
     m.def("convert_sound_speeds", &convert_sound_speeds, "Convert all_mbes_ping::PingsT to csv_asvp_sound_speed::EntriesT");
