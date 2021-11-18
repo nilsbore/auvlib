@@ -59,6 +59,7 @@ public:
     using BoundsT = Eigen::Matrix2d;
 
 protected:
+    int nbr_pings = 256;
 
     Eigen::MatrixXd V1; // bathymetry mesh vertices
     Eigen::MatrixXi F1; // bathymetry mesh faces
@@ -91,7 +92,7 @@ protected:
 
     // NOTE: these are new style functions
     std::pair<Eigen::MatrixXd, Eigen::MatrixXd> compute_sss_dirs(const Eigen::Matrix3d& R, double tilt_angle, double beam_width, int nbr_lines);
-    std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> project(const std_data::sss_ping& ping);
+    std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> project(const std_data::sss_ping& ping, const int nbr_lines=500);
     std::tuple<Eigen::MatrixXd, Eigen::MatrixXd> trace_side(const std_data::sss_ping_side& ping,
                                                             const Eigen::Vector3d& sensor_origin,
                                                             const Eigen::MatrixXd& dirs);

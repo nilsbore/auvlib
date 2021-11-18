@@ -72,7 +72,7 @@ pair<Eigen::MatrixXd, Eigen::MatrixXd> BaseDraper::compute_sss_dirs(const Eigen:
     return make_pair(dirs_left, dirs_right);
 }
 
-tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> BaseDraper::project(const std_data::sss_ping& ping)
+tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> BaseDraper::project(const std_data::sss_ping& ping, const int nbr_lines)
 {
     if (DEBUG_OUTPUT) cout << "Setting new position: " << ping.pos_.transpose() << endl;
     Eigen::Matrix3d Rcomp = Eigen::AngleAxisd(sensor_yaw, Eigen::Vector3d::UnitZ()).matrix();
@@ -107,7 +107,7 @@ tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> BaseDr
 
     Eigen::MatrixXd dirs_left;
     Eigen::MatrixXd dirs_right;
-    tie(dirs_left, dirs_right) = compute_sss_dirs(R, tilt_angle, beam_width, 500);
+    tie(dirs_left, dirs_right) = compute_sss_dirs(R, tilt_angle, beam_width, nbr_lines);
 
     tie(hits_left, normals_left) = trace_side(ping.port, origin_port, dirs_left);
     tie(hits_right, normals_right) = trace_side(ping.stbd, origin_stbd, dirs_right);
@@ -376,7 +376,7 @@ sss_draping_result BaseDraper::project_ping(const std_data::sss_ping& ping, int 
     Eigen::MatrixXd normals_left;
     Eigen::MatrixXd normals_right;
     auto start = chrono::high_resolution_clock::now();
-    tie(hits_left, hits_right, normals_left, normals_right) = project(ping);
+    tie(hits_left, hits_right, normals_left, normals_right) = project(ping, nbr_bins*2);
     auto stop = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
     if (DEBUG_OUTPUT) cout << "project time: " << duration.count() << " microseconds" << endl;
