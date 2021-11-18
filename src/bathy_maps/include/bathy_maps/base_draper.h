@@ -59,7 +59,6 @@ public:
     using BoundsT = Eigen::Matrix2d;
 
 protected:
-    int nbr_pings = 256;
 
     Eigen::MatrixXd V1; // bathymetry mesh vertices
     Eigen::MatrixXi F1; // bathymetry mesh faces
