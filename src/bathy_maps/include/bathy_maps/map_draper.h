@@ -25,7 +25,7 @@ public:
 
 protected:
 
-    int nbr_pings = 256; //default nbr_pings per channel //default nbr_pings per channel //default nbr_pings per channel //default nbr_pings per channel
+    int nbr_pings = 256; //default nbr_pings per channel
     double resolution;
     std::function<void(MapType)> save_callback;
     typename MapType::ImagesT map_images;
