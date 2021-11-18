@@ -25,7 +25,7 @@ MapDraper<MapSaver>::MapDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi&
                                const csv_asvp_sound_speed::EntriesT& sound_speeds)
     : ViewDraper(V1, F1, pings, bounds, sound_speeds),
       resolution(30./8.), save_callback(&default_callback),
-      map_image_builder(bounds, 30./8., 256)
+      map_image_builder(bounds, 30./8., nbr_pings)
       //map_image_builder(bounds, 30./8., pings[0].port.pings.size())
 {
     viewer.callback_pre_draw = std::bind(&MapDraper::callback_pre_draw, this, std::placeholders::_1);
@@ -67,7 +67,7 @@ bool MapDraper<MapSaver>::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
             map_images.push_back(map_image);
         }
         //map_image_builder = sss_map_image_builder(bounds, resolution, pings[i].port.pings.size());
-        map_image_builder = MapSaver(bounds, resolution, 256);
+        map_image_builder = MapSaver(bounds, resolution, nbr_pings);
     }
 
     if (i >= pings.size()) {
@@ -78,6 +78,7 @@ bool MapDraper<MapSaver>::callback_pre_draw(igl::opengl::glfw::Viewer& viewer)
     }
 
     ping_draping_result left, right;
+    cout << "Number of waterfall bins: " << map_image_builder.get_waterfall_bins() << endl;
     tie(left, right) = project_ping(pings[i], map_image_builder.get_waterfall_bins());
 
     // add the 3d hits and waterfall images to the builder object
@@ -151,10 +152,17 @@ void MapDraper<MapSaver>::set_resolution(double new_resolution)
 { 
     resolution = new_resolution;
     //map_image_builder = sss_map_image_builder(bounds, resolution, pings[i].port.pings.size());
-    map_image_builder = MapSaver(bounds, resolution, 256);
+    map_image_builder = MapSaver(bounds, resolution, nbr_pings);
     //int rows, cols;
     //tie(rows, cols) = map_image_builder.get_map_image_shape();
     //draping_vis_texture = Eigen::MatrixXd::Zero(rows, cols);
+}
+
+template <typename MapSaver>
+void MapDraper<MapSaver>::set_nbr_pings(int new_nbr_pings)
+{
+    nbr_pings = new_nbr_pings;
+    map_image_builder = MapSaver(bounds, resolution, nbr_pings);
 }
 
 template <typename MapSaver>

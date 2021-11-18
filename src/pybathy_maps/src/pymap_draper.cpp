@@ -71,7 +71,10 @@ PYBIND11_MODULE(map_draper, m) {
         .def("set_image_callback", &MapImageDraper::set_image_callback, "Set the function to be called when an entire sidescan map is done")
         .def("set_store_map_images", &MapImageDraper::set_store_map_images, "Set if the draper should save and return map images at the end")
         .def("set_close_when_done", &MapImageDraper::set_close_when_done, "Set if the draper should close when done draping")
-        .def("get_images", &MapImageDraper::get_images, "Get all the sss_map_image::ImagesT that have been gathered so far");
+        .def("get_images", &MapImageDraper::get_images, "Get all the sss_map_image::ImagesT that have been gathered so far")
+        // Getters and setters for nbr_pings and (indirectly) waterfall_width
+        .def("get_nbr_pings", &MapImageDraper::get_nbr_pings, "Get number of pings in one side-scan channel")
+        .def("set_nbr_pings", &MapImageDraper::set_nbr_pings, "Set desirable number of pings in one side-scan channel (<= nbr_bins in the actual side-scan data)");
 
     py::class_<MeasDataDraper>(m, "MeasDataDraper", "Class for draping the whole data set of sidescan pings onto a bathymetry mesh")
         // Methods inherited from MeasDataDraper:
@@ -90,7 +93,10 @@ PYBIND11_MODULE(map_draper, m) {
         .def("set_image_callback", &MeasDataDraper::set_image_callback, "Set the function to be called when an entire sidescan map is done")
         .def("set_store_map_images", &MeasDataDraper::set_store_map_images, "Set if the draper should save and return map images at the end")
         .def("set_close_when_done", &MeasDataDraper::set_close_when_done, "Set if the draper should close when done draping")
-        .def("get_images", &MeasDataDraper::get_images, "Get all the sss_map_image::ImagesT that have been gathered so far");
+        .def("get_images", &MeasDataDraper::get_images, "Get all the sss_map_image::ImagesT that have been gathered so far")
+        // Getters and setters for nbr_pings and (indirectly) waterfall_width
+        .def("get_nbr_pings", &MeasDataDraper::get_nbr_pings, "Get number of pings in one side-scan channel")
+        .def("set_nbr_pings", &MeasDataDraper::set_nbr_pings, "Set desirable number of pings in one side-scan channel (<= nbr_bins in the actual side-scan data)");
 
     m.def("drape_maps", &drape_maps, "Overlay sss_ping::PingsT sidescan data on a mesh and get sss_map_image::ViewsT");
     m.def("color_jet_from_mesh", &color_jet_from_mesh, "Get a jet color scheme from a vertex matrix");
