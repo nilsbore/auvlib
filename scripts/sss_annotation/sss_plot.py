@@ -44,7 +44,7 @@ class SSSAnnotationPlot():
         return overlapping_data
 
     def annotate_onclick(self, event):
-        if self.target_coord is None:
+        if not event.dblclick or self.target_coord is None:
             return
         try:
             coord = (int(event.ydata), int(event.xdata))
@@ -67,8 +67,9 @@ class SSSAnnotationPlot():
             f'Set annotation: {self.data.filename} pixel {self.target_coord} == {corr_filename} pixel {corr_pixel}'
         )
 
-    #TODO: separate click from drag and zoom events
     def find_corr_pixels_onclick(self, event):
+        if not event.dblclick:
+            return
         try:
             coord = (int(event.ydata), int(event.xdata))
             utils.update_highlight(self.data.highlight, coord)
@@ -78,9 +79,6 @@ class SSSAnnotationPlot():
         self.target_coord = coord
         self.target_pos = self.data.pos[coord]
 
-        #TODO: Keep the clicked position as a keypoint
-        # Should only do this after we can separate clicks from drag and zoom
-        #self.annotations[self.target_coord] = dict()
         print('------------------------------------------')
         print(f'Clicked pixel: {coord}, target coordinate: {self.target_pos}')
         if all(self.target_pos == 0):
