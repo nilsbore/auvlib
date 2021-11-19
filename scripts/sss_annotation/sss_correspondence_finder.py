@@ -11,7 +11,7 @@ from sss_annotation.sss_plot import SSSAnnotationPlot, SSSPlotData
 from sss_annotation.utils import normalize_waterfall_image
 
 
-class SSSDrapingFolderParser():
+class SSSFolderAnnotator():
     """Parse a side-scan sonar draping results folder containing .cereal files
     of sss_meas_data objects."""
     def __init__(self, draping_res_folder):
