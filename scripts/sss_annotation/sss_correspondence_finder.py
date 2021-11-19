@@ -6,9 +6,9 @@ import numpy as np
 from auvlib.bathy_maps.map_draper import sss_meas_data
 from skimage.feature import plot_matches
 
-from sss_annotations_manager import SSSAnnotationManager
-from sss_plot import SSSAnnotationPlot, SSSPlotData
-from utils import normalize_waterfall_image
+from sss_annotation.sss_annotations_manager import SSSAnnotationManager
+from sss_annotation.sss_plot import SSSAnnotationPlot, SSSPlotData
+from sss_annotation.utils import normalize_waterfall_image
 
 
 class SSSDrapingFolderParser():

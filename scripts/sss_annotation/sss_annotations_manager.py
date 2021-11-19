@@ -2,7 +2,7 @@ import json
 import uuid
 import os
 from collections import OrderedDict, defaultdict
-from utils import filepath_to_filename
+from sss_annotation.utils import filepath_to_filename
 
 
 class SSSAnnotationManager:

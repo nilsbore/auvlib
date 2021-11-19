@@ -5,7 +5,7 @@ import numpy as np
 from scipy.spatial import KDTree
 from auvlib.bathy_maps.map_draper import sss_meas_data
 
-import utils
+import sss_annotation.utils as utils
 
 
 class SSSAnnotationPlot():
