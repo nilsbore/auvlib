@@ -1,14 +1,12 @@
 import os
-from collections import OrderedDict, defaultdict
+import json
+from collections import OrderedDict
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.spatial import KDTree
 from auvlib.bathy_maps.map_draper import sss_meas_data
-import json
-import uuid
 
+from sss_annotations_manager import SSSAnnotationManager
 from sss_plot import SSSAnnotationPlot
-from utils import update_highlight
 
 
 class SSSDrapingFolderParser():
@@ -23,31 +21,9 @@ class SSSDrapingFolderParser():
 
         # Correspondence annotations
         self.correspondence_annotations_filename = 'correspondence_annotations.json'
-        self.correspondence_annotations_file = os.path.join(
-            self.folder, self.correspondence_annotations_filename)
-        self.correspondence_annotations = self._init_annotations()
-        self.keypoints = self._parse_keypoints_from_correspondence_annotations(
-        )
-
-    def _init_annotations(self):
-        """Load annotation file if exist, construct an OrderedDict otherwise.
-        The annotation dictionary has key=id and value=(a dictionary with
-        key=filename, value=(ping_nbr, col_nbr))"""
-        data = OrderedDict()
-        if os.path.exists(self.correspondence_annotations_file):
-            with open(self.correspondence_annotations_file, 'r') as f:
-                data = json.load(f)
-        return data
-
-    def _parse_keypoints_from_correspondence_annotations(self):
-        """Parse the correspondence_annotations dictionary and return a
-        keypoint dictionary with key=filename and value=(a dictionary with
-        key=pixel position, value=the corresponding uuid)."""
-        keypoints = defaultdict(dict)
-        for kp_id, values in self.correspondence_annotations.items():
-            for filename, pixel in values.items():
-                keypoints[filename][tuple(pixel)] = kp_id
-        return keypoints
+        self.annotations_manager = SSSAnnotationManager(
+            os.path.join(self.folder,
+                         self.correspondence_annotations_filename))
 
     def _get_data_files_dict(self):
         """Return a dict of .cereal file paths found under self.folder.
@@ -145,26 +121,7 @@ class SSSDrapingFolderParser():
                                             normalize_image=normalize_image)
         plt.show()
 
-        self._update_annotation(target_filename, annotation_plot.annotations)
-        self.write_annotations()
-        return self.correspondence_annotations
-
-    def _update_annotation(self, target_filename, annotations):
-        """Update the correspondence_annotations and keypoint annotations"""
-        for target_pixel, correspondences in annotations.items():
-            kp_id = str(uuid.uuid1())
-            # Update keypoints dict
-            #TODO: check whether the keypoint has been recorded before with a different kp_id
-            self.keypoints[target_filename][target_pixel] = kp_id
-            # Update correspondence_annotations dict
-            corr_dict = {target_filename: target_pixel}
-            for corr_filename, corr_pixel in correspondences.items():
-                # Update keypoints dict
-                self.keypoints[corr_filename][corr_pixel] = kp_id
-                # Update correspondence_annotations dict
-                corr_dict[corr_filename] = corr_pixel
-            self.correspondence_annotations[kp_id] = corr_dict
-
-    def write_annotations(self):
-        with open(self.correspondence_annotations_file, 'w') as f:
-            json.dump(self.correspondence_annotations, f)
+        self.annotations_manager.update_annotation(target_filename,
+                                                   annotation_plot.annotations)
+        self.annotations_manager.write_annotations()
+        return self.annotations_manager.correspondence_annotations
