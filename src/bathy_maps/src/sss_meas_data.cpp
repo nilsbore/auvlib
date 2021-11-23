@@ -78,18 +78,11 @@ sss_meas_data sss_meas_data_builder::finish()
     meas_data.pos = pos;
     meas_data.rpy = rpy;
     meas_data.ping_id = ping_id;
-    if (waterfall_width == 512) {
-        meas_data.sss_waterfall_image = sss_waterfall_image.topRows(waterfall_counter).cast<float>();
-        meas_data.sss_waterfall_hits_X = sss_waterfall_hits_X.topRows(waterfall_counter).cast<float>();
-        meas_data.sss_waterfall_hits_Y = sss_waterfall_hits_Y.topRows(waterfall_counter).cast<float>();
-        meas_data.sss_waterfall_hits_Z = sss_waterfall_hits_Z.topRows(waterfall_counter).cast<float>();
-    }
-    else {
-        meas_data.sss_waterfall_image = downsample_cols(sss_waterfall_image.topRows(waterfall_counter), 512).cast<float>();
-        meas_data.sss_waterfall_hits_X = downsample_cols(sss_waterfall_hits_X.topRows(waterfall_counter), 512).cast<float>();
-        meas_data.sss_waterfall_hits_Y = downsample_cols(sss_waterfall_hits_Y.topRows(waterfall_counter), 512).cast<float>();
-        meas_data.sss_waterfall_hits_Z = downsample_cols(sss_waterfall_hits_Z.topRows(waterfall_counter), 512).cast<float>();
-    }
+
+    meas_data.sss_waterfall_image = sss_waterfall_image.topRows(waterfall_counter).cast<float>();
+    meas_data.sss_waterfall_hits_X = sss_waterfall_hits_X.topRows(waterfall_counter).cast<float>();
+    meas_data.sss_waterfall_hits_Y = sss_waterfall_hits_Y.topRows(waterfall_counter).cast<float>();
+    meas_data.sss_waterfall_hits_Z = sss_waterfall_hits_Z.topRows(waterfall_counter).cast<float>();
 
     return meas_data;
 }
@@ -137,34 +130,20 @@ void sss_meas_data_builder::add_hits(const Eigen::MatrixXd& hits, const Eigen::V
         sss_waterfall_hits_Z.conservativeResize(sss_waterfall_image.rows()+1000, sss_waterfall_image.cols());
     }
 
-    if (waterfall_width == 512) {
-        double ping_step = double(ping.pings.size()) / double(waterfall_width/2);
-        Eigen::ArrayXd value_windows = Eigen::VectorXd::Zero(waterfall_width/2);
-        Eigen::ArrayXd value_counts = Eigen::ArrayXd::Zero(waterfall_width/2);
-        for (int i = 0; i < ping.pings.size(); ++i) {
-            int col = int(double(i)/ping_step);
-            value_windows(col) += double(ping.pings[i])/10000.;
-            value_counts(col) += 1.;
-        }
-        value_counts += (value_counts == 0).cast<double>();
-        if (is_left) {
-            sss_waterfall_image.block(waterfall_counter, waterfall_width/2, 1, waterfall_width/2) = (value_windows / value_counts).transpose();
-        }
-        else {
-            sss_waterfall_image.block(waterfall_counter, 0, 1, waterfall_width/2) = (value_windows / value_counts).reverse().transpose();
-        }
+    double ping_step = double(ping.pings.size()) / double(waterfall_width/2);
+    Eigen::ArrayXd value_windows = Eigen::VectorXd::Zero(waterfall_width/2);
+    Eigen::ArrayXd value_counts = Eigen::ArrayXd::Zero(waterfall_width/2);
+    for (int i = 0; i < ping.pings.size(); ++i) {
+        int col = int(double(i)/ping_step);
+        value_windows(col) += double(ping.pings[i])/10000.;
+        value_counts(col) += 1.;
+    }
+    value_counts += (value_counts == 0).cast<double>();
+    if (is_left) {
+        sss_waterfall_image.block(waterfall_counter, waterfall_width/2, 1, waterfall_width/2) = (value_windows / value_counts).transpose();
     }
     else {
-        for (int i = 0; i < ping.pings.size(); ++i) {
-            int col;
-            if (is_left) {
-                col = waterfall_width/2 + i;
-            }
-            else {
-                col = waterfall_width/2 - 1 - i;
-            }
-            sss_waterfall_image(waterfall_counter, col) = double(ping.pings[i])/10000.;
-        }
+        sss_waterfall_image.block(waterfall_counter, 0, 1, waterfall_width/2) = (value_windows / value_counts).reverse().transpose();
     }
 
     for (int i = 0; i < hits.rows(); ++i) {
