@@ -73,7 +73,7 @@ PYBIND11_MODULE(map_draper, m) {
         .def("set_store_map_images", &MapImageDraper::set_store_map_images, "Set if the draper should save and return map images at the end")
         .def("set_close_when_done", &MapImageDraper::set_close_when_done, "Set if the draper should close when done draping")
         .def("get_images", &MapImageDraper::get_images, "Get all the sss_map_image::ImagesT that have been gathered so far")
-        .def("get_sonar_offset", &MapImageDraper::get_sonar_offset, "Get offsets for multibeam and sidescan sonar fed in as input to the draper");
+        .def("get_sonar_offset", &MapImageDraper::get_sonar_offset, "Get offsets for multibeam and sidescan sonar fed in as input to the draper")
         // Getters and setters for nbr_pings and (indirectly) waterfall_width
         .def("get_nbr_pings", &MapImageDraper::get_nbr_pings, "Get number of pings in one side-scan channel")
         .def("set_nbr_pings", &MapImageDraper::set_nbr_pings, "Set desirable number of pings in one side-scan channel (<= nbr_bins in the actual side-scan data)");
@@ -97,7 +97,7 @@ PYBIND11_MODULE(map_draper, m) {
         .def("set_store_map_images", &MeasDataDraper::set_store_map_images, "Set if the draper should save and return map images at the end")
         .def("set_close_when_done", &MeasDataDraper::set_close_when_done, "Set if the draper should close when done draping")
         .def("get_images", &MeasDataDraper::get_images, "Get all the sss_map_image::ImagesT that have been gathered so far")
-        .def("get_sonar_offset", &MeasDataDraper::get_sonar_offset, "Get offsets for multibeam and sidescan sonar fed in as input to the draper");
+        .def("get_sonar_offset", &MeasDataDraper::get_sonar_offset, "Get offsets for multibeam and sidescan sonar fed in as input to the draper")
         // Getters and setters for nbr_pings and (indirectly) waterfall_width
         .def("get_nbr_pings", &MeasDataDraper::get_nbr_pings, "Get number of pings in one side-scan channel")
         .def("set_nbr_pings", &MeasDataDraper::set_nbr_pings, "Set desirable number of pings in one side-scan channel (<= nbr_bins in the actual side-scan data)");
