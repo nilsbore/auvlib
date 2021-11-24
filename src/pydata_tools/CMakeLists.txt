@@ -13,6 +13,7 @@ add_library(pycsv_data MODULE src/pycsv_data.cpp)
 add_library(pyall_data MODULE src/pyall_data.cpp)
 add_library(pyxyz_data MODULE src/pyxyz_data.cpp)
 add_library(pybenchmark MODULE src/pybenchmark.cpp)
+add_library(pysensor_offset MODULE src/pysensor_offset.cpp)
 
 target_include_directories(pystd_data PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -52,6 +53,11 @@ target_include_directories(pyxyz_data PUBLIC
     PRIVATE src)
 
 target_include_directories(pybenchmark PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+    PRIVATE src)
+
+target_include_directories(pysensor_offset PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
@@ -100,7 +106,13 @@ set_target_properties(pybenchmark PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
                                              OUTPUT_NAME "benchmark"
                                              SUFFIX "${PYTHON_MODULE_EXTENSION}")
 
-set(AUVLIB_PYDATA_TOOLS_LIBS pystd_data pyxtf_data pyjsf_data pycsv_data pyall_data pyxyz_data pybenchmark)
+target_link_libraries(pysensor_offset PRIVATE sensor_offset ${BOOST_LIBRARIES} pybind11::module)
+set_target_properties(pysensor_offset PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
+                                             OUTPUT_NAME "sensor_offset"
+                                             SUFFIX "${PYTHON_MODULE_EXTENSION}")
+
+set(AUVLIB_PYDATA_TOOLS_LIBS pystd_data pyxtf_data pyjsf_data pycsv_data pyall_data pyxyz_data
+    pybenchmark pysensor_offset)
 if(AUVLIB_WITH_GSF)
   set(AUVLIB_PYDATA_TOOLS_LIBS ${AUVLIB_PYDATA_TOOLS_LIBS} pygsf_data)
 endif()

@@ -108,6 +108,14 @@ struct all_nav_attitude_sample {
 
 };
 
+struct unfolded_attitude {
+    long long time_stamp_; // posix time stamp
+    double roll;
+    double pitch;
+    double heading;
+    double heave;
+};
+
 struct all_nav_attitude {
 
     using EntriesT = std::vector<all_nav_attitude, Eigen::aligned_allocator<all_nav_attitude> >;
@@ -224,10 +232,12 @@ struct all_installation_param {
     }
 };
 
-std_data::mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_entry::EntriesT& entries);
+std_data::mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_entry::EntriesT& entries, float roll);
 std_data::mbes_ping::PingsT match_attitude(std_data::mbes_ping::PingsT& pings, all_nav_attitude::EntriesT& entries);
+std_data::mbes_ping::PingsT convert_matched_nav_and_attitude_entries(all_mbes_ping::PingsT& pings, all_nav_entry::EntriesT& nav_entries, all_nav_attitude::EntriesT& attitude_entries);
 csv_data::csv_asvp_sound_speed::EntriesT convert_sound_speeds(const all_mbes_ping::PingsT& pings);
 std_data::attitude_entry::EntriesT convert_attitudes(const all_nav_attitude::EntriesT& attitudes);
+std::vector<unfolded_attitude> convert_attitude_timestamps(all_nav_attitude::EntriesT& entries);
 
 class StreamParser {
 private:

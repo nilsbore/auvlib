@@ -29,8 +29,13 @@ BaseDraper::BaseDraper(const Eigen::MatrixXd& V1, const Eigen::MatrixXi& F1,
       tracing_map_size(200.), intensity_multiplier(1.)
 {
     offset = Eigen::Vector3d(bounds(0, 0), bounds(0, 1), 0.);
-    sensor_offset_port = Eigen::Vector3d::Zero();
-    sensor_offset_stbd = Eigen::Vector3d::Zero();
+
+    // N.B. default sonar_offset sets all offsets to 0
+    // the SonarOffset variable can be obtained by the function
+    // get_sonar_offset_from_file in data_tools.sensor_offset
+    sensor_offset_port = sonar_offset.sss_port - sonar_offset.mbes_tx;
+    sensor_offset_stbd = sonar_offset.sss_stbd - sonar_offset.mbes_tx;
+
     igl::per_face_normals(V1, F1, N1); // compute normals for mesh 
 }
 

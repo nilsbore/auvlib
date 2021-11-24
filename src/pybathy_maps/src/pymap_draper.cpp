@@ -59,6 +59,7 @@ PYBIND11_MODULE(map_draper, m) {
         .def(py::init<const Eigen::MatrixXd&, const Eigen::MatrixXi&,
                       const std_data::sss_ping::PingsT&, const MapImageDraper::BoundsT&,
                       const csv_asvp_sound_speed::EntriesT&>())
+        .def("set_sonar_offset", &MapImageDraper::set_sonar_offset, "Set multibeam and sidescan sonar offset")
         .def("set_sidescan_yaw", &MapImageDraper::set_sidescan_yaw, "Set yaw correction of sidescan with respect to nav frame")
         .def("set_sidescan_port_stbd_offsets", &MapImageDraper::set_sidescan_port_stbd_offsets, "Set offsets of sidescan port and stbd sides with respect to nav frame")
         .def("set_tracing_map_size", &MapImageDraper::set_tracing_map_size, "Set size of slice of map where we do ray tracing. Smaller makes it faster but you might cut off valid sidescan angles")
@@ -72,6 +73,7 @@ PYBIND11_MODULE(map_draper, m) {
         .def("set_store_map_images", &MapImageDraper::set_store_map_images, "Set if the draper should save and return map images at the end")
         .def("set_close_when_done", &MapImageDraper::set_close_when_done, "Set if the draper should close when done draping")
         .def("get_images", &MapImageDraper::get_images, "Get all the sss_map_image::ImagesT that have been gathered so far")
+        .def("get_sonar_offset", &MapImageDraper::get_sonar_offset, "Get offsets for multibeam and sidescan sonar fed in as input to the draper")
         // Getters and setters for nbr_pings and (indirectly) waterfall_width
         .def("get_nbr_pings", &MapImageDraper::get_nbr_pings, "Get number of pings in one side-scan channel")
         .def("set_nbr_pings", &MapImageDraper::set_nbr_pings, "Set desirable number of pings in one side-scan channel (<= nbr_bins in the actual side-scan data)");
@@ -81,6 +83,7 @@ PYBIND11_MODULE(map_draper, m) {
         .def(py::init<const Eigen::MatrixXd&, const Eigen::MatrixXi&,
                       const std_data::sss_ping::PingsT&, const MeasDataDraper::BoundsT&,
                       const csv_asvp_sound_speed::EntriesT&>())
+        .def("set_sonar_offset", &MeasDataDraper::set_sonar_offset, "Set multibeam and sidescan sonar offset")
         .def("set_sidescan_yaw", &MeasDataDraper::set_sidescan_yaw, "Set yaw correction of sidescan with respect to nav frame")
         .def("set_sidescan_port_stbd_offsets", &MeasDataDraper::set_sidescan_port_stbd_offsets, "Set offsets of sidescan port and stbd sides with respect to nav frame")
         .def("set_tracing_map_size", &MeasDataDraper::set_tracing_map_size, "Set size of slice of map where we do ray tracing. Smaller makes it faster but you might cut off valid sidescan angles")
@@ -94,6 +97,7 @@ PYBIND11_MODULE(map_draper, m) {
         .def("set_store_map_images", &MeasDataDraper::set_store_map_images, "Set if the draper should save and return map images at the end")
         .def("set_close_when_done", &MeasDataDraper::set_close_when_done, "Set if the draper should close when done draping")
         .def("get_images", &MeasDataDraper::get_images, "Get all the sss_map_image::ImagesT that have been gathered so far")
+        .def("get_sonar_offset", &MeasDataDraper::get_sonar_offset, "Get offsets for multibeam and sidescan sonar fed in as input to the draper")
         // Getters and setters for nbr_pings and (indirectly) waterfall_width
         .def("get_nbr_pings", &MeasDataDraper::get_nbr_pings, "Get number of pings in one side-scan channel")
         .def("set_nbr_pings", &MeasDataDraper::set_nbr_pings, "Set desirable number of pings in one side-scan channel (<= nbr_bins in the actual side-scan data)");
