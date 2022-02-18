@@ -25,7 +25,10 @@ PYBIND11_MODULE(benchmark, m) {
         .def(py::init<const std::string&>(), "Constructor, takes the dataset name")
         .def(py::init<>(), "Constructor, default dataset name 'default'")
         .def("add_ground_truth", (void (track_error_benchmark::*)(std_data::mbes_ping::PingsT&) ) &track_error_benchmark::add_ground_truth, "Add the ground truth dataset, need to call this before add_benchmark")
-        .def("add_benchmark", (void (track_error_benchmark::*)(std_data::mbes_ping::PingsT&, const std::string&) ) &track_error_benchmark::add_benchmark, "Add a benchmark from std_data::mbes_ping::PingsT");
+        .def("add_ground_truth", (void (track_error_benchmark::*)(std::vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> >&, std::vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> >& ) ) &track_error_benchmark::add_ground_truth, "Add the ground truth dataset, need to call this before add_benchmark")
+        .def("add_benchmark", (void (track_error_benchmark::*)(std_data::mbes_ping::PingsT&, const std::string&) ) &track_error_benchmark::add_benchmark, "Add a benchmark from std_data::mbes_ping::PingsT")
+        .def("add_benchmark", (void (track_error_benchmark::*)(std::vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> >&, std::vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> >&, const std::string&) ) &track_error_benchmark::add_benchmark, "Add a benchmark from PointsT")
+        .def("print_summary", (void (track_error_benchmark::*)() ) &track_error_benchmark::print_summary, "Prints summary of benchmarking results");
 
     // from http://alexsm.com/pybind11-buffer-protocol-opencv-to-numpy/
     pybind11::class_<cv::Mat>(m, "Image", pybind11::buffer_protocol())

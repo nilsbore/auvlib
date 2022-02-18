@@ -36,10 +36,13 @@ PYBIND11_MODULE(mesh_map, m) {
     m.def("write_dae_mesh", &mesh_map::write_dae_mesh_from_str, "Write vertices and faces to a .dae file");
     m.def("read_ply_mesh", &mesh_map::read_ply_mesh_from_str, "Read vertices and faces from a .ply file");
     m.def("cut_square_around_point", &mesh_map::cut_square_around_point, "Cut out a square from within the mesh, around point p with side length");
+    m.def("normal_at_point", &mesh_map::normal_at_point, "Get the normal at point in the mesh, from vertex normals, returns (0, 0 -1) if no mesh");
     m.def("depth_at_point", &mesh_map::depth_at_point, "Get the depth at point in the mesh, returns 0 if no mesh at point");
+    m.def("normals_at_points", &mesh_map::normals_at_points, "Get the normals at points in the mesh, from vertex normals, returns (0, 0 -1) if no mesh");
+    m.def("depths_at_points", &mesh_map::depths_at_points, "Get the depths at points in the mesh, returns 0 if no mesh at point");
     m.def("mesh_and_normals_from_pings", &mesh_map::mesh_and_normals_from_pings, "Get vertices, faces, normals and bounds form mbes_ping::PingsT");
     m.def("shade_image_from_normals", &mesh_map::shade_image_from_normals, "Compute [0, 1] shade image from normals and lighting direction");
     m.def("compute_normals", &mesh_map::compute_normals, "Compute normals from the mesh, per vertex");
-    m.def("normals_at_points", &mesh_map::normals_at_points, "Get the normals at a set of points on the mesh");
+    m.def("normals_at_grid_points", &mesh_map::normals_at_grid_points, "Get the normals at a set of points on the mesh");
 
 }

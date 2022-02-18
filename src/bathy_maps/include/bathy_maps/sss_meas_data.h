@@ -82,6 +82,7 @@ public:
                   const std_data::sss_ping_side& ping, const Eigen::Vector3d& pos,
                   const Eigen::Vector3d& rpy, bool is_left); // used
 
+
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 };

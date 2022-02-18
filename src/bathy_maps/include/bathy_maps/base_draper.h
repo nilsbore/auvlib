@@ -18,8 +18,15 @@
 #include <data_tools/xtf_data.h>
 #include <data_tools/csv_data.h>
 #include <sonar_tracing/bathy_tracer.h>
+#include <data_tools/sensor_offset.h>
+
+struct ping_draping_result;
+
+using sss_draping_result = std::pair<ping_draping_result, ping_draping_result>;
 
 struct ping_draping_result {
+
+    using ResultsT = std::vector<sss_draping_result, Eigen::aligned_allocator<sss_draping_result> >;
 
     // origin of the sensor in the world
     Eigen::Vector3d sensor_origin;
@@ -54,10 +61,11 @@ public:
 
 protected:
 
-    Eigen::MatrixXd V1; // bathymetry mesh faces
-    Eigen::MatrixXi F1; // bathymetry mesh vertices
+    Eigen::MatrixXd V1; // bathymetry mesh vertices
+    Eigen::MatrixXi F1; // bathymetry mesh faces
     Eigen::MatrixXd N1; // bathymetry mesh normals
     Eigen::Vector3d offset; // offset of mesh wrt world coordinates
+    sensor_offset::SonarOffset sonar_offset; //offsets for multibeam and sidescan sonar fed in as input to the draper
 
     /*
     // smaller local versions used for ray tracing
@@ -85,7 +93,7 @@ protected:
 
     // NOTE: these are new style functions
     std::pair<Eigen::MatrixXd, Eigen::MatrixXd> compute_sss_dirs(const Eigen::Matrix3d& R, double tilt_angle, double beam_width, int nbr_lines);
-    std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> project(const std_data::sss_ping& ping);
+    std::tuple<Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd, Eigen::MatrixXd> project(const std_data::sss_ping& ping, const int nbr_lines=500);
     std::tuple<Eigen::MatrixXd, Eigen::MatrixXd> trace_side(const std_data::sss_ping_side& ping,
                                                             const Eigen::Vector3d& sensor_origin,
                                                             const Eigen::MatrixXd& dirs);
@@ -126,16 +134,22 @@ public:
                const BoundsT& bounds,
                const csv_data::csv_asvp_sound_speed::EntriesT& sound_speeds = csv_data::csv_asvp_sound_speed::EntriesT());
 
-    std::pair<ping_draping_result, ping_draping_result> project_ping(const std_data::sss_ping& ping, int nbr_bins);
-    Eigen::VectorXd compute_bin_intensities(const std_data::sss_ping_side& ping, int nbr_bins);
+    sss_draping_result project_ping(const std_data::sss_ping& ping, int nbr_bins);
+    Eigen::MatrixXd project_mbes(const Eigen::Vector3d& pos, const Eigen::Matrix3d& R, int nbr_beams, double beam_width);
+    double project_altimeter(const Eigen::Vector3d& pos);
 
     void set_sidescan_yaw(double new_sensor_yaw) { sensor_yaw = new_sensor_yaw; }
     void set_sidescan_port_stbd_offsets(const Eigen::Vector3d& new_offset_port, const Eigen::Vector3d& new_offset_stbd) { sensor_offset_port = new_offset_port; sensor_offset_stbd = new_offset_stbd; }
     void set_tracing_map_size(double new_tracing_map_size) { tracing_map_size = new_tracing_map_size; }
     void set_intensity_multiplier(double new_intensity_multiplier) { intensity_multiplier = new_intensity_multiplier; }
     void set_ray_tracing_enabled(bool enabled);
+    void set_sonar_offset(const sensor_offset::SonarOffset& new_sonar_offset) {sonar_offset = new_sonar_offset;}
 
+    const sensor_offset::SonarOffset& get_sonar_offset() const {return sonar_offset;}
+    const Eigen::Vector3d& get_sensor_offset_port() const {return sensor_offset_port;}
+    const Eigen::Vector3d& get_sensor_offset_stbd() const {return sensor_offset_stbd;}
 };
 
+Eigen::VectorXd compute_bin_intensities(const std_data::sss_ping_side& ping, int nbr_bins);
 
 #endif // BASE_DRAPER_H

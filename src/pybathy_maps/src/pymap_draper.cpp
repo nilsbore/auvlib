@@ -28,15 +28,6 @@ using MeasDataDraper = MapDraper<sss_meas_data_builder>;
 
 PYBIND11_MODULE(map_draper, m) {
     m.doc() = "Functions for draping a mesh with sidescan data"; // optional module docstring
-    py::class_<ping_draping_result>(m, "ping_draping_result", "Class for representing the intermediate result from draping on sidescan ping side")
-        .def(py::init<>())
-        .def_readwrite("sensor_origin", &ping_draping_result::sensor_origin, "Origin of sensor when capturing ping")
-        .def_readwrite("hits_points", &ping_draping_result::hits_points, "3D positions of hits, see hits_inds for corresponding sidescan index")
-        .def_readwrite("hits_inds", &ping_draping_result::hits_inds, "Ping time index of the hits")
-        .def_readwrite("hits_intensities", &ping_draping_result::hits_intensities, "Downsampledintensities from sidescan")
-        .def_readwrite("time_bin_points", &ping_draping_result::time_bin_points, "Depths corresponding to the ping intensities")
-        .def_readwrite("time_bin_normals", &ping_draping_result::time_bin_normals, "Normals corresponding to the ping intensities")
-        .def_readwrite("time_bin_model_intensities", &ping_draping_result::time_bin_model_intensities, "Model intensities corresponding to the real intensities");
 
     py::class_<sss_map_image>(m, "sss_map_image", "Class for sidescan views of a patch from different survey lines")
         .def(py::init<>())
@@ -63,25 +54,12 @@ PYBIND11_MODULE(map_draper, m) {
         .def_static("read_single", &read_data_from_str<sss_meas_data>, "Read single sss_meas_data from .cereal file")
         .def_static("read_data", &read_data_from_str<sss_meas_data::ImagesT>, "Read sss_meas_data::ImagesT from .cereal file");
 
-    py::class_<BaseDraper>(m, "BaseDraper", "Class for draping the whole data set of sidescan pings onto a bathymetry mesh")
-        // Methods inherited from BaseDraper:
-        .def(py::init<const Eigen::MatrixXd&, const Eigen::MatrixXi&,
-                      const BaseDraper::BoundsT&,
-                      const csv_asvp_sound_speed::EntriesT&>())
-        .def("project_ping", &BaseDraper::project_ping, "Project a ping onto the mesh and get intermediate draping results. Provide the desired downsampling of the ping as the second parameter")
-        .def("compute_bin_intensities", &BaseDraper::compute_bin_intensities, "Dowsample the intensities of a ping to a vector of a desired length")
-        .def("set_sidescan_yaw", &BaseDraper::set_sidescan_yaw, "Set yaw correction of sidescan with respect to nav frame")
-        .def("set_sidescan_port_stbd_offsets", &BaseDraper::set_sidescan_port_stbd_offsets, "Set offsets of sidescan port and stbd sides with respect to nav frame")
-        .def("set_tracing_map_size", &BaseDraper::set_tracing_map_size, "Set size of slice of map where we do ray tracing. Smaller makes it faster but you might cut off valid sidescan angles")
-        .def("set_intensity_multiplier", &BaseDraper::set_intensity_multiplier, "Set a value to multiply the sidescan intensity with when displaying on top of mesh")
-        .def("set_ray_tracing_enabled", &BaseDraper::set_ray_tracing_enabled, "Set if ray tracing through water layers should be enabled. Takes more time but is recommended if there are large speed differences");
-        // Methods unique to BaseDraper:
-
     py::class_<MapImageDraper>(m, "MapDraper", "Class for draping the whole data set of sidescan pings onto a bathymetry mesh")
         // Methods inherited from MapImageDraper:
         .def(py::init<const Eigen::MatrixXd&, const Eigen::MatrixXi&,
                       const std_data::sss_ping::PingsT&, const MapImageDraper::BoundsT&,
                       const csv_asvp_sound_speed::EntriesT&>())
+        .def("set_sonar_offset", &MapImageDraper::set_sonar_offset, "Set multibeam and sidescan sonar offset")
         .def("set_sidescan_yaw", &MapImageDraper::set_sidescan_yaw, "Set yaw correction of sidescan with respect to nav frame")
         .def("set_sidescan_port_stbd_offsets", &MapImageDraper::set_sidescan_port_stbd_offsets, "Set offsets of sidescan port and stbd sides with respect to nav frame")
         .def("set_tracing_map_size", &MapImageDraper::set_tracing_map_size, "Set size of slice of map where we do ray tracing. Smaller makes it faster but you might cut off valid sidescan angles")
@@ -94,13 +72,18 @@ PYBIND11_MODULE(map_draper, m) {
         .def("set_image_callback", &MapImageDraper::set_image_callback, "Set the function to be called when an entire sidescan map is done")
         .def("set_store_map_images", &MapImageDraper::set_store_map_images, "Set if the draper should save and return map images at the end")
         .def("set_close_when_done", &MapImageDraper::set_close_when_done, "Set if the draper should close when done draping")
-        .def("get_images", &MapImageDraper::get_images, "Get all the sss_map_image::ImagesT that have been gathered so far");
+        .def("get_images", &MapImageDraper::get_images, "Get all the sss_map_image::ImagesT that have been gathered so far")
+        .def("get_sonar_offset", &MapImageDraper::get_sonar_offset, "Get offsets for multibeam and sidescan sonar fed in as input to the draper")
+        // Getters and setters for nbr_pings and (indirectly) waterfall_width
+        .def("get_nbr_pings", &MapImageDraper::get_nbr_pings, "Get number of pings in one side-scan channel")
+        .def("set_nbr_pings", &MapImageDraper::set_nbr_pings, "Set desirable number of pings in one side-scan channel (<= nbr_bins in the actual side-scan data)");
 
     py::class_<MeasDataDraper>(m, "MeasDataDraper", "Class for draping the whole data set of sidescan pings onto a bathymetry mesh")
         // Methods inherited from MeasDataDraper:
         .def(py::init<const Eigen::MatrixXd&, const Eigen::MatrixXi&,
                       const std_data::sss_ping::PingsT&, const MeasDataDraper::BoundsT&,
                       const csv_asvp_sound_speed::EntriesT&>())
+        .def("set_sonar_offset", &MeasDataDraper::set_sonar_offset, "Set multibeam and sidescan sonar offset")
         .def("set_sidescan_yaw", &MeasDataDraper::set_sidescan_yaw, "Set yaw correction of sidescan with respect to nav frame")
         .def("set_sidescan_port_stbd_offsets", &MeasDataDraper::set_sidescan_port_stbd_offsets, "Set offsets of sidescan port and stbd sides with respect to nav frame")
         .def("set_tracing_map_size", &MeasDataDraper::set_tracing_map_size, "Set size of slice of map where we do ray tracing. Smaller makes it faster but you might cut off valid sidescan angles")
@@ -113,7 +96,11 @@ PYBIND11_MODULE(map_draper, m) {
         .def("set_image_callback", &MeasDataDraper::set_image_callback, "Set the function to be called when an entire sidescan map is done")
         .def("set_store_map_images", &MeasDataDraper::set_store_map_images, "Set if the draper should save and return map images at the end")
         .def("set_close_when_done", &MeasDataDraper::set_close_when_done, "Set if the draper should close when done draping")
-        .def("get_images", &MeasDataDraper::get_images, "Get all the sss_map_image::ImagesT that have been gathered so far");
+        .def("get_images", &MeasDataDraper::get_images, "Get all the sss_map_image::ImagesT that have been gathered so far")
+        .def("get_sonar_offset", &MeasDataDraper::get_sonar_offset, "Get offsets for multibeam and sidescan sonar fed in as input to the draper")
+        // Getters and setters for nbr_pings and (indirectly) waterfall_width
+        .def("get_nbr_pings", &MeasDataDraper::get_nbr_pings, "Get number of pings in one side-scan channel")
+        .def("set_nbr_pings", &MeasDataDraper::set_nbr_pings, "Set desirable number of pings in one side-scan channel (<= nbr_bins in the actual side-scan data)");
 
     m.def("drape_maps", &drape_maps, "Overlay sss_ping::PingsT sidescan data on a mesh and get sss_map_image::ViewsT");
     m.def("color_jet_from_mesh", &color_jet_from_mesh, "Get a jet color scheme from a vertex matrix");

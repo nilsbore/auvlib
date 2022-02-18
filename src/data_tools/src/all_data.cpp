@@ -14,6 +14,7 @@
 #include <liball/all.h>
 //#include <endian.h>
 #include <fstream>
+#include <string>
 
 #define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/date_time.hpp>
@@ -117,7 +118,7 @@ vector<ReturnType, Eigen::aligned_allocator<ReturnType> > parse_file(const boost
 */
 
 template <typename ReturnType, typename AllHeaderType>
-ReturnType read_datagram(std::istream& input, const AllHeaderType& header)
+ReturnType read_datagram(std::istream& input, const AllHeaderType& header, int ascii_buffer_length = 0)
 {
     ReturnType rtn;
 	return rtn;
@@ -161,8 +162,8 @@ vector<ReturnType, Eigen::aligned_allocator<ReturnType> > parse_stream_impl(istr
 			AllHeaderType header;
 		    //cout << "Is a MB reading, code: " << int(data_type) << endl;
 		    input.read(reinterpret_cast<char*>(&header), sizeof(header));
-			returns.push_back(read_datagram<ReturnType, AllHeaderType>(input, header));
-		    //input.read(reinterpret_cast<char*>(&spare), sizeof(spare));
+            int ascii_length = nbr_bytes - sizeof(start_id)- sizeof(data_type) - sizeof(header) - sizeof(end_ident)- sizeof(end_ident);
+			returns.push_back(read_datagram<ReturnType, AllHeaderType>(input, header, ascii_length));
 		    input.read(reinterpret_cast<char*>(&end_ident), sizeof(end_ident));
 		    input.read(reinterpret_cast<char*>(&checksum), sizeof(checksum));
 			//cout << "End identifier: " << end_ident << endl;
@@ -177,9 +178,10 @@ vector<ReturnType, Eigen::aligned_allocator<ReturnType> > parse_stream_impl(istr
 
     /*
     for (int i = 0; i < 255; ++i) {
-        cout << std::dec << "Got " << counters[i] << " of type " << i << std::hex <<" with hex 0x"<< i << std::dec << endl;
+        if (counters[i] != 0){
+            cout << std::dec << "Got " << counters[i] << " of type " << i << std::hex <<" with hex 0x"<< i << std::dec << endl;
+        }
     }
-	cout << "Got " << pos_counter << " position entries" << endl;
     */
 
     if (!returns.empty()) {
@@ -234,7 +236,7 @@ pair<long long, string> parse_all_time(unsigned int date, unsigned int time)
 }
 
 template <>
-all_mbes_ping read_datagram<all_mbes_ping, all_xyz88_datagram>(std::istream& input, const all_xyz88_datagram& header)
+all_mbes_ping read_datagram<all_mbes_ping, all_xyz88_datagram>(std::istream& input, const all_xyz88_datagram& header, int ascii_buffer_length)
 {
 	//cout << "Total number of beams: " << header.nbr_beams << endl;
     //cout << "Valid number of beams: " << header.nbr_valid << endl;
@@ -253,7 +255,7 @@ all_mbes_ping read_datagram<all_mbes_ping, all_xyz88_datagram>(std::istream& inp
 	for (int i = 0; i < header.nbr_beams; ++i) {
 		input.read(reinterpret_cast<char*>(&ping), sizeof(ping));
         //if (short(le16toh(ping.rt_cleaning_info)) < 0) { // (ping.detection_info & mask[5]) != 0) {
-        if (ping.rt_cleaning_info < 0 || (ping.detection_info & mask[0]) != 0 || ping.depth > 40.) {
+        if (ping.rt_cleaning_info < 0 || (ping.detection_info & mask[0]) != 0) {
             continue;
         }
 		pings.push_back(ping);
@@ -271,7 +273,7 @@ all_mbes_ping read_datagram<all_mbes_ping, all_xyz88_datagram>(std::istream& inp
 }
 
 template <>
-all_nav_entry read_datagram<all_nav_entry, all_position_datagram>(std::istream& input, const all_position_datagram& header)
+all_nav_entry read_datagram<all_nav_entry, all_position_datagram>(std::istream& input, const all_position_datagram& header, int ascii_buffer_length)
 {
 	//cout << "Got a position datagram, skipping: " << int(header.nbr_bytes_input) << endl;
 
@@ -299,7 +301,7 @@ all_nav_entry read_datagram<all_nav_entry, all_position_datagram>(std::istream& 
 }
 
 template <>
-all_nav_depth read_datagram<all_nav_depth, all_depth_datagram>(std::istream& input, const all_depth_datagram& header)
+all_nav_depth read_datagram<all_nav_depth, all_depth_datagram>(std::istream& input, const all_depth_datagram& header, int ascii_buffer_length)
 {
 	all_nav_depth entry;
 	entry.id_ = header.height_count;
@@ -312,7 +314,7 @@ all_nav_depth read_datagram<all_nav_depth, all_depth_datagram>(std::istream& inp
 }
 
 template <>
-all_nav_attitude read_datagram<all_nav_attitude, all_attitude_datagram>(std::istream& input, const all_attitude_datagram& header)
+all_nav_attitude read_datagram<all_nav_attitude, all_attitude_datagram>(std::istream& input, const all_attitude_datagram& header, int ascii_buffer_length)
 {
 	all_nav_attitude entry;
 	entry.id_ = header.attitude_count;
@@ -328,6 +330,7 @@ all_nav_attitude read_datagram<all_nav_attitude, all_attitude_datagram>(std::ist
         sample.pitch = M_PI/180.*0.01*double(meas.pitch);
         sample.roll = M_PI/180.*0.01*double(meas.roll);
         sample.heading = M_PI/180.*0.01*double(meas.heading);
+        //sample.heading = 0.5*M_PI-sample.heading; // this basically converts to yaw, should have that as marker instead
         sample.heave = 0.01*double(meas.heave);
         entry.samples.push_back(sample);
 	}
@@ -339,7 +342,7 @@ all_nav_attitude read_datagram<all_nav_attitude, all_attitude_datagram>(std::ist
 }
 
 template <>
-all_echosounder_depth read_datagram<all_echosounder_depth, all_echosounder_depth_datagram>(std::istream& input, const all_echosounder_depth_datagram& header)
+all_echosounder_depth read_datagram<all_echosounder_depth, all_echosounder_depth_datagram>(std::istream& input, const all_echosounder_depth_datagram& header, int ascii_buffer_length)
 {
 	all_echosounder_depth entry;
 	entry.id_ = header.echo_count;
@@ -350,7 +353,86 @@ all_echosounder_depth read_datagram<all_echosounder_depth, all_echosounder_depth
     return entry;
 }
 
-mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_entry::EntriesT& entries)
+template <>
+all_sound_speed_profile read_datagram<all_sound_speed_profile, all_sound_speed_profile_datagram>(std::istream& input, const all_sound_speed_profile_datagram& header, int ascii_buffer_length)
+{
+	
+    all_sound_speed_profile entry;
+    entry.id_ = header.profile_count;
+    tie(entry.time_stamp_, entry.time_string_) = parse_all_time(header.date , header.time);
+    all_sound_speed_profile_datagram_repeat one_element;
+    for (int i = 0; i < header.nbr_entries; ++i) {
+        input.read(reinterpret_cast<char*>(&one_element), sizeof(one_element));
+        entry.depth_.push_back(one_element.depth);
+        entry.sound_speed_.push_back(one_element.sound_speed);
+    }
+	unsigned char spare; // Spare (always 0)
+	input.read(reinterpret_cast<char*>(&spare), sizeof(spare));
+    return entry;
+}
+
+template <>
+all_raw_range_and_beam_angle read_datagram<all_raw_range_and_beam_angle, all_raw_range_and_beam_angle_datagram>(std::istream& input, const all_raw_range_and_beam_angle_datagram& header, int ascii_buffer_length)
+{
+    all_raw_range_and_beam_angle raw;
+	raw.id_ = header.ping_count;
+    tie(raw.time_stamp_, raw.time_string_) = parse_all_time(header.date , header.time);
+    raw.sound_vel_ = header.sound_vel;
+    raw.D_scale_ = header.D_scale;
+	all_raw_range_and_beam_angle_datagram_repeat_transmit transmit_tep;
+    for (int i = 0; i < header.transmit_sector_nbr; ++i) {
+		input.read(reinterpret_cast<char*>(&transmit_tep), sizeof(transmit_tep));
+    }
+    
+    
+    all_raw_range_and_beam_angle_datagram_repeat_received beam;
+	for (int i = 0; i < header.received_beam_nbr; ++i) {
+		input.read(reinterpret_cast<char*>(&beam), sizeof(beam));
+        received_beam tep;
+        tep.beam_pointing_angle_ = beam.beam_pointing_angle;
+        tep.transmit_sector_number_ = beam.transmit_sector_number;
+        tep.detection_info_ = beam.detection_info;
+        tep.quality_factor_ = beam.quality_factor;
+        tep.D_corr_ = beam.D_corr;
+        tep.two_way_tranvel_time_ = beam.two_way_tranvel_time;
+        tep.reflectivity_ = beam.reflectivity;
+		raw.received_beam_.push_back(tep);
+	}
+    
+    unsigned char spare; // Spare (always 0)
+	input.read(reinterpret_cast<char*>(&spare), sizeof(spare));
+
+	return raw;
+}
+
+template <>
+all_installation_param read_datagram<all_installation_param, all_installation_para_datagram>(std::istream& input, const all_installation_para_datagram& header, int ascii_buffer_length)
+{
+    all_installation_param param;
+	param.id_ = header.installation_datagram_count;
+    tie(param.time_stamp_, param.time_string_) = parse_all_time(header.date , header.time);
+    param.system_serial_number_ = header.serial_nbr;
+    param.secondary_system_serial_number_ = header.secondary_serial_nbr;
+    char * buffer = new char [ascii_buffer_length];
+    input.read (buffer, ascii_buffer_length);
+    stringstream str(buffer); 
+    string x;
+    while (getline(str, x, ',')) { 
+        size_t split_pos = x.find("=");
+        if (split_pos == std::string::npos) {
+            continue;
+        }
+        string key = x.substr(0, split_pos);
+        string value = x.substr(split_pos + 1);
+        param.param_[key] = value;
+
+        // cout<< x <<", " << key <<", " << value << endl;
+    } 
+	return param;
+}
+
+
+mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_entry::EntriesT& entries, float roll=0.)
 {
     mbes_ping::PingsT new_pings;
     new_pings.reserve(pings.size());
@@ -375,52 +457,40 @@ mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_
         new_ping.heading_ = ping.heading_;
         new_ping.pitch_ = 0.;
         new_ping.roll_ = 0.;
-        if (pos == entries.end()) {
+        if (pos == entries.end() || pos == entries.begin()) {
             double easting, northing;
             string utm_zone;
-            tie(northing, easting, utm_zone) = lat_long_utm::lat_long_to_UTM(entries.back().lat_, entries.back().long_);
+            tie(northing, easting, utm_zone) = lat_long_utm::lat_long_to_UTM(pos->lat_, pos->long_);
             new_ping.pos_ = Eigen::Vector3d(easting, northing, -ping.transducer_depth_);
             //new_ping.pos_ = Eigen::Vector3d(easting, northing, -entries.back().depth_);
         }
         else {
-            if (pos == entries.begin()) {
-                double easting, northing;
-                string utm_zone;
-                tie(northing, easting, utm_zone) = lat_long_utm::lat_long_to_UTM(pos->lat_, pos->long_);
-                new_ping.pos_ = Eigen::Vector3d(easting, northing, -ping.transducer_depth_);
-                //new_ping.pos_ = Eigen::Vector3d(easting, northing, -pos->depth_);
-            }
-            else {
-                all_nav_entry& previous = *(pos - 1);
-                double ratio = double(ping.time_stamp_ - previous.time_stamp_)/double(pos->time_stamp_ - previous.time_stamp_);
-                double lat = previous.lat_ + ratio*(pos->lat_ - previous.lat_);
-                double lon = previous.long_ + ratio*(pos->long_ - previous.long_);
-                double depth = previous.depth_ + ratio*(pos->depth_ - previous.depth_);
-                double easting, northing;
-                string utm_zone;
-                tie(northing, easting, utm_zone) = lat_long_utm::lat_long_to_UTM(lat, lon);
-                new_ping.pos_ = Eigen::Vector3d(easting, northing, -ping.transducer_depth_);
-                //cout << "Filtered depth: " << depth << ", transducer depth: " << ping.transducer_depth_ << endl;
-                //new_ping.pos_ = Eigen::Vector3d(easting, northing, -depth);
-            }
+            all_nav_entry& previous = *(pos - 1);
+            double ratio = double(ping.time_stamp_ - previous.time_stamp_)/double(pos->time_stamp_ - previous.time_stamp_);
+            double lat = previous.lat_ + ratio*(pos->lat_ - previous.lat_);
+            double lon = previous.long_ + ratio*(pos->long_ - previous.long_);
+            double depth = previous.depth_ + ratio*(pos->depth_ - previous.depth_);
+            double easting, northing;
+            string utm_zone;
+            tie(northing, easting, utm_zone) = lat_long_utm::lat_long_to_UTM(lat, lon);
+            new_ping.pos_ = Eigen::Vector3d(easting, northing, -ping.transducer_depth_);
+            //cout << "Filtered depth: " << depth << ", transducer depth: " << ping.transducer_depth_ << endl;
+            //new_ping.pos_ = Eigen::Vector3d(easting, northing, -depth);
         }
 
         new_ping.beams.reserve(ping.beams.size());
         new_ping.back_scatter.reserve(ping.beams.size());
-        int i = 0;
-        //cout << "Ping heading: " << new_ping.heading_ << endl;
-        for (const Eigen::Vector3d& beam : ping.beams) {
-            /*if (beam(2) > -5. || beam(2) < -25.) {
-                ++i;
-                continue;
-            }*/
-            Eigen::Matrix3d Rz = Eigen::AngleAxisd(new_ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
+        Eigen::Matrix3d Rz = Eigen::AngleAxisd(new_ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
 
-            // it seems it has already been compensated for pitch, roll
-            new_ping.beams.push_back(new_ping.pos_ + Rz*beam);
-            //new_ping.beams.push_back(new_ping.pos_ + beam);
+        int i = 0;
+        double step_roll = 2.*roll/ping.beams.size();
+        double current_roll = -roll;
+        for (const Eigen::Vector3d& beam : ping.beams) {
+            Eigen::Matrix3d Rx = Eigen::AngleAxisd(M_PI/180*current_roll, Eigen::Vector3d::UnitX()).matrix();
+            new_ping.beams.push_back(new_ping.pos_ + Rz*Rx*beam);
             new_ping.back_scatter.push_back(ping.reflectivities[i]);
             ++i;
+            current_roll += step_roll;
         }
 
         new_pings.push_back(new_ping);
@@ -429,16 +499,96 @@ mbes_ping::PingsT convert_matched_entries(all_mbes_ping::PingsT& pings, all_nav_
     return new_pings;
 }
 
-mbes_ping::PingsT match_attitude(mbes_ping::PingsT& pings, all_nav_attitude::EntriesT& entries)
+mbes_ping::PingsT convert_matched_nav_and_attitude_entries(all_mbes_ping::PingsT& pings, all_nav_entry::EntriesT& nav_entries, all_nav_attitude::EntriesT& attitude_entries)
 {
-    struct unfolded_attitude {
-        long long time_stamp_; // posix time stamp
-        double roll;
-        double pitch;
-        double heading;
-        double heave;
-    };
 
+    mbes_ping::PingsT new_pings;
+    new_pings.reserve(pings.size());
+    vector<unfolded_attitude> attitudes = convert_attitude_timestamps(attitude_entries);
+
+    // sort everything according to their timestamps
+    std::stable_sort(attitudes.begin(), attitudes.end(), [](const unfolded_attitude& entry1, const unfolded_attitude& entry2) {
+        return entry1.time_stamp_ < entry2.time_stamp_;
+    });
+    std::stable_sort(nav_entries.begin(), nav_entries.end(), [](const all_nav_entry& entry1, const all_nav_entry& entry2) {
+        return entry1.time_stamp_ < entry2.time_stamp_;
+    });
+    std::stable_sort(pings.begin(), pings.end(), [](const all_mbes_ping& ping1, const all_mbes_ping& ping2) {
+        return ping1.time_stamp_ < ping2.time_stamp_;
+    });
+
+    auto nav_entry = nav_entries.begin();
+    auto attitude_entry = attitudes.begin();
+
+    for (all_mbes_ping& ping : pings) {
+        mbes_ping new_ping;
+        new_ping.time_stamp_ = ping.time_stamp_;
+        new_ping.time_string_ = ping.time_string_;
+        new_ping.first_in_file_ = ping.first_in_file_;
+        new_ping.heading_ = ping.heading_;
+        new_ping.pitch_ = 0.;
+        new_ping.roll_ = 0.;
+
+        // find the first nav_entry whose timestamp is after the ping
+        nav_entry = std::find_if(nav_entry, nav_entries.end(), [&](const all_nav_entry& entry) {
+            return entry.time_stamp_ > ping.time_stamp_;
+        });
+        // ping position = nav_entry's position
+        if (nav_entry == nav_entries.end() || nav_entry == nav_entries.begin()) {
+            double easting, northing;
+            string utm_zone;
+            tie(northing, easting, utm_zone) = lat_long_utm::lat_long_to_UTM(nav_entry->lat_, nav_entry->long_);
+            new_ping.pos_ = Eigen::Vector3d(easting, northing, -ping.transducer_depth_);
+        } else {
+            all_nav_entry& previous = *(nav_entry - 1);
+            double ratio = double(ping.time_stamp_ - previous.time_stamp_)/double(nav_entry->time_stamp_ - previous.time_stamp_);
+            double lat = previous.lat_ + ratio*(nav_entry->lat_ - previous.lat_);
+            double lon = previous.long_ + ratio*(nav_entry->long_ - previous.long_);
+            double depth = previous.depth_ + ratio*(nav_entry->depth_ - previous.depth_);
+            double easting, northing;
+            string utm_zone;
+            tie(northing, easting, utm_zone) = lat_long_utm::lat_long_to_UTM(lat, lon);
+            new_ping.pos_ = Eigen::Vector3d(easting, northing, -ping.transducer_depth_);
+        }
+
+        // find the first attitude_entry whose timestamp is after the ping
+        attitude_entry = std::find_if(attitude_entry, attitudes.end(), [&](const unfolded_attitude& entry) {
+            return entry.time_stamp_ > ping.time_stamp_;
+        });
+        if (attitude_entry == attitudes.begin() || attitude_entry == attitudes.end()) {
+            new_ping.pitch_ = attitude_entry->pitch;
+            new_ping.roll_ = attitude_entry->roll;
+            new_ping.heading_ = attitude_entry->heading;
+        } else {
+            unfolded_attitude& previous = *(attitude_entry - 1);
+            double ratio = double(new_ping.time_stamp_ - previous.time_stamp_)/double(attitude_entry->time_stamp_ - previous.time_stamp_);
+            new_ping.pitch_ = previous.pitch + ratio*(attitude_entry->pitch - previous.pitch);
+            new_ping.roll_ = previous.roll + ratio*(attitude_entry->roll - previous.roll);
+            new_ping.heading_ = previous.heading + ratio*(attitude_entry->heading - previous.heading);
+        }
+
+        new_ping.beams.reserve(ping.beams.size());
+        new_ping.back_scatter.reserve(ping.beams.size());
+
+        Eigen::Matrix3d Rz = Eigen::AngleAxisd(new_ping.heading_, Eigen::Vector3d::UnitZ()).matrix();
+        Eigen::Matrix3d Ry = Eigen::AngleAxisd(new_ping.pitch_, Eigen::Vector3d::UnitY()).matrix();
+        Eigen::Matrix3d Rx = Eigen::AngleAxisd(new_ping.roll_, Eigen::Vector3d::UnitX()).matrix();
+        Eigen::Matrix3d R = Rz * Ry * Rx;
+
+        int i = 0;
+        for (Eigen::Vector3d& beam : ping.beams) {
+            //beam += Eigen::Vector3d(-1.086, -0.001, -0.414);
+            new_ping.beams.push_back(new_ping.pos_ + R*beam);
+            new_ping.back_scatter.push_back(ping.reflectivities[i]);
+            ++i;
+        }
+        new_pings.push_back(new_ping);
+    }
+    return new_pings;
+}
+
+vector<unfolded_attitude> convert_attitude_timestamps(all_nav_attitude::EntriesT& entries)
+{
     vector<unfolded_attitude> attitudes;
     unfolded_attitude attitude;
     for (const all_nav_attitude& entry : entries) {
@@ -451,10 +601,16 @@ mbes_ping::PingsT match_attitude(mbes_ping::PingsT& pings, all_nav_attitude::Ent
             attitudes.push_back(attitude);
         }
     }
+    return attitudes;
+}
 
+mbes_ping::PingsT match_attitude(mbes_ping::PingsT& pings, all_nav_attitude::EntriesT& entries)
+{
+
+    vector<unfolded_attitude> attitudes = convert_attitude_timestamps(entries);
     mbes_ping::PingsT new_pings = pings;
 
-    std::stable_sort(entries.begin(), entries.end(), [](const all_nav_attitude& entry1, const all_nav_attitude& entry2) {
+    std::stable_sort(attitudes.begin(), attitudes.end(), [](const unfolded_attitude& entry1, const unfolded_attitude& entry2) {
         return entry1.time_stamp_ < entry2.time_stamp_;
     });
 
@@ -648,6 +804,25 @@ template <>
 all_echosounder_depth::EntriesT parse_file<all_echosounder_depth>(const boost::filesystem::path& file)
 {
     return parse_file_impl<all_echosounder_depth, all_echosounder_depth_datagram, 69>(file);
+}
+
+template <>
+all_sound_speed_profile::EntriesT parse_file<all_sound_speed_profile>(const boost::filesystem::path& file)
+{
+    return parse_file_impl<all_sound_speed_profile, all_sound_speed_profile_datagram, 85>(file);
+}
+
+template <>
+all_raw_range_and_beam_angle::EntriesT parse_file<all_raw_range_and_beam_angle>(const boost::filesystem::path& file)
+{
+    return parse_file_impl<all_raw_range_and_beam_angle, all_raw_range_and_beam_angle_datagram, 78>(file);
+}
+
+template <>
+all_installation_param::EntriesT parse_file<all_installation_param>(const boost::filesystem::path& file)
+{   
+    // actually there will be only one all_installation_param, so return size should be one
+    return parse_file_impl<all_installation_param, all_installation_para_datagram, 73>(file);
 }
 
 } // namespace std_data

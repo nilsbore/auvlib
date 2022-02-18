@@ -147,6 +147,104 @@ PACK(struct all_attitude_datagram_repeat {
     unsigned short heading; //– Heading in 0.01° 2U 0 to 35999 —
 });
 
+PACK(struct all_sound_speed_profile_datagram {
+    // common header, see all_common_header
+
+    // data description
+    unsigned short model_nbr; // EM model number (Example: EM 710 = 710)
+    unsigned int date; // Date at start of data record = year*10000 + month*100 + day (Example: Sep 26, 2005 = 20050926)
+    unsigned int time; // Time at start of data record since midnight in milliseconds (Example: 08:12:51.234 = 29570234)
+    unsigned short profile_count; // Profile counter (sequential counter)
+    unsigned short serial_nbr; // System serial number
+    unsigned int date_profile_made; // Date when profile was made = year*10000 + month*100 + day (Example: Sep 26, 2005 = 20050926)
+    unsigned int time_profile_made; // Time when profile was made since midnight in seconds (Example: 08:12:51 = 29571)
+    unsigned short nbr_entries; // Number of entries in datagram = N
+    unsigned short depth_resolution; // Depth resolution in cm
+
+    // repeat cycle, see all_sound_speed_profile_datagram_repeat
+
+    // unsigned char spare; // Spare byte to get even length (Always 0)
+
+    // end of repeat cycle, see all_common_end
+});
+
+// repeats nbr_entries times as given in all_sound_speed_profile_datagram
+PACK(struct all_sound_speed_profile_datagram_repeat {
+    // repeat cycle data
+    unsigned int depth; // Depth
+	unsigned int sound_speed; // Sound speed in dm/s
+});
+
+PACK(struct all_raw_range_and_beam_angle_datagram {
+    // common header, see all_common_header
+
+    // data description
+    unsigned short model_nbr; // EM model number (Example: EM 710 = 710)
+    unsigned int date; // Date at start of data record = year*10000 + month*100 + day (Example: Sep 26, 2005 = 20050926)
+    unsigned int time; // Time at start of data record since midnight in milliseconds (Example: 08:12:51.234 = 29570234)
+    unsigned short ping_count; // Ping counter (sequential counter)
+    unsigned short serial_nbr; // System serial number
+    unsigned short sound_vel; // Sound speed at transducer in 0.1 m/s
+    unsigned short transmit_sector_nbr; // Number of transmit sector = Ntx
+    unsigned short received_beam_nbr; // Number of received beams in datagram = Nrx
+    unsigned short valid_detections_nbr; // Number of valid detections
+    float sampling_freq; // Sampling frequency in Hz
+    unsigned int D_scale;
+
+    // repeat cycle, see all_raw_range_and_beam_angle_datagram_repeat_transmit
+    // repeat cycle, see all_raw_range_and_beam_angle_datagram_repeat_received
+
+    // unsigned char spare; // Spare byte to get even length (Always 0)
+
+    // end of repeat cycle, see all_common_end
+});
+
+// repeats transmit_sector_nbr (Ntx) times as given in all_raw_range_and_beam_angle_datagram
+PACK(struct all_raw_range_and_beam_angle_datagram_repeat_transmit {
+    // repeat cycle data
+    short tilt_angle; // Tilt angle re TX array in 0.01 degree, range [-2900, 2900]
+	unsigned short focus_range; // 
+    float signal_length;
+    float sector_transmit_delay;
+    float centre_frequency;
+    unsigned short mean_absorption_coeff;
+    unsigned char signal_wave_identifier;
+    unsigned char transmit_sector_number;
+    float signal_bandwidth;
+});
+
+// repeats received_beam_nbr (Nrx) times as given in all_raw_range_and_beam_angle_datagram
+PACK(struct all_raw_range_and_beam_angle_datagram_repeat_received {
+    // repeat cycle data
+    short beam_pointing_angle; // 
+    unsigned char transmit_sector_number;
+    unsigned char detection_info;
+    unsigned short detection_window_length;
+    unsigned char quality_factor;
+    char D_corr;
+    float two_way_tranvel_time;
+    short reflectivity;
+    char cleaning_info;
+    unsigned char spare;
+});
+
+PACK(struct all_installation_para_datagram {
+    // common header, see all_common_header
+
+    // data description
+    unsigned short model_nbr; // EM model number (Example: EM 710 = 710)
+    unsigned int date; // Date at start of data record = year*10000 + month*100 + day (Example: Sep 26, 2005 = 20050926)
+    unsigned int time; // Time at start of data record since midnight in milliseconds (Example: 08:12:51.234 = 29570234)
+    unsigned short installation_datagram_count; // installation datagram count (0 to 65534)
+    unsigned short serial_nbr; // System serial number
+    unsigned short secondary_serial_nbr; // Secondary system serial number
+    
+    // ASCII
+    
+    // unsigned char spare; // not necessary, needed if to get even length, 
+    // end of repeat cycle, see all_common_end
+});
+
 #undef PACK
 
 #endif // ALL_H

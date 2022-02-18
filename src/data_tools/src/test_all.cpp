@@ -25,6 +25,9 @@ int main(int argc, char** argv)
 	all_echosounder_depth::EntriesT echo_depths = parse_folder<all_echosounder_depth>(path);
 	all_mbes_ping::PingsT pings = parse_file<all_mbes_ping>(path);
 	all_nav_entry::EntriesT entries = parse_file<all_nav_entry>(path);
+	all_sound_speed_profile::EntriesT sound_speed_profile = parse_file<all_sound_speed_profile>(path);
+	all_raw_range_and_beam_angle::EntriesT raw_range_and_angle = parse_file<all_raw_range_and_beam_angle>(path);
+	all_installation_param::EntriesT installation_param = parse_file<all_installation_param>(path);
 	//all_nav_entry::EntriesT entries = parse_folder<all_nav_entry>(path);
 	//all_mbes_ping::PingsT pings = parse_folder<all_mbes_ping>(path);
 
