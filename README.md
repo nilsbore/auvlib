@@ -17,11 +17,12 @@ on how to install and use the latest release.
 
 ## Dependencies
 
-auvlib has been tested on Ubuntu 16.04 and 18.04.
-On Ubuntu 16.04 and 18.04, use the following command to install all dependencies:
+auvlib has been tested on Ubuntu 16.04, 18.04 and 20.04.
+On Ubuntu 16.04, 18.04 and 20.04, use the following command to install all dependencies:
 ```
 sudo apt-get install libcereal-dev libglfw3-dev libtinyxml2-dev libboost-all-dev libopencv-dev xorg-dev
 ```
+
 ## Building
 
 Once cloned, you need to get the libigl submodule and some of its dependencies:
@@ -29,7 +30,13 @@ Once cloned, you need to get the libigl submodule and some of its dependencies:
 git submodule update --init
 ```
 
-**NOTE:** On 18.04 you currently also need to provide the flags
+**NOTE:** If you are using 20.04, you need to change a few things because you are probabaly using OpenCV 4.2.0. Change all `CV_AA` to `cv::LINE_AA` in the following files: `src/bathy_maps/src/draw_map.cpp`, `src/data_tools/src/benchmark.cpp` and `src/data_tools/src/test_submap_tracks.cpp`. See this [Reference](https://github.com/luxiya01/auvlib/commit/a84ebf3297209514d6b584567323ec6b85c7cce9?w=1).
+
+**NOTE:** If you want to use python3 (which I recommend) you need to change a few lines of the `src/CMakeLists.txt` before compling:
+If you are using the default `/usr/bin/python3`, you only need to change the flag `AUVLIB_USE_PYTHON3` in `src/CMakeLists.txt` to `ON`; if you are using the conda,
+you need to change the flag `AUVLIB_USE_PYTHON3` to `ON` AND line 78 from `set(PYTHON_EXECUTABLE /usr/bin/python3)` to `set(PYTHON_EXECUTABLE /home/user/anaconda3/envs/envname/bin/python)`
+
+**NOTE:** On 18.04 and 20.04 you currently also need to provide the flags
 `-DAUVLIB_USE_LIBIGL_TINYXML=ON -DAUVLIB_USE_LIBIGL_GLFW=ON` to cmake below.
 In that case, ignore the error about the `tinyxml2` and `glfw` targets not being in the export set;
 build files are still generated properly.
