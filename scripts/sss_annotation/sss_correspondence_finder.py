@@ -188,3 +188,4 @@ class SSSFolderAnnotator():
                      matches,
                      keypoints_color='y',
                      matches_color='g')
+        ax.set_title(f'Keypoint annotations for {filename1} and {filename2}')
