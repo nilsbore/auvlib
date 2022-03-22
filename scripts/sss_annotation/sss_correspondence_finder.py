@@ -179,7 +179,7 @@ class SSSFolderAnnotator():
                 self.data_files[filename1]).sss_waterfall_image)
         img2 = normalize_waterfall_image(
             sss_meas_data.read_single(
-                self.data_files[filename1]).sss_waterfall_image)
+                self.data_files[filename2]).sss_waterfall_image)
         plot_matches(ax,
                      img1,
                      img2,
