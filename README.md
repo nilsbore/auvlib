@@ -30,23 +30,26 @@ Once cloned, you need to get the libigl submodule and some of its dependencies:
 git submodule update --init
 ```
 
-**NOTE:** If you are using 20.04, you need to change a few things because you are probabaly using OpenCV 4.2.0. Change all `CV_AA` to `cv::LINE_AA` in the following files: `src/bathy_maps/src/draw_map.cpp`, `src/data_tools/src/benchmark.cpp` and `src/data_tools/src/test_submap_tracks.cpp`. See this [Reference](https://github.com/luxiya01/auvlib/commit/a84ebf3297209514d6b584567323ec6b85c7cce9?w=1).
+### Cmake
 
-**NOTE:** If you want to use python3 (which I recommend) you need to change a few lines of the `src/CMakeLists.txt` before compling:
-If you are using the default `/usr/bin/python3`, you only need to change the flag `AUVLIB_USE_PYTHON3` in `src/CMakeLists.txt` to `ON`; if you are using the conda,
-you need to change the flag `AUVLIB_USE_PYTHON3` to `ON` AND line 78 from `set(PYTHON_EXECUTABLE /usr/bin/python3)` to `set(PYTHON_EXECUTABLE /home/user/anaconda3/envs/envname/bin/python)`
+When done, create a `build` folder in the repo root, and enter:
+```
+mkdir build && cd build
+```
+Then execute the following `cmake` command depending on your platform:
 
-**NOTE:** On 18.04 and 20.04 you currently also need to provide the flags
-`-DAUVLIB_USE_LIBIGL_TINYXML=ON -DAUVLIB_USE_LIBIGL_GLFW=ON` to cmake below.
-In that case, ignore the error about the `tinyxml2` and `glfw` targets not being in the export set;
+* **Ubuntu 16.04**: `cmake -DCMAKE_INSTALL_PREFIX=../install .. -DAUVLIB_USE_LIBIGL_TINYXML=OFF -DAUVLIB_USE_LIBIGL_GLFW=OFF`
+* **Ubuntu 18.04**: `cmake -DCMAKE_INSTALL_PREFIX=../install ..`
+* **Ubuntu 20.04**: `cmake -DCMAKE_INSTALL_PREFIX=../install ..`
+
+**NOTE:** If you are using a conda python executable, you first need to change the flag on line 78 from `set(PYTHON_EXECUTABLE /usr/bin/python3)` to something like `set(PYTHON_EXECUTABLE /home/user/anaconda3/envs/[YOUR ENV NAME]/bin/python)`.
+
+**NOTE:** Ignore the errors about the `tinyxml2` and `glfw` targets not being in the export set;
 build files are still generated properly.
 
-When done, create a `build` folder in the repo root, and run
+When done, build and intall the code using
 ```
-cd build
-cmake -DCMAKE_INSTALL_PREFIX=../install ..
-make -j4
-make install
+make -j4 && make install
 ```
 
 You should now have a compiled version of auvlib in the folder
@@ -54,12 +57,12 @@ You should now have a compiled version of auvlib in the folder
 ```
 export PYTHONPATH=$PYTHONPATH:/path/to/auvlib/install/lib
 ```
-in any terminal where you want to use the python 2.7 version of
+in any terminal where you want to use the python version of
 the library, or add this line to your `~/.bashrc`.
 
 ## Using as a python library
 
-Python 2.7 is the preferred interface for auvlib. In general, the python bindings have more
+Python 3 is the preferred interface for auvlib. In general, the python bindings have more
 complete documentation and supports most of the use cases of the c++ library.
 Extensive documentation is available [at this site](https://nilsbore.github.io/auvlib-docs/index.html).
 
