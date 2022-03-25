@@ -29,9 +29,6 @@ Once cloned, you need to get the libigl submodule and some of its dependencies:
 ```
 git submodule update --init
 ```
-
-### Cmake
-
 When done, create a `build` folder in the repo root, and enter:
 ```
 mkdir build && cd build
