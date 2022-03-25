@@ -179,7 +179,7 @@ class SSSFolderAnnotator():
                 self.data_files[filename1]).sss_waterfall_image)
         img2 = normalize_waterfall_image(
             sss_meas_data.read_single(
-                self.data_files[filename1]).sss_waterfall_image)
+                self.data_files[filename2]).sss_waterfall_image)
         plot_matches(ax,
                      img1,
                      img2,
@@ -188,3 +188,4 @@ class SSSFolderAnnotator():
                      matches,
                      keypoints_color='y',
                      matches_color='g')
+        ax.set_title(f'Keypoint annotations for {filename1} and {filename2}')
