@@ -11,12 +11,12 @@ environment:
   - CONFIG: Release
     BOOST_ROOT: C:/Libraries/boost_1_65_1
     OpenCV_DIR: C:/tools/opencv/build/x64/vc14/lib
-    PYTHON: 27
+    PYTHON: 39
 install:
   - cd C:\projects\auvlib
   - git submodule update --init 
   #- cinst python2 appveyor already has python
-  - cinst OpenCV --version 3.4.7
+  - cinst OpenCV --version 4.2.0
 build:
   parallel: true
 build_script:
