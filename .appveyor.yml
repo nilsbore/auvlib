@@ -13,6 +13,8 @@ environment:
     OpenCV_DIR: C:/tools/opencv/build/x64/vc14/lib
     PYTHON: 39
 install:
+  - Get-ChildItem C:\
+  - Get-ChildItem C:\Python39-x64
   - cd C:\projects\auvlib
   - git submodule update --init 
   #- cinst python2 appveyor already has python
