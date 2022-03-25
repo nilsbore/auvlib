@@ -68,7 +68,7 @@ endif()
 
 if(MSVC)
   if (AUVLIB_USE_PYTHON3)
-    set(PYTHON_EXECUTABLE C:/Python39-x64/python.exe)
+    set(PYTHON_EXECUTABLE C:/Python39/python.exe)
   else()
     #set(PYTHON_EXECUTABLE C:/Python27/python.exe)
     set(PYTHON_EXECUTABLE C:/Python27-x64/python.exe)
