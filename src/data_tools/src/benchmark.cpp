@@ -775,7 +775,7 @@ std::pair<double, Eigen::MatrixXd> track_error_benchmark::compute_consistency_er
 
             // Registration error
             double value = 0.;
-            int nbr_averages = 10;
+            int nbr_averages = 1000;
             for (int c = 0; c < nbr_averages; ++c) {
                 double maxm = 0.;
                 for (int m = 0; m < nbr_maps; ++m) {
