@@ -46,6 +46,10 @@ struct track_error_benchmark {
     double min_depth_;
     double max_depth_;
 
+    // Benchmark number of rows and columns
+    int benchmark_nbr_rows;
+    int benchmark_nbr_cols;
+
     // TODO: get this from on of the dicts instead
     //int nbr_tracks_drawn;
 
@@ -55,13 +59,8 @@ struct track_error_benchmark {
     // NOTE: this is here for convenience
     cv::Mat track_img;
 
-    track_error_benchmark() : dataset_name("default")
-    {
-        min_consistency_error = -1.;
-        max_consistency_error = -1.;
-    }
-
-    track_error_benchmark(const std::string& dataset_name) : dataset_name(dataset_name)
+    track_error_benchmark(const std::string& dataset_name="default", int nbr_rows=500, int nbr_cols=500) :
+        dataset_name(dataset_name), benchmark_nbr_rows(nbr_rows), benchmark_nbr_cols(nbr_cols)
     {
         min_consistency_error = -1.;
         max_consistency_error = -1.;
@@ -78,7 +77,7 @@ struct track_error_benchmark {
     void add_ground_truth(PointsT &map_points, PointsT &track_points);
     void add_benchmark(PointsT &maps_points, PointsT &tracks_points, const std::string &name);
 
-    void track_img_params(PointsT& points_maps, int rows=1000, int cols=1000);
+    void track_img_params(PointsT& points_maps);
     cv::Mat draw_height_map(PointsT &points_maps);
     std::vector<std::vector<std::vector<Eigen::MatrixXd> > > create_grids_from_pings(std_data::mbes_ping::PingsT& pings);
     std::vector<std::vector<std::vector<Eigen::MatrixXd> > > create_grids_from_matrices(PointsT& points_maps);
@@ -90,7 +89,7 @@ struct track_error_benchmark {
     cv::Mat draw_height_submap(PointsT &map_points, PointsT &track_points, const int &submap_number);
     void map_draw_params(PointsT& map_points, PointsT& track_points, const int& submap_number);
 
-    void track_img_params(std_data::mbes_ping::PingsT& pings, int rows=1000, int cols=1000);
+    void track_img_params(std_data::mbes_ping::PingsT& pings);
     void draw_track_img(std_data::mbes_ping::PingsT& pings, cv::Mat& img, const cv::Scalar& color, const std::string& name);
     //void draw_track_img(pt_submaps::TransT& positions);
     void draw_track_legend();
