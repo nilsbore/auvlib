@@ -654,10 +654,6 @@ mbes_ping::PingsT registration_summary_benchmark::get_submap_pings_index(const m
 }
 
 vector<vector<vector<Eigen::MatrixXd> > > track_error_benchmark::create_grids_from_pings(mbes_ping::PingsT& pings){
-
-    int rows = 500;
-    int cols = 500;
-
     double res, minx, miny, x0, y0;
     res = params[0]; minx = params[1]; miny = params[2]; x0 = params[3]; y0 = params[4];
 
@@ -665,10 +661,10 @@ vector<vector<vector<Eigen::MatrixXd> > > track_error_benchmark::create_grids_fr
         return sum + int(ping.first_in_file_);
     });
 
-    vector<vector<vector<Eigen::MatrixXd> > > grid_maps(rows);
-    for (int i = 0; i < rows; ++i) {
-        grid_maps[i].resize(cols);
-        for (int j = 0; j < cols; ++j) {
+    vector<vector<vector<Eigen::MatrixXd> > > grid_maps(benchmark_nbr_rows);
+    for (int i = 0; i < benchmark_nbr_rows; ++i) {
+        grid_maps[i].resize(benchmark_nbr_cols);
+        for (int j = 0; j < benchmark_nbr_cols; ++j) {
             grid_maps[i][j].resize(nbr_maps);
         }
     }
@@ -685,7 +681,7 @@ vector<vector<vector<Eigen::MatrixXd> > > track_error_benchmark::create_grids_fr
             for (const Eigen::Vector3d& point : iter->beams) {
                 int col = int(x0+res*(point[0]-minx));
                 int row = int(y0+res*(point[1]-miny));
-                if (col >= 0 && col < cols && row >= 0 && row < rows) {
+                if (col >= 0 && col < benchmark_nbr_cols && row >= 0 && row < benchmark_nbr_rows) {
                     grid_maps[row][col][k].conservativeResize(grid_maps[row][col][k].rows()+1, 3);
                     grid_maps[row][col][k].bottomRows<1>() = point.transpose();
                 }
@@ -700,18 +696,15 @@ vector<vector<vector<Eigen::MatrixXd> > > track_error_benchmark::create_grids_fr
 
 vector<vector<vector<Eigen::MatrixXd> > > track_error_benchmark::create_grids_from_matrices(PointsT& points_maps){
 
-    int rows = 500;
-    int cols = 500;
-
     double res, minx, miny, x0, y0;
     res = params[0]; minx = params[1]; miny = params[2]; x0 = params[3]; y0 = params[4];
 
     int nbr_maps = points_maps.size();
 
-    vector<vector<vector<Eigen::MatrixXd> > > grid_maps(rows);
-    for (int i = 0; i < rows; ++i) {
-        grid_maps[i].resize(cols);
-        for (int j = 0; j < cols; ++j) {
+    vector<vector<vector<Eigen::MatrixXd> > > grid_maps(benchmark_nbr_rows);
+    for (int i = 0; i < benchmark_nbr_rows; ++i) {
+        grid_maps[i].resize(benchmark_nbr_cols);
+        for (int j = 0; j < benchmark_nbr_cols; ++j) {
             grid_maps[i][j].resize(nbr_maps);
         }
     }
@@ -724,7 +717,7 @@ vector<vector<vector<Eigen::MatrixXd> > > track_error_benchmark::create_grids_fr
             Eigen::Vector3d point_i = submap_k.row(i);
             int col = int(x0+res*(point_i[0]-minx));
             int row = int(y0+res*(point_i[1]-miny));
-            if (col >= 0 && col < cols && row >= 0 && row < rows) {
+            if (col >= 0 && col < benchmark_nbr_cols && row >= 0 && row < benchmark_nbr_rows) {
                 grid_maps[row][col][k].conservativeResize(grid_maps[row][col][k].rows()+1, 3);
                 grid_maps[row][col][k].bottomRows<1>() = point_i.transpose();
             }
