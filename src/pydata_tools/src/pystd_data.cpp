@@ -67,7 +67,9 @@ PYBIND11_MODULE(std_data, m) {
         .def_readwrite("slant_range", &std_data::sss_ping_side::slant_range, "Slant range")
         .def_readwrite("time_duration", &std_data::sss_ping_side::time_duration, "Furthest measured intensity")
         .def_readwrite("tilt_angle", &std_data::sss_ping_side::tilt_angle, "Tilt angle")
-        .def_readwrite("beam_width", &std_data::sss_ping_side::beam_width, "Beam width");
+        .def_readwrite("beam_width", &std_data::sss_ping_side::beam_width, "Beam width")
+        .def_readwrite("gain_code", &std_data::sss_ping_side::gain_code, "Gain code")
+        .def_readwrite("initial_gain_code", &std_data::sss_ping_side::initial_gain_code, "Initial gain code");
 
     py::class_<std_data::sss_ping>(m, "sss_ping", "Class for xtf sidescan type")
         .def(py::init<>())
@@ -82,6 +84,7 @@ PYBIND11_MODULE(std_data, m) {
         .def_readwrite("lat_", &std_data::sss_ping::lat_, "Latitude")
         .def_readwrite("long_", &std_data::sss_ping::long_, "Longitude")
         .def_readwrite("sound_vel_", &std_data::sss_ping::sound_vel_, "Sound speed in m/s")
+        .def_readwrite("altitude_", &std_data::sss_ping::altitude_, "Sensor primary altitude in m")
         .def_readwrite("pos_", &std_data::sss_ping::pos_, "Position in ENU coordinates")
         .def_static("read_data", &read_data_from_str<std_data::sss_ping::PingsT>, "Read sss_ping::PingsT from .cereal file");
 

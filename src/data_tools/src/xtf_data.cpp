@@ -128,6 +128,7 @@ xtf_sss_ping process_side_scan_ping(XTFPINGHEADER *PingHeader, XTFFILEHEADER *XT
    ping.roll_ = M_PI/180.*PingHeader->SensorRoll;
    ping.pitch_ =  M_PI/180.*PingHeader->SensorPitch;
    ping.sound_vel_ = PingHeader->SoundVelocity;
+   ping.altitude_ =  PingHeader->SensorPrimaryAltitude;
 
    boost::posix_time::ptime data_time(boost::gregorian::date(PingHeader->Year, PingHeader->Month, PingHeader->Day), boost::posix_time::hours(PingHeader->Hour)+boost::posix_time::minutes(PingHeader->Minute)+boost::posix_time::seconds(PingHeader->Second)+boost::posix_time::milliseconds(10*int(PingHeader->HSeconds))); 
    stringstream time_ss;
@@ -204,6 +205,8 @@ xtf_sss_ping process_side_scan_ping(XTFPINGHEADER *PingHeader, XTFFILEHEADER *XT
       }
       ping_channel->time_duration = ChanHeader->TimeDuration;
       ping_channel->slant_range = ChanHeader->SlantRange;
+      ping_channel->gain_code = ChanHeader->GainCode;
+      ping_channel->initial_gain_code = ChanHeader->InitialGainCode;
 
       // Do whatever processing on the sidescan imagery here.
       //cout << "Processing a side scan ping!!" << endl;

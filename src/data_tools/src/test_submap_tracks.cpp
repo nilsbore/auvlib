@@ -117,7 +117,7 @@ int main(int argc, char** argv)
         cv::Scalar color(colormap[i%43][2], colormap[i%43][1], colormap[i%43][0]);
         cv::Mat curve(cp, true);
         curve.convertTo(curve, CV_32S); //adapt type for polylines
-        cv::polylines(track_img, curve, false, color, 2, cv::LINE_AA);
+        cv::polylines(track_img, curve, false, color, 2, CV_AA);
         ++i;
     }
 

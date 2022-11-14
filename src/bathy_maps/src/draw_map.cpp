@@ -142,7 +142,7 @@ void BathyMapImage::draw_track(const mbes_ping::PingsT& pings, const cv::Scalar&
 
     cv::Mat curve(curve_points, true);
     curve.convertTo(curve, CV_32S); //adapt type for polylines
-    cv::polylines(bathy_map, curve, false, color, 1, cv::LINE_AA);
+    cv::polylines(bathy_map, curve, false, color, 1, CV_AA);
 }
 
 void BathyMapImage::draw_track(const vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> >& pos)
@@ -162,7 +162,7 @@ void BathyMapImage::draw_track(const vector<Eigen::Vector3d, Eigen::aligned_allo
 
     cv::Mat curve(curve_points, true);
     curve.convertTo(curve, CV_32S); //adapt type for polylines
-    cv::polylines(bathy_map, curve, false, color, 1, cv::LINE_AA);
+    cv::polylines(bathy_map, curve, false, color, 1, CV_AA);
 }
 
 void BathyMapImage::draw_indices(mbes_ping::PingsT& pings, int skip_indices)
