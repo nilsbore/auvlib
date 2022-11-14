@@ -754,19 +754,18 @@ std::pair<double, Eigen::MatrixXd> track_error_benchmark::compute_consistency_er
     double value_count = 0.;
     for (int i = 0; i < benchmark_nbr_rows; ++i) {
         for (int j = 0; j < benchmark_nbr_cols; ++j) {
-            //cout << "i: " << i << ", j: " << j << endl;
 
             // Gather neighbors
             vector<Eigen::MatrixXd> neighborhood_points(nbr_maps);
-            vector<bool> neighborhood_present(nbr_maps, true);
+            vector<bool> neighborhood_present(nbr_maps, false);
             for (int m = 0; m < nbr_maps; ++m) {
-                for (int ii = std::max(i-1, 0); ii < std::min(i+1, benchmark_nbr_rows-1); ++ii) {
-                    for (int jj = std::max(j-1, 0); jj < std::min(j+1, benchmark_nbr_cols-1); ++jj) {
-                        //neighborhood_present[m] = neighborhood_present[m] && grid_maps[ii][jj][m].rows() > 0;
+                for (int ii = std::max(i-1, 0); ii <= std::min(i+1, benchmark_nbr_rows-1); ++ii) {
+                    for (int jj = std::max(j-1, 0); jj <= std::min(j+1, benchmark_nbr_cols-1); ++jj) {
                         if (grid_maps[ii][jj][m].rows() == 0) {
-                            neighborhood_present[m] = false;
+                            neighborhood_present[m] = false || neighborhood_present[m];
                             continue;
                         }
+                        neighborhood_present[m] = true;
                         neighborhood_points[m].conservativeResize(neighborhood_points[m].rows() + grid_maps[ii][jj][m].rows(), 3);
                         neighborhood_points[m].bottomRows(grid_maps[ii][jj][m].rows()) = grid_maps[ii][jj][m];
                     }
@@ -775,7 +774,7 @@ std::pair<double, Eigen::MatrixXd> track_error_benchmark::compute_consistency_er
 
             // Registration error
             double value = 0.;
-            int nbr_averages = 1000;
+            int nbr_averages = 10;
             for (int c = 0; c < nbr_averages; ++c) {
                 double maxm = 0.;
                 for (int m = 0; m < nbr_maps; ++m) {
