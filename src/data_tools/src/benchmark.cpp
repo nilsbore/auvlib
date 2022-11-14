@@ -295,6 +295,7 @@ std::pair<std::vector<std::vector<std::vector<double>>>, std::vector<std::vector
     double res, minx, miny, x0, y0;
     res = params[0]; minx = params[1]; miny = params[2]; x0 = params[3]; y0 = params[4];
 
+    int submap_num = 0;
     for(const Eigen::MatrixXd& submap: points_maps){
         for(unsigned int i = 0; i<submap.rows(); i++){
             Eigen::Vector3d pos = submap.row(i);
@@ -302,9 +303,10 @@ std::pair<std::vector<std::vector<std::vector<double>>>, std::vector<std::vector
             int row = int(y0+res*(pos[1]-miny));
             if (col >= 0 && col < benchmark_nbr_cols && row >= 0 && row < benchmark_nbr_rows) {
                 height_grid[row][col].push_back(pos[2]);
-                hit_by_submaps[row][col].insert(i);
+                hit_by_submaps[row][col].insert(submap_num);
             }
         }
+        submap_num += 1;
     }
     return make_pair(height_grid, hit_by_submaps);
 }
