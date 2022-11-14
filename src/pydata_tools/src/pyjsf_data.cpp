@@ -43,15 +43,45 @@ PYBIND11_MODULE(jsf_data, m) {
         .def_readwrite("sound_vel_", &jsf_sss_ping::sound_vel, "Sound speed in m/s")
         .def_readwrite("frequency", &jsf_sss_ping::frequency, "Frequency of sampling")
         .def_readwrite("pos_", &jsf_sss_ping::pos_, "Position in ENU coordinates")
+        .def_readwrite("sample_interval_", &jsf_sss_ping::sample_interval, "Sample interval in s")
+        .def_readwrite("flag_", &jsf_sss_ping::flag_, "Flag indicates which values are valid")
+        .def_readwrite("altitude_", &jsf_sss_ping::altitude_, "Altitude")
+        .def_readwrite("slant_", &jsf_sss_ping::slant_, "Max Slant Range")
+
         .def_static("parse_file", &parse_file_from_str<jsf_sss_ping>, "Parse jsf_sss_ping from .jsf file")
         .def_static("parse_folder", &parse_folder_from_str<jsf_sss_ping>, "Parse jsf_sss_ping from folder of .jsf files")
         .def_static("read_data", &read_data_from_str<jsf_sss_ping::PingsT>, "Read jsf_sss_ping::PingsT from .cereal file");
 
+    py::class_<jsf_dvl_ping>(m, "jsf_dvl_ping", "Class for jsf dvl type")
+        .def(py::init<>())
+        .def_readwrite("time_string_", &jsf_dvl_ping::time_string_, "Readable date of measurement")
+        .def_readwrite("time_stamp_", &jsf_dvl_ping::time_stamp_, "UNIX timestamp")
+        .def_readwrite("dist_to_bottom_", &jsf_dvl_ping::dist_to_bottom_, "Disctance to bottom in meter for up to 4 beams")
+        .def_readwrite("vel_wrt_bottom_", &jsf_dvl_ping::vel_wrt_bottom_, "Velocity with respect to the bottom in m/s")
+        .def_readwrite("vel_wrt_water_", &jsf_dvl_ping::vel_wrt_water_, "Velocity with respect to the water layer in m/s")
+        .def_readwrite("first_in_file_", &jsf_dvl_ping::first_in_file_, "Is first measurement in file?")
+        .def_readwrite("ship_coord_", &jsf_dvl_ping::ship_coord_, "Is velocity in ship coordinates?")
+        .def_readwrite("depth_", &jsf_dvl_ping::depth_, "Depth from depth sensor in meters")
+        .def_readwrite("pitch_", &jsf_dvl_ping::pitch_, "Radian pitch in ENU coordinates")
+        .def_readwrite("roll_", &jsf_dvl_ping::roll_, "Radian roll in ENU coordinatese")
+        .def_readwrite("heading_", &jsf_dvl_ping::heading_, "Radian heading in ENU coordinates")
+        .def_readwrite("sound_vel_", &jsf_dvl_ping::sound_vel_, "Sound speed in m/s")
+        .def_readwrite("temp_", &jsf_dvl_ping::temp_, "Temperature in degree Celsius")
+        .def_readwrite("salinity_", &jsf_dvl_ping::salinity_, "Salinity in 1 part per thousand")
+        .def_readwrite("flag_", &jsf_dvl_ping::flag_, "Flag indicates which values present")
+        .def_readwrite("error_", &jsf_dvl_ping::error_, "Is error detected?")
+        .def_static("parse_file", &parse_file_from_str<jsf_dvl_ping>, "Parse jsf_dvl_ping from .jsf file")
+        .def_static("parse_folder", &parse_folder_from_str<jsf_dvl_ping>, "Parse jsf_dvl_ping from folder of .jsf files")
+        .def_static("read_data", &read_data_from_str<jsf_dvl_ping::PingsT>, "Read jsf_dvl_ping::PingsT from .cereal file");
+
     m.def("write_data", &write_data_from_str<jsf_sss_ping::PingsT>, "Write jsf pings to .cereal file");
+    m.def("write_data", &write_data_from_str<jsf_dvl_ping::PingsT>, "Write dvl pings to .cereal file");
     m.def("make_waterfall_image", &make_waterfall_image, "Create a cv2 waterfall image from jsf_sss_ping::PingsT");
     m.def("show_waterfall_image", &show_waterfall_image, "Show a waterfall image created from jsf_sss_ping::PingsT");
     m.def("filter_frequency", &filter_frequency, "Filter to keep only jsf_sss_ping::PingsT with certain frequency");
     m.def("convert_to_xtf_pings", &convert_to_xtf_pings, "Convert jsf_sss_ping::PingsT to std_data::sss_ping::PingsT");
+    m.def("match_sound_vel", &match_sound_vel, "Match sound velocity and slant range from jsf_dvl_ping::PingsT to jsf_sss_ping::PingsT");
+
 
     // from http://alexsm.com/pybind11-buffer-protocol-opencv-to-numpy/
     pybind11::class_<cv::Mat>(m, "Image", pybind11::buffer_protocol())
