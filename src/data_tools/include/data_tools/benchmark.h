@@ -16,6 +16,8 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+#include <set>
+
 namespace benchmark {
 
 struct track_error_benchmark {
@@ -84,6 +86,14 @@ struct track_error_benchmark {
     std::pair<double, Eigen::MatrixXd> compute_consistency_error(
             std::vector<std::vector<std::vector<Eigen::MatrixXd> > >& grid_maps);
     cv::Mat draw_error_consistency_map(Eigen::MatrixXd values);
+
+    // Functions for grid std computations and plotting
+    std::pair<std::vector<std::vector<std::vector<double>>>, std::vector<std::vector<std::set<int>>>> create_height_and_hits_grid_from_matrices(PointsT& points_maps);
+    double compute_vector_std(const std::vector<double>& vec, double vec_mean);
+    std::pair<double, Eigen::MatrixXd> compute_grid_std(const std::vector<std::vector<std::vector<double>>>& height_grid,
+                                                                 const std::vector<std::vector<std::set<int>>>& hit_by_submaps,
+                                                                 int min_nbr_submap_hits=1);
+    cv::Mat draw_grid(Eigen::MatrixXd);
 
     // Draw heightmap of submaps
     cv::Mat draw_height_submap(PointsT &map_points, PointsT &track_points, const int &submap_number);
