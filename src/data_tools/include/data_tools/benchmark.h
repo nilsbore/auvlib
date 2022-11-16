@@ -28,6 +28,8 @@ struct benchmark_range {
 
     benchmark_range(double minx, double miny, double maxx, double maxy) : minx(minx),
         miny(miny), maxx(maxx), maxy(maxy) {};
+
+    benchmark_range() : minx(0), miny(0), maxx(0), maxy(0) {};
 };
 
 struct track_error_benchmark {
@@ -81,6 +83,7 @@ struct track_error_benchmark {
     // Helper functions to track_img_params
     benchmark_range compute_benchmark_range_from_gt_track();
     benchmark_range compute_benchmark_range_from_pings(std_data::mbes_ping::PingsT& pings);
+    benchmark_range compute_benchmark_range_from_pointsT(PointsT& points_maps);
     std::array<double, 5> compute_params_from_benchmark_range(benchmark_range range);
 
     // these 5 functions should be the main way of interfacing with this class
@@ -94,7 +97,7 @@ struct track_error_benchmark {
     void add_ground_truth(PointsT &map_points, PointsT &track_points);
     void add_benchmark(PointsT &maps_points, PointsT &tracks_points, const std::string &name);
 
-    void track_img_params(PointsT& points_maps);
+    void track_img_params(PointsT& points_maps, bool compute_range_from_points = true);
     cv::Mat draw_height_map(PointsT &points_maps);
     std::vector<std::vector<std::vector<Eigen::MatrixXd> > > create_grids_from_pings(std_data::mbes_ping::PingsT& pings);
     std::vector<std::vector<std::vector<Eigen::MatrixXd> > > create_grids_from_matrices(PointsT& points_maps);
