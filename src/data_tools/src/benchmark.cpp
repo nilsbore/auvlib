@@ -21,9 +21,7 @@ namespace benchmark {
 
 using namespace std_data;
 
-// res, xmin, ymin, imxmin, imymin
-void track_error_benchmark::track_img_params(mbes_ping::PingsT& pings)
-{
+benchmark_range track_error_benchmark::compute_benchmark_range_from_pings(mbes_ping::PingsT& pings) {
     auto xcomp = [](const mbes_ping& p1, const mbes_ping& p2) {
         return p1.pos_[0] < p2.pos_[0];
     };
@@ -34,26 +32,10 @@ void track_error_benchmark::track_img_params(mbes_ping::PingsT& pings)
     double minx = std::min_element(pings.begin(), pings.end(), xcomp)->pos_[0];
     double maxy = std::max_element(pings.begin(), pings.end(), ycomp)->pos_[1];
     double miny = std::min_element(pings.begin(), pings.end(), ycomp)->pos_[1];
-
-    cout << "Min X: " << minx << ", Max X: " << maxx << ", Min Y: " << miny << ", Max Y: " << maxy << endl;
-
-    double xres = double(benchmark_nbr_cols)/(maxx - minx);
-    double yres = double(benchmark_nbr_rows)/(maxy - miny);
-
-    double res = std::min(xres, yres);
-
-    double x0 = .5*(double(benchmark_nbr_cols) - res*(maxx-minx));
-    double y0 = .5*(double(benchmark_nbr_rows) - res*(maxy-miny));
-
-    cout << xres << ", " << yres << endl;
-
-    params = array<double, 5>{res, minx, miny, x0, y0};
-    track_img = cv::Mat(benchmark_nbr_rows, benchmark_nbr_cols, CV_8UC3, cv::Scalar(255, 255, 255));
+    return benchmark_range(minx, miny, maxx, maxy);
 }
 
-
-void track_error_benchmark::track_img_params(PointsT& points_maps)
-{
+benchmark_range track_error_benchmark::compute_benchmark_range_from_gt_track() {
     auto xcomp = [](const Eigen::Vector3d& p1, const Eigen::Vector3d& p2) {
         return p1[0] < p2[0];
     };
@@ -65,20 +47,39 @@ void track_error_benchmark::track_img_params(PointsT& points_maps)
     double minx = std::min_element(gt_track.begin(), gt_track.end(), xcomp)->data()[0]-20;
     double maxy = std::max_element(gt_track.begin(), gt_track.end(), ycomp)->data()[1]+20;
     double miny = std::min_element(gt_track.begin(), gt_track.end(), ycomp)->data()[1]-20;
+    return benchmark_range(minx, miny, maxx, maxy);
+}
 
-    cout << "Min X: " << minx << ", Max X: " << maxx << ", Min Y: " << miny << ", Max Y: " << maxy << endl;
+array<double, 5> track_error_benchmark::compute_params_from_benchmark_range(benchmark_range range) {
+    cout << "Min X: " << range.minx << ", Max X: " << range.maxx << ", Min Y: " << range.miny << ", Max Y: " << range.maxy << endl;
 
-    double xres = double(benchmark_nbr_cols)/(maxx - minx);
-    double yres = double(benchmark_nbr_rows)/(maxy - miny);
+    double xres = double(benchmark_nbr_cols)/(range.maxx - range.minx);
+    double yres = double(benchmark_nbr_rows)/(range.maxy - range.miny);
 
     double res = std::min(xres, yres);
 
-    double x0 = .5*(double(benchmark_nbr_cols) - res*(maxx-minx));
-    double y0 = .5*(double(benchmark_nbr_rows) - res*(maxy-miny));
+    double x0 = .5*(double(benchmark_nbr_cols) - res*(range.maxx-range.minx));
+    double y0 = .5*(double(benchmark_nbr_rows) - res*(range.maxy-range.miny));
 
     cout << xres << ", " << yres << endl;
 
-    params = array<double, 5>{res, minx, miny, x0, y0};
+    return array<double, 5>{res, range.minx, range.miny, x0, y0};
+}
+
+
+// res, xmin, ymin, imxmin, imymin
+void track_error_benchmark::track_img_params(mbes_ping::PingsT& pings)
+{
+    benchmark_range range = compute_benchmark_range_from_pings(pings);
+    params = compute_params_from_benchmark_range(range);
+    track_img = cv::Mat(benchmark_nbr_rows, benchmark_nbr_cols, CV_8UC3, cv::Scalar(255, 255, 255));
+}
+
+
+void track_error_benchmark::track_img_params(PointsT& points_maps)
+{
+    benchmark_range range = compute_benchmark_range_from_gt_track();
+    params = compute_params_from_benchmark_range(range);
     track_img = cv::Mat(benchmark_nbr_rows, benchmark_nbr_cols, CV_8UC3, cv::Scalar(255, 255, 255));
 }
 

@@ -20,6 +20,16 @@
 
 namespace benchmark {
 
+struct benchmark_range {
+    double minx;
+    double miny;
+    double maxx;
+    double maxy;
+
+    benchmark_range(double minx, double miny, double maxx, double maxy) : minx(minx),
+        miny(miny), maxx(maxx), maxy(maxy) {};
+};
+
 struct track_error_benchmark {
 
     using PointsT = std::vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> >;
@@ -67,6 +77,11 @@ struct track_error_benchmark {
         min_consistency_error = -1.;
         max_consistency_error = -1.;
     }
+
+    // Helper functions to track_img_params
+    benchmark_range compute_benchmark_range_from_gt_track();
+    benchmark_range compute_benchmark_range_from_pings(std_data::mbes_ping::PingsT& pings);
+    std::array<double, 5> compute_params_from_benchmark_range(benchmark_range range);
 
     // these 5 functions should be the main way of interfacing with this class
     void add_ground_truth(std_data::mbes_ping::PingsT& pings);
