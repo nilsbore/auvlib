@@ -29,7 +29,11 @@ struct benchmark_range {
     benchmark_range(double minx, double miny, double maxx, double maxy) : minx(minx),
         miny(miny), maxx(maxx), maxy(maxy) {};
 
-    benchmark_range() : minx(0), miny(0), maxx(0), maxy(0) {};
+    benchmark_range() :
+        minx(std::numeric_limits<double>::max()),
+        miny(std::numeric_limits<double>::max()),
+        maxx(std::numeric_limits<double>::min()),
+        maxy(std::numeric_limits<double>::min()) {};
 };
 
 struct track_error_benchmark {

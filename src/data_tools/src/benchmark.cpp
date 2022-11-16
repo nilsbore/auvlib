@@ -51,8 +51,10 @@ benchmark_range track_error_benchmark::compute_benchmark_range_from_gt_track() {
 }
 
 benchmark_range track_error_benchmark::compute_benchmark_range_from_pointsT(PointsT& points_maps) {
-    double minx, miny = std::numeric_limits<double>::max();
-    double maxx, maxy = std::numeric_limits<double>::min();
+    double minx = std::numeric_limits<double>::max();
+    double miny = std::numeric_limits<double>::max();
+    double maxx = std::numeric_limits<double>::min();
+    double maxy = std::numeric_limits<double>::min();
 
     for (auto point_cloud : points_maps) {
         auto min_coeff = point_cloud.colwise().minCoeff();
