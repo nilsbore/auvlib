@@ -32,8 +32,8 @@ struct benchmark_range {
     benchmark_range() :
         minx(std::numeric_limits<double>::max()),
         miny(std::numeric_limits<double>::max()),
-        maxx(std::numeric_limits<double>::min()),
-        maxy(std::numeric_limits<double>::min()) {};
+        maxx(std::numeric_limits<double>::lowest()),
+        maxy(std::numeric_limits<double>::lowest()) {};
 };
 
 struct track_error_benchmark {
@@ -96,6 +96,7 @@ struct track_error_benchmark {
     void add_benchmark(std_data::mbes_ping::PingsT& pings, const std::string& name);
     void add_benchmark(std_data::pt_submaps::TransT& trans_corr, std_data::pt_submaps::RotsT& rots_corr, const std::string& name);
     void print_summary();
+
 
     // Overloaded functions to work with input submaps in PointsT format
     void add_ground_truth(PointsT &map_points, PointsT &track_points);
