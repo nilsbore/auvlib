@@ -21,21 +21,20 @@ namespace benchmark {
 
 using namespace std_data;
 
-benchmark_range track_error_benchmark::compute_benchmark_range_from_pings(mbes_ping::PingsT& pings) {
+void track_error_benchmark::compute_benchmark_range_from_pings(const mbes_ping::PingsT& pings, benchmark_range& range) {
     auto xcomp = [](const mbes_ping& p1, const mbes_ping& p2) {
         return p1.pos_[0] < p2.pos_[0];
     };
     auto ycomp = [](const mbes_ping& p1, const mbes_ping& p2) {
         return p1.pos_[1] < p2.pos_[1];
     };
-    double maxx = std::max_element(pings.begin(), pings.end(), xcomp)->pos_[0];
-    double minx = std::min_element(pings.begin(), pings.end(), xcomp)->pos_[0];
-    double maxy = std::max_element(pings.begin(), pings.end(), ycomp)->pos_[1];
-    double miny = std::min_element(pings.begin(), pings.end(), ycomp)->pos_[1];
-    return benchmark_range(minx, miny, maxx, maxy);
+    range.maxx = std::max_element(pings.begin(), pings.end(), xcomp)->pos_[0];
+    range.minx = std::min_element(pings.begin(), pings.end(), xcomp)->pos_[0];
+    range.maxy = std::max_element(pings.begin(), pings.end(), ycomp)->pos_[1];
+    range.miny = std::min_element(pings.begin(), pings.end(), ycomp)->pos_[1];
 }
 
-benchmark_range track_error_benchmark::compute_benchmark_range_from_gt_track() {
+void track_error_benchmark::compute_benchmark_range_from_gt_track(benchmark_range& range) {
     auto xcomp = [](const Eigen::Vector3d& p1, const Eigen::Vector3d& p2) {
         return p1[0] < p2[0];
     };
@@ -43,14 +42,13 @@ benchmark_range track_error_benchmark::compute_benchmark_range_from_gt_track() {
         return p1[1] < p2[1];
     };
 
-    double maxx = std::max_element(gt_track.begin(), gt_track.end(), xcomp)->data()[0]+20;
-    double minx = std::min_element(gt_track.begin(), gt_track.end(), xcomp)->data()[0]-20;
-    double maxy = std::max_element(gt_track.begin(), gt_track.end(), ycomp)->data()[1]+20;
-    double miny = std::min_element(gt_track.begin(), gt_track.end(), ycomp)->data()[1]-20;
-    return benchmark_range(minx, miny, maxx, maxy);
+    range.maxx = std::max_element(gt_track.begin(), gt_track.end(), xcomp)->data()[0]+20;
+    range.minx = std::min_element(gt_track.begin(), gt_track.end(), xcomp)->data()[0]-20;
+    range.maxy = std::max_element(gt_track.begin(), gt_track.end(), ycomp)->data()[1]+20;
+    range.miny = std::min_element(gt_track.begin(), gt_track.end(), ycomp)->data()[1]-20;
 }
 
-benchmark_range track_error_benchmark::compute_benchmark_range_from_pointsT(PointsT& points_maps) {
+void track_error_benchmark::compute_benchmark_range_from_pointsT(const PointsT& points_maps, benchmark_range& range) {
     double minx = std::numeric_limits<double>::max();
     double miny = std::numeric_limits<double>::max();
     double maxx = std::numeric_limits<double>::lowest();
@@ -67,10 +65,13 @@ benchmark_range track_error_benchmark::compute_benchmark_range_from_pointsT(Poin
         maxy = std::max(maxy, max_coeff[1]);
 
     }
-    return benchmark_range(minx, miny, maxx, maxy);
+    range.minx = minx;
+    range.miny = miny;
+    range.maxx = maxx;
+    range.maxy = maxy;
 }
 
-array<double, 5> track_error_benchmark::compute_params_from_benchmark_range(benchmark_range range) {
+array<double, 5> track_error_benchmark::compute_params_from_benchmark_range(const benchmark_range& range) {
     cout << "Min X: " << range.minx << ", Max X: " << range.maxx << ", Min Y: " << range.miny << ", Max Y: " << range.maxy << endl;
 
     double xres = double(benchmark_nbr_cols)/(range.maxx - range.minx);
@@ -90,7 +91,8 @@ array<double, 5> track_error_benchmark::compute_params_from_benchmark_range(benc
 // res, xmin, ymin, imxmin, imymin
 void track_error_benchmark::track_img_params(mbes_ping::PingsT& pings)
 {
-    benchmark_range range = compute_benchmark_range_from_pings(pings);
+    benchmark_range range;
+    compute_benchmark_range_from_pings(pings, range);
     params = compute_params_from_benchmark_range(range);
     track_img = cv::Mat(benchmark_nbr_rows, benchmark_nbr_cols, CV_8UC3, cv::Scalar(255, 255, 255));
 }
@@ -102,9 +104,9 @@ void track_error_benchmark::track_img_params(PointsT& points_maps, bool compute_
     // Compute range from the given PointsT& points_maps directly if the flag is set to true
     // Otherwise compute range from the gt_track set in the add_groundtruth method...
     if (compute_range_from_points) {
-        range = compute_benchmark_range_from_pointsT(points_maps);
+        compute_benchmark_range_from_pointsT(points_maps, range);
     } else {
-        range = compute_benchmark_range_from_gt_track();
+        compute_benchmark_range_from_gt_track(range);
     }
     params = compute_params_from_benchmark_range(range);
     track_img = cv::Mat(benchmark_nbr_rows, benchmark_nbr_cols, CV_8UC3, cv::Scalar(255, 255, 255));

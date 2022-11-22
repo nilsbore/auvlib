@@ -85,10 +85,10 @@ struct track_error_benchmark {
     }
 
     // Helper functions to track_img_params
-    benchmark_range compute_benchmark_range_from_gt_track();
-    benchmark_range compute_benchmark_range_from_pings(std_data::mbes_ping::PingsT& pings);
-    benchmark_range compute_benchmark_range_from_pointsT(PointsT& points_maps);
-    std::array<double, 5> compute_params_from_benchmark_range(benchmark_range range);
+    void compute_benchmark_range_from_gt_track(benchmark_range& range);
+    void compute_benchmark_range_from_pings(const std_data::mbes_ping::PingsT& pings, benchmark_range& range);
+    void compute_benchmark_range_from_pointsT(const PointsT& points_maps, benchmark_range& range);
+    std::array<double, 5> compute_params_from_benchmark_range(const benchmark_range& range);
 
     // these 5 functions should be the main way of interfacing with this class
     void add_ground_truth(std_data::mbes_ping::PingsT& pings);
