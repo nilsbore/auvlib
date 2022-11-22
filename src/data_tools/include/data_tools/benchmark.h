@@ -59,6 +59,8 @@ struct track_error_benchmark {
     //std::map<std::string, pt_submaps::TransT> tracks;
     std::map<std::string, double> track_rms_errors;
     std::map<std::string, double> consistency_rms_errors;
+    std::map<std::string, double> std_grids_with_hits;
+    std::map<std::string, double> std_grids_with_overlaps;
     double min_consistency_error;
     double max_consistency_error;
     double min_depth_;

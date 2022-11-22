@@ -562,9 +562,11 @@ void track_error_benchmark::add_benchmark(PointsT& maps_points, PointsT& tracks_
     tie(height_grid, hit_by_submaps) = create_height_and_hits_grid_from_matrices(maps_points);
     // std for cells with >= 1 hits (i.e. grids with any data at all)
     tie(average_std_grids_with_data, std_grids_with_data) = compute_grid_std(height_grid, hit_by_submaps, 1);
+    std_grids_with_hits[name] = average_std_grids_with_data;
     cv::imwrite(dataset_name+"_"+name+"_std_grids_with_hits.png", draw_grid(std_grids_with_data));
     // std for cells with >= 2 hits (i.e. grids with overlap)
     tie(average_std_grids_with_overlap, std_grids_with_overlap) = compute_grid_std(height_grid, hit_by_submaps, 2);
+    std_grids_with_overlaps[name] = average_std_grids_with_overlap;
     cv::imwrite(dataset_name+"_"+name+"_std_grids_with_overlap.png", draw_grid(std_grids_with_overlap));
 
     cout << " -------------- " << endl;
@@ -639,6 +641,12 @@ void track_error_benchmark::print_summary()
     }
     for (const pair<string, double>& p : consistency_rms_errors) {
         cout << p.first << " RMS consistency error: " << p.second << endl;
+    }
+    for (const pair<string, double>& p: std_grids_with_hits) {
+        cout << p.first << " Std grids with hits (1): " << p.second << endl;
+    }
+    for (const pair<string, double>& p: std_grids_with_overlaps) {
+        cout << p.first << " Std grids with overlap (2): " << p.second << endl;
     }
     for (const pair<string, string>& p : error_img_paths) {
         cout << p.first << " consistency image path: " << p.second << endl;
