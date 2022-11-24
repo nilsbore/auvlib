@@ -90,7 +90,7 @@ struct track_error_benchmark {
     void compute_benchmark_range_from_gt_track(benchmark_range& range);
     void compute_benchmark_range_from_pings(const std_data::mbes_ping::PingsT& pings, benchmark_range& range);
     void compute_benchmark_range_from_pointsT(const PointsT& points_maps, benchmark_range& range);
-    std::array<double, 5> compute_params_from_benchmark_range(const benchmark_range& range);
+    void compute_params_from_benchmark_range(const benchmark_range& range);
 
     // these 5 functions should be the main way of interfacing with this class
     void add_ground_truth(std_data::mbes_ping::PingsT& pings);
@@ -101,24 +101,24 @@ struct track_error_benchmark {
 
 
     // Overloaded functions to work with input submaps in PointsT format
-    void add_ground_truth(PointsT &map_points, PointsT &track_points);
-    void add_benchmark(PointsT &maps_points, PointsT &tracks_points, const std::string &name);
+    void add_ground_truth(const PointsT &map_points, const PointsT &track_points);
+    void add_benchmark(const PointsT &maps_points, const PointsT &tracks_points, const std::string &name);
 
-    void track_img_params(PointsT& points_maps, bool compute_range_from_points = true);
-    cv::Mat draw_height_map(PointsT &points_maps);
-    std::vector<std::vector<std::vector<Eigen::MatrixXd> > > create_grids_from_pings(std_data::mbes_ping::PingsT& pings);
-    std::vector<std::vector<std::vector<Eigen::MatrixXd> > > create_grids_from_matrices(PointsT& points_maps);
+    void track_img_params(const PointsT& points_maps, bool compute_range_from_points = true);
+    cv::Mat draw_height_map(const PointsT &points_maps);
+    std::vector<std::vector<std::vector<Eigen::MatrixXd> > > create_grids_from_pings(const std_data::mbes_ping::PingsT& pings);
+    std::vector<std::vector<std::vector<Eigen::MatrixXd> > > create_grids_from_matrices(const PointsT& points_maps);
     std::pair<double, Eigen::MatrixXd> compute_consistency_error(
-            std::vector<std::vector<std::vector<Eigen::MatrixXd> > >& grid_maps);
+            const std::vector<std::vector<std::vector<Eigen::MatrixXd> > >& grid_maps);
     cv::Mat draw_error_consistency_map(Eigen::MatrixXd values);
 
     // Functions for grid std computations and plotting
-    std::pair<std::vector<std::vector<std::vector<double>>>, std::vector<std::vector<std::set<int>>>> create_height_and_hits_grid_from_matrices(PointsT& points_maps);
-    double compute_vector_std(const std::vector<double>& vec, double vec_mean);
+    std::pair<std::vector<std::vector<std::vector<double>>>, std::vector<std::vector<std::set<int>>>> create_height_and_hits_grid_from_matrices(const PointsT& points_maps);
+    double compute_vector_std(const std::vector<double>& vec, const double vec_mean);
     std::pair<double, Eigen::MatrixXd> compute_grid_std(const std::vector<std::vector<std::vector<double>>>& height_grid,
                                                                  const std::vector<std::vector<std::set<int>>>& hit_by_submaps,
                                                                  int min_nbr_submap_hits=1);
-    cv::Mat draw_grid(Eigen::MatrixXd);
+    cv::Mat draw_grid(Eigen::MatrixXd values);
 
     // Draw heightmap of submaps
     cv::Mat draw_height_submap(PointsT &map_points, PointsT &track_points, const int &submap_number);
