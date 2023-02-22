@@ -17,6 +17,7 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include <set>
+#include <fstream>
 
 namespace benchmark {
 
@@ -105,7 +106,7 @@ struct track_error_benchmark {
     void add_benchmark(const PointsT &maps_points, const PointsT &tracks_points, const std::string &name);
 
     void track_img_params(const PointsT& points_maps, bool compute_range_from_points = true);
-    cv::Mat draw_height_map(const PointsT &points_maps);
+    cv::Mat draw_height_map(const PointsT &points_maps, const std::string& name);
     std::vector<std::vector<std::vector<Eigen::MatrixXd> > > create_grids_from_pings(const std_data::mbes_ping::PingsT& pings);
     std::vector<std::vector<std::vector<Eigen::MatrixXd> > > create_grids_from_matrices(const PointsT& points_maps);
     std::pair<double, Eigen::MatrixXd> compute_consistency_error(
@@ -113,12 +114,13 @@ struct track_error_benchmark {
     cv::Mat draw_error_consistency_map(Eigen::MatrixXd values);
 
     // Functions for grid std computations and plotting
-    std::pair<std::vector<std::vector<std::vector<double>>>, std::vector<std::vector<std::set<int>>>> create_height_and_hits_grid_from_matrices(const PointsT& points_maps);
     double compute_vector_std(const std::vector<double>& vec, const double vec_mean);
-    std::pair<double, Eigen::MatrixXd> compute_grid_std(const std::vector<std::vector<std::vector<double>>>& height_grid,
-                                                                 const std::vector<std::vector<std::set<int>>>& hit_by_submaps,
-                                                                 int min_nbr_submap_hits=1);
+    std::pair<double, Eigen::MatrixXd> compute_grid_std(const std::vector<std::vector<std::vector<Eigen::MatrixXd>>>& grid_maps,
+        int min_nbr_submap_hits=1, bool compute_mean=true);
     cv::Mat draw_grid(Eigen::MatrixXd values);
+
+    // Other helper functions
+    void write_matrix_to_file(const Eigen::MatrixXd& matrix, const std::string& filename);
 
     // Draw heightmap of submaps
     cv::Mat draw_height_submap(PointsT &map_points, PointsT &track_points, const int &submap_number);

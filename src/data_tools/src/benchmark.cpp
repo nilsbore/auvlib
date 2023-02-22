@@ -21,6 +21,13 @@ namespace benchmark {
 
 using namespace std_data;
 
+void track_error_benchmark::write_matrix_to_file(const Eigen::MatrixXd& matrix, const std::string& filename){
+    Eigen::IOFormat CSVFmt(Eigen::FullPrecision, Eigen::DontAlignCols,
+                           ", ", "\n");
+    ofstream file((filename + ".csv").c_str());
+    file << matrix.format(CSVFmt);
+}
+
 void track_error_benchmark::compute_benchmark_range_from_pings(const mbes_ping::PingsT& pings, benchmark_range& range) {
     auto xcomp = [](const mbes_ping& p1, const mbes_ping& p2) {
         return p1.pos_[0] < p2.pos_[0];
@@ -317,34 +324,6 @@ void track_error_benchmark::map_draw_params(PointsT& map_points, PointsT& track_
     max_depth_ = means.maxCoeff();
 }
 
-
-std::pair<std::vector<std::vector<std::vector<double>>>, std::vector<std::vector<std::set<int>>>> track_error_benchmark::create_height_and_hits_grid_from_matrices(const PointsT& points_maps) {
-    std::vector<std::vector<std::vector<double>>> height_grid(benchmark_nbr_rows);
-    std::vector<std::vector<std::set<int>>> hit_by_submaps(benchmark_nbr_rows);
-    for (int i = 0; i < benchmark_nbr_rows; ++i) {
-        height_grid[i].resize(benchmark_nbr_cols);
-        hit_by_submaps[i].resize(benchmark_nbr_cols);
-    }
-
-    double res, minx, miny, x0, y0;
-    res = params[0]; minx = params[1]; miny = params[2]; x0 = params[3]; y0 = params[4];
-
-    int submap_num = 0;
-    for(const Eigen::MatrixXd& submap: points_maps){
-        for(unsigned int i = 0; i<submap.rows(); i++){
-            Eigen::Vector3d pos = submap.row(i);
-            int col = int(x0+res*(pos[0]-minx));
-            int row = int(y0+res*(pos[1]-miny));
-            if (col >= 0 && col < benchmark_nbr_cols && row >= 0 && row < benchmark_nbr_rows) {
-                height_grid[row][col].push_back(pos[2]);
-                hit_by_submaps[row][col].insert(submap_num);
-            }
-        }
-        submap_num += 1;
-    }
-    return make_pair(height_grid, hit_by_submaps);
-}
-
 double track_error_benchmark::compute_vector_std(const std::vector<double>& vec, const double vec_mean) {
     double vec_std = 0;
     for (auto i : vec) {
@@ -354,9 +333,54 @@ double track_error_benchmark::compute_vector_std(const std::vector<double>& vec,
     return pow(1/(denominator)*vec_std, .5);
 }
 
+std::pair<double, Eigen::MatrixXd> track_error_benchmark::compute_grid_std(const std::vector<std::vector<std::vector<Eigen::MatrixXd>>>& grid_maps,
+    int min_nbr_submap_hits, bool compute_mean) {
+
+    double nbr_grids = 0.;
+    double mean = 0;
+
+    Eigen::MatrixXd standard_deviation(benchmark_nbr_rows, benchmark_nbr_cols); standard_deviation.setZero();
+    for (int i = 0; i < benchmark_nbr_rows; ++i) {
+        for (int j = 0; j < benchmark_nbr_cols; ++j) {
+            int submap_with_hits = 0;
+            std::vector<double> submap_means_at_grid;
+
+            for (int k = 0; k < grid_maps[i][j].size(); ++k) {
+                if (grid_maps[i][j][k].rows() > 0) {
+                    submap_with_hits += 1;
+
+                    if (compute_mean) {
+                        std::vector<double> submap_hits_at_grid;
+                        for (int p = 0; p <  grid_maps[i][j][k].rows(); p++) {
+                            submap_hits_at_grid.push_back(grid_maps[i][j][k].row(p)[2]);
+                        }
+                        submap_means_at_grid.push_back(std::accumulate(submap_hits_at_grid.begin(),
+                                                                    submap_hits_at_grid.end(),
+                                                                    0.)/submap_hits_at_grid.size()
+                        );
+                    } else {
+                        for (int p = 0; p <  grid_maps[i][j][k].rows(); p++) {
+                            submap_means_at_grid.push_back(grid_maps[i][j][k].row(p)[2]);
+                        }
+                    }
+                }
+            }
+            if (submap_with_hits < min_nbr_submap_hits) {
+                continue;
+            }
+            nbr_grids += 1;
+            mean = std::accumulate(submap_means_at_grid.begin(), submap_means_at_grid.end(), 0.) / submap_means_at_grid.size();
+            standard_deviation(i, j) = compute_vector_std(submap_means_at_grid, mean);
+        }
+    }
+    double average_std = standard_deviation.sum()/nbr_grids;
+    cout << "Average std (" << min_nbr_submap_hits << ") = " << average_std << ", nbr grids = " << nbr_grids << endl;
+    return make_pair(average_std, standard_deviation);
+}
 // Computes standard deviation of the grids with at least min_nbr_submap_hits
 // The default behavior is to compute standard deviation of all grids with >= 1 hits, i.e.
 // for grid cells with at least some hits by 1 submap
+/*
 std::pair<double, Eigen::MatrixXd> track_error_benchmark::compute_grid_std(const std::vector<std::vector<std::vector<double>>>& height_grid,
                                                                  const std::vector<std::vector<std::set<int>>>& hit_by_submaps,
                                                                  int min_nbr_submap_hits) {
@@ -377,8 +401,9 @@ std::pair<double, Eigen::MatrixXd> track_error_benchmark::compute_grid_std(const
     cout << "Average std (" << min_nbr_submap_hits << ") = " << average_std << ", nbr grids = " << nbr_grids << endl;
     return make_pair(average_std, standard_deviation);
 }
+*/
 
-cv::Mat track_error_benchmark::draw_height_map(const PointsT& points_maps)
+cv::Mat track_error_benchmark::draw_height_map(const PointsT& points_maps, const std::string& name)
 {
     Eigen::MatrixXd means(benchmark_nbr_rows, benchmark_nbr_cols); means.setZero();
     Eigen::MatrixXd counts(benchmark_nbr_rows, benchmark_nbr_cols); counts.setZero();
@@ -400,6 +425,8 @@ cv::Mat track_error_benchmark::draw_height_map(const PointsT& points_maps)
 
     Eigen::ArrayXXd counts_pos = counts.array() + (counts.array() == 0.).cast<double>();
     means.array() /= counts_pos;
+    //TODO: refactor this!!!
+    write_matrix_to_file(means, name);
 
     double minv = means.minCoeff();
     double meanv = means.mean();
@@ -548,30 +575,31 @@ void track_error_benchmark::add_benchmark(const PointsT& maps_points, const Poin
     std::vector<std::vector<std::vector<Eigen::MatrixXd> > > grid_maps = create_grids_from_matrices(maps_points);
     tie(consistency_rms_error, error_vals) = compute_consistency_error(grid_maps);
     error_img = draw_error_consistency_map(error_vals);
-    string error_img_path = dataset_name + "_" + name + "_rms_consistency_error.png";
+    std::string error_img_path = dataset_name + "_" + name + "_rms_consistency_error.png";
     cv::imwrite(error_img_path, error_img);
     error_img_paths[name] = error_img_path;
     consistency_rms_errors[name] = consistency_rms_error;
+    write_matrix_to_file(error_vals, error_img_path);
 
-    cv::Mat mean_img = draw_height_map(maps_points);
-    string mean_img_path = dataset_name + "_" + name + "_mean_depth.png";
+    std::string mean_img_path = dataset_name + "_" + name + "_mean_depth.png";
+    cv::Mat mean_img = draw_height_map(maps_points, mean_img_path);
     cv::imwrite(mean_img_path, mean_img);
 
-
     //Compute std error
-    std::vector<std::vector<std::vector<double>>> height_grid;
-    std::vector<std::vector<std::set<int>>> hit_by_submaps;
     double average_std_grids_with_data, average_std_grids_with_overlap;
     Eigen::MatrixXd std_grids_with_data, std_grids_with_overlap;
-    tie(height_grid, hit_by_submaps) = create_height_and_hits_grid_from_matrices(maps_points);
     // std for cells with >= 1 hits (i.e. grids with any data at all)
-    tie(average_std_grids_with_data, std_grids_with_data) = compute_grid_std(height_grid, hit_by_submaps, 1);
+    tie(average_std_grids_with_data, std_grids_with_data) = compute_grid_std(grid_maps, 1, false);
     std_grids_with_hits[name] = average_std_grids_with_data;
-    cv::imwrite(dataset_name+"_"+name+"_std_grids_with_hits.png", draw_grid(std_grids_with_data));
+    std::string std_grids_img_path = dataset_name+"_"+name+"_std_grids_with_hits.png";
+    cv::imwrite(std_grids_img_path, draw_grid(std_grids_with_data));
+    write_matrix_to_file(std_grids_with_data, std_grids_img_path);
     // std for cells with >= 2 hits (i.e. grids with overlap)
-    tie(average_std_grids_with_overlap, std_grids_with_overlap) = compute_grid_std(height_grid, hit_by_submaps, 2);
+    tie(average_std_grids_with_overlap, std_grids_with_overlap) = compute_grid_std(grid_maps, 2, false);
+    std::string std_overlaps_img_path = dataset_name+"_"+name+"_std_grids_with_overlap.png";
     std_grids_with_overlaps[name] = average_std_grids_with_overlap;
-    cv::imwrite(dataset_name+"_"+name+"_std_grids_with_overlap.png", draw_grid(std_grids_with_overlap));
+    cv::imwrite(std_overlaps_img_path, draw_grid(std_grids_with_overlap));
+    write_matrix_to_file(std_grids_with_overlap, std_overlaps_img_path);
 
     cout << " -------------- " << endl;
     cout << "Added benchmark " << name << endl;
@@ -829,7 +857,8 @@ vector<vector<vector<Eigen::MatrixXd> > > track_error_benchmark::create_grids_fr
             int col = int(x0+res*(point_i[0]-minx));
             int row = int(y0+res*(point_i[1]-miny));
             if (col >= 0 && col < benchmark_nbr_cols && row >= 0 && row < benchmark_nbr_rows) {
-                grid_maps[row][col][k].conservativeResize(grid_maps[row][col][k].rows()+1, 3);
+                int nbr_points = grid_maps[row][col][k].rows() + 1;
+                grid_maps[row][col][k].conservativeResize(nbr_points, 3);
                 grid_maps[row][col][k].bottomRows<1>() = point_i.transpose();
             }
         }
