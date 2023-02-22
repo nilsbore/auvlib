@@ -586,27 +586,30 @@ void track_error_benchmark::add_benchmark(const PointsT& maps_points, const Poin
     cv::imwrite(mean_img_path, mean_img);
 
     //Compute std error
-    double average_std_grids_with_data, average_std_grids_with_overlap;
-    Eigen::MatrixXd std_grids_with_data, std_grids_with_overlap;
-    // std for cells with >= 1 hits (i.e. grids with any data at all)
-    tie(average_std_grids_with_data, std_grids_with_data) = compute_grid_std(grid_maps, 1, false);
-    std_grids_with_hits[name] = average_std_grids_with_data;
-    std::string std_grids_img_path = dataset_name+"_"+name+"_std_grids_with_hits.png";
-    cv::imwrite(std_grids_img_path, draw_grid(std_grids_with_data));
-    write_matrix_to_file(std_grids_with_data, std_grids_img_path);
-    // std for cells with >= 2 hits (i.e. grids with overlap)
-    tie(average_std_grids_with_overlap, std_grids_with_overlap) = compute_grid_std(grid_maps, 2, false);
-    std::string std_overlaps_img_path = dataset_name+"_"+name+"_std_grids_with_overlap.png";
-    std_grids_with_overlaps[name] = average_std_grids_with_overlap;
-    cv::imwrite(std_overlaps_img_path, draw_grid(std_grids_with_overlap));
-    write_matrix_to_file(std_grids_with_overlap, std_overlaps_img_path);
+    double average_std;
+    Eigen::MatrixXd std_grids;
+    std::vector<int> min_nbr_submap_hits{1, 2};
+    std::vector<bool> use_mean{true, false};
+    for (auto hits : min_nbr_submap_hits) {
+        for (auto mean : use_mean) {
+            tie(average_std, std_grids) = compute_grid_std(grid_maps, hits, mean);
+            std_metrics[name][hits][mean] = average_std;
+            std::string std_grids_img_path = dataset_name+"_"+name+"_std_" + std::to_string(hits)
+                                             + "_use_mean_" + std::to_string(mean) + ".png";
+            cv::imwrite(std_grids_img_path, draw_grid(std_grids));
+            write_matrix_to_file(std_grids, std_grids_img_path);
+        }
+    }
 
     cout << " -------------- " << endl;
     cout << "Added benchmark " << name << endl;
     cout << "RMS consistency error: " << consistency_rms_error << endl;
     cout << "Consistency image map: " << error_img_path << endl;
-    cout << "Std grids with data: " << average_std_grids_with_data << endl;
-    cout << "Std grids with overlap: " << average_std_grids_with_overlap << endl;
+    for (auto hits : min_nbr_submap_hits) {
+        for (auto mean : use_mean) {
+            cout << "Std (" << hits << ", use mean = " << mean << "): " << std_metrics[name][hits][mean] << endl;
+        }
+    }
     cout << " -------------- " << endl;
 
 }
