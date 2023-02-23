@@ -677,15 +677,6 @@ void track_error_benchmark::print_summary()
     for (const pair<string, double>& p : consistency_rms_errors) {
         cout << p.first << " RMS consistency error: " << p.second << endl;
     }
-    for (const pair<string, double>& p: std_grids_with_hits) {
-        cout << p.first << " Std grids with hits (1): " << p.second << endl;
-    }
-    for (const pair<string, double>& p: std_grids_with_overlaps) {
-        cout << p.first << " Std grids with overlap (2): " << p.second << endl;
-    }
-    for (const pair<string, string>& p : error_img_paths) {
-        cout << p.first << " consistency image path: " << p.second << endl;
-    }
     cout << "Max consistency error: " << max_consistency_error << endl;
     cout << "Min consistency error: " << min_consistency_error << endl;
 }
